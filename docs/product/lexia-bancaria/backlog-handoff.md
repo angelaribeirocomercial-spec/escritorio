@@ -238,7 +238,7 @@ Usar como base:
 
 Com base nas auditorias recentes e nas stories adicionadas ao backlog, a sequencia recomendada para o bloco de hardening da Clara e:
 
-1. [11.9 audit-driven foundation hardening](../../docs/stories/11.9.audit-driven-foundation-hardening.md)
+1. [11.9 audit-driven foundation hardening](../../stories/11.9.audit-driven-foundation-hardening.md)
 2. [11.10 build Clara structured juridical core](../../stories/11.10.build-clara-structured-juridical-core.md)
 3. [11.11 build Clara official source adapters](../../stories/11.11.build-clara-official-source-adapters.md)
 4. [11.12 build Clara audit trail and anti-hallucination](../../stories/11.12.build-clara-audit-trail-and-anti-hallucination.md)

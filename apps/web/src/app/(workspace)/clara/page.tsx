@@ -1,12 +1,14 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
+import { ClaraConversationCard } from "@/components/layout/clara-conversation-card";
 import {
   commitClaraExecutionAction,
   updateClaraRecordContentAction,
   updateClaraReviewNoteAction,
   updateClaraWorkflowStatusAction
 } from "@/app/(workspace)/clara/actions";
-import { ClaraRecord, listClaraRecords } from "@/server/services/clara/clara-record-store";
+import { listClaraRecords } from "@/server/services/clara/clara-record-store";
+import type { ClaraRecord } from "@/server/services/clara/clara-record-types";
 import {
   getClaraAgendaArtifact,
   getClaraCaseArtifact,
@@ -23,7 +25,7 @@ import { getClaraWorkspace } from "@/server/services/clara/get-clara-workspace";
 
 const tabItems = [
   { id: "analise", label: "Analise" },
-  { id: "revisional", label: "Revisional bancaria" },
+  { id: "intimacao", label: "Intimacao" },
   { id: "pecas", label: "Pecas" },
   { id: "jurisprudencia", label: "Jurisprudencia" },
   { id: "checklist", label: "Checklist" },
@@ -31,10 +33,41 @@ const tabItems = [
   { id: "comparador", label: "Comparador de documentos" }
 ] as const;
 
+const nicheItems = [
+  {
+    id: "revisional",
+    label: "Revisional de contratos",
+    description:
+      "Leitura contratual, abusividades, memoria de calculo, minuta assistida e pacote de ajuizamento."
+  },
+  {
+    id: "fraude",
+    label: "Fraude bancaria",
+    description:
+      "Descontos indevidos, contratacao nao autorizada, contestacao e resposta humana guiada."
+  },
+  {
+    id: "busca-apreensao",
+    label: "Busca e apreensao",
+    description:
+      "Preservacao do veiculo, mora controvertida, defesa urgente e resposta formal alinhada."
+  }
+] as const;
+
 type TabId = (typeof tabItems)[number]["id"];
+type NicheId = (typeof nicheItems)[number]["id"];
+type ClaraSearchEntry = {
+  kind: string;
+  label: string;
+  detail?: string;
+  href: string;
+  keywords?: readonly string[];
+};
 
 type SearchParams = {
   tab?: string;
+  niche?: string;
+  q?: string;
   client?: string;
   process?: string;
   case?: string;
@@ -59,11 +92,15 @@ function isTabId(value: string | undefined): value is TabId {
   return tabItems.some((item) => item.id === value);
 }
 
+function isNicheId(value: string | undefined): value is NicheId {
+  return nicheItems.some((item) => item.id === value);
+}
+
 function hasOptions(field: { type: string; options?: string[] }): field is { type: string; options: string[] } {
   return Array.isArray(field.options);
 }
 
-function getCustomFieldName(tab: TabId, label: string) {
+function getCustomFieldName(tab: TabId | "revisional", label: string) {
   if (tab === "revisional" && label === "Objetivo") return "objetivo";
   if (tab === "comparador" && label === "Comparar por") return "mode";
   if (tab === "pecas" && label === "Tipo de peca") return "mode";
@@ -73,17 +110,75 @@ function getCustomFieldName(tab: TabId, label: string) {
   return label.toLowerCase().replace(/\s+/g, "-");
 }
 
+function normalizeSearchQuery(value: string) {
+  return value.toLowerCase().trim();
+}
+
+function rankSearchEntries(query: string, entries: readonly ClaraSearchEntry[]) {
+  const normalized = normalizeSearchQuery(query);
+
+  if (!normalized) {
+    return [];
+  }
+
+  const tokens = normalized.split(/[^a-z0-9À-ÿ]+/u).filter((token) => token.length > 2);
+
+  return entries
+    .map((entry) => {
+      const haystack = [entry.kind, entry.label, entry.detail, ...(entry.keywords ?? [])]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      let score = 0;
+
+      if (haystack.includes(normalized)) {
+        score += 5;
+      }
+
+      for (const token of tokens) {
+        if (haystack.includes(token)) {
+          score += 1;
+        }
+      }
+
+      if (entry.label.toLowerCase() === normalized) {
+        score += 2;
+      }
+
+      return { entry, score };
+    })
+    .filter(({ score }) => score >= 2)
+    .sort((left, right) => right.score - left.score || left.entry.label.localeCompare(right.entry.label))
+    .slice(0, 5)
+    .map(({ entry }) => entry);
+}
+
 export default async function ClaraPage({
   searchParams
 }: {
   searchParams?: SearchParams;
 }) {
-  const clara = await getClaraWorkspace();
-  const recentRecords = await listClaraRecords(24);
+  const activeNiche = isNicheId(searchParams?.niche)
+    ? searchParams.niche
+    : searchParams?.tab
+      ? "revisional"
+      : null;
   const activeTab = isTabId(searchParams?.tab) ? searchParams.tab : "analise";
+  const clara = await getClaraWorkspace({
+    clientId: searchParams?.client,
+    caseId: searchParams?.case,
+    processId: searchParams?.process,
+    documentId: searchParams?.document,
+    documentId2: searchParams?.document2,
+    niche: activeNiche ?? undefined,
+    tab: activeTab,
+    objective: searchParams?.objetivo
+  });
+  const recentRecords = await listClaraRecords(24);
   const activeWorkspace = clara.tabs[activeTab];
   const revisionalWorkspace =
-    activeTab === "revisional"
+    activeNiche === "revisional"
       ? await getBankingRevisionalWorkspace({
           clientId: searchParams?.client,
           documentId: searchParams?.document,
@@ -96,89 +191,349 @@ export default async function ClaraPage({
           targetReductionPercent: searchParams?.targetReductionPercent
         })
       : null;
+  const nicheConfig = activeNiche
+    ? {
+        revisional: {
+          title: "Revisional de contratos",
+          summary:
+            revisionalWorkspace?.analysis.executiveSummary ??
+            "Leitura contratual, abusividades, memoria de calculo e minuta assistida em um unico fluxo."
+        },
+        fraude: {
+          title: "Fraude bancaria",
+          summary:
+            "Descontos indevidos, contratacao nao autorizada, contestacao e resposta humana guiada dentro do fluxo bancario."
+        },
+        "busca-apreensao": {
+          title: "Busca e apreensao",
+          summary:
+            "Preservacao do veiculo, mora controvertida, defesa urgente e saida formal para resposta do caso."
+        }
+      }[activeNiche]
+    : null;
+  const nicheFlow = activeNiche
+    ? {
+        revisional: {
+          steps: [
+            {
+              title: "Analise",
+              detail:
+                "Confirma contrato, parcelas, CET, encargos e viabilidade inicial da revisional."
+            },
+            {
+              title: "Intimacao",
+              detail:
+                "Extrai prazo, ato exigido e necessidade de resposta humana antes do protocolo."
+            },
+            {
+              title: "Pecas",
+              detail:
+                "Estrutura a minuta assistida com fatos, fundamentos, memoria de calculo e pedidos."
+            },
+            {
+              title: "Jurisprudencia",
+              detail:
+                "Prioriza STJ e separa STF apenas quando houver recorte constitucional real."
+            },
+            {
+              title: "Saida operacional",
+              detail:
+                "Abre minuta, pacote revisional e editor formal para salvar, revisar e imprimir."
+            }
+          ]
+        },
+        fraude: {
+          steps: [
+            {
+              title: "Analise",
+              detail:
+                "Leitura do cliente, do processo e do documento para localizar fraude, desconto indevido ou contratacao nao autorizada."
+            },
+            {
+              title: "Intimacao",
+              detail:
+                "Identifica prazo e providencia urgente quando houver resposta administrativa ou judicial a ser feita."
+            },
+            {
+              title: "Pecas",
+              detail:
+                "Redige contestacao, peticao inicial ou resposta humana com foco em fraude bancaria e protecao do consumidor."
+            },
+            {
+              title: "Jurisprudencia",
+              detail:
+                "Busca precedentes do STJ em fraude bancaria e usa STF apenas se existir debate constitucional real."
+            },
+            {
+              title: "Saida operacional",
+              detail:
+                "Abre minuta assistida e editor formal para revisar, salvar, aprovar e seguir para uso."
+            }
+          ]
+        },
+        "busca-apreensao": {
+          steps: [
+            {
+              title: "Analise",
+              detail:
+                "Identifica risco de apreensao, mora controvertida, contrato do veiculo e preservacao possivel."
+            },
+            {
+              title: "Intimacao",
+              detail:
+                "Extrai o prazo e a medida exigida para resposta ou defesa urgente."
+            },
+            {
+              title: "Pecas",
+              detail:
+                "Prepara a peticao de defesa com urgencia, prova da posse e narrativa para preservacao do bem."
+            },
+            {
+              title: "Jurisprudencia",
+              detail:
+                "Prioriza STJ em busca e apreensao e deixa STF apenas como excecao constitucional."
+            },
+            {
+              title: "Saida operacional",
+              detail:
+                "Abre a minuta assistida e o editor formal para salvar, revisar, aprovar e imprimir."
+            }
+          ]
+        }
+      }[activeNiche]
+    : null;
+  const selectedClientFromParam = clara.selectors.clients.find((item) => item.id === searchParams?.client);
+  const selectedProcessFromParam = clara.selectors.processes.find((item) => item.id === searchParams?.process);
+  const selectedClient =
+    selectedProcessFromParam
+      ? clara.selectors.clients.find((item) => item.id === selectedProcessFromParam.clientId) ??
+        selectedClientFromParam ??
+        clara.selectors.clients[0]
+      : selectedClientFromParam ?? clara.selectors.clients[0];
+  const processOptions = clara.selectors.processes.filter((processItem) => processItem.clientId === selectedClient.id);
+  const selectedProcess =
+    selectedProcessFromParam && selectedProcessFromParam.clientId === selectedClient.id
+      ? selectedProcessFromParam
+      : processOptions[0] ?? selectedProcessFromParam ?? clara.selectors.processes[0];
+  const caseOptions = clara.selectors.cases.filter((caseItem) => caseItem.clientId === selectedClient.id);
+  const selectedCaseFromParam = clara.selectors.cases.find((item) => item.id === searchParams?.case);
+  const selectedCase =
+    (selectedProcess && caseOptions.find((item) => item.id === selectedProcess.caseId)) ??
+    (selectedCaseFromParam && selectedCaseFromParam.clientId === selectedClient.id ? selectedCaseFromParam : null) ??
+    caseOptions[0] ??
+    selectedCaseFromParam ??
+    clara.selectors.cases[0];
+  const documentOptions = clara.selectors.documents.filter((document) => {
+    if (selectedCase) return document.caseId === selectedCase.id;
+    return document.clientId === selectedClient.id;
+  });
+  const selectedDocumentFromParam = clara.selectors.documents.find((item) => item.id === searchParams?.document);
+  const selectedDocument =
+    documentOptions.find((item) => item.id === selectedDocumentFromParam?.id) ??
+    selectedDocumentFromParam ??
+    documentOptions[0] ??
+    clara.selectors.documents[0];
+  const selectedDocument2FromParam = clara.selectors.documents.find((item) => item.id === searchParams?.document2);
+  const selectedDocument2 =
+    documentOptions.find((item) => item.id === selectedDocument2FromParam?.id) ??
+    selectedDocument2FromParam ??
+    documentOptions[1] ??
+    documentOptions[0] ??
+    clara.selectors.documents[1];
+  const taskOptions = clara.selectors.tasks.filter((task) => {
+    if (selectedCase) return task.caseId === selectedCase.id;
+    return task.clientId === selectedClient.id;
+  });
+  const selectedTaskFromParam = clara.selectors.tasks.find((item) => item.id === searchParams?.task);
+  const selectedTask = 
+    taskOptions.find((item) => item.id === selectedTaskFromParam?.id) ??
+    selectedTaskFromParam ??
+    taskOptions[0] ??
+    clara.selectors.tasks[0];
+  const nicheOperational = activeNiche
+    ? {
+        revisional: null,
+        fraude: {
+          title: "Motor de defesa por fraude bancaria",
+          summary:
+            "A Clara le o caso como defesa por consignado nao autorizado, desconto indevido ou contratacao nao reconhecida, com saida formal pronta para revisao humana.",
+          cards: [
+            {
+              label: "Leitura central",
+              value: "Consignado nao autorizado, fraude ou desconto indevido"
+            },
+            {
+              label: "Tese pratica",
+              value: "Inexistencia de contratacao valida e protecao imediata da renda"
+            },
+            {
+              label: "Prova essencial",
+              value: "Extratos, identificacao e comunicacoes bancarias"
+            },
+            {
+              label: "Saida formal",
+              value: "Resposta assistida, contestacao ou inicial revisavel"
+            }
+          ],
+          links: [
+            {
+              label: "Abrir resposta assistida",
+              href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=peticao-inicial&objetivo=fraude-bancaria`
+            },
+            {
+              label: "Abrir processo",
+              href: `/processos/${selectedProcess.id}?clara=1&action=fraude-bancaria&client=${selectedClient.id}&document=${selectedDocument.id}`
+            },
+            {
+              label: "Abrir documento base",
+              href: `/documentos/${selectedDocument.id}`
+            }
+          ]
+        },
+        "busca-apreensao": {
+          title: "Motor de defesa em busca e apreensao",
+          summary:
+            "A Clara organiza a defesa com foco em preservacao do veiculo, mora controvertida e resposta urgente antes da constricao.",
+          cards: [
+            {
+              label: "Leitura central",
+              value: "Risco de apreensao e preservacao da posse"
+            },
+            {
+              label: "Tese pratica",
+              value: "Mora controvertida e defesa urgente do bem"
+            },
+            {
+              label: "Prova essencial",
+              value: "Contrato, posse, pagamentos e notificacao"
+            },
+            {
+              label: "Saida formal",
+              value: "Defesa urgente, liminar e minuta pronta para revisao"
+            }
+          ],
+          links: [
+            {
+              label: "Abrir defesa assistida",
+              href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=peticao-inicial&objetivo=busca-apreensao`
+            },
+            {
+              label: "Abrir processo",
+              href: `/processos/${selectedProcess.id}?clara=1&action=busca-apreensao&client=${selectedClient.id}&document=${selectedDocument.id}`
+            },
+            {
+              label: "Abrir documento base",
+              href: `/documentos/${selectedDocument.id}`
+            }
+          ]
+        }
+      }[activeNiche]
+    : null;
+  const nicheExecutionBlocks = activeNiche
+    ? {
+        revisional: null,
+        fraude: {
+          title: "Fluxo de fraude bancaria",
+          steps: [
+            "Triagem da contratacao e do desconto indevido.",
+            "Leitura da intencao de resposta ou contestacao imediata.",
+            "Montagem da peca assistida para revisao humana.",
+            "Fechamento da tese com prova minima e jurispudencia util."
+          ]
+        },
+        "busca-apreensao": {
+          title: "Fluxo de busca e apreensao",
+          steps: [
+            "Triagem do risco de apreensao e da posse atual do veiculo.",
+            "Leitura da intimacao ou da medida urgente.",
+            "Preparacao da defesa e da minuta assistida.",
+            "Fechamento da tese com preservacao do bem e resposta formal."
+          ]
+        }
+      }[activeNiche]
+    : null;
+  const selectedAction = searchParams?.action;
+  const workflowFields = [...activeWorkspace.workflow.fields];
+  function compactKeywords(values: Array<string | undefined>) {
+    return values.filter((value): value is string => Boolean(value));
+  }
+  const searchIndex: ClaraSearchEntry[] = [
+    ...clara.selectors.clients.map((item) => ({
+      kind: "Cliente",
+      label: item.label,
+      href: `/pessoas/clientes/${item.id}`,
+      keywords: compactKeywords([item.id])
+    })),
+    ...clara.selectors.processes.map((item) => ({
+      kind: "Processo",
+      label: item.label,
+      href: `/processos/${item.id}`,
+      keywords: compactKeywords([item.id, item.clientId, item.caseId])
+    })),
+    ...clara.selectors.cases.map((item) => ({
+      kind: "Caso",
+      label: item.label,
+      href: `/casos/${item.id}`,
+      keywords: compactKeywords([item.id, item.clientId])
+    })),
+    ...clara.selectors.documents.map((item) => ({
+      kind: "Documento",
+      label: item.label,
+      href: `/documentos/${item.id}`,
+      keywords: compactKeywords([item.id, item.clientId, item.caseId])
+    })),
+    ...clara.selectors.tasks.map((item) => ({
+      kind: "Tarefa",
+      label: item.label,
+      href: `/tarefas/${item.id}`,
+      keywords: compactKeywords([item.id, item.clientId, item.caseId])
+    })),
+    ...recentRecords.map((record) => ({
+      kind: "Registro",
+      label: record.editedTitle || record.sourceAction || record.kind,
+      detail: record.editedDetail || record.reviewNote || record.targetPath,
+      href: record.targetPath,
+      keywords: compactKeywords([
+        record.kind,
+        record.workflowStatus,
+        record.ownerId,
+        record.id,
+        record.sourceAction
+      ])
+    }))
+  ];
+  const globalSearchQuery = searchParams?.q?.trim() ?? "";
+  const globalSearchMatches = rankSearchEntries(globalSearchQuery, searchIndex);
+
+  function getFieldWeight(fieldType: string) {
+    if (fieldType === "client") return 0;
+    if (fieldType === "process") return 1;
+    if (fieldType === "document") return 2;
+    if (fieldType === "case") return 3;
+    if (fieldType === "task") return 4;
+    return 5;
+  }
+
+  const visibleWorkflowFields = workflowFields
+    .filter((field) => field.type !== "client")
+    .sort((left, right) => getFieldWeight(left.type) - getFieldWeight(right.type))
+    .slice(0, 2);
+  const extraWorkflowFields = workflowFields
+    .filter((field) => field.type !== "client")
+    .sort((left, right) => getFieldWeight(left.type) - getFieldWeight(right.type))
+    .slice(2);
 
   function getOptions(type: string) {
     if (type === "client") return clara.selectors.clients;
-    if (type === "process") return clara.selectors.processes;
-    if (type === "case") return clara.selectors.cases;
-    if (type === "document") return clara.selectors.documents;
-    if (type === "task") return clara.selectors.tasks;
+    if (type === "process") return processOptions;
+    if (type === "case") return caseOptions;
+    if (type === "document") return documentOptions;
+    if (type === "task") return taskOptions;
     return [];
   }
 
-  const selectedClient =
-    clara.selectors.clients.find((item) => item.id === searchParams?.client) ??
-    clara.selectors.clients[0];
-  const selectedProcess =
-    clara.selectors.processes.find((item) => item.id === searchParams?.process) ??
-    clara.selectors.processes[0];
-  const selectedCase =
-    clara.selectors.cases.find((item) => item.id === searchParams?.case) ??
-    clara.selectors.cases[0];
-  const selectedDocument =
-    clara.selectors.documents.find((item) => item.id === searchParams?.document) ??
-    clara.selectors.documents[0];
-  const selectedDocument2 =
-    clara.selectors.documents.find((item) => item.id === searchParams?.document2) ??
-    clara.selectors.documents[1];
-  const selectedTask =
-    clara.selectors.tasks.find((item) => item.id === searchParams?.task) ??
-    clara.selectors.tasks[0];
-  const selectedAction = searchParams?.action;
-  const contextualQuickActions = [
-    searchParams?.document
-      ? {
-          label: "Abrir motor revisional deste contrato",
-          detail: "Triagem de viabilidade, abusividades, memoria de calculo e minuta inicial no mesmo fluxo.",
-          href: `/clara?tab=revisional&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&action=${encodeURIComponent("Triar viabilidade revisional")}#clara-workbench`
-        }
-      : null,
-    searchParams?.process
-      ? {
-          label: `Analisar ${selectedProcess.label}`,
-          detail: "Leitura executiva, prazo e risco do processo atual.",
-          href: `/clara?tab=analise&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&action=${encodeURIComponent("Analisar processo")}#clara-workbench`
-        }
-      : null,
-    searchParams?.process
-      ? {
-          label: "Calcular prazo deste processo",
-          detail: "Abre a Clara ja pronta para orientar prazo e janela util.",
-          href: `/clara?tab=analise&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&action=${encodeURIComponent("Calcular prazo")}#clara-workbench`
-        }
-      : null,
-    searchParams?.case
-      ? {
-          label: `Gerar minuta de ${selectedCase.label}`,
-          detail: "Estrutura de peca e abertura do rascunho assistido.",
-          href: `/clara?tab=pecas&case=${selectedCase.id}&document=${selectedDocument.id}&action=${encodeURIComponent("Abrir minuta assistida")}#clara-workbench`
-        }
-      : null,
-    searchParams?.case
-      ? {
-          label: "Pesquisar jurisprudencia deste caso",
-          detail: "Pesquisa guiada por tese e tribunal para o caso atual.",
-          href: `/clara?tab=jurisprudencia&case=${selectedCase.id}&process=${selectedProcess.id}&action=${encodeURIComponent("Pesquisar precedentes")}#clara-workbench`
-        }
-      : null,
-    searchParams?.client
-      ? {
-          label: `Atualizar ${selectedClient.label}`,
-          detail: "Gera proxima acao e mensagem operacional ao cliente.",
-          href: `/clara?tab=proximos-passos&client=${selectedClient.id}&case=${selectedCase.id}&action=${encodeURIComponent("Gerar atualizacao ao cliente")}#clara-workbench`
-        }
-      : null,
-    searchParams?.client
-      ? {
-          label: "Montar proxima acao deste cliente",
-          detail: "Ordena o que deve acontecer agora no fluxo do atendimento.",
-          href: `/clara?tab=proximos-passos&client=${selectedClient.id}&case=${selectedCase.id}&action=${encodeURIComponent("Montar proxima acao")}#clara-workbench`
-        }
-      : null
-  ].filter(Boolean) as { label: string; detail: string; href: string }[];
-
   const operationalByTab: Record<
-    TabId,
+    TabId | "revisional",
     {
       title: string;
       summary: string;
@@ -187,7 +542,16 @@ export default async function ClaraPage({
   > = {
     analise: {
       title: "Analise pronta para aprofundamento",
-      summary: `Clara cruzou ${selectedProcess.label}, ${selectedDocument.label} e ${selectedClient.label} para montar leitura executiva, prazo e risco do caso.`,
+      summary: `${clara.structuredCore.classification.scenarioLabel} em leitura estruturada: ${clara.structuredCore.nextStep}`,
+      links: [
+        { label: "Abrir processo", href: `/processos/${selectedProcess.id}` },
+        { label: "Abrir documento", href: `/documentos/${selectedDocument.id}` },
+        { label: "Abrir cliente", href: `/pessoas/clientes/${selectedClient.id}` }
+      ]
+    },
+    intimacao: {
+      title: "Intimacao pronta para resposta",
+      summary: `Clara organizou a intimacao vinculada a ${selectedProcess.label} para destacar prazo, ato processual e a resposta humana ou automatica que precisa sair agora.`,
       links: [
         { label: "Abrir processo", href: `/processos/${selectedProcess.id}` },
         { label: "Abrir documento", href: `/documentos/${selectedDocument.id}` },
@@ -200,7 +564,7 @@ export default async function ClaraPage({
       links: [
         { label: "Abrir contrato", href: `/documentos/${selectedDocument.id}` },
         { label: "Abrir analise contratual", href: `/analise-contrato?documentId=${selectedDocument.id}` },
-        { label: "Abrir editor da inicial", href: `/editor-de-texto/meus-textos?draft=1&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional` }
+        { label: "Abrir editor da inicial", href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional` }
       ]
     },
     pecas: {
@@ -214,7 +578,7 @@ export default async function ClaraPage({
     },
     jurisprudencia: {
       title: "Pesquisa orientada por tese",
-      summary: `Clara preparou um recorte de pesquisa para ${selectedCase.label}, organizando o tema juridico e o tribunal alvo antes da consulta jurisprudencial.`,
+      summary: `Clara preparou um recorte de pesquisa para ${selectedCase.label}, organizando o tema juridico e o tribunal alvo antes da consulta jurisprudencial. O STJ fica em primeiro plano e o STF entra apenas quando houver recorte constitucional.`,
       links: [
         { label: "Abrir processo", href: `/processos/${selectedProcess.id}?case_context=1` },
         { label: "Ir para relatorios", href: "/relatorios/processos" },
@@ -232,7 +596,7 @@ export default async function ClaraPage({
     },
     "proximos-passos": {
       title: "Ordem de ataque definida",
-      summary: `Clara priorizou os proximos passos de ${selectedClient.label} em torno de ${selectedCase.label}, com foco em entrega operacional e atualizacao ao cliente.`,
+      summary: `Clara priorizou os proximos passos de ${selectedClient.label} em torno de ${selectedCase.label}, com foco em entrega operacional, distribuicao da acao e acompanhamento apos a saida do editor.`,
       links: [
         { label: "Abrir cliente", href: `/pessoas/clientes/${selectedClient.id}` },
         { label: "Abrir processo", href: `/processos/${selectedProcess.id}?case_context=1` },
@@ -251,14 +615,8 @@ export default async function ClaraPage({
   };
 
   const operational = operationalByTab[activeTab];
-  const threadLinks = {
-    "thread-1": `/clara?tab=revisional&client=${clara.selectors.clients[0]?.id ?? selectedClient.id}&process=${clara.selectors.processes[0]?.id ?? selectedProcess.id}&document=${clara.selectors.documents[0]?.id ?? selectedDocument.id}&action=${encodeURIComponent("Montar estrategia revisional")}#clara-workbench`,
-    "thread-2": `/clara?tab=analise&client=${clara.selectors.clients[1]?.id ?? selectedClient.id}&process=${clara.selectors.processes[1]?.id ?? selectedProcess.id}&document=${clara.selectors.documents[1]?.id ?? selectedDocument.id}&action=${encodeURIComponent("Analisar processo")}#clara-workbench`,
-    "thread-3": `/clara?tab=revisional&client=${clara.selectors.clients[2]?.id ?? selectedClient.id}&process=${clara.selectors.processes[2]?.id ?? selectedProcess.id}&document=${clara.selectors.documents[3]?.id ?? selectedDocument.id}&action=${encodeURIComponent("Triar viabilidade revisional")}#clara-workbench`
-  } as const;
-
   const executedByTab: Record<
-    TabId,
+    TabId | "revisional",
     Partial<Record<string, { title: string; body: string[]; cta: { label: string; href: string } }>>
   > = {
     analise: {
@@ -266,7 +624,8 @@ export default async function ClaraPage({
         title: "Leitura executiva pronta",
         body: [
           `${selectedProcess.label} foi lido com base em ${selectedDocument.label}.`,
-          "Prazo sensivel identificado na fase atual com necessidade de reforco probatorio antes da proxima peca.",
+          clara.structuredCore.summary,
+          `Lacunas documentais: ${clara.structuredCore.documentsMissing.length > 0 ? clara.structuredCore.documentsMissing.join(", ") : "nenhuma lacuna essencial"}.`,
           `Cliente vinculado: ${selectedClient.label}.`
         ],
         cta: {
@@ -274,14 +633,17 @@ export default async function ClaraPage({
           href: `/processos/${selectedProcess.id}?clara=1&action=analisar-processo&document=${selectedDocument.id}&client=${selectedClient.id}`
         }
       },
-      "Calcular prazo": {
+      "Abrir prazo calculado": {
         title: "Prazo operacional estimado",
         body: [
           "A Clara estimou uma janela util de preparo considerando citacao, memoria de calculo e revisao documental.",
           "O proximo passo e validar a data exata no andamento e travar checklist interno.",
           "Recomendacao: alinhar responsabilidade com a equipe antes de protocolar."
         ],
-        cta: { label: "Ir para agenda", href: "/agenda/prazos?clara=1&created=1&action=calcular-prazo" }
+        cta: {
+          label: "Abrir calculadora de prazo",
+          href: `/agenda/prazos/calcular?clara=1&created=1&action=abrir-prazo-calculado&client=${selectedClient.id}&case=${selectedCase.id}&process=${selectedProcess.id}&document=${selectedDocument.id}`
+        }
       },
       "Gerar resumo executivo": {
         title: "Resumo executivo gerado",
@@ -290,7 +652,48 @@ export default async function ClaraPage({
           "Tese principal, risco, urgencia e proxima medida foram condensados em formato para repasse interno.",
           "Esse resumo ja pode orientar reuniao, atendimento ao cliente e abertura de minuta."
         ],
-        cta: { label: "Abrir processo", href: `/processos/${selectedProcess.id}?clara=1&action=resumo-executivo&case_context=1` }
+        cta: {
+          label: "Abrir resumo no editor",
+          href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=resumo-executivo&source=clara`
+        }
+      }
+    },
+    intimacao: {
+      "Analisar intimacao": {
+        title: "Intimacao lida",
+        body: [
+          `${selectedProcess.label} recebeu uma intima��o que precisa ser tratada com aten��o ao prazo e ao ato exigido.`,
+          "A Clara separou o que exige confer�ncia humana antes da resposta ou da juntada.",
+          `Cliente vinculado: ${selectedClient.label}.`
+        ],
+        cta: {
+          label: "Abrir processo para revisar",
+          href: `/processos/${selectedProcess.id}?clara=1&action=analisar-intimacao&document=${selectedDocument.id}&client=${selectedClient.id}`
+        }
+      },
+      "Extrair prazo": {
+        title: "Prazo extraido",
+        body: [
+          "A Clara destacou o prazo da intimacao e orientou a janela util para resposta.",
+          "A etapa seguinte e confirmar a data com o andamento mais recente e travar a estrategia de saida.",
+          "Se houver duvida, a revisao humana entra antes do protocolo."
+        ],
+        cta: {
+          label: "Ir para agenda",
+          href: "/agenda/prazos?clara=1&created=1&action=extrair-prazo"
+        }
+      },
+      "Gerar resposta a intimacao": {
+        title: "Resposta a intima��o preparada",
+        body: [
+          `A Clara estruturou a resposta a intima��o de ${selectedProcess.label} em formato pronto para revis�o humana.`,
+          "O texto pode seguir para o editor, receber ajuste do advogado e depois ser usado no fluxo operacional.",
+          "A decis�o final permanece sob aprova��o humana antes do uso."
+        ],
+        cta: {
+          label: "Abrir minuta",
+          href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=resposta-intimacao`
+        }
       }
     },
     revisional: {
@@ -351,21 +754,21 @@ export default async function ClaraPage({
         ],
         cta: {
           label: "Abrir editor da inicial",
-          href: `/editor-de-texto/meus-textos?draft=1&created=1&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional`
+          href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional`
         }
       }
     },
     pecas: {
-      "Gerar estrutura": {
-        title: "Estrutura de peca montada",
+      "Redigir peticao inicial": {
+        title: "Peticao inicial pronta para revisao",
         body: [
           "A Clara separou fatos, fundamentos bancarios, pedidos e urgencia em uma ordem de redacao inicial.",
           `Documento base usado: ${selectedDocument.label}.`,
           "A revisao humana deve ajustar o enquadramento final e a dosimetria dos pedidos."
         ],
         cta: {
-          label: "Abrir analise premium",
-          href: `/analise-contrato?documentId=${selectedDocument.id}&clara=1&action=estrutura-peca`
+          label: "Abrir minuta assistida",
+          href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=peticao-inicial`
         }
       },
       "Montar fundamentos": {
@@ -389,31 +792,31 @@ export default async function ClaraPage({
         ],
         cta: {
           label: "Ir para editor de texto",
-          href: `/editor-de-texto/meus-textos?draft=1&created=1&case=${selectedCase.id}&document=${selectedDocument.id}&piece=peticao-inicial`
+          href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=peticao-inicial`
         }
       }
     },
     jurisprudencia: {
-      "Pesquisar precedentes": {
-        title: "Pesquisa de precedentes organizada",
+      "Pesquisar STJ": {
+        title: "Pesquisa no STJ organizada",
         body: [
           "A Clara preparou o recorte jurisprudencial por tema, tribunal e tipo de demanda bancaria.",
-          "A busca prioriza julgados aproveitaveis na fase atual do caso.",
+          "A busca prioriza julgados do STJ, que costuma concentrar a leitura mais util em direito bancario.",
           `Tema em foco vinculado a ${selectedCase.label}.`
         ],
         cta: {
           label: "Abrir relatorios",
-          href: "/relatorios/processos?clara=1&action=precedentes"
+          href: "/relatorios/processos?clara=1&action=precedentes-stj"
         }
       },
-      "Separar julgados lideres": {
-        title: "Julgados lideres separados",
+      "Pesquisar STF": {
+        title: "Pesquisa no STF preparada",
         body: [
-          "Foram destacados precedentes com maior potencial de reforco argumentativo.",
-          "A recomendacao e usar os lideres para sustentar a abertura da narrativa e os pedidos centrais.",
-          "Depois disso, complementar com julgados de apoio por tribunal."
+          "Foram separados os julgados do STF que fazem sentido quando a tese bancaria precisa de recorte constitucional.",
+          "Esse caminho e secundario no banking, mas util quando a discussao extrapola o contrato e toca materia constitucional.",
+          "A Clara deixa o STF como camada de excecao, nao como trilha principal."
         ],
-        cta: { label: "Abrir processo", href: `/processos/${selectedProcess.id}?clara=1&action=julgados-lideres&case_context=1` }
+        cta: { label: "Abrir relatorios", href: "/relatorios/processos?clara=1&action=precedentes-stf" }
       },
       "Montar base jurisprudencial": {
         title: "Base jurisprudencial pronta",
@@ -464,26 +867,29 @@ export default async function ClaraPage({
       }
     },
     "proximos-passos": {
-      "Sugerir ordem de ataque": {
-        title: "Ordem de ataque pronta",
+      "Distribuir acao": {
+        title: "Acao pronta para distribuicao",
         body: [
           `Cliente priorizado: ${selectedClient.label}.`,
           "A Clara definiu agora, depois e em seguida para reduzir dispersao da equipe.",
-          "O foco inicial e fechar o item que aumenta robustez do caso ou destrava a peca."
+          "Depois da minuta, este passo leva ao encaminhamento formal da acao."
         ],
         cta: {
-          label: "Abrir cliente",
-          href: `/pessoas/clientes/${selectedClient.id}?clara=1&action=proximos-passos&case=${selectedCase.id}`
+          label: "Abrir processo",
+          href: `/processos/${selectedProcess.id}?clara=1&action=distribuir-acao&case_context=1`
         }
       },
-      "Montar proxima acao": {
-        title: "Proxima acao definida",
+      "Acompanhar acao": {
+        title: "Acompanhamento iniciado",
         body: [
           `Caso base: ${selectedCase.label}.`,
-          "A proxima entrega foi convertida em movimento operacional objetivo com criterio de prioridade.",
-          "Esse passo ja pode orientar equipe, atendimento e agenda."
+          "A Clara converteu a distribuicao em acompanhamento operacional com marcos, tarefas e proximas verificacoes.",
+          "Esse passo serve para monitorar protocolo, andamento e resposta do cliente."
         ],
-        cta: { label: "Abrir processo", href: `/processos/${selectedProcess.id}?clara=1&action=proxima-acao&case_context=1` }
+        cta: {
+          label: "Ir para tarefas",
+          href: `/agenda/tarefas?clara=1&created=1&task=${selectedTask.id}&case=${selectedCase.id}&client=${selectedClient.id}&process=${selectedProcess.id}&document=${selectedDocument.id}&focus=acompanhamento`
+        }
       },
       "Gerar atualizacao ao cliente": {
         title: "Atualizacao ao cliente preparada",
@@ -542,10 +948,21 @@ export default async function ClaraPage({
     selectedAction && executedByTab[activeTab][selectedAction]
       ? executedByTab[activeTab][selectedAction]
       : null;
-  const recordKindByTab: Partial<Record<TabId, "task" | "agenda" | "deadline" | "text-draft" | "comparison" | "filing-package" | "process" | "case" | "client">> = {
+  const recordKindByTab: Partial<
+    Record<
+      TabId | "revisional",
+      "task" | "agenda" | "deadline" | "text-draft" | "comparison" | "filing-package" | "process" | "client"
+    >
+  > = {
     checklist: "task",
     "proximos-passos": "agenda",
     comparador: "comparison",
+    intimacao:
+      selectedAction === "Extrair prazo"
+        ? "deadline"
+        : selectedAction === "Gerar resposta a intimacao"
+          ? "text-draft"
+          : "process",
     revisional:
       selectedAction === "Gerar minuta inicial revisional"
         ? "text-draft"
@@ -556,23 +973,51 @@ export default async function ClaraPage({
         : selectedAction === "Organizar provas e calculos"
           ? "task"
           : "process",
-    pecas: selectedAction === "Abrir minuta assistida" ? "text-draft" : undefined,
+    pecas:
+      selectedAction === "Redigir peticao inicial" || selectedAction === "Abrir minuta assistida"
+        ? "text-draft"
+        : undefined,
     analise:
-      selectedAction === "Calcular prazo"
+      selectedAction === "Abrir prazo calculado"
         ? "deadline"
         : selectedAction === "Analisar processo"
           ? "process"
           : selectedAction === "Gerar resumo executivo"
-            ? "case"
+            ? "text-draft"
             : undefined
   };
-  if (activeTab === "proximos-passos" && selectedAction === "Sugerir ordem de ataque") {
-    recordKindByTab["proximos-passos"] = "client";
+  if (activeTab === "proximos-passos" && selectedAction === "Distribuir acao") {
+    recordKindByTab["proximos-passos"] = "process";
   }
-  if (activeTab === "proximos-passos" && selectedAction === "Montar proxima acao") {
-    recordKindByTab["proximos-passos"] = "case";
+  if (activeTab === "proximos-passos" && selectedAction === "Acompanhar acao") {
+    recordKindByTab["proximos-passos"] = "task";
+  }
+  if (activeTab === "proximos-passos" && selectedAction === "Gerar atualizacao ao cliente") {
+    recordKindByTab["proximos-passos"] = "agenda";
   }
   const recordKind = recordKindByTab[activeTab];
+  const recordOwnerType =
+    recordKind === "agenda" || recordKind === "deadline" || recordKind === "task"
+      ? "agenda-item"
+      : recordKind === "text-draft"
+        ? "draft-workspace"
+        : recordKind === "comparison"
+          ? "document-workspace"
+          : recordKind === "client"
+            ? "client"
+            : recordKind
+              ? "process"
+              : "";
+  const recordOwnerId =
+    recordKind === "client"
+      ? selectedClient.id
+      : recordKind === "comparison"
+        ? selectedDocument.id
+        : recordKind === "text-draft"
+          ? selectedProcess.id
+          : recordKind
+            ? selectedProcess.id
+            : "";
   const historyQuery = searchParams?.history_q?.trim().toLowerCase() ?? "";
   const historyKindFilter = searchParams?.history_kind?.trim() ?? "";
 
@@ -589,35 +1034,35 @@ export default async function ClaraPage({
         const payload = record.payload as Awaited<ReturnType<typeof getClaraAgendaArtifact>>;
         return {
           title: payload.clientLabel,
-          detail: `${payload.statusLabel} · ${payload.caseLabel}`
+          detail: `${payload.statusLabel} ? ${payload.caseLabel}`
         };
       }
       case "deadline": {
         const payload = record.payload as Awaited<ReturnType<typeof getClaraDeadlineArtifact>>;
         return {
           title: payload.statusLabel,
-          detail: `${payload.stageLabel} · ${payload.actionLabel}`
+          detail: `${payload.stageLabel} ? ${payload.actionLabel}`
         };
       }
       case "task": {
         const payload = record.payload as Awaited<ReturnType<typeof getClaraTaskArtifact>>;
         return {
           title: payload.title,
-          detail: `${payload.statusLabel} · ${payload.caseLabel}`
+          detail: `${payload.statusLabel} ? ${payload.caseLabel}`
         };
       }
       case "text-draft": {
         const payload = record.payload as Awaited<ReturnType<typeof getClaraTextDraftArtifact>>;
         return {
           title: payload.pieceLabel,
-          detail: `${payload.statusLabel} · ${payload.caseLabel}`
+          detail: `${payload.statusLabel} ? ${payload.caseLabel}`
         };
       }
       case "comparison": {
         const payload = record.payload as Awaited<ReturnType<typeof getClaraComparisonArtifact>>;
         return {
           title: payload.firstLabel,
-          detail: `${payload.statusLabel} · ${payload.secondLabel}`
+          detail: `${payload.statusLabel} ? ${payload.secondLabel}`
         };
       }
       case "filing-package": {
@@ -625,28 +1070,28 @@ export default async function ClaraPage({
           record.payload as Awaited<ReturnType<typeof getClaraRevisionalFilingPackageArtifact>>;
         return {
           title: payload.title,
-          detail: `${payload.statusLabel} · ${payload.caseLabel}`
+          detail: `${payload.statusLabel} ? ${payload.caseLabel}`
         };
       }
       case "process": {
         const payload = record.payload as Awaited<ReturnType<typeof getClaraProcessArtifact>>;
         return {
           title: payload.processLabel,
-          detail: `${payload.statusLabel} · ${payload.clientLabel}`
+          detail: `${payload.statusLabel} ? ${payload.clientLabel}`
         };
       }
       case "case": {
         const payload = record.payload as Awaited<ReturnType<typeof getClaraCaseArtifact>>;
         return {
           title: payload.caseLabel,
-          detail: `${payload.statusLabel} · ${payload.bankLabel}`
+          detail: `${payload.statusLabel} ? ${payload.bankLabel}`
         };
       }
       case "client": {
         const payload = record.payload as Awaited<ReturnType<typeof getClaraClientArtifact>>;
         return {
           title: payload.clientLabel,
-          detail: `${payload.statusLabel} · ${payload.bankLabel}`
+          detail: `${payload.statusLabel} ? ${payload.bankLabel}`
         };
       }
     }
@@ -661,7 +1106,7 @@ export default async function ClaraPage({
       return true;
     }
 
-    const summary = summarizeRecord(record);
+    const summary = summarizeRecord(record)!;
     return [record.id, record.kind, record.sourceAction, summary.title, summary.detail]
       .join(" ")
       .toLowerCase()
@@ -671,12 +1116,80 @@ export default async function ClaraPage({
     filteredRecords.find((record) => record.id === searchParams?.selected_record) ??
     filteredRecords[0] ??
     null;
+  const selectedHistorySummary = selectedHistoryRecord
+    ? summarizeRecord(selectedHistoryRecord)!
+    : null;
+  const executionRecord = searchParams?.record
+    ? recentRecords.find((record) => record.id === searchParams.record) ?? null
+    : null;
 
   const historyReturnPath = `/clara?tab=${activeTab}${
     searchParams?.history_q ? `&history_q=${encodeURIComponent(searchParams.history_q)}` : ""
   }${searchParams?.history_kind ? `&history_kind=${encodeURIComponent(searchParams.history_kind)}` : ""}${
     selectedHistoryRecord ? `&selected_record=${encodeURIComponent(selectedHistoryRecord.id)}` : ""
   }#clara-history`;
+  const executionReturnPath = `/clara?tab=${activeTab}${
+    searchParams?.record ? `&record=${encodeURIComponent(searchParams.record)}` : ""
+  }#clara-execucao`;
+  const filingPackageEditorHref = `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional&objetivo=${encodeURIComponent(revisionalWorkspace?.objectiveProfile.label ?? activeWorkspace.title)}`;
+  const workbenchActionHref = (action: string) =>
+    `/clara?tab=${activeTab}${
+      searchParams?.client ? `&client=${encodeURIComponent(searchParams.client)}` : `&client=${encodeURIComponent(selectedClient.id)}`
+    }${
+      searchParams?.process ? `&process=${encodeURIComponent(searchParams.process)}` : `&process=${encodeURIComponent(selectedProcess.id)}`
+    }${
+      searchParams?.case ? `&case=${encodeURIComponent(searchParams.case)}` : `&case=${encodeURIComponent(selectedCase.id)}`
+    }${
+      searchParams?.document ? `&document=${encodeURIComponent(searchParams.document)}` : `&document=${encodeURIComponent(selectedDocument.id)}`
+    }${action ? `&action=${encodeURIComponent(action)}` : ""}#clara-execucao`;
+  const workbenchActionTargetHref = (action: string) =>
+    executedByTab[activeTab][action]?.cta.href ?? workbenchActionHref(action);
+  const workbenchActions = activeWorkspace.workflow.actions.filter(
+    (action) => !(activeTab === "analise" && action === "Analisar processo")
+  );
+  const quickActionLinks = [
+    ...operational.links,
+    ...(activeNiche && nicheOperational ? nicheOperational.links : []),
+    ...workbenchActions.map((action) => ({
+      label: action,
+      href: workbenchActionTargetHref(action)
+    }))
+  ];
+  const revisionalFlowCards =
+    activeNiche === "revisional" && revisionalWorkspace
+      ? [
+          {
+            step: "01",
+            title: "Triagem",
+            detail: revisionalWorkspace.analysis.executiveSummary,
+            href: `/analise-contrato?documentId=${revisionalWorkspace.selectedDocument.id}&client=${selectedClient.id}&process=${selectedProcess.id}&objetivo=${encodeURIComponent(revisionalWorkspace.objectiveProfile.label)}`
+          },
+          {
+            step: "02",
+            title: "Abusividades",
+            detail: revisionalWorkspace.analysis.abusivenessSignals[0] ?? "Abrir o documento para verificar as clausulas abusivas.",
+            href: `/documentos/${selectedDocument.id}`
+          },
+          {
+            step: "03",
+            title: "Estrategia",
+            detail: revisionalWorkspace.decisionSummary,
+            href: `/processos/${selectedProcess.id}?record_tab=revisional-package&client=${selectedClient.id}&document=${selectedDocument.id}${searchParams?.objetivo ? `&objetivo=${encodeURIComponent(searchParams.objetivo)}` : ""}`
+          },
+          {
+            step: "04",
+            title: "Prova e calculo",
+            detail: `${revisionalWorkspace.calculationMemory.basis} O botao de impressao fica na pagina de destino.`,
+            href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional&objetivo=${encodeURIComponent("Montar memoria de calculo")}&contractedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.contractedInstallment)}&chargedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.chargedInstallment)}&revisedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.revisedInstallment)}&estimatedTotalExcess=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.estimatedTotalExcess)}`
+          },
+          {
+            step: "05",
+            title: "Minuta inicial",
+            detail: revisionalWorkspace.filingPackage.summary,
+            href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional&objetivo=${encodeURIComponent(revisionalWorkspace.objectiveProfile.label)}&contractedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.contractedInstallment)}&chargedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.chargedInstallment)}&revisedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.revisedInstallment)}&estimatedTotalExcess=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.estimatedTotalExcess)}`
+          }
+        ]
+      : null;
 
   function workflowStatusLabel(record: ClaraRecord) {
     switch (record.workflowStatus) {
@@ -754,123 +1267,170 @@ export default async function ClaraPage({
     }
   }
 
+  if (!activeNiche) {
+    return (
+      <div className="space-y-6">
+        {globalSearchQuery ? (
+          <section className="workspace-panel p-6">
+            <div className="flex flex-col gap-2">
+              <p className="workspace-kicker">Busca global</p>
+              <p className="text-sm leading-6 text-slate-300">
+                Resultados para <span className="font-semibold text-white">{globalSearchQuery}</span>.
+              </p>
+            </div>
+            {globalSearchMatches.length > 0 ? (
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {globalSearchMatches.map((item) => (
+                  <Link
+                    key={`${item.kind}-${item.href}`}
+                    className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.07]"
+                    href={item.href}
+                  >
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+                        {item.kind}
+                      </p>
+                      <p className="mt-3 text-sm font-semibold text-white">{item.label}</p>
+                      {item.detail ? <p className="mt-2 text-sm leading-6 text-slate-300">{item.detail}</p> : null}
+                    </div>
+                    <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-100">
+                      Abrir resultado
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm leading-6 text-slate-300">
+                Nenhum resultado direto foi encontrado. Tente outro termo ou continue pela Clara para localizar o registro.
+              </div>
+            )}
+          </section>
+        ) : null}
+
+        <section className="space-y-4">
+          <ClaraConversationCard
+            badgeLabel="CLARA"
+            badgeSubtitle="Orquestrador do sistema"
+            responseDetail="Pergunte � Clara. Ela localiza clientes, processos, documentos e andamentos e leva voc� direto ao que precisa."
+            interactive
+            searchIndex={searchIndex}
+            statusLabel="Hub"
+            statusLine="Nicho define o motor de trabalho. A busca continua global."
+          />
+        </section>
+
+        <section className="workspace-panel p-6">
+          <div className="flex flex-col gap-2">
+            <p className="workspace-kicker">Acesso rapido</p>
+            <p className="text-sm leading-6 text-slate-300">
+              Atalhos operacionais para iniciar um caso novo sem cair em telas intermediarias.
+            </p>
+          </div>
+            <div className="mt-4 grid gap-3 lg:grid-cols-2 xl:grid-cols-5">
+            {[
+              {
+                label: "Cadastrar cliente",
+                href: "/pessoas/clientes/adicionar",
+                detail: "Abre o cadastro do cliente novo para iniciar o fluxo."
+              },
+              {
+                label: "Registrar caso",
+                href: "/casos/adicionar",
+                detail: "Classifica o caso por nicho, tese e urgencia."
+              },
+              {
+                label: "Anexar documentos",
+                href: "/documentos/enviar-arquivos",
+                detail: "Leva para o envio e vinculacao de documentos do caso."
+              },
+              {
+                label: "Abrir processo",
+                href: "/processos/adicionar",
+                detail: "Cria o processo manualmente quando o caso ja estiver pronto."
+              },
+              {
+                label: "Abrir editor formal",
+                href: "/editor-de-texto/criar-texto",
+                detail: "Comeca a minuta formal com revisao humana e salvamento."
+              }
+            ].map((item) => (
+                <Link
+                  key={item.label}
+                  className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.07]"
+                  href={item.href}
+                >
+                  <div>
+                    <p className="text-[15px] font-semibold leading-6 text-white">{item.label}</p>
+                    <p className="mt-2 text-[13px] leading-6 text-slate-300">{item.detail}</p>
+                  </div>
+                  <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[11px] font-semibold text-emerald-100">
+                    Abrir atalho
+                  </span>
+                </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="workspace-panel p-6">
+          <div className="flex flex-col gap-2">
+            <p className="workspace-kicker">Nichos</p>
+            <p className="text-sm leading-6 text-slate-300">
+              O hub so escolhe o nicho. A sequencia operacional fica dentro do fluxo de trabalho escolhido.
+            </p>
+          </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-3">
+            {nicheItems.map((item) => (
+              <Link
+                key={item.id}
+                className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-white/10 bg-white/[0.04] p-5 transition hover:bg-white/[0.07]"
+                href={`/clara?niche=${item.id}&tab=analise`}
+              >
+                <div>
+                  <p className="text-lg font-semibold text-white">{item.label}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">{item.description}</p>
+                </div>
+                <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-100">
+                  Abrir nicho
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <section className="clara-hero-shell overflow-hidden rounded-[6px] border border-white/10 bg-[linear-gradient(145deg,#0b1220,#0f1724_55%,#0b1322)] p-5 shadow-soft sm:p-6">
-        <div className="grid gap-6 xl:grid-cols-[0.98fr_1.02fr] xl:items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-black/20 px-4 py-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-              <span className="text-sm font-semibold text-amber-300">CLARA™ — Online agora</span>
-            </div>
-
-            <h1 className="mt-5 max-w-[33rem] text-[2.3rem] font-semibold leading-[1.06] tracking-tight text-white sm:text-[3rem]">
-              Conheca CLARA, sua advogada digital 24h
-            </h1>
-            <p className="mt-4 max-w-[31rem] text-[1rem] leading-7 text-slate-400">
-              Clara trabalha dentro do fluxo real do escritorio bancario para analisar
-              processos, comparar documentos, orientar prazos, sugerir pecas e transformar
-              leitura juridica em proxima acao operacional.
-            </p>
-
-            <div className="mt-6 grid gap-3">
-              {[
-                "Analise juridica e operacional do processo",
-                "Geracao assistida de pecas e minutas",
-                "Pesquisa de jurisprudencia por tese bancaria",
-                "Checklist e proxima acao do escritorio"
-              ].map((item) => (
-                <div key={item} className="flex items-start gap-3">
-                  <span className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-amber-400/10 text-xs text-amber-300">
-                    ✓
-                  </span>
-                  <p className="text-[15px] font-medium leading-6 text-slate-100">{item}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                className="rounded-[4px] bg-[linear-gradient(90deg,#d9a437,#e0b04f)] px-4 py-3 text-sm font-semibold text-slate-950 shadow-soft transition hover:brightness-105"
-                href={`/clara?tab=${activeTab}#clara-workbench`}
-              >
-                Modulo ativo: {activeWorkspace.title}
-              </Link>
-              <div className="clara-secondary-surface rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-300">
-                Contextos ativos: {clara.metrics.contextualActions}
-              </div>
-            </div>
-          </div>
-
-          <article className="clara-hero-card rounded-[4px] border border-white/10 bg-[linear-gradient(180deg,#0d1725,#101b2b)] p-4 shadow-soft">
-            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-[4px] bg-amber-400/12 text-amber-300">
-                <svg aria-hidden="true" className="h-6 w-6" fill="none" viewBox="0 0 24 24">
-                  <rect x="5" y="7" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.8" />
-                  <path d="M9 4.8v2.4M15 4.8v2.4M9.5 12h5" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-lg font-semibold text-white">CLARA™</p>
-                <p className="text-sm text-slate-400">Inteligencia juridica</p>
-              </div>
-            </div>
-
-            <div className="mt-4 flex justify-end">
-              <div className="clara-prompt-bubble max-w-[25rem] rounded-[4px] bg-[linear-gradient(90deg,#d9a437,#e0b04f)] px-4 py-3 text-sm font-medium text-slate-950">
-                {clara.featuredResponse.prompt}
-              </div>
-            </div>
-
-            <div className="clara-summary-card mt-4 max-w-[24rem] rounded-[4px] border border-white/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] px-4 py-4 text-slate-100">
-              <p className="text-[15px] font-semibold leading-6 text-white">{activeWorkspace.summary}</p>
-              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-                {activeWorkspace.highlights.slice(0, 3).map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-              <p className="mt-4 text-sm text-slate-400">{clara.featuredResponse.cautionLabel}</p>
-            </div>
-
-            <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-300/70" />
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-300/40" />
-              <span>CLARA esta analisando o contexto do escritorio...</span>
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                className="rounded-[4px] bg-[linear-gradient(90deg,#d9a437,#e0b04f)] px-4 py-3 text-sm font-semibold text-slate-950 shadow-soft transition hover:brightness-105"
-                href={`/clara?tab=${activeTab}#clara-workbench`}
-              >
-                Ir para bancada
-              </Link>
-              <Link
-                className="clara-secondary-button rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/[0.08]"
-                href={`/clara?tab=${activeTab}#clara-history`}
-              >
-                Ver historico
-              </Link>
-            </div>
-          </article>
+      <section className="workspace-panel scroll-mt-40 p-4" id="clara-nicho-ativo">
+        <div className="flex flex-col gap-2">
+          <p className="workspace-kicker">Nicho ativo</p>
+          <p className="text-sm leading-6 text-slate-300">
+            {nicheConfig?.summary ??
+              "Escolha um nicho para abrir a sequencia operacional dentro do contexto correto."}
+          </p>
         </div>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Acoes Contextuais", value: clara.metrics.contextualActions },
-          { label: "Modo Ativo", value: clara.metrics.activeMode },
-          { label: "Respostas Hoje", value: `${clara.metrics.responsesToday}` },
-          { label: "Confianca", value: clara.metrics.confidenceLabel }
-        ].map((metric) => (
-          <article key={metric.label} className="workspace-panel min-w-0 p-5">
-            <p className="workspace-muted text-sm font-medium">{metric.label}</p>
-            <p className="mt-4 break-words text-2xl font-semibold leading-tight tracking-tight text-white">
-              {metric.value}
-            </p>
-          </article>
-        ))}
+        {nicheFlow ? (
+          <div className="mt-4 grid gap-2 md:grid-cols-5">
+            {nicheFlow.steps.map((step, index) => (
+              <div
+                key={step.title}
+                className={`detail-soft-row flex h-full flex-col justify-between px-3 py-3 text-xs font-semibold text-slate-200 ${
+                  index === 4 ? "border-emerald-300/20 bg-emerald-300/10" : ""
+                }`}
+              >
+                <span>
+                  {index + 1}. {step.title}
+                </span>
+                <p className="mt-2 text-xs font-normal leading-5 text-slate-300">{step.detail}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <p className="mt-3 text-xs leading-6 text-slate-400">
+          A saida operacional fica abaixo como documento formal, revisao humana e impress�o.
+        </p>
       </section>
 
       <section className="workspace-panel p-6">
@@ -882,11 +1442,11 @@ export default async function ClaraPage({
                 <Link
                   key={item.id}
                   className={`rounded-[4px] px-4 py-3 text-sm font-semibold transition ${
-                  active
-                    ? "bg-[linear-gradient(90deg,#d9a437,#e0b04f)] text-slate-950 shadow-soft"
-                    : "clara-secondary-button border border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]"
-                }`}
-                href={`/clara?tab=${item.id}`}
+                    active
+                      ? "bg-[linear-gradient(90deg,#22c55e,#4ade80)] text-slate-950 shadow-soft"
+                      : "clara-secondary-button border border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]"
+                  }`}
+                  href={`/clara?niche=${activeNiche ?? "revisional"}&tab=${item.id}#clara-workbench`}
               >
                 {item.label}
               </Link>
@@ -895,611 +1455,391 @@ export default async function ClaraPage({
         </div>
       </section>
 
-      {activeTab === "revisional" ? (
-        <section className="space-y-4">
-          <div className="workspace-panel p-6">
-            <p className="workspace-kicker">Fluxo revisional bancario</p>
-            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-              {[
-                {
-                  step: "01",
-                  title: "Triagem",
-                  detail: "Confirma contrato, parcelas, CET, encargos e viabilidade inicial da revisional."
-                },
-                {
-                  step: "02",
-                  title: "Abusividades",
-                  detail: "Localiza juros, capitalizacao, seguro embutido, tarifas e clausulas sensiveis."
-                },
-                {
-                  step: "03",
-                  title: "Estrategia",
-                  detail: "Define tese, pedido revisional, tutela e narrativa para rediscutir clausulas e parcelas."
-                },
-                {
-                  step: "04",
-                  title: "Prova e calculo",
-                  detail: "Organiza checklist documental, memoria de calculo e anexos que sustentam a inicial."
-                },
-                {
-                  step: "05",
-                  title: "Minuta inicial",
-                  detail: "Abre a peca revisional base no editor com estrutura juridica pronta para revisao."
-                }
-              ].map((item) => (
-                <div key={item.step} className="clara-secondary-surface rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">{item.step}</p>
-                  <p className="mt-3 text-sm font-semibold text-white">{item.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{item.detail}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+      <section className="workspace-panel scroll-mt-96 p-6" id="clara-workbench">
+        <div className="flex flex-col gap-2">
+          <p className="workspace-kicker">Bancada de trabalho</p>
+          <p className="text-sm leading-6 text-slate-300">
+            Ajuste aqui o contexto antes da execucao. O cliente escolhido filtra os processos; o restante abre em mais contexto.
+          </p>
+        </div>
 
-          {revisionalWorkspace ? (
-            <div className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">
-              <article className="workspace-panel p-6">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="workspace-kicker">Leitura contratual estruturada</p>
-                    <p className="mt-3 text-lg font-semibold text-white">
-                      {revisionalWorkspace.selectedDocument.fileName}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">
-                      {revisionalWorkspace.analysis.executiveSummary}
-                    </p>
-                    <p className="mt-3 text-sm font-medium text-amber-200">
-                      Cenario: {revisionalWorkspace.scenarioProfile.label}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">
-                      {revisionalWorkspace.scenarioProfile.summary}
-                    </p>
-                    <p className="mt-3 text-sm font-medium text-emerald-200">
-                      Produto bancario: {revisionalWorkspace.productProfile.label}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">
-                      {revisionalWorkspace.productProfile.strategyDriver}
-                    </p>
-                    <p className="mt-3 text-sm font-medium text-cyan-200">
-                      Objetivo atual: {revisionalWorkspace.objectiveProfile.label}
-                    </p>
-                    <p className="mt-3 text-sm font-medium text-fuchsia-200">
-                      Chave de urgencia: {revisionalWorkspace.urgencyProfile.label}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">
-                      {revisionalWorkspace.urgencyProfile.summary}
-                    </p>
-                  </div>
-                  <div className="clara-secondary-surface rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Viabilidade
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold text-white">
-                      {revisionalWorkspace.viabilityScore}%
-                    </p>
-                    <p className="mt-1 text-sm text-slate-300">
-                      Risco {revisionalWorkspace.riskLabel.toLowerCase()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-3 md:grid-cols-2">
-                  {revisionalWorkspace.clauseMap.map((item) => (
-                    <div key={item.title} className="workspace-soft-card p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        {item.title}
-                      </p>
-                      <p className="mt-3 text-sm font-semibold text-white">{item.detail}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-300">{item.impact}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-5 grid gap-3 md:grid-cols-3">
-                  {revisionalWorkspace.legalGrounds.map((item) => (
-                    <div key={item.title} className="workspace-soft-card p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        {item.title}
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-slate-300">{item.detail}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-5 rounded-[4px] border border-cyan-300/15 bg-cyan-300/10 px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
-                    Direcao decisoria da Clara
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-cyan-50">
-                    {revisionalWorkspace.decisionSummary}
-                  </p>
-                </div>
-                <div className="mt-5 grid gap-3 md:grid-cols-2">
-                  {revisionalWorkspace.priorityTheses.map((item) => (
-                    <div key={item.title} className="workspace-soft-card p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Tese priorizada
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-white">{item.title}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-300">{item.rationale}</p>
-                      <p className="mt-3 text-xs text-slate-400">Prova-chave: {item.proof}</p>
-                      <p className="mt-1 text-xs text-slate-400">Pedido conectado: {item.request}</p>
-                    </div>
-                  ))}
-                </div>
-              </article>
-
-              <article className="space-y-4">
-                <div className="workspace-panel p-6">
-                  <p className="workspace-kicker">Sinais de abusividade</p>
-                  <div className="mt-4 space-y-3">
-                    {revisionalWorkspace.analysis.abusivenessSignals.map((item) => (
-                      <div
-                        key={item}
-                        className="rounded-[4px] border border-amber-300/20 bg-amber-300/10 px-4 py-4 text-sm leading-6 text-amber-100"
-                      >
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="workspace-panel p-6">
-                  <p className="workspace-kicker">Prova e calculo minimo</p>
-                  <div className="mt-4 space-y-3">
-                    {revisionalWorkspace.missingEvidence.map((item) => (
-                      <div key={item} className="workspace-soft-card p-4">
-                        <p className="text-sm leading-6 text-slate-200">{item}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 grid gap-3">
-                    {revisionalWorkspace.evidenceTracks.map((track) => (
-                      <div key={track.title} className="workspace-soft-card p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                          {track.title}
-                        </p>
-                        <div className="mt-3 space-y-2">
-                          {track.items.map((item) => (
-                            <p key={item} className="text-sm leading-6 text-slate-200">
-                              {item}
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Driver do produto bancario
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">
-                      {revisionalWorkspace.productProfile.thesisDriver}
-                    </p>
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    {revisionalWorkspace.criticalProof.map((item) => (
-                      <div
-                        key={item}
-                        className="rounded-[4px] border border-emerald-300/15 bg-emerald-300/10 px-4 py-4 text-sm leading-6 text-emerald-100"
-                      >
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Prontidao documental
-                    </p>
-                    <div className="mt-3 space-y-3">
-                      {revisionalWorkspace.documentReadiness.map((item) => (
-                        <div key={item.title} className="workspace-soft-card p-4">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-semibold text-white">{item.title}</p>
-                            <span
-                              className={`rounded-[4px] border px-2 py-1 text-[11px] font-semibold ${
-                                item.status === "ok"
-                                  ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-100"
-                                  : item.status === "warning"
-                                    ? "border-amber-300/20 bg-amber-300/10 text-amber-100"
-                                    : "border-fuchsia-300/20 bg-fuchsia-300/10 text-fuchsia-100"
-                              }`}
-                            >
-                              {item.status === "ok"
-                                ? "OK"
-                                : item.status === "warning"
-                                  ? "Pendencia"
-                                  : "Falta"}
-                            </span>
-                          </div>
-                          <p className="mt-2 text-sm leading-6 text-slate-300">{item.detail}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </article>
-            </div>
-          ) : null}
-
-          {revisionalWorkspace ? (
-            <div className="grid gap-4 xl:grid-cols-[0.96fr_1.04fr]">
-              <article className="workspace-panel p-6">
-                <p className="workspace-kicker">Estrategia revisional</p>
-                <div className="mt-4 space-y-3">
-                  {revisionalWorkspace.strategySteps.map((item, index) => (
-                    <div key={item} className="workspace-soft-card p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Passo {index + 1}
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-slate-200">{item}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 rounded-[4px] border border-cyan-300/15 bg-cyan-300/10 px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
-                    Leitura orientada pelo objetivo
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-cyan-100">
-                    {revisionalWorkspace.objectiveProfile.strategyFocus}
-                  </p>
-                </div>
-                <div className="mt-4 rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Checklist de ajuizamento
-                  </p>
-                  <div className="mt-3 space-y-3">
-                    {revisionalWorkspace.filingChecklist.map((item) => (
-                      <div key={item.title} className="workspace-soft-card p-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-semibold text-white">{item.title}</p>
-                          <span
-                            className={`rounded-[4px] border px-2 py-1 text-[11px] font-semibold ${
-                              item.status === "ready"
-                                ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-100"
-                                : "border-amber-300/20 bg-amber-300/10 text-amber-100"
-                            }`}
-                          >
-                            {item.status === "ready" ? "Pronto" : "Atencao"}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-sm leading-6 text-slate-300">{item.detail}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="mt-4 rounded-[4px] border border-amber-300/20 bg-amber-300/10 px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
-                    {revisionalWorkspace.filingPackage.title}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-amber-50">
-                    {revisionalWorkspace.filingPackage.summary}
-                  </p>
-                <div className="mt-3 space-y-3">
-                  {revisionalWorkspace.filingPackage.items.map((item) => (
-                    <div key={item.kind} className="workspace-soft-card p-4">
-                      <p className="text-sm font-semibold text-white">{item.title}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-300">{item.detail}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <Link
-                    className="clara-secondary-button rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/[0.08]"
-                    href={`/agenda/tarefas?clara=1&created=1&task=${selectedTask.id}&case=${selectedCase.id}&client=${selectedClient.id}&process=${selectedProcess.id}&document=${selectedDocument.id}&focus=revisional&objetivo=${encodeURIComponent(revisionalWorkspace.objectiveProfile.label)}`}
-                  >
-                    Abrir tarefa do pacote
-                  </Link>
-                  <Link
-                    className="clara-secondary-button rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/[0.08]"
-                    href={`/agenda/compromissos?clara=1&created=1&client=${selectedClient.id}&case=${selectedCase.id}&process=${selectedProcess.id}&document=${selectedDocument.id}&focus=revisional&objetivo=${encodeURIComponent(revisionalWorkspace.objectiveProfile.label)}`}
-                  >
-                    Abrir compromisso do pacote
-                  </Link>
-                  <Link
-                    className="clara-secondary-button rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/[0.08]"
-                    href={`/editor-de-texto/meus-textos?draft=1&created=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional&objetivo=${encodeURIComponent(revisionalWorkspace.objectiveProfile.label)}&contractedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.contractedInstallment)}&chargedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.chargedInstallment)}&revisedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.revisedInstallment)}&estimatedTotalExcess=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.estimatedTotalExcess)}`}
-                  >
-                    Abrir minuta do pacote
-                  </Link>
-                </div>
-                {
-                  // @ts-expect-error Next server action form binding
-                  <form action={commitClaraExecutionAction} className="mt-3">
-                    <input name="targetPath" type="hidden" value={`/clara?tab=revisional&client=${selectedClient.id}&process=${selectedProcess.id}&document=${selectedDocument.id}${searchParams?.objetivo ? `&objetivo=${encodeURIComponent(searchParams.objetivo)}` : ""}`} />
-                    <input name="recordKind" type="hidden" value="filing-package" />
-                    <input name="sourceAction" type="hidden" value="Montar estrategia revisional" />
-                    <input name="client" type="hidden" value={selectedClient.id} />
-                    <input name="case" type="hidden" value={selectedCase.id} />
-                    <input name="document" type="hidden" value={selectedDocument.id} />
-                    <input name="process" type="hidden" value={selectedProcess.id} />
-                    <input name="objective" type="hidden" value={revisionalWorkspace.objectiveProfile.label} />
-                    <button
-                      className="clara-secondary-button inline-flex rounded-[4px] border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
-                      type="submit"
+        <div className="mt-4 rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
+          <form method="get">
+            <input name="tab" type="hidden" value={activeTab} />
+            <div className="grid gap-4">
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Cliente
+                </label>
+                <select className="reference-search-input w-full px-3 py-2 text-sm outline-none" name="client">
+                  {clara.selectors.clients.map((option) => (
+                    <option
+                      key={option.id}
+                      selected={option.id === selectedClient.id}
+                      value={option.id}
                     >
-                      Salvar pacote no historico
-                    </button>
-                  </form>
-                }
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-              </article>
 
-              <article className="workspace-panel p-6">
-                <p className="workspace-kicker">Frente de calculo e minuta</p>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Calculo revisional</p>
-                    <form className="mt-3 grid gap-3" method="get">
-                      <input name="tab" type="hidden" value={activeTab} />
-                      <input name="client" type="hidden" value={selectedClient.id} />
-                      <input name="process" type="hidden" value={selectedProcess.id} />
-                      <input name="document" type="hidden" value={selectedDocument.id} />
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <div>
-                          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            Valor financiado
-                          </label>
-                          <input
-                            className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                            defaultValue={revisionalWorkspace.calculationMemory.labels.financedAmount}
-                            name="financedAmount"
-                            type="text"
-                          />
-                        </div>
-                        <div>
-                          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            Quantidade de parcelas
-                          </label>
-                          <input
-                            className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                            defaultValue={revisionalWorkspace.calculationMemory.inputs.installmentCount}
-                            name="installmentCount"
-                            type="number"
-                          />
-                        </div>
-                        <div>
-                          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            Parcela contratada
-                          </label>
-                          <input
-                            className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                            defaultValue={revisionalWorkspace.calculationMemory.labels.contractedInstallment}
-                            name="contractedInstallment"
-                            type="text"
-                          />
-                        </div>
-                        <div>
-                          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            Parcela cobrada
-                          </label>
-                          <input
-                            className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                            defaultValue={revisionalWorkspace.calculationMemory.labels.chargedInstallment}
-                            name="chargedInstallment"
-                            type="text"
-                          />
-                        </div>
-                        <div className="md:col-span-2">
-                          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            Reducao alvo da parcela (%)
-                          </label>
-                          <input
-                            className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                            defaultValue={revisionalWorkspace.calculationMemory.inputs.targetReductionPercent}
-                            name="targetReductionPercent"
-                            step="0.1"
-                            type="number"
-                          />
-                        </div>
-                      </div>
-                      <button
-                        className="clara-secondary-button rounded-[4px] border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
-                        type="submit"
-                      >
-                        Recalcular memoria revisional
-                      </button>
-                    </form>
-                    <div className="mt-3 grid gap-3">
-                      {[
-                        {
-                          label: "Parcela contratada",
-                          value: revisionalWorkspace.calculationMemory.labels.contractedInstallment
-                        },
-                        {
-                          label: "Parcela cobrada",
-                          value: revisionalWorkspace.calculationMemory.labels.chargedInstallment
-                        },
-                        {
-                          label: "Parcela revisada",
-                          value: revisionalWorkspace.calculationMemory.labels.revisedInstallment
-                        },
-                        {
-                          label: "Excesso mensal",
-                          value: revisionalWorkspace.calculationMemory.labels.estimatedMonthlyExcess
-                        },
-                        {
-                          label: "Excesso estimado",
-                          value: revisionalWorkspace.calculationMemory.labels.estimatedTotalExcess
-                        }
-                      ].map((item) => (
-                        <div key={item.label} className="workspace-soft-card p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            {item.label}
-                          </p>
-                          <p className="mt-2 text-sm font-semibold text-white">{item.value}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-3 space-y-3">
-                      {revisionalWorkspace.calculationFront.map((item) => (
-                        <div key={item} className="workspace-soft-card p-4">
-                          <p className="text-sm leading-6 text-slate-200">{item}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-3 rounded-[4px] border border-cyan-300/15 bg-cyan-300/10 px-4 py-4">
-                      <p className="text-sm leading-6 text-cyan-100">
-                        {revisionalWorkspace.calculationMemory.basis}
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">Estrutura da inicial</p>
-                    <div className="mt-3 space-y-3">
-                      {revisionalWorkspace.initialStructure.map((item) => (
-                        <div key={item} className="workspace-soft-card p-4">
-                          <p className="text-sm leading-6 text-slate-200">{item}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-3 space-y-3">
-                      {revisionalWorkspace.calculationMemory.highlights.map((item) => (
-                        <div
-                          key={item}
-                          className="rounded-[4px] border border-amber-300/20 bg-amber-300/10 px-4 py-4 text-sm leading-6 text-amber-100"
+              <div className="grid gap-4 md:grid-cols-2">
+                {visibleWorkflowFields.map((field, index) => {
+                  const name =
+                    field.type === "document" && activeTab === "comparador" && index === 1
+                      ? "document2"
+                      : field.type;
+
+                  return (
+                    <div key={`${field.label}-${name}`}>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        {field.label}
+                      </label>
+                      {field.type === "custom" && hasOptions(field) ? (
+                        <select
+                          className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                          name={getCustomFieldName(activeTab, field.label)}
                         >
-                          {item}
-                        </div>
-                      ))}
+                          {field.options.map((option) => (
+                            <option key={option}>{option}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <select className="reference-search-input w-full px-3 py-2 text-sm outline-none" name={name}>
+                          {(
+                            field.type === "process"
+                              ? processOptions
+                              : getOptions(field.type)
+                          ).map((option) => (
+                            <option
+                              key={option.id}
+                              selected={
+                                (searchParams as Record<string, string | undefined> | undefined)?.[name] === option.id
+                              }
+                              value={option.id}
+                            >
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
-                    <div className="mt-3 space-y-3">
-                      {revisionalWorkspace.petitionRequests.map((item) => (
-                        <div key={item.title} className="workspace-soft-card p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            {item.title}
-                          </p>
-                          <p className="mt-2 text-sm leading-6 text-slate-200">{item.detail}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <Link
-                      className="mt-3 inline-flex rounded-[4px] bg-[linear-gradient(90deg,#d9a437,#e0b04f)] px-4 py-3 text-sm font-semibold text-slate-950 shadow-soft"
-                      href={`/editor-de-texto/meus-textos?draft=1&created=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional&objetivo=${encodeURIComponent(revisionalWorkspace.objectiveProfile.label)}&contractedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.contractedInstallment)}&chargedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.chargedInstallment)}&revisedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.revisedInstallment)}&estimatedTotalExcess=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.estimatedTotalExcess)}`}
-                    >
-                      Abrir minuta com memoria revisional
-                    </Link>
-                    <Link
-                      className="mt-3 inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/[0.08]"
-                      href={`/agenda/compromissos?clara=1&created=1&client=${selectedClient.id}&case=${selectedCase.id}&process=${selectedProcess.id}&document=${selectedDocument.id}&focus=revisional&objetivo=${encodeURIComponent(revisionalWorkspace.objectiveProfile.label)}`}
-                    >
-                      Preparar retorno ao cliente
-                    </Link>
-                  </div>
-                </div>
-              </article>
+                  );
+                })}
+              </div>
             </div>
-          ) : null}
-        </section>
-      ) : null}
 
-      {contextualQuickActions.length ? (
+            {extraWorkflowFields.length > 0 ? (
+              <details className="mt-4 rounded-[4px] border border-white/10 bg-black/10 px-4 py-4">
+                <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
+                  Mais contexto
+                </summary>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {extraWorkflowFields.map((field, sliceIndex) => {
+                    const index = sliceIndex + 2;
+                    const name =
+                      field.type === "document" && activeTab === "comparador" && index === 1
+                        ? "document2"
+                        : field.type;
+
+                    return (
+                      <div key={`${field.label}-${name}`}>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          {field.label}
+                        </label>
+                        {field.type === "custom" && hasOptions(field) ? (
+                          <select
+                            className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                            name={getCustomFieldName(activeTab, field.label)}
+                          >
+                            {field.options.map((option) => (
+                              <option key={option}>{option}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <select className="reference-search-input w-full px-3 py-2 text-sm outline-none" name={name}>
+                            {(
+                              field.type === "process"
+                                ? processOptions
+                                : getOptions(field.type)
+                            ).map((option) => (
+                              <option
+                                key={option.id}
+                                selected={
+                                  (searchParams as Record<string, string | undefined> | undefined)?.[name] === option.id
+                                }
+                                value={option.id}
+                              >
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </details>
+            ) : null}
+
+            {quickActionLinks.length > 0 ? (
+              <div className="mt-5 rounded-[4px] border border-white/10 bg-black/10 p-4">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Acoes rapidas
+                </p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  {quickActionLinks.map((link) => (
+                    <Link
+                      key={`${link.label}-${link.href}`}
+                      className="clara-secondary-button rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/[0.08]"
+                      href={link.href}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+          </form>
+        </div>
+      </section>
+
+      {activeNiche && nicheOperational ? (
         <section className="workspace-panel p-6">
-          <p className="workspace-kicker">Acoes rapidas do objeto atual</p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {contextualQuickActions.map((item) => (
-              <Link
-                key={item.href}
-                className="clara-secondary-surface rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-4 transition hover:bg-white/[0.08]"
-                href={item.href}
-              >
-                <p className="text-sm font-semibold text-white">{item.label}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{item.detail}</p>
-              </Link>
-            ))}
+          <div className="flex flex-col gap-2">
+            <p className="workspace-kicker">Motor do nicho</p>
+            <p className="text-sm leading-6 text-slate-300">{nicheOperational.summary}</p>
           </div>
-        </section>
-      ) : null}
-
-      <section className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
-        <article className="workspace-panel p-6">
-          <p className="workspace-kicker">{activeWorkspace.title}</p>
-          <h2 className="mt-3 text-2xl font-semibold text-white">{activeWorkspace.subtitle}</h2>
-          <p className="mt-4 text-sm leading-7 text-slate-300">{activeWorkspace.summary}</p>
-
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            {activeWorkspace.cards.map((card) => (
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {nicheOperational.cards.map((card) => (
               <div key={card.label} className="workspace-soft-card p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                   {card.label}
                 </p>
-                <p className="mt-3 text-base font-semibold text-white">{card.value}</p>
+                <p className="mt-2 text-sm font-semibold text-white">{card.value}</p>
               </div>
             ))}
           </div>
-        </article>
+        </section>
+      ) : null}
 
-        <article className="workspace-panel p-6" id="clara-workbench">
-          <p className="workspace-kicker">Bancada de trabalho</p>
-          <form className="clara-secondary-surface mt-4 rounded-[4px] border border-white/10 bg-white/[0.04] p-5" method="get">
-            <input name="tab" type="hidden" value={activeTab} />
-            <div className="grid gap-4 md:grid-cols-3">
-              {activeWorkspace.workflow.fields.map((field, index) => {
-                const name =
-                  field.type === "document" && activeTab === "comparador" && index === 1
-                    ? "document2"
-                    : field.type;
+      {activeNiche && nicheExecutionBlocks ? (
+        <section className="workspace-panel p-6">
+          <div className="flex flex-col gap-2">
+            <p className="workspace-kicker">{nicheExecutionBlocks.title}</p>
+            <p className="text-sm leading-6 text-slate-300">
+              A Clara usa esta trilha para manter o trabalho dentro do nicho escolhido antes de abrir a saida formal.
+            </p>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {nicheExecutionBlocks.steps.map((step, index) => (
+              <div key={step} className="workspace-soft-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Passo {index + 1}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-200">{step}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
-                return (
-                  <div key={`${field.label}-${name}`}>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      {field.label}
-                    </label>
-                  {field.type === "custom" && hasOptions(field) ? (
-                    <select className="reference-search-input w-full px-3 py-2 text-sm outline-none" name={getCustomFieldName(activeTab, field.label)}>
-                      {field.options.map((option) => (
-                        <option key={option}>{option}</option>
-                      ))}
-                      </select>
-                    ) : (
-                      <select className="reference-search-input w-full px-3 py-2 text-sm outline-none" name={name}>
-                        {getOptions(field.type).map((option) => (
-                          <option key={option.id} selected={(searchParams as Record<string, string | undefined> | undefined)?.[name] === option.id} value={option.id}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                );
-              })}
+      {activeTab === "analise" ? (
+        <section className="workspace-panel p-6">
+          <div className="flex flex-col gap-2">
+            <p className="workspace-kicker">Nucleo juridico estruturado</p>
+            <p className="text-sm leading-6 text-slate-300">{clara.structuredCore.summary}</p>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="workspace-soft-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Classificacao
+              </p>
+              <p className="mt-2 text-sm font-semibold text-white">
+                {clara.structuredCore.classification.scenarioLabel}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                {clara.structuredCore.classification.decisionLabel}
+              </p>
             </div>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              {activeWorkspace.workflow.actions.map((action, index) => (
-                <button
-                  key={action}
-                  className={`rounded-[4px] px-4 py-3 text-sm font-semibold ${
-                    index === 0
-                      ? "bg-[linear-gradient(90deg,#d9a437,#e0b04f)] text-slate-950 shadow-soft"
-                      : "clara-secondary-button border border-white/10 bg-white/[0.04] text-slate-100"
-                  }`}
-                  name="action"
-                  type="submit"
-                  value={action}
-                >
-                  {action}
-                </button>
-              ))}
+            <div className="workspace-soft-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Fatos confirmados
+              </p>
+              <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-200">
+                {clara.structuredCore.confirmedFacts.slice(0, 4).map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
             </div>
-          </form>
-
-          <div className="clara-secondary-surface mt-6 rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
-            <p className="workspace-kicker">Saida operacional</p>
-            <p className="mt-3 text-lg font-semibold text-white">{operational.title}</p>
-            <p className="mt-3 text-sm leading-7 text-slate-300">{operational.summary}</p>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              {operational.links.map((link) => (
-                <Link
-                  key={link.label}
-                  className="clara-secondary-button rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/[0.08]"
-                  href={link.href}
-                >
-                  {link.label}
-                </Link>
+            <div className="workspace-soft-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Lacunas documentais
+              </p>
+              {clara.structuredCore.documentsMissing.length > 0 ? (
+                <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-200">
+                  {clara.structuredCore.documentsMissing.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm leading-6 text-emerald-100">
+                  Nenhuma lacuna essencial identificada.
+                </p>
+              )}
+            </div>
+            <div className="workspace-soft-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Proxima decisao
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-200">{clara.structuredCore.nextStep}</p>
+              <p className="mt-3 text-xs leading-6 text-slate-400">{clara.structuredCore.recommendation}</p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="workspace-soft-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Documentos encontrados
+              </p>
+              <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-200">
+                {clara.structuredCore.documentsFound.map((document) => (
+                  <li key={document.id}>{document.detail}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="workspace-soft-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Riscos e consistencia
+              </p>
+              <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-200">
+                {clara.structuredCore.risks.map((risk) => (
+                  <li key={risk}>{risk}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div className="mt-4 workspace-soft-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Fontes externas preparadas
+            </p>
+            <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {clara.structuredCore.sourceAdapters.map((adapter) => (
+                <div key={adapter.sourceId} className="rounded-[4px] border border-white/10 bg-black/10 p-4">
+                  <p className="text-sm font-semibold text-white">{adapter.sourceLabel}</p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-500">
+                    {adapter.status === "failed"
+                      ? "Falhou"
+                      : adapter.status === "available"
+                        ? "Consultado"
+                        : "Nao consultado"}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">{adapter.scope}</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-400">{adapter.queryHint}</p>
+                  {adapter.failureReason ? (
+                    <p className="mt-2 text-xs leading-5 text-rose-200">{adapter.failureReason}</p>
+                  ) : null}
+                </div>
               ))}
             </div>
           </div>
+          <div className="mt-4 workspace-soft-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Trilha de auditoria
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{clara.structuredCore.auditTrail.summary}</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-4">
+              {Object.entries(clara.structuredCore.auditTrail.originCounts).map(([origin, count]) => (
+                <div key={origin} className="rounded-[4px] border border-white/10 bg-black/10 p-3">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{origin}</p>
+                  <p className="mt-2 text-lg font-semibold text-white">{count}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <div className="rounded-[4px] border border-white/10 bg-black/10 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Entradas de origem
+                </p>
+                <div className="mt-3 space-y-3">
+                  {clara.structuredCore.auditTrail.entries.slice(0, 10).map((entry) => (
+                    <div key={`${entry.origin}-${entry.label}`} className="rounded-[4px] border border-white/10 bg-white/[0.03] p-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-white">{entry.label}</p>
+                        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-slate-400">
+                          {entry.origin}
+                        </span>
+                        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-slate-400">
+                          {entry.confirmed ? "confirmado" : "inferencia"}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-slate-300">{entry.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-[4px] border border-white/10 bg-black/10 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Alertas de consistencia
+                </p>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-200">
+                  {clara.structuredCore.auditTrail.warnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+                {clara.structuredCore.auditTrail.failures.length > 0 ? (
+                  <div className="mt-4 rounded-[4px] border border-rose-300/20 bg-rose-300/10 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-100">
+                      Fontes com falha
+                    </p>
+                    <ul className="mt-2 space-y-2 text-sm leading-6 text-rose-50">
+                      {clara.structuredCore.auditTrail.failures.map((failure) => (
+                        <li key={failure}>{failure}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
+      {revisionalFlowCards ? (
+        <section className="workspace-panel p-6">
+          <div className="flex flex-col gap-2">
+            <p className="workspace-kicker">Fluxo revisional bancario</p>
+            <p className="text-sm leading-6 text-slate-300">
+              Cada etapa abre a pagina certa. A leitura detalhada e a impressao ficam dentro do destino correspondente.
+            </p>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            {revisionalFlowCards.map((card) => (
+              <Link
+                key={card.step}
+                className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.07]"
+                href={card.href}
+              >
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">{card.step}</p>
+                  <p className="mt-3 text-sm font-semibold text-white">{card.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">{card.detail}</p>
+                </div>
+                <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-100">
+                  Abrir etapa
+                </span>
+              </Link>
+            ))}
+          </div>
+          <p className="mt-4 text-xs leading-6 text-slate-400">
+            Triagem, abusividades, estrategia, prova e minuta ja levam a paginas que contem o botao de imprimir.
+          </p>
+        </section>
+      ) : null}
+
+      <section className="space-y-4">
+      <article className="workspace-panel scroll-mt-96 p-6" id="clara-execucao">
           {executedResult ? (
             <div className="mt-5 rounded-[4px] border border-amber-300/20 bg-amber-300/10 p-5">
               <p className="workspace-kicker">Execucao da Clara</p>
@@ -1512,7 +1852,7 @@ export default async function ClaraPage({
                 ))}
               </div>
               <Link
-                className="mt-5 inline-flex rounded-[4px] bg-[linear-gradient(90deg,#d9a437,#e0b04f)] px-4 py-3 text-sm font-semibold text-slate-950 shadow-soft"
+                className="mt-5 inline-flex rounded-[4px] bg-[linear-gradient(90deg,#22c55e,#4ade80)] px-4 py-3 text-sm font-semibold text-slate-950 shadow-soft"
                 href={executedResult.cta.href}
               >
                 {executedResult.cta.label}
@@ -1522,6 +1862,8 @@ export default async function ClaraPage({
                 <form action={commitClaraExecutionAction} className="mt-3">
                   <input name="targetPath" type="hidden" value={executedResult.cta.href} />
                   <input name="recordKind" type="hidden" value={recordKind} />
+                  <input name="ownerType" type="hidden" value={recordOwnerType} />
+                  <input name="ownerId" type="hidden" value={recordOwnerId} />
                   <input name="sourceAction" type="hidden" value={selectedAction} />
                   <input name="client" type="hidden" value={selectedClient.id} />
                   <input name="case" type="hidden" value={selectedCase.id} />
@@ -1531,7 +1873,7 @@ export default async function ClaraPage({
                   <input name="task" type="hidden" value={selectedTask.id} />
                   <input name="piece" type="hidden" value="peticao-inicial" />
                   <input name="deadlineAction" type="hidden" value={selectedAction} />
-                  <input name="focus" type="hidden" value={activeTab === "revisional" && selectedAction === "Organizar provas e calculos" ? "revisional" : ""} />
+                  <input name="focus" type="hidden" value={activeNiche === "revisional" && selectedAction === "Organizar provas e calculos" ? "revisional" : ""} />
                   <input name="objective" type="hidden" value={searchParams?.objetivo ?? ""} />
                   <button
                     className="clara-secondary-button inline-flex rounded-[4px] border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
@@ -1541,39 +1883,100 @@ export default async function ClaraPage({
                   </button>
                 </form>
               ) : null}
+              {recordKind === "text-draft" && executionRecord ? (
+                <div className="mt-4 rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                    Rascunho com revisao da advogada
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-cyan-50">
+                    Este resultado pode ser editado no editor, revisado pela advogada e aprovado antes de entrar em uso.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      className="clara-secondary-button inline-flex rounded-[4px] border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                      href={`/editor-de-texto/meus-textos?record=${executionRecord.id}`}
+                    >
+                      Editar rascunho
+                    </Link>
+                    {
+                      // @ts-expect-error Next server action form binding
+                      <form action={updateClaraWorkflowStatusAction}>
+                      <input name="recordId" type="hidden" value={executionRecord.id} />
+                      <input name="workflowStatus" type="hidden" value="reviewed" />
+                      <input name="returnPath" type="hidden" value={executionReturnPath} />
+                      <button
+                        className="clara-secondary-button inline-flex rounded-[4px] border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                        type="submit"
+                      >
+                        Enviar para revisao da advogada
+                      </button>
+                      </form>
+                    }
+                    {
+                      // @ts-expect-error Next server action form binding
+                      <form action={updateClaraWorkflowStatusAction}>
+                      <input name="recordId" type="hidden" value={executionRecord.id} />
+                      <input name="workflowStatus" type="hidden" value="completed" />
+                      <input name="returnPath" type="hidden" value={executionReturnPath} />
+                      <button
+                        className="mj-model-button-green inline-flex items-center justify-center px-4 py-3 text-sm font-semibold"
+                        type="submit"
+                      >
+                        Aprovar e usar
+                      </button>
+                      </form>
+                    }
+                  </div>
+                </div>
+              ) : null}
+              {recordKind === "filing-package" && executionRecord ? (
+                <div className="mt-4 rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
+                    Pacote operacional com revisao da advogada
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-emerald-50">
+                    Este pacote pode ser aberto no editor como minuta formal, revisado pela advogada e aprovado antes do uso no processo.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      className="clara-secondary-button inline-flex rounded-[4px] border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                      href={filingPackageEditorHref}
+                    >
+                      Editar pacote
+                    </Link>
+                    {
+                      // @ts-expect-error Next server action form binding
+                      <form action={updateClaraWorkflowStatusAction}>
+                      <input name="recordId" type="hidden" value={executionRecord.id} />
+                      <input name="workflowStatus" type="hidden" value="reviewed" />
+                      <input name="returnPath" type="hidden" value={executionReturnPath} />
+                      <button
+                        className="clara-secondary-button inline-flex rounded-[4px] border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                        type="submit"
+                      >
+                        Enviar para revisao da advogada
+                      </button>
+                      </form>
+                    }
+                    {
+                      // @ts-expect-error Next server action form binding
+                      <form action={updateClaraWorkflowStatusAction}>
+                      <input name="recordId" type="hidden" value={executionRecord.id} />
+                      <input name="workflowStatus" type="hidden" value="completed" />
+                      <input name="returnPath" type="hidden" value={executionReturnPath} />
+                      <button
+                        className="mj-model-button-green inline-flex items-center justify-center px-4 py-3 text-sm font-semibold"
+                        type="submit"
+                      >
+                        Aprovar e usar
+                      </button>
+                      </form>
+                    }
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
-
-          <div className="clara-secondary-surface mt-5 rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Highlights da Clara
-            </p>
-            <div className="mt-4 space-y-3">
-              {activeWorkspace.highlights.map((item) => (
-                <div key={item} className="workspace-soft-card p-4">
-                  <p className="text-sm leading-7 text-slate-200">{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="clara-secondary-surface mt-5 rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Threads recentes
-            </p>
-            <div className="mt-4 space-y-3">
-              {clara.recentThreads.map((thread) => (
-                <Link
-                  key={thread.id}
-                  className="clara-tertiary-surface block rounded-[4px] border border-white/10 bg-black/20 px-4 py-4 transition hover:bg-white/[0.06]"
-                  href={threadLinks[thread.id as keyof typeof threadLinks] ?? `/clara?tab=${activeTab}#clara-workbench`}
-                >
-                  <p className="text-sm font-semibold text-white">{thread.label}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{thread.detail}</p>
-                </Link>
-              ))}
-            </div>
-          </div>
 
           <div
             className="clara-secondary-surface mt-5 rounded-[4px] border border-white/10 bg-white/[0.04] p-5"
@@ -1620,7 +2023,7 @@ export default async function ClaraPage({
             <div className="mt-4 space-y-3">
               {filteredRecords.length ? (
                 filteredRecords.map((record) => {
-                  const summary = summarizeRecord(record);
+                  const summary = summarizeRecord(record)!;
 
                   return (
                     <div key={record.id}>
@@ -1675,7 +2078,7 @@ export default async function ClaraPage({
                       Revisao do registro
                     </p>
                     <p className="mt-2 text-sm font-semibold text-white">
-                      {summarizeRecord(selectedHistoryRecord).title}
+                      {selectedHistorySummary?.title}
                     </p>
                   </div>
                   <Link
@@ -1704,7 +2107,7 @@ export default async function ClaraPage({
                         </label>
                         <input
                           className="reference-search-input w-full px-3 py-3 text-sm outline-none"
-                          defaultValue={selectedHistoryRecord.editedTitle ?? summarizeRecord(selectedHistoryRecord).title}
+                          defaultValue={selectedHistoryRecord.editedTitle ?? selectedHistorySummary?.title ?? ""}
                           name="editedTitle"
                           placeholder="Ajuste o titulo final do registro"
                           type="text"
@@ -1716,7 +2119,7 @@ export default async function ClaraPage({
                         </label>
                         <textarea
                           className="reference-search-input min-h-[6.5rem] w-full px-3 py-3 text-sm outline-none"
-                          defaultValue={selectedHistoryRecord.editedDetail ?? summarizeRecord(selectedHistoryRecord).detail}
+                          defaultValue={selectedHistoryRecord.editedDetail ?? selectedHistorySummary?.detail ?? ""}
                           name="editedDetail"
                           placeholder="Consolide aqui a versao final revisada pelo advogado."
                         />
@@ -1758,8 +2161,15 @@ export default async function ClaraPage({
               </div>
             ) : null}
           </div>
+
         </article>
       </section>
     </div>
   );
 }
+
+
+
+
+
+
