@@ -1,0 +1,80 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+assert.equal(true, true);
+
+[
+  "src/app/(auth)/sign-in/actions.ts",
+  "src/app/(auth)/sign-in/page.tsx",
+  "src/app/(auth)/sign-in/sign-in-form.tsx",
+  "src/app/(workspace)/layout.tsx",
+  "src/app/(workspace)/dashboard/page.tsx",
+  "src/app/(workspace)/pessoas/page.tsx",
+  "src/app/(workspace)/pessoas/clientes/page.tsx",
+  "src/app/(workspace)/pessoas/adversos/page.tsx",
+  "src/app/(workspace)/clientes/page.tsx",
+  "src/app/(workspace)/clientes/[clientId]/page.tsx",
+  "src/app/(workspace)/casos/page.tsx",
+  "src/app/(workspace)/casos/[caseId]/page.tsx",
+  "src/app/(workspace)/processos/page.tsx",
+  "src/app/(workspace)/processos/lista/page.tsx",
+  "src/app/(workspace)/processos/lixeira/page.tsx",
+  "src/app/(workspace)/processos/ultimos-andamentos/page.tsx",
+  "src/app/(workspace)/processos/importar-lote/page.tsx",
+  "src/app/(workspace)/processos/importar-oab/page.tsx",
+  "src/app/(workspace)/processos/[processId]/page.tsx",
+  "src/app/(workspace)/diario-oficial/page.tsx",
+  "src/app/(workspace)/diario-oficial/[publicationId]/page.tsx",
+  "src/app/(workspace)/andamentos/page.tsx",
+  "src/app/(workspace)/andamentos/[updateId]/page.tsx",
+  "src/app/(workspace)/agenda/page.tsx",
+  "src/app/(workspace)/agenda/compromissos/page.tsx",
+  "src/app/(workspace)/agenda/tarefas/page.tsx",
+  "src/app/(workspace)/agenda/prazos/page.tsx",
+  "src/app/(workspace)/financeiro/page.tsx",
+  "src/app/(workspace)/financeiro/despesas/page.tsx",
+  "src/app/(workspace)/financeiro/receitas/page.tsx",
+  "src/app/(workspace)/financeiro/transferencias/page.tsx",
+  "src/app/(workspace)/financeiro/vencimentos/page.tsx",
+  "src/app/(workspace)/financeiro/graficos/page.tsx",
+  "src/app/(workspace)/relatorios/page.tsx",
+  "src/app/(workspace)/estatisticas/page.tsx",
+  "src/app/(workspace)/documentos/page.tsx",
+  "src/app/(workspace)/documentos/[documentId]/page.tsx",
+  "src/app/(workspace)/site/page.tsx",
+  "src/app/(workspace)/editor-de-texto/page.tsx",
+  "src/app/(workspace)/analise-contrato/page.tsx",
+  "src/app/(workspace)/tarefas/page.tsx",
+  "src/app/(workspace)/tarefas/[taskId]/page.tsx",
+  "src/app/(workspace)/lexia/page.tsx",
+  "src/app/(workspace)/equipe/page.tsx",
+  "src/app/(workspace)/configuracoes/page.tsx",
+  "src/components/layout/workspace-shell.tsx",
+  "src/components/layout/lexia-context-actions.tsx",
+  "src/components/layout/session-actions.tsx",
+  "src/lib/auth/session.ts",
+  "src/lib/supabase/client.ts",
+  "src/lib/supabase/server.ts",
+  "src/middleware.ts",
+  "src/server/services/auth/workspace-context.ts",
+  "src/server/services/dashboard/get-dashboard-summary.ts",
+  "src/server/services/contract-analysis/get-contract-analysis.ts",
+  "src/server/services/lexia/get-lexia-workspace.ts",
+  "src/server/services/processes/get-processes.ts",
+  "src/server/services/official-diary/get-official-diary.ts",
+  "src/server/services/procedural-updates/get-procedural-updates.ts",
+  "src/server/services/agenda/get-agenda-workspace.ts",
+  "src/server/services/clients/get-clients.ts",
+  "src/server/services/cases/get-cases.ts",
+  "src/server/services/documents/get-documents.ts",
+  "src/server/services/tasks/get-tasks.ts"
+].forEach((relativePath) => {
+  assert.equal(
+    fs.existsSync(path.join(__dirname, "..", relativePath)),
+    true,
+    `Expected file to exist: ${relativePath}`
+  );
+});
+
+console.log("Workspace shell tests passed.");

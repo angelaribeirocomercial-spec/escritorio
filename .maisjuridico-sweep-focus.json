@@ -1,0 +1,50 @@
+[
+  {
+    "key": "pessoas-clientes",
+    "url": "https://www.maisjuridico.com.br/cp/cliente_lista.php",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nClientes\nAdversos\nAdvogados Adversos\nContatos / Partes\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nClientes\nImportar lote\nAdicionar\nExibindo 0 resultado(s)\nBusca\nBuscar\nVocê ainda não cadastrou nenhum cliente.",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-pessoas-clientes.png"
+  },
+  {
+    "key": "pessoas-adversos",
+    "url": "https://www.maisjuridico.com.br/cp/adverso_lista.php",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nClientes\nAdversos\nAdvogados Adversos\nContatos / Partes\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nAdversos\nImportar lote\nAdicionar\nExibindo 0 resultado(s)\nBusca\nBuscar\nVocê ainda não cadastrou nenhum adverso.",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-pessoas-adversos.png"
+  },
+  {
+    "key": "pessoas-adv-adversos",
+    "url": "https://www.maisjuridico.com.br/cp/adv_adverso_lista.php",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nClientes\nAdversos\nAdvogados Adversos\nContatos / Partes\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nAdvogados adversos\nAdicionar\nExibindo 0 resultado(s)\nBusca\nBuscar\nVocê ainda não cadastrou nenhum advogado adverso.",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-pessoas-adv-adversos.png"
+  },
+  {
+    "key": "pessoas-contatos",
+    "url": "https://www.maisjuridico.com.br/cp/outras_partes.php",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nClientes\nAdversos\nAdvogados Adversos\nContatos / Partes\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nContatos / Partes\nAdicionar\nExibindo 0 resultado(s)\nBusca\nBuscar\nVocê ainda não cadastrou nenhuma parte.",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-pessoas-contatos.png"
+  },
+  {
+    "key": "relatorios-sms",
+    "url": "https://www.maisjuridico.com.br/cp/relatorio_sms.php",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nResumo\nProcessos\nFinanceiro\nCustas\nHonorários\nCompromissos\nTarefas\nPrazos\nHoras trabalhadas\nPessoas\nTorpedos SMS\nE-mails\nEtiquetas\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nRelatório de torpedos SMS\nPeríodo\n Todos os períodos\n Apenas deste mês\n Indicar o período\nRelatórios\nDefina suas configurações para refinar a busca.",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-relatorios-sms.png"
+  },
+  {
+    "key": "relatorios-email",
+    "url": "https://www.maisjuridico.com.br/cp/relatorio_email.php",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nResumo\nProcessos\nFinanceiro\nCustas\nHonorários\nCompromissos\nTarefas\nPrazos\nHoras trabalhadas\nPessoas\nTorpedos SMS\nE-mails\nEtiquetas\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nRelatório de e-mails enviados\nData de início:\nData de término:\nRelatórios\nDefina suas configurações para refinar a busca.",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-relatorios-email.png"
+  },
+  {
+    "key": "estatisticas-cadastro",
+    "url": "https://www.maisjuridico.com.br/cp/estatistica_processo_cadastro.php",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nAndamentos atrasados\nAndamentos dos processos\nÚltimos andamentos\nAndamentos automáticos\nClientes\nProcessos\nAbertura de processos\nCadastro de processos\nFase do processo\nNatureza da ação\nFinanceiro\nPersonalizados\nAtendimento geral\nAtendimento atendente\nAtendimento categorias\nAtendimento clientes\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nData de cadastro de processos no sistema\nData inicial\nData final\nData de cadastro\tQtde. Processos\n\n10/03/2026\t0\n11/03/2026\t0\n12/03/2026\t0\n13/03/2026\t0\n14/03/2026\t0\n15/03/2026\t0\n16/03/2026\t0\n17/03/2026\t0\n18/03/2026\t0\n19/03/2026\t0\n20/03/2026\t0\n21/03/2026\t0\n22/03/2026\t0\n23/03/2026\t0\n24/03/2026\t0\n25/03/2026\t0\n26/03/2026\t0\n27/03/2026\t0\n28/03/2026\t0\n29/03/2026\t0\n30/03/2026\t0\n31/03/2026\t0\n01/04/2026\t0\n02/04/2026\t0\n03/04/2026\t0\n04/04/2026\t0\n05/04/2026\t0\n06/04/2026\t0\n07/04/2026\t0\n08/04/2026\t0\n09/04/2026\t0\n10/04/2026\t0",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-estatisticas-cadastro.png"
+  },
+  {
+    "key": "estatisticas-atendimento-clientes",
+    "url": "https://www.maisjuridico.com.br/cp/relatorio_cliente.php",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nAndamentos atrasados\nAndamentos dos processos\nÚltimos andamentos\nAndamentos automáticos\nClientes\nProcessos\nAbertura de processos\nCadastro de processos\nFase do processo\nNatureza da ação\nFinanceiro\nPersonalizados\nAtendimento geral\nAtendimento atendente\nAtendimento categorias\nAtendimento clientes\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nAtendimento por clientes\nPeríodo inicio\nPeríodo fim\nCliente\nTodos\nEstatísticas\nSem dados para a filtragem atual.\nAtendimentos por status\nTotal\t0",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-estatisticas-atendimento-clientes.png"
+  }
+]

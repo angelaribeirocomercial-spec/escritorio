@@ -1,0 +1,74 @@
+[
+  {
+    "key": "estatisticas-atrasados",
+    "url": "https://www.maisjuridico.com.br/cp/estatistica_lista.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-estatisticas-atrasados.png",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nAndamentos atrasados\nAndamentos dos processos\nÚltimos andamentos\nAndamentos automáticos\nClientes\nProcessos\nAbertura de processos\nCadastro de processos\nFase do processo\nNatureza da ação\nFinanceiro\nPersonalizados\nAtendimento geral\nAtendimento atendente\nAtendimento categorias\nAtendimento clientes\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nAndamentos atrasados\nPeríodo sem andamentos\tProcesso\t%\nTotal\t\t100,00%\n\n\nWarning\n: implode(): Invalid arguments passed in\n/home/www/maisjuridico.com.br/cp/estatistica_lista.php\non line\n181\n\n\n\nWarning\n: mysqli_num_rows() expects parameter 1 to be mysqli_result, boolean given in\n/home/www/maisjuridico.com.br/fu_mysql2mysqli.php\non line\n90\n\n"
+  },
+  {
+    "key": "estatisticas-andproc",
+    "url": "https://www.maisjuridico.com.br/cp/estatistica_andproc.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-estatisticas-andproc.png",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nAndamentos atrasados\nAndamentos dos processos\nÚltimos andamentos\nAndamentos automáticos\nClientes\nProcessos\nAbertura de processos\nCadastro de processos\nFase do processo\nNatureza da ação\nFinanceiro\nPersonalizados\nAtendimento geral\nAtendimento atendente\nAtendimento categorias\nAtendimento clientes\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nAndamentos dos processos\nAndamento\tQtde"
+  },
+  {
+    "key": "estatisticas-ultimos",
+    "url": "https://www.maisjuridico.com.br/cp/estatistica_andult.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-estatisticas-ultimos.png",
+    "preview": "404 Not Found\nnginx"
+  },
+  {
+    "key": "estatisticas-automaticos",
+    "url": "https://www.maisjuridico.com.br/cp/estatistica_automatico.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-estatisticas-automaticos.png",
+    "preview": "404 Not Found\nnginx"
+  },
+  {
+    "key": "estatisticas-clientes",
+    "url": "https://www.maisjuridico.com.br/cp/estatistica_cliente.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-estatisticas-clientes.png",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nAndamentos atrasados\nAndamentos dos processos\nÚltimos andamentos\nAndamentos automáticos\nClientes\nProcessos\nAbertura de processos\nCadastro de processos\nFase do processo\nNatureza da ação\nFinanceiro\nPersonalizados\nAtendimento geral\nAtendimento atendente\nAtendimento categorias\nAtendimento clientes\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nClientes\nStatus dos processos\tQtde\nPessoa Física\t0\nPessoa Jurídica\t0\nNão especificado\t0"
+  },
+  {
+    "key": "estatisticas-processos",
+    "url": "https://www.maisjuridico.com.br/cp/estatistica_processo.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-estatisticas-processos.png",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nAndamentos atrasados\nAndamentos dos processos\nÚltimos andamentos\nAndamentos automáticos\nClientes\nProcessos\nAbertura de processos\nCadastro de processos\nFase do processo\nNatureza da ação\nFinanceiro\nPersonalizados\nAtendimento geral\nAtendimento atendente\nAtendimento categorias\nAtendimento clientes\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nClientes e processos\nStatus dos processos\tQtde\nQtde. Clientes\tQtde. Processos\n\nWarning: implode(): Invalid arguments passed in /home/www/maisjuridico.com.br/cp/estatistica_processo.php on line 170\n\nWarning: mysqli_num_rows() expects parameter 1 to be mysqli_result, boolean given in /home/www/maisjuridico.com.br/fu_mysql2mysqli.php on line 90\n\nClientes"
+  },
+  {
+    "key": "diario-publicacoes",
+    "url": "https://www.maisjuridico.com.br/cp/publicacao_lista.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-diario-publicacoes.png",
+    "preview": "404 Not Found\nnginx"
+  },
+  {
+    "key": "diario-advogados",
+    "url": "https://www.maisjuridico.com.br/cp/publicacao_advogados.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-diario-advogados.png",
+    "preview": "404 Not Found\nnginx"
+  },
+  {
+    "key": "diario-palavras",
+    "url": "https://www.maisjuridico.com.br/cp/publicacao_palavras.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-diario-palavras.png",
+    "preview": "404 Not Found\nnginx"
+  },
+  {
+    "key": "diario-lixeira",
+    "url": "https://www.maisjuridico.com.br/cp/publicacao_lixeira.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-diario-lixeira.png",
+    "preview": "404 Not Found\nnginx"
+  },
+  {
+    "key": "andamentos-automaticos",
+    "url": "https://www.maisjuridico.com.br/cp/andamento_automatico.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-andamentos-automaticos.png",
+    "preview": "404 Not Found\nnginx"
+  },
+  {
+    "key": "andamentos-monitoramentos",
+    "url": "https://www.maisjuridico.com.br/cp/andamento_monitoramento.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-andamentos-monitoramentos.png",
+    "preview": "404 Not Found\nnginx"
+  }
+]

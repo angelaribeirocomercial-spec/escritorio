@@ -1,0 +1,1999 @@
+[
+  {
+    "key": "arquivos-root",
+    "url": "https://www.maisjuridico.com.br/cp/arquivo_lista.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found\nnginx",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-arquivos-root.png",
+    "cpLinks": []
+  },
+  {
+    "key": "arquivos-meus",
+    "url": "https://www.maisjuridico.com.br/cp/arquivo_lista.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found\nnginx",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-arquivos-meus.png",
+    "cpLinks": []
+  },
+  {
+    "key": "arquivos-enviar",
+    "url": "https://www.maisjuridico.com.br/cp/arquivo_add10.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found\nnginx",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-arquivos-enviar.png",
+    "cpLinks": []
+  },
+  {
+    "key": "arquivos-relatorios",
+    "url": "https://www.maisjuridico.com.br/cp/arquivo_relatorio.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found\nnginx",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-arquivos-relatorios.png",
+    "cpLinks": []
+  },
+  {
+    "key": "site-root",
+    "url": "https://www.maisjuridico.com.br/cp/siteadv_config.php",
+    "title": "MaisJurídico",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nPáginas do site\nBanco de imagens\nE-mail\nConfigurações\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nEstrutura do site\nNOVIDADE: Já está disponível a nova versão desta ferramenta de criação de sites!\nSe você deseja migrar para a nova versão e criar seu novo site, solicite a nossa equipe de suporte a migração para a versão 2 da ferramenta Site para Advogados.\nPágina\tAções\nNenhum item.\nNão há nenhuma página inicial ainda, crie uma agora mesmo.",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-site-root.png",
+    "cpLinks": [
+      {
+        "text": "Dashboard",
+        "href": "https://www.maisjuridico.com.br/cp/dashboard.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/processo_lista.php"
+      },
+      {
+        "text": "Pessoas",
+        "href": "https://www.maisjuridico.com.br/cp/cliente_lista.php"
+      },
+      {
+        "text": "Clientes",
+        "href": "https://www.maisjuridico.com.br/cp/cliente_lista.php"
+      },
+      {
+        "text": "Adversos",
+        "href": "https://www.maisjuridico.com.br/cp/adverso_lista.php"
+      },
+      {
+        "text": "Advogados Adversos",
+        "href": "https://www.maisjuridico.com.br/cp/adv_adverso_lista.php"
+      },
+      {
+        "text": "Contatos / Partes",
+        "href": "https://www.maisjuridico.com.br/cp/outras_partes.php"
+      },
+      {
+        "text": "Equipe",
+        "href": "https://www.maisjuridico.com.br/cp/advogado_lista.php"
+      },
+      {
+        "text": "Advogados / Equipe",
+        "href": "https://www.maisjuridico.com.br/cp/advogado_lista.php"
+      },
+      {
+        "text": "Grupo de advogados",
+        "href": "https://www.maisjuridico.com.br/cp/grupo_lista.php"
+      },
+      {
+        "text": "Agenda",
+        "href": "https://www.maisjuridico.com.br/cp/compromisso_aba2.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/agenda.php"
+      },
+      {
+        "text": "Tarefas",
+        "href": "https://www.maisjuridico.com.br/cp/tarefa_lista.php"
+      },
+      {
+        "text": "Prazos",
+        "href": "https://www.maisjuridico.com.br/cp/processo_prazo.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values.php"
+      },
+      {
+        "text": "Despesas",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values.php?limpar_filtro=0"
+      },
+      {
+        "text": "Receitas",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values_r.php?limpar_filtro=0"
+      },
+      {
+        "text": "Transferências",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values_t.php?limpar_filtro=0"
+      },
+      {
+        "text": "Vencimentos",
+        "href": "https://www.maisjuridico.com.br/cp/fin_lembrete.php"
+      },
+      {
+        "text": "Gráficos",
+        "href": "https://www.maisjuridico.com.br/cp/graficos.php"
+      },
+      {
+        "text": "SAC",
+        "href": "https://www.maisjuridico.com.br/cp/atendimento_lista.php"
+      },
+      {
+        "text": "Atendimentos",
+        "href": "https://www.maisjuridico.com.br/cp/atendimento_lista.php"
+      },
+      {
+        "text": "Envio de SMS",
+        "href": "https://www.maisjuridico.com.br/cp/sms_lista10.php"
+      },
+      {
+        "text": "Aniversariantes",
+        "href": "https://www.maisjuridico.com.br/cp/aniversariantes.php"
+      },
+      {
+        "text": "Relatórios",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_resumo.php"
+      },
+      {
+        "text": "Resumo",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_resumo.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_lista.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_rels.php"
+      },
+      {
+        "text": "Custas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_custas.php"
+      },
+      {
+        "text": "Honorários",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_honorarios.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_compromisso.php"
+      },
+      {
+        "text": "Tarefas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_tarefas.php"
+      },
+      {
+        "text": "Prazos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_prazos.php"
+      },
+      {
+        "text": "Horas trabalhadas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_horas.php"
+      },
+      {
+        "text": "Pessoas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_pessoas.php"
+      },
+      {
+        "text": "Torpedos SMS",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_sms.php"
+      },
+      {
+        "text": "E-mails",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_email.php"
+      },
+      {
+        "text": "Etiquetas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_etiqueta.php"
+      },
+      {
+        "text": "Estatísticas",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_lista.php"
+      },
+      {
+        "text": "Andamentos atrasados",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_lista.php"
+      },
+      {
+        "text": "Andamentos dos processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_andproc.php"
+      },
+      {
+        "text": "Últimos andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_ult_and.php"
+      },
+      {
+        "text": "Andamentos automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_andauto.php"
+      },
+      {
+        "text": "Clientes",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_cliente.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo.php"
+      },
+      {
+        "text": "Abertura de processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo_abertura.php"
+      },
+      {
+        "text": "Cadastro de processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo_cadastro.php"
+      },
+      {
+        "text": "Fase do processo",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_fase.php"
+      },
+      {
+        "text": "Natureza da ação",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_natureza.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_graficos.php"
+      },
+      {
+        "text": "Personalizados",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_personalizados.php"
+      },
+      {
+        "text": "Atendimento geral",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_sac_lista.php"
+      },
+      {
+        "text": "Atendimento atendente",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_atendente.php"
+      },
+      {
+        "text": "Atendimento categorias",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_cat.php"
+      },
+      {
+        "text": "Atendimento clientes",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_cliente.php"
+      },
+      {
+        "text": "Diário Oficial",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Publicações",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Advogados",
+        "href": "https://www.maisjuridico.com.br/cp/do_adv_lista.php"
+      },
+      {
+        "text": "Palavras-chave",
+        "href": "https://www.maisjuridico.com.br/cp/do_pchave_lista.php"
+      },
+      {
+        "text": "Lixeira",
+        "href": "https://www.maisjuridico.com.br/cp/do_lixeira.php"
+      },
+      {
+        "text": "Andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Andamentos automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Configurar monitoramentos",
+        "href": "https://www.maisjuridico.com.br/cp/monitoramento_processos_add10.php"
+      },
+      {
+        "text": "Site",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_config.php"
+      },
+      {
+        "text": "Páginas do site",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_paginas.php"
+      },
+      {
+        "text": "Banco de imagens",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_banco_imagem.php"
+      },
+      {
+        "text": "E-mail",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_email.php"
+      },
+      {
+        "text": "Configurações",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_config_add10.php"
+      },
+      {
+        "text": "Editor de texto",
+        "href": "https://www.maisjuridico.com.br/cp/texto_lista.php"
+      },
+      {
+        "text": "Meus textos",
+        "href": "https://www.maisjuridico.com.br/cp/texto_lista.php"
+      },
+      {
+        "text": "Modelos",
+        "href": "https://www.maisjuridico.com.br/cp/contrato_lista.php"
+      },
+      {
+        "text": "",
+        "href": "https://www.maisjuridico.com.br/cp/processo_lista.php"
+      },
+      {
+        "text": "Visualizar publicações",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Visualizar Andamentos Automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Configurações gerais",
+        "href": "https://www.maisjuridico.com.br/cp/config_opcao.php"
+      },
+      {
+        "text": "Andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/config_andamento.php"
+      },
+      {
+        "text": "Classes processuais",
+        "href": "https://www.maisjuridico.com.br/cp/config_acao.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/class_comp_lista.php"
+      },
+      {
+        "text": "Comarcas",
+        "href": "https://www.maisjuridico.com.br/cp/config_comarca.php"
+      },
+      {
+        "text": "Fases",
+        "href": "https://www.maisjuridico.com.br/cp/config_fase.php"
+      },
+      {
+        "text": "Fóruns",
+        "href": "https://www.maisjuridico.com.br/cp/config_forum.php"
+      },
+      {
+        "text": "Natureza da ação",
+        "href": "https://www.maisjuridico.com.br/cp/config_juizo.php"
+      },
+      {
+        "text": "Posições das partes",
+        "href": "https://www.maisjuridico.com.br/cp/config_posicao.php"
+      },
+      {
+        "text": "Ritos",
+        "href": "https://www.maisjuridico.com.br/cp/config_rito.php"
+      },
+      {
+        "text": "Varas",
+        "href": "https://www.maisjuridico.com.br/cp/config_vara.php"
+      },
+      {
+        "text": "Campos personalizados",
+        "href": "https://www.maisjuridico.com.br/cp/campo_person_lista.php"
+      },
+      {
+        "text": "Configurações gerais",
+        "href": "https://www.maisjuridico.com.br/cp/fin_config_geral10.php"
+      },
+      {
+        "text": "Categorias de despesas",
+        "href": "https://www.maisjuridico.com.br/cp/cat_list10.php?mode=d"
+      },
+      {
+        "text": "Categorias de receitas",
+        "href": "https://www.maisjuridico.com.br/cp/cat_list10.php?mode=r"
+      },
+      {
+        "text": "Contas",
+        "href": "https://www.maisjuridico.com.br/cp/conta_lista10.php"
+      },
+      {
+        "text": "Filtros",
+        "href": "https://www.maisjuridico.com.br/cp/filtro_lista10.php"
+      },
+      {
+        "text": "Exportar para excel",
+        "href": "https://www.maisjuridico.com.br/cp/export_excel.php"
+      },
+      {
+        "text": "Histórico de atividades",
+        "href": "https://www.maisjuridico.com.br/cp/usuario_log10.php?id1=0"
+      },
+      {
+        "text": "Histórico de acessos",
+        "href": "https://www.maisjuridico.com.br/cp/historico_acessos.php"
+      },
+      {
+        "text": "Google Agenda",
+        "href": "https://www.maisjuridico.com.br/cp/google_agenda_config.php"
+      },
+      {
+        "text": "Tour pelo MJ",
+        "href": "https://www.maisjuridico.com.br/cp/dashboard.php?exibir_tour=3"
+      }
+    ]
+  },
+  {
+    "key": "site-paginas",
+    "url": "https://www.maisjuridico.com.br/cp/siteadv_paginas.php",
+    "title": "MaisJurídico",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nPáginas do site\nBanco de imagens\nE-mail\nConfigurações\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nPáginas do site\n\nCrie seu site em minutos com este sistema passo a passo do MaisJurídico! Basta seguir este wizard preenchendo os campos solicitados para criar uma página inicial completa.\n\nApós a criação da página inicial, será possível criar novas páginas e liberar acesso para seus clientes pelo seu próprio site!\n\nCriar meu site agora!",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-site-paginas.png",
+    "cpLinks": [
+      {
+        "text": "Dashboard",
+        "href": "https://www.maisjuridico.com.br/cp/dashboard.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/processo_lista.php"
+      },
+      {
+        "text": "Pessoas",
+        "href": "https://www.maisjuridico.com.br/cp/cliente_lista.php"
+      },
+      {
+        "text": "Clientes",
+        "href": "https://www.maisjuridico.com.br/cp/cliente_lista.php"
+      },
+      {
+        "text": "Adversos",
+        "href": "https://www.maisjuridico.com.br/cp/adverso_lista.php"
+      },
+      {
+        "text": "Advogados Adversos",
+        "href": "https://www.maisjuridico.com.br/cp/adv_adverso_lista.php"
+      },
+      {
+        "text": "Contatos / Partes",
+        "href": "https://www.maisjuridico.com.br/cp/outras_partes.php"
+      },
+      {
+        "text": "Equipe",
+        "href": "https://www.maisjuridico.com.br/cp/advogado_lista.php"
+      },
+      {
+        "text": "Advogados / Equipe",
+        "href": "https://www.maisjuridico.com.br/cp/advogado_lista.php"
+      },
+      {
+        "text": "Grupo de advogados",
+        "href": "https://www.maisjuridico.com.br/cp/grupo_lista.php"
+      },
+      {
+        "text": "Agenda",
+        "href": "https://www.maisjuridico.com.br/cp/compromisso_aba2.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/agenda.php"
+      },
+      {
+        "text": "Tarefas",
+        "href": "https://www.maisjuridico.com.br/cp/tarefa_lista.php"
+      },
+      {
+        "text": "Prazos",
+        "href": "https://www.maisjuridico.com.br/cp/processo_prazo.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values.php"
+      },
+      {
+        "text": "Despesas",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values.php?limpar_filtro=0"
+      },
+      {
+        "text": "Receitas",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values_r.php?limpar_filtro=0"
+      },
+      {
+        "text": "Transferências",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values_t.php?limpar_filtro=0"
+      },
+      {
+        "text": "Vencimentos",
+        "href": "https://www.maisjuridico.com.br/cp/fin_lembrete.php"
+      },
+      {
+        "text": "Gráficos",
+        "href": "https://www.maisjuridico.com.br/cp/graficos.php"
+      },
+      {
+        "text": "SAC",
+        "href": "https://www.maisjuridico.com.br/cp/atendimento_lista.php"
+      },
+      {
+        "text": "Atendimentos",
+        "href": "https://www.maisjuridico.com.br/cp/atendimento_lista.php"
+      },
+      {
+        "text": "Envio de SMS",
+        "href": "https://www.maisjuridico.com.br/cp/sms_lista10.php"
+      },
+      {
+        "text": "Aniversariantes",
+        "href": "https://www.maisjuridico.com.br/cp/aniversariantes.php"
+      },
+      {
+        "text": "Relatórios",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_resumo.php"
+      },
+      {
+        "text": "Resumo",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_resumo.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_lista.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_rels.php"
+      },
+      {
+        "text": "Custas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_custas.php"
+      },
+      {
+        "text": "Honorários",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_honorarios.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_compromisso.php"
+      },
+      {
+        "text": "Tarefas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_tarefas.php"
+      },
+      {
+        "text": "Prazos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_prazos.php"
+      },
+      {
+        "text": "Horas trabalhadas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_horas.php"
+      },
+      {
+        "text": "Pessoas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_pessoas.php"
+      },
+      {
+        "text": "Torpedos SMS",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_sms.php"
+      },
+      {
+        "text": "E-mails",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_email.php"
+      },
+      {
+        "text": "Etiquetas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_etiqueta.php"
+      },
+      {
+        "text": "Estatísticas",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_lista.php"
+      },
+      {
+        "text": "Andamentos atrasados",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_lista.php"
+      },
+      {
+        "text": "Andamentos dos processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_andproc.php"
+      },
+      {
+        "text": "Últimos andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_ult_and.php"
+      },
+      {
+        "text": "Andamentos automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_andauto.php"
+      },
+      {
+        "text": "Clientes",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_cliente.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo.php"
+      },
+      {
+        "text": "Abertura de processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo_abertura.php"
+      },
+      {
+        "text": "Cadastro de processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo_cadastro.php"
+      },
+      {
+        "text": "Fase do processo",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_fase.php"
+      },
+      {
+        "text": "Natureza da ação",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_natureza.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_graficos.php"
+      },
+      {
+        "text": "Personalizados",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_personalizados.php"
+      },
+      {
+        "text": "Atendimento geral",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_sac_lista.php"
+      },
+      {
+        "text": "Atendimento atendente",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_atendente.php"
+      },
+      {
+        "text": "Atendimento categorias",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_cat.php"
+      },
+      {
+        "text": "Atendimento clientes",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_cliente.php"
+      },
+      {
+        "text": "Diário Oficial",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Publicações",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Advogados",
+        "href": "https://www.maisjuridico.com.br/cp/do_adv_lista.php"
+      },
+      {
+        "text": "Palavras-chave",
+        "href": "https://www.maisjuridico.com.br/cp/do_pchave_lista.php"
+      },
+      {
+        "text": "Lixeira",
+        "href": "https://www.maisjuridico.com.br/cp/do_lixeira.php"
+      },
+      {
+        "text": "Andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Andamentos automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Configurar monitoramentos",
+        "href": "https://www.maisjuridico.com.br/cp/monitoramento_processos_add10.php"
+      },
+      {
+        "text": "Site",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_config.php"
+      },
+      {
+        "text": "Páginas do site",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_paginas.php"
+      },
+      {
+        "text": "Banco de imagens",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_banco_imagem.php"
+      },
+      {
+        "text": "E-mail",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_email.php"
+      },
+      {
+        "text": "Configurações",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_config_add10.php"
+      },
+      {
+        "text": "Editor de texto",
+        "href": "https://www.maisjuridico.com.br/cp/texto_lista.php"
+      },
+      {
+        "text": "Meus textos",
+        "href": "https://www.maisjuridico.com.br/cp/texto_lista.php"
+      },
+      {
+        "text": "Modelos",
+        "href": "https://www.maisjuridico.com.br/cp/contrato_lista.php"
+      },
+      {
+        "text": "",
+        "href": "https://www.maisjuridico.com.br/cp/processo_lista.php"
+      },
+      {
+        "text": "Visualizar publicações",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Visualizar Andamentos Automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Configurações gerais",
+        "href": "https://www.maisjuridico.com.br/cp/config_opcao.php"
+      },
+      {
+        "text": "Andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/config_andamento.php"
+      },
+      {
+        "text": "Classes processuais",
+        "href": "https://www.maisjuridico.com.br/cp/config_acao.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/class_comp_lista.php"
+      },
+      {
+        "text": "Comarcas",
+        "href": "https://www.maisjuridico.com.br/cp/config_comarca.php"
+      },
+      {
+        "text": "Fases",
+        "href": "https://www.maisjuridico.com.br/cp/config_fase.php"
+      },
+      {
+        "text": "Fóruns",
+        "href": "https://www.maisjuridico.com.br/cp/config_forum.php"
+      },
+      {
+        "text": "Natureza da ação",
+        "href": "https://www.maisjuridico.com.br/cp/config_juizo.php"
+      },
+      {
+        "text": "Posições das partes",
+        "href": "https://www.maisjuridico.com.br/cp/config_posicao.php"
+      },
+      {
+        "text": "Ritos",
+        "href": "https://www.maisjuridico.com.br/cp/config_rito.php"
+      },
+      {
+        "text": "Varas",
+        "href": "https://www.maisjuridico.com.br/cp/config_vara.php"
+      },
+      {
+        "text": "Campos personalizados",
+        "href": "https://www.maisjuridico.com.br/cp/campo_person_lista.php"
+      },
+      {
+        "text": "Configurações gerais",
+        "href": "https://www.maisjuridico.com.br/cp/fin_config_geral10.php"
+      },
+      {
+        "text": "Categorias de despesas",
+        "href": "https://www.maisjuridico.com.br/cp/cat_list10.php?mode=d"
+      },
+      {
+        "text": "Categorias de receitas",
+        "href": "https://www.maisjuridico.com.br/cp/cat_list10.php?mode=r"
+      },
+      {
+        "text": "Contas",
+        "href": "https://www.maisjuridico.com.br/cp/conta_lista10.php"
+      },
+      {
+        "text": "Filtros",
+        "href": "https://www.maisjuridico.com.br/cp/filtro_lista10.php"
+      },
+      {
+        "text": "Exportar para excel",
+        "href": "https://www.maisjuridico.com.br/cp/export_excel.php"
+      },
+      {
+        "text": "Histórico de atividades",
+        "href": "https://www.maisjuridico.com.br/cp/usuario_log10.php?id1=0"
+      },
+      {
+        "text": "Histórico de acessos",
+        "href": "https://www.maisjuridico.com.br/cp/historico_acessos.php"
+      },
+      {
+        "text": "Google Agenda",
+        "href": "https://www.maisjuridico.com.br/cp/google_agenda_config.php"
+      },
+      {
+        "text": "Tour pelo MJ",
+        "href": "https://www.maisjuridico.com.br/cp/dashboard.php?exibir_tour=3"
+      }
+    ]
+  },
+  {
+    "key": "site-imagens",
+    "url": "https://www.maisjuridico.com.br/cp/siteadv_banco_imagem.php",
+    "title": "MaisJurídico",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nPáginas do site\nBanco de imagens\nE-mail\nConfigurações\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nBanco de imagens\nPré-visualizar site Adicionar\nVocê não possui imagens cadastradas\n   \n ",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-site-imagens.png",
+    "cpLinks": [
+      {
+        "text": "Dashboard",
+        "href": "https://www.maisjuridico.com.br/cp/dashboard.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/processo_lista.php"
+      },
+      {
+        "text": "Pessoas",
+        "href": "https://www.maisjuridico.com.br/cp/cliente_lista.php"
+      },
+      {
+        "text": "Clientes",
+        "href": "https://www.maisjuridico.com.br/cp/cliente_lista.php"
+      },
+      {
+        "text": "Adversos",
+        "href": "https://www.maisjuridico.com.br/cp/adverso_lista.php"
+      },
+      {
+        "text": "Advogados Adversos",
+        "href": "https://www.maisjuridico.com.br/cp/adv_adverso_lista.php"
+      },
+      {
+        "text": "Contatos / Partes",
+        "href": "https://www.maisjuridico.com.br/cp/outras_partes.php"
+      },
+      {
+        "text": "Equipe",
+        "href": "https://www.maisjuridico.com.br/cp/advogado_lista.php"
+      },
+      {
+        "text": "Advogados / Equipe",
+        "href": "https://www.maisjuridico.com.br/cp/advogado_lista.php"
+      },
+      {
+        "text": "Grupo de advogados",
+        "href": "https://www.maisjuridico.com.br/cp/grupo_lista.php"
+      },
+      {
+        "text": "Agenda",
+        "href": "https://www.maisjuridico.com.br/cp/compromisso_aba2.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/agenda.php"
+      },
+      {
+        "text": "Tarefas",
+        "href": "https://www.maisjuridico.com.br/cp/tarefa_lista.php"
+      },
+      {
+        "text": "Prazos",
+        "href": "https://www.maisjuridico.com.br/cp/processo_prazo.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values.php"
+      },
+      {
+        "text": "Despesas",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values.php?limpar_filtro=0"
+      },
+      {
+        "text": "Receitas",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values_r.php?limpar_filtro=0"
+      },
+      {
+        "text": "Transferências",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values_t.php?limpar_filtro=0"
+      },
+      {
+        "text": "Vencimentos",
+        "href": "https://www.maisjuridico.com.br/cp/fin_lembrete.php"
+      },
+      {
+        "text": "Gráficos",
+        "href": "https://www.maisjuridico.com.br/cp/graficos.php"
+      },
+      {
+        "text": "SAC",
+        "href": "https://www.maisjuridico.com.br/cp/atendimento_lista.php"
+      },
+      {
+        "text": "Atendimentos",
+        "href": "https://www.maisjuridico.com.br/cp/atendimento_lista.php"
+      },
+      {
+        "text": "Envio de SMS",
+        "href": "https://www.maisjuridico.com.br/cp/sms_lista10.php"
+      },
+      {
+        "text": "Aniversariantes",
+        "href": "https://www.maisjuridico.com.br/cp/aniversariantes.php"
+      },
+      {
+        "text": "Relatórios",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_resumo.php"
+      },
+      {
+        "text": "Resumo",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_resumo.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_lista.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_rels.php"
+      },
+      {
+        "text": "Custas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_custas.php"
+      },
+      {
+        "text": "Honorários",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_honorarios.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_compromisso.php"
+      },
+      {
+        "text": "Tarefas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_tarefas.php"
+      },
+      {
+        "text": "Prazos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_prazos.php"
+      },
+      {
+        "text": "Horas trabalhadas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_horas.php"
+      },
+      {
+        "text": "Pessoas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_pessoas.php"
+      },
+      {
+        "text": "Torpedos SMS",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_sms.php"
+      },
+      {
+        "text": "E-mails",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_email.php"
+      },
+      {
+        "text": "Etiquetas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_etiqueta.php"
+      },
+      {
+        "text": "Estatísticas",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_lista.php"
+      },
+      {
+        "text": "Andamentos atrasados",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_lista.php"
+      },
+      {
+        "text": "Andamentos dos processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_andproc.php"
+      },
+      {
+        "text": "Últimos andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_ult_and.php"
+      },
+      {
+        "text": "Andamentos automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_andauto.php"
+      },
+      {
+        "text": "Clientes",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_cliente.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo.php"
+      },
+      {
+        "text": "Abertura de processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo_abertura.php"
+      },
+      {
+        "text": "Cadastro de processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo_cadastro.php"
+      },
+      {
+        "text": "Fase do processo",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_fase.php"
+      },
+      {
+        "text": "Natureza da ação",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_natureza.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_graficos.php"
+      },
+      {
+        "text": "Personalizados",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_personalizados.php"
+      },
+      {
+        "text": "Atendimento geral",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_sac_lista.php"
+      },
+      {
+        "text": "Atendimento atendente",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_atendente.php"
+      },
+      {
+        "text": "Atendimento categorias",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_cat.php"
+      },
+      {
+        "text": "Atendimento clientes",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_cliente.php"
+      },
+      {
+        "text": "Diário Oficial",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Publicações",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Advogados",
+        "href": "https://www.maisjuridico.com.br/cp/do_adv_lista.php"
+      },
+      {
+        "text": "Palavras-chave",
+        "href": "https://www.maisjuridico.com.br/cp/do_pchave_lista.php"
+      },
+      {
+        "text": "Lixeira",
+        "href": "https://www.maisjuridico.com.br/cp/do_lixeira.php"
+      },
+      {
+        "text": "Andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Andamentos automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Configurar monitoramentos",
+        "href": "https://www.maisjuridico.com.br/cp/monitoramento_processos_add10.php"
+      },
+      {
+        "text": "Site",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_config.php"
+      },
+      {
+        "text": "Páginas do site",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_paginas.php"
+      },
+      {
+        "text": "Banco de imagens",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_banco_imagem.php"
+      },
+      {
+        "text": "E-mail",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_email.php"
+      },
+      {
+        "text": "Configurações",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_config_add10.php"
+      },
+      {
+        "text": "Editor de texto",
+        "href": "https://www.maisjuridico.com.br/cp/texto_lista.php"
+      },
+      {
+        "text": "Meus textos",
+        "href": "https://www.maisjuridico.com.br/cp/texto_lista.php"
+      },
+      {
+        "text": "Modelos",
+        "href": "https://www.maisjuridico.com.br/cp/contrato_lista.php"
+      },
+      {
+        "text": "",
+        "href": "https://www.maisjuridico.com.br/cp/processo_lista.php"
+      },
+      {
+        "text": "Visualizar publicações",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Visualizar Andamentos Automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Configurações gerais",
+        "href": "https://www.maisjuridico.com.br/cp/config_opcao.php"
+      },
+      {
+        "text": "Andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/config_andamento.php"
+      },
+      {
+        "text": "Classes processuais",
+        "href": "https://www.maisjuridico.com.br/cp/config_acao.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/class_comp_lista.php"
+      },
+      {
+        "text": "Comarcas",
+        "href": "https://www.maisjuridico.com.br/cp/config_comarca.php"
+      },
+      {
+        "text": "Fases",
+        "href": "https://www.maisjuridico.com.br/cp/config_fase.php"
+      },
+      {
+        "text": "Fóruns",
+        "href": "https://www.maisjuridico.com.br/cp/config_forum.php"
+      },
+      {
+        "text": "Natureza da ação",
+        "href": "https://www.maisjuridico.com.br/cp/config_juizo.php"
+      },
+      {
+        "text": "Posições das partes",
+        "href": "https://www.maisjuridico.com.br/cp/config_posicao.php"
+      },
+      {
+        "text": "Ritos",
+        "href": "https://www.maisjuridico.com.br/cp/config_rito.php"
+      },
+      {
+        "text": "Varas",
+        "href": "https://www.maisjuridico.com.br/cp/config_vara.php"
+      },
+      {
+        "text": "Campos personalizados",
+        "href": "https://www.maisjuridico.com.br/cp/campo_person_lista.php"
+      },
+      {
+        "text": "Configurações gerais",
+        "href": "https://www.maisjuridico.com.br/cp/fin_config_geral10.php"
+      },
+      {
+        "text": "Categorias de despesas",
+        "href": "https://www.maisjuridico.com.br/cp/cat_list10.php?mode=d"
+      },
+      {
+        "text": "Categorias de receitas",
+        "href": "https://www.maisjuridico.com.br/cp/cat_list10.php?mode=r"
+      },
+      {
+        "text": "Contas",
+        "href": "https://www.maisjuridico.com.br/cp/conta_lista10.php"
+      },
+      {
+        "text": "Filtros",
+        "href": "https://www.maisjuridico.com.br/cp/filtro_lista10.php"
+      },
+      {
+        "text": "Exportar para excel",
+        "href": "https://www.maisjuridico.com.br/cp/export_excel.php"
+      },
+      {
+        "text": "Histórico de atividades",
+        "href": "https://www.maisjuridico.com.br/cp/usuario_log10.php?id1=0"
+      },
+      {
+        "text": "Histórico de acessos",
+        "href": "https://www.maisjuridico.com.br/cp/historico_acessos.php"
+      },
+      {
+        "text": "Google Agenda",
+        "href": "https://www.maisjuridico.com.br/cp/google_agenda_config.php"
+      },
+      {
+        "text": "Tour pelo MJ",
+        "href": "https://www.maisjuridico.com.br/cp/dashboard.php?exibir_tour=3"
+      }
+    ]
+  },
+  {
+    "key": "site-email",
+    "url": "https://www.maisjuridico.com.br/cp/siteadv_email.php",
+    "title": "MaisJurídico",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nPáginas do site\nBanco de imagens\nE-mail\nConfigurações\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nAcesso aos e-mails\nServiço não configurado\nVocê não possui um serviço de e-mails com o MaisJurídico.",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-site-email.png",
+    "cpLinks": [
+      {
+        "text": "Dashboard",
+        "href": "https://www.maisjuridico.com.br/cp/dashboard.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/processo_lista.php"
+      },
+      {
+        "text": "Pessoas",
+        "href": "https://www.maisjuridico.com.br/cp/cliente_lista.php"
+      },
+      {
+        "text": "Clientes",
+        "href": "https://www.maisjuridico.com.br/cp/cliente_lista.php"
+      },
+      {
+        "text": "Adversos",
+        "href": "https://www.maisjuridico.com.br/cp/adverso_lista.php"
+      },
+      {
+        "text": "Advogados Adversos",
+        "href": "https://www.maisjuridico.com.br/cp/adv_adverso_lista.php"
+      },
+      {
+        "text": "Contatos / Partes",
+        "href": "https://www.maisjuridico.com.br/cp/outras_partes.php"
+      },
+      {
+        "text": "Equipe",
+        "href": "https://www.maisjuridico.com.br/cp/advogado_lista.php"
+      },
+      {
+        "text": "Advogados / Equipe",
+        "href": "https://www.maisjuridico.com.br/cp/advogado_lista.php"
+      },
+      {
+        "text": "Grupo de advogados",
+        "href": "https://www.maisjuridico.com.br/cp/grupo_lista.php"
+      },
+      {
+        "text": "Agenda",
+        "href": "https://www.maisjuridico.com.br/cp/compromisso_aba2.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/agenda.php"
+      },
+      {
+        "text": "Tarefas",
+        "href": "https://www.maisjuridico.com.br/cp/tarefa_lista.php"
+      },
+      {
+        "text": "Prazos",
+        "href": "https://www.maisjuridico.com.br/cp/processo_prazo.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values.php"
+      },
+      {
+        "text": "Despesas",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values.php?limpar_filtro=0"
+      },
+      {
+        "text": "Receitas",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values_r.php?limpar_filtro=0"
+      },
+      {
+        "text": "Transferências",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values_t.php?limpar_filtro=0"
+      },
+      {
+        "text": "Vencimentos",
+        "href": "https://www.maisjuridico.com.br/cp/fin_lembrete.php"
+      },
+      {
+        "text": "Gráficos",
+        "href": "https://www.maisjuridico.com.br/cp/graficos.php"
+      },
+      {
+        "text": "SAC",
+        "href": "https://www.maisjuridico.com.br/cp/atendimento_lista.php"
+      },
+      {
+        "text": "Atendimentos",
+        "href": "https://www.maisjuridico.com.br/cp/atendimento_lista.php"
+      },
+      {
+        "text": "Envio de SMS",
+        "href": "https://www.maisjuridico.com.br/cp/sms_lista10.php"
+      },
+      {
+        "text": "Aniversariantes",
+        "href": "https://www.maisjuridico.com.br/cp/aniversariantes.php"
+      },
+      {
+        "text": "Relatórios",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_resumo.php"
+      },
+      {
+        "text": "Resumo",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_resumo.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_lista.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_rels.php"
+      },
+      {
+        "text": "Custas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_custas.php"
+      },
+      {
+        "text": "Honorários",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_honorarios.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_compromisso.php"
+      },
+      {
+        "text": "Tarefas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_tarefas.php"
+      },
+      {
+        "text": "Prazos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_prazos.php"
+      },
+      {
+        "text": "Horas trabalhadas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_horas.php"
+      },
+      {
+        "text": "Pessoas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_pessoas.php"
+      },
+      {
+        "text": "Torpedos SMS",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_sms.php"
+      },
+      {
+        "text": "E-mails",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_email.php"
+      },
+      {
+        "text": "Etiquetas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_etiqueta.php"
+      },
+      {
+        "text": "Estatísticas",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_lista.php"
+      },
+      {
+        "text": "Andamentos atrasados",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_lista.php"
+      },
+      {
+        "text": "Andamentos dos processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_andproc.php"
+      },
+      {
+        "text": "Últimos andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_ult_and.php"
+      },
+      {
+        "text": "Andamentos automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_andauto.php"
+      },
+      {
+        "text": "Clientes",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_cliente.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo.php"
+      },
+      {
+        "text": "Abertura de processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo_abertura.php"
+      },
+      {
+        "text": "Cadastro de processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo_cadastro.php"
+      },
+      {
+        "text": "Fase do processo",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_fase.php"
+      },
+      {
+        "text": "Natureza da ação",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_natureza.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_graficos.php"
+      },
+      {
+        "text": "Personalizados",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_personalizados.php"
+      },
+      {
+        "text": "Atendimento geral",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_sac_lista.php"
+      },
+      {
+        "text": "Atendimento atendente",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_atendente.php"
+      },
+      {
+        "text": "Atendimento categorias",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_cat.php"
+      },
+      {
+        "text": "Atendimento clientes",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_cliente.php"
+      },
+      {
+        "text": "Diário Oficial",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Publicações",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Advogados",
+        "href": "https://www.maisjuridico.com.br/cp/do_adv_lista.php"
+      },
+      {
+        "text": "Palavras-chave",
+        "href": "https://www.maisjuridico.com.br/cp/do_pchave_lista.php"
+      },
+      {
+        "text": "Lixeira",
+        "href": "https://www.maisjuridico.com.br/cp/do_lixeira.php"
+      },
+      {
+        "text": "Andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Andamentos automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Configurar monitoramentos",
+        "href": "https://www.maisjuridico.com.br/cp/monitoramento_processos_add10.php"
+      },
+      {
+        "text": "Site",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_config.php"
+      },
+      {
+        "text": "Páginas do site",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_paginas.php"
+      },
+      {
+        "text": "Banco de imagens",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_banco_imagem.php"
+      },
+      {
+        "text": "E-mail",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_email.php"
+      },
+      {
+        "text": "Configurações",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_config_add10.php"
+      },
+      {
+        "text": "Editor de texto",
+        "href": "https://www.maisjuridico.com.br/cp/texto_lista.php"
+      },
+      {
+        "text": "Meus textos",
+        "href": "https://www.maisjuridico.com.br/cp/texto_lista.php"
+      },
+      {
+        "text": "Modelos",
+        "href": "https://www.maisjuridico.com.br/cp/contrato_lista.php"
+      },
+      {
+        "text": "",
+        "href": "https://www.maisjuridico.com.br/cp/processo_lista.php"
+      },
+      {
+        "text": "Visualizar publicações",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Visualizar Andamentos Automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Configurações gerais",
+        "href": "https://www.maisjuridico.com.br/cp/config_opcao.php"
+      },
+      {
+        "text": "Andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/config_andamento.php"
+      },
+      {
+        "text": "Classes processuais",
+        "href": "https://www.maisjuridico.com.br/cp/config_acao.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/class_comp_lista.php"
+      },
+      {
+        "text": "Comarcas",
+        "href": "https://www.maisjuridico.com.br/cp/config_comarca.php"
+      },
+      {
+        "text": "Fases",
+        "href": "https://www.maisjuridico.com.br/cp/config_fase.php"
+      },
+      {
+        "text": "Fóruns",
+        "href": "https://www.maisjuridico.com.br/cp/config_forum.php"
+      },
+      {
+        "text": "Natureza da ação",
+        "href": "https://www.maisjuridico.com.br/cp/config_juizo.php"
+      },
+      {
+        "text": "Posições das partes",
+        "href": "https://www.maisjuridico.com.br/cp/config_posicao.php"
+      },
+      {
+        "text": "Ritos",
+        "href": "https://www.maisjuridico.com.br/cp/config_rito.php"
+      },
+      {
+        "text": "Varas",
+        "href": "https://www.maisjuridico.com.br/cp/config_vara.php"
+      },
+      {
+        "text": "Campos personalizados",
+        "href": "https://www.maisjuridico.com.br/cp/campo_person_lista.php"
+      },
+      {
+        "text": "Configurações gerais",
+        "href": "https://www.maisjuridico.com.br/cp/fin_config_geral10.php"
+      },
+      {
+        "text": "Categorias de despesas",
+        "href": "https://www.maisjuridico.com.br/cp/cat_list10.php?mode=d"
+      },
+      {
+        "text": "Categorias de receitas",
+        "href": "https://www.maisjuridico.com.br/cp/cat_list10.php?mode=r"
+      },
+      {
+        "text": "Contas",
+        "href": "https://www.maisjuridico.com.br/cp/conta_lista10.php"
+      },
+      {
+        "text": "Filtros",
+        "href": "https://www.maisjuridico.com.br/cp/filtro_lista10.php"
+      },
+      {
+        "text": "Exportar para excel",
+        "href": "https://www.maisjuridico.com.br/cp/export_excel.php"
+      },
+      {
+        "text": "Histórico de atividades",
+        "href": "https://www.maisjuridico.com.br/cp/usuario_log10.php?id1=0"
+      },
+      {
+        "text": "Histórico de acessos",
+        "href": "https://www.maisjuridico.com.br/cp/historico_acessos.php"
+      },
+      {
+        "text": "Google Agenda",
+        "href": "https://www.maisjuridico.com.br/cp/google_agenda_config.php"
+      },
+      {
+        "text": "Tour pelo MJ",
+        "href": "https://www.maisjuridico.com.br/cp/dashboard.php?exibir_tour=3"
+      }
+    ]
+  },
+  {
+    "key": "site-config",
+    "url": "https://www.maisjuridico.com.br/cp/siteadv_config_add10.php",
+    "title": "MaisJurídico",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nPáginas do site\nBanco de imagens\nE-mail\nConfigurações\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nConfigurações\nPré-visualizar site\nCores e logotipo\nCores do site\nCor do menu\nÁrea do cliente\nCor dos links do menu\nLogotipo do menu externo\nVoce não possui imagens cadastradas no banco de imagens do site\nClique aqui para cadastrar imagens na ferramenta site\nBotão de Whatsapp\nHabilitar botão do WhatsApp no site\nE-mail do fale conosco\nAo receber um contato\nCriar um protocolo interno de atendimento (SAC)\nRealizar o atendimento por e-mail\nInserir scripts\nScripts do cabeçalho (tag header)\nScripts do corpo (inicio da tag body)\nInserir scripts no corpo (final da tag body)\nSalvar",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-site-config.png",
+    "cpLinks": [
+      {
+        "text": "Dashboard",
+        "href": "https://www.maisjuridico.com.br/cp/dashboard.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/processo_lista.php"
+      },
+      {
+        "text": "Pessoas",
+        "href": "https://www.maisjuridico.com.br/cp/cliente_lista.php"
+      },
+      {
+        "text": "Clientes",
+        "href": "https://www.maisjuridico.com.br/cp/cliente_lista.php"
+      },
+      {
+        "text": "Adversos",
+        "href": "https://www.maisjuridico.com.br/cp/adverso_lista.php"
+      },
+      {
+        "text": "Advogados Adversos",
+        "href": "https://www.maisjuridico.com.br/cp/adv_adverso_lista.php"
+      },
+      {
+        "text": "Contatos / Partes",
+        "href": "https://www.maisjuridico.com.br/cp/outras_partes.php"
+      },
+      {
+        "text": "Equipe",
+        "href": "https://www.maisjuridico.com.br/cp/advogado_lista.php"
+      },
+      {
+        "text": "Advogados / Equipe",
+        "href": "https://www.maisjuridico.com.br/cp/advogado_lista.php"
+      },
+      {
+        "text": "Grupo de advogados",
+        "href": "https://www.maisjuridico.com.br/cp/grupo_lista.php"
+      },
+      {
+        "text": "Agenda",
+        "href": "https://www.maisjuridico.com.br/cp/compromisso_aba2.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/agenda.php"
+      },
+      {
+        "text": "Tarefas",
+        "href": "https://www.maisjuridico.com.br/cp/tarefa_lista.php"
+      },
+      {
+        "text": "Prazos",
+        "href": "https://www.maisjuridico.com.br/cp/processo_prazo.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values.php"
+      },
+      {
+        "text": "Despesas",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values.php?limpar_filtro=0"
+      },
+      {
+        "text": "Receitas",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values_r.php?limpar_filtro=0"
+      },
+      {
+        "text": "Transferências",
+        "href": "https://www.maisjuridico.com.br/cp/fin_values_t.php?limpar_filtro=0"
+      },
+      {
+        "text": "Vencimentos",
+        "href": "https://www.maisjuridico.com.br/cp/fin_lembrete.php"
+      },
+      {
+        "text": "Gráficos",
+        "href": "https://www.maisjuridico.com.br/cp/graficos.php"
+      },
+      {
+        "text": "SAC",
+        "href": "https://www.maisjuridico.com.br/cp/atendimento_lista.php"
+      },
+      {
+        "text": "Atendimentos",
+        "href": "https://www.maisjuridico.com.br/cp/atendimento_lista.php"
+      },
+      {
+        "text": "Envio de SMS",
+        "href": "https://www.maisjuridico.com.br/cp/sms_lista10.php"
+      },
+      {
+        "text": "Aniversariantes",
+        "href": "https://www.maisjuridico.com.br/cp/aniversariantes.php"
+      },
+      {
+        "text": "Relatórios",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_resumo.php"
+      },
+      {
+        "text": "Resumo",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_resumo.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_lista.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_rels.php"
+      },
+      {
+        "text": "Custas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_custas.php"
+      },
+      {
+        "text": "Honorários",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_honorarios.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_compromisso.php"
+      },
+      {
+        "text": "Tarefas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_tarefas.php"
+      },
+      {
+        "text": "Prazos",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_prazos.php"
+      },
+      {
+        "text": "Horas trabalhadas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_horas.php"
+      },
+      {
+        "text": "Pessoas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_pessoas.php"
+      },
+      {
+        "text": "Torpedos SMS",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_sms.php"
+      },
+      {
+        "text": "E-mails",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_email.php"
+      },
+      {
+        "text": "Etiquetas",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_etiqueta.php"
+      },
+      {
+        "text": "Estatísticas",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_lista.php"
+      },
+      {
+        "text": "Andamentos atrasados",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_lista.php"
+      },
+      {
+        "text": "Andamentos dos processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_andproc.php"
+      },
+      {
+        "text": "Últimos andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_ult_and.php"
+      },
+      {
+        "text": "Andamentos automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_andauto.php"
+      },
+      {
+        "text": "Clientes",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_cliente.php"
+      },
+      {
+        "text": "Processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo.php"
+      },
+      {
+        "text": "Abertura de processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo_abertura.php"
+      },
+      {
+        "text": "Cadastro de processos",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_processo_cadastro.php"
+      },
+      {
+        "text": "Fase do processo",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_fase.php"
+      },
+      {
+        "text": "Natureza da ação",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_natureza.php"
+      },
+      {
+        "text": "Financeiro",
+        "href": "https://www.maisjuridico.com.br/cp/fin_graficos.php"
+      },
+      {
+        "text": "Personalizados",
+        "href": "https://www.maisjuridico.com.br/cp/estatistica_personalizados.php"
+      },
+      {
+        "text": "Atendimento geral",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_sac_lista.php"
+      },
+      {
+        "text": "Atendimento atendente",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_atendente.php"
+      },
+      {
+        "text": "Atendimento categorias",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_cat.php"
+      },
+      {
+        "text": "Atendimento clientes",
+        "href": "https://www.maisjuridico.com.br/cp/relatorio_cliente.php"
+      },
+      {
+        "text": "Diário Oficial",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Publicações",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Advogados",
+        "href": "https://www.maisjuridico.com.br/cp/do_adv_lista.php"
+      },
+      {
+        "text": "Palavras-chave",
+        "href": "https://www.maisjuridico.com.br/cp/do_pchave_lista.php"
+      },
+      {
+        "text": "Lixeira",
+        "href": "https://www.maisjuridico.com.br/cp/do_lixeira.php"
+      },
+      {
+        "text": "Andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Andamentos automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Configurar monitoramentos",
+        "href": "https://www.maisjuridico.com.br/cp/monitoramento_processos_add10.php"
+      },
+      {
+        "text": "Site",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_config.php"
+      },
+      {
+        "text": "Páginas do site",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_paginas.php"
+      },
+      {
+        "text": "Banco de imagens",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_banco_imagem.php"
+      },
+      {
+        "text": "E-mail",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_email.php"
+      },
+      {
+        "text": "Configurações",
+        "href": "https://www.maisjuridico.com.br/cp/siteadv_config_add10.php"
+      },
+      {
+        "text": "Editor de texto",
+        "href": "https://www.maisjuridico.com.br/cp/texto_lista.php"
+      },
+      {
+        "text": "Meus textos",
+        "href": "https://www.maisjuridico.com.br/cp/texto_lista.php"
+      },
+      {
+        "text": "Modelos",
+        "href": "https://www.maisjuridico.com.br/cp/contrato_lista.php"
+      },
+      {
+        "text": "",
+        "href": "https://www.maisjuridico.com.br/cp/processo_lista.php"
+      },
+      {
+        "text": "Visualizar publicações",
+        "href": "https://www.maisjuridico.com.br/cp/do_lista.php"
+      },
+      {
+        "text": "Visualizar Andamentos Automáticos",
+        "href": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php"
+      },
+      {
+        "text": "Configurações gerais",
+        "href": "https://www.maisjuridico.com.br/cp/config_opcao.php"
+      },
+      {
+        "text": "Andamentos",
+        "href": "https://www.maisjuridico.com.br/cp/config_andamento.php"
+      },
+      {
+        "text": "Classes processuais",
+        "href": "https://www.maisjuridico.com.br/cp/config_acao.php"
+      },
+      {
+        "text": "Compromissos",
+        "href": "https://www.maisjuridico.com.br/cp/class_comp_lista.php"
+      },
+      {
+        "text": "Comarcas",
+        "href": "https://www.maisjuridico.com.br/cp/config_comarca.php"
+      },
+      {
+        "text": "Fases",
+        "href": "https://www.maisjuridico.com.br/cp/config_fase.php"
+      },
+      {
+        "text": "Fóruns",
+        "href": "https://www.maisjuridico.com.br/cp/config_forum.php"
+      },
+      {
+        "text": "Natureza da ação",
+        "href": "https://www.maisjuridico.com.br/cp/config_juizo.php"
+      },
+      {
+        "text": "Posições das partes",
+        "href": "https://www.maisjuridico.com.br/cp/config_posicao.php"
+      },
+      {
+        "text": "Ritos",
+        "href": "https://www.maisjuridico.com.br/cp/config_rito.php"
+      },
+      {
+        "text": "Varas",
+        "href": "https://www.maisjuridico.com.br/cp/config_vara.php"
+      },
+      {
+        "text": "Campos personalizados",
+        "href": "https://www.maisjuridico.com.br/cp/campo_person_lista.php"
+      },
+      {
+        "text": "Configurações gerais",
+        "href": "https://www.maisjuridico.com.br/cp/fin_config_geral10.php"
+      },
+      {
+        "text": "Categorias de despesas",
+        "href": "https://www.maisjuridico.com.br/cp/cat_list10.php?mode=d"
+      },
+      {
+        "text": "Categorias de receitas",
+        "href": "https://www.maisjuridico.com.br/cp/cat_list10.php?mode=r"
+      },
+      {
+        "text": "Contas",
+        "href": "https://www.maisjuridico.com.br/cp/conta_lista10.php"
+      },
+      {
+        "text": "Filtros",
+        "href": "https://www.maisjuridico.com.br/cp/filtro_lista10.php"
+      },
+      {
+        "text": "Exportar para excel",
+        "href": "https://www.maisjuridico.com.br/cp/export_excel.php"
+      },
+      {
+        "text": "Histórico de atividades",
+        "href": "https://www.maisjuridico.com.br/cp/usuario_log10.php?id1=0"
+      },
+      {
+        "text": "Histórico de acessos",
+        "href": "https://www.maisjuridico.com.br/cp/historico_acessos.php"
+      },
+      {
+        "text": "Google Agenda",
+        "href": "https://www.maisjuridico.com.br/cp/google_agenda_config.php"
+      },
+      {
+        "text": "Tour pelo MJ",
+        "href": "https://www.maisjuridico.com.br/cp/dashboard.php?exibir_tour=3"
+      }
+    ]
+  }
+]

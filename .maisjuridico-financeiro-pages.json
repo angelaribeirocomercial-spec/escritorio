@@ -1,0 +1,32 @@
+[
+  {
+    "key": "despesas",
+    "url": "https://www.maisjuridico.com.br/cp/fin_values.php?limpar_filtro=0",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-maisjuridico-financeiro-despesas.png",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nDespesas\nReceitas\nTransferências\nVencimentos\nGráficos\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nDespesas\nTransferência entre contas\nAdicionar\nExibindo 0 resultado(s)\nSaldo das contas\n* Lançamentos realizados até 09/04/2026\tExibir\nSaldo\nLançamentos realizados\nLançamentos em aberto\n\n Conta Principal\t\n0,00 \nMês\nÚltimos lançamentos\nTodos os meses\n04/2026\nContas\nTodas as contas\nConta Principal\nSituação\nTodas (filtra pelo vencimento)\nSomente realizadas (filtra pelo pagamento)\nSomente em aberto (filtra pelo vencimento)\nCliente\nBuscar\nVocê ainda não cadastrou nenhuma despesa."
+  },
+  {
+    "key": "receitas",
+    "url": "https://www.maisjuridico.com.br/cp/fin_values_r.php?limpar_filtro=0",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-maisjuridico-financeiro-receitas.png",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nDespesas\nReceitas\nTransferências\nVencimentos\nGráficos\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nReceitas\nTransferência entre contas\nAdicionar\nExibindo 0 resultado(s)\nSaldo das contas\n* Lançamentos realizados até 09/04/2026\tExibir\nSaldo\nLançamentos realizados\nLançamentos em aberto\n\n Conta Principal\t\n0,00 \nMês\nÚltimos lançamentos\nTodos os meses\n04/2026\nContas\nTodas as contas\nConta Principal\nSituação\nTodas (filtra pelo vencimento)\nSomente realizadas (filtra pelo recebimento)\nSomente em aberto (filtra pelo vencimento)\nCliente\nBuscar\nVocê ainda não cadastrou nenhuma receita."
+  },
+  {
+    "key": "transferencias",
+    "url": "https://www.maisjuridico.com.br/cp/fin_values_t.php?limpar_filtro=0",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-maisjuridico-financeiro-transferencias.png",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nDespesas\nReceitas\nTransferências\nVencimentos\nGráficos\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nTransferências\nAdicionar\nExibindo 0 resultado(s)\nSaldo das contas\n* Lançamentos realizados até 09/04/2026\tExibir\nSaldo\nLançamentos realizados\nLançamentos em aberto\n\n Conta Principal\t\n0,00 \nMês\nÚltimos lançamentos\nTodos os meses\n04/2026\nContas\nTodas as contas\nConta Principal\nSituação\nTodas (filtra pelo vencimento)\nSomente realizadas (filtra pelo recebimento)\nSomente em aberto (filtra pelo vencimento)\nCliente\nBuscar\nVocê ainda não cadastrou nenhuma transferência."
+  },
+  {
+    "key": "vencimentos",
+    "url": "https://www.maisjuridico.com.br/cp/fin_lembrete.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-maisjuridico-financeiro-vencimentos.png",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nDespesas\nReceitas\nTransferências\nVencimentos\nGráficos\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nResumo dos vencimentos\nLembrar por e-mail\nExibindo 0 resultado(s)\nNão existem cadastro de contas a pagar ou a receber para os próximos 30 dias."
+  },
+  {
+    "key": "graficos",
+    "url": "https://www.maisjuridico.com.br/cp/graficos.php",
+    "screenshotPath": "C:/Users/User/escritorio/.pw-maisjuridico-financeiro-graficos.png",
+    "preview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nDespesas\nReceitas\nTransferências\nVencimentos\nGráficos\nSAC\nRelatórios\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nGráficos\nImprimir\nModo manual\nModo filtro\nGráfico\nGráfico de pizza das despesas\nGráfico de pizza das receitas\nDespesas (mensal)\nReceitas (mensal)\nDespesas e Receitas (mensal)\nLucro / Prejuízo (Receitas - Despesas)\nConta\nTodas as contas\nConta Principal\nAnálise por\ndata do movimento\ndata do pagamento\nSituação\nAberto e realizadas\nSomente em aberto\nSomente realizadas\nInicio\n04/2026\nFim\n04/2026\nIncluir transferências no gráfico\nNão existe informação suficiente para plotar o gráfico.\nAltere as opções acima a fim ajustar uma situação que possamos plotar um gráfico."
+  }
+]

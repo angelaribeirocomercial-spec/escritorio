@@ -1,0 +1,430 @@
+{
+  "diario": {
+    "before": [
+      {
+        "text": "",
+        "href": "https://www.maisjuridico.com.br/"
+      },
+      {
+        "text": "Planos",
+        "href": "https://www.maisjuridico.com.br/planos.php"
+      },
+      {
+        "text": "Controle de processos",
+        "href": "https://www.maisjuridico.com.br/software-juridico-para-controle-processos.php"
+      },
+      {
+        "text": "Publicações dos diários oficiais",
+        "href": "https://www.maisjuridico.com.br/publicacoes-dos-diarios-oficiais.php"
+      },
+      {
+        "text": "Andamentos processuais",
+        "href": "https://www.maisjuridico.com.br/andamentos-processuais.php"
+      },
+      {
+        "text": "Agenda de compromissos",
+        "href": "https://www.maisjuridico.com.br/agenda-de-prazos-e-compromissos.php"
+      },
+      {
+        "text": "Controle financeiro",
+        "href": "https://www.maisjuridico.com.br/controle-financeiro.php"
+      },
+      {
+        "text": "Gestão de clientes",
+        "href": "https://www.maisjuridico.com.br/gestao-de-clientes.php"
+      },
+      {
+        "text": "Site para advocacia",
+        "href": "https://www.maisjuridico.com.br/site-para-advogados.php"
+      },
+      {
+        "text": "Relatórios e estatísticas",
+        "href": "https://www.maisjuridico.com.br/relatorios-e-estatisticas.php"
+      },
+      {
+        "text": "Armazenamento em nuvem",
+        "href": "https://www.maisjuridico.com.br/armazenamento-em-nuvem.php"
+      },
+      {
+        "text": "Editor de textos e contratos",
+        "href": "https://www.maisjuridico.com.br/editor-de-textos-e-contratos.php"
+      },
+      {
+        "text": "Contato",
+        "href": "https://www.maisjuridico.com.br/faleconosco.php"
+      },
+      {
+        "text": "Entrar",
+        "href": "https://www.maisjuridico.com.br/login.php"
+      },
+      {
+        "text": "CRIAR CONTA GRATUITA",
+        "href": "https://www.maisjuridico.com.br/cadastro.php"
+      },
+      {
+        "text": "Esqueci minha senha",
+        "href": "https://www.maisjuridico.com.br/esqueci10.php"
+      },
+      {
+        "text": "Sou novo usuário",
+        "href": "https://www.maisjuridico.com.br/cadastro.php"
+      }
+    ],
+    "after": [
+      {
+        "text": "",
+        "href": "https://www.maisjuridico.com.br/"
+      },
+      {
+        "text": "Planos",
+        "href": "https://www.maisjuridico.com.br/planos.php"
+      },
+      {
+        "text": "Controle de processos",
+        "href": "https://www.maisjuridico.com.br/software-juridico-para-controle-processos.php"
+      },
+      {
+        "text": "Publicações dos diários oficiais",
+        "href": "https://www.maisjuridico.com.br/publicacoes-dos-diarios-oficiais.php"
+      },
+      {
+        "text": "Andamentos processuais",
+        "href": "https://www.maisjuridico.com.br/andamentos-processuais.php"
+      },
+      {
+        "text": "Agenda de compromissos",
+        "href": "https://www.maisjuridico.com.br/agenda-de-prazos-e-compromissos.php"
+      },
+      {
+        "text": "Controle financeiro",
+        "href": "https://www.maisjuridico.com.br/controle-financeiro.php"
+      },
+      {
+        "text": "Gestão de clientes",
+        "href": "https://www.maisjuridico.com.br/gestao-de-clientes.php"
+      },
+      {
+        "text": "Site para advocacia",
+        "href": "https://www.maisjuridico.com.br/site-para-advogados.php"
+      },
+      {
+        "text": "Relatórios e estatísticas",
+        "href": "https://www.maisjuridico.com.br/relatorios-e-estatisticas.php"
+      },
+      {
+        "text": "Armazenamento em nuvem",
+        "href": "https://www.maisjuridico.com.br/armazenamento-em-nuvem.php"
+      },
+      {
+        "text": "Editor de textos e contratos",
+        "href": "https://www.maisjuridico.com.br/editor-de-textos-e-contratos.php"
+      },
+      {
+        "text": "Contato",
+        "href": "https://www.maisjuridico.com.br/faleconosco.php"
+      },
+      {
+        "text": "Entrar",
+        "href": "https://www.maisjuridico.com.br/login.php"
+      },
+      {
+        "text": "CRIAR CONTA GRATUITA",
+        "href": "https://www.maisjuridico.com.br/cadastro.php"
+      },
+      {
+        "text": "Esqueci minha senha",
+        "href": "https://www.maisjuridico.com.br/esqueci10.php"
+      },
+      {
+        "text": "Sou novo usuário",
+        "href": "https://www.maisjuridico.com.br/cadastro.php"
+      }
+    ]
+  },
+  "andamentos": {
+    "before": [
+      {
+        "text": "",
+        "href": "https://www.maisjuridico.com.br/"
+      },
+      {
+        "text": "Planos",
+        "href": "https://www.maisjuridico.com.br/planos.php"
+      },
+      {
+        "text": "Controle de processos",
+        "href": "https://www.maisjuridico.com.br/software-juridico-para-controle-processos.php"
+      },
+      {
+        "text": "Publicações dos diários oficiais",
+        "href": "https://www.maisjuridico.com.br/publicacoes-dos-diarios-oficiais.php"
+      },
+      {
+        "text": "Andamentos processuais",
+        "href": "https://www.maisjuridico.com.br/andamentos-processuais.php"
+      },
+      {
+        "text": "Agenda de compromissos",
+        "href": "https://www.maisjuridico.com.br/agenda-de-prazos-e-compromissos.php"
+      },
+      {
+        "text": "Controle financeiro",
+        "href": "https://www.maisjuridico.com.br/controle-financeiro.php"
+      },
+      {
+        "text": "Gestão de clientes",
+        "href": "https://www.maisjuridico.com.br/gestao-de-clientes.php"
+      },
+      {
+        "text": "Site para advocacia",
+        "href": "https://www.maisjuridico.com.br/site-para-advogados.php"
+      },
+      {
+        "text": "Relatórios e estatísticas",
+        "href": "https://www.maisjuridico.com.br/relatorios-e-estatisticas.php"
+      },
+      {
+        "text": "Armazenamento em nuvem",
+        "href": "https://www.maisjuridico.com.br/armazenamento-em-nuvem.php"
+      },
+      {
+        "text": "Editor de textos e contratos",
+        "href": "https://www.maisjuridico.com.br/editor-de-textos-e-contratos.php"
+      },
+      {
+        "text": "Contato",
+        "href": "https://www.maisjuridico.com.br/faleconosco.php"
+      },
+      {
+        "text": "Entrar",
+        "href": "https://www.maisjuridico.com.br/login.php"
+      },
+      {
+        "text": "CRIAR CONTA GRATUITA",
+        "href": "https://www.maisjuridico.com.br/cadastro.php"
+      },
+      {
+        "text": "Esqueci minha senha",
+        "href": "https://www.maisjuridico.com.br/esqueci10.php"
+      },
+      {
+        "text": "Sou novo usuário",
+        "href": "https://www.maisjuridico.com.br/cadastro.php"
+      }
+    ],
+    "after": [
+      {
+        "text": "",
+        "href": "https://www.maisjuridico.com.br/"
+      },
+      {
+        "text": "Planos",
+        "href": "https://www.maisjuridico.com.br/planos.php"
+      },
+      {
+        "text": "Controle de processos",
+        "href": "https://www.maisjuridico.com.br/software-juridico-para-controle-processos.php"
+      },
+      {
+        "text": "Publicações dos diários oficiais",
+        "href": "https://www.maisjuridico.com.br/publicacoes-dos-diarios-oficiais.php"
+      },
+      {
+        "text": "Andamentos processuais",
+        "href": "https://www.maisjuridico.com.br/andamentos-processuais.php"
+      },
+      {
+        "text": "Agenda de compromissos",
+        "href": "https://www.maisjuridico.com.br/agenda-de-prazos-e-compromissos.php"
+      },
+      {
+        "text": "Controle financeiro",
+        "href": "https://www.maisjuridico.com.br/controle-financeiro.php"
+      },
+      {
+        "text": "Gestão de clientes",
+        "href": "https://www.maisjuridico.com.br/gestao-de-clientes.php"
+      },
+      {
+        "text": "Site para advocacia",
+        "href": "https://www.maisjuridico.com.br/site-para-advogados.php"
+      },
+      {
+        "text": "Relatórios e estatísticas",
+        "href": "https://www.maisjuridico.com.br/relatorios-e-estatisticas.php"
+      },
+      {
+        "text": "Armazenamento em nuvem",
+        "href": "https://www.maisjuridico.com.br/armazenamento-em-nuvem.php"
+      },
+      {
+        "text": "Editor de textos e contratos",
+        "href": "https://www.maisjuridico.com.br/editor-de-textos-e-contratos.php"
+      },
+      {
+        "text": "Contato",
+        "href": "https://www.maisjuridico.com.br/faleconosco.php"
+      },
+      {
+        "text": "Entrar",
+        "href": "https://www.maisjuridico.com.br/login.php"
+      },
+      {
+        "text": "CRIAR CONTA GRATUITA",
+        "href": "https://www.maisjuridico.com.br/cadastro.php"
+      },
+      {
+        "text": "Esqueci minha senha",
+        "href": "https://www.maisjuridico.com.br/esqueci10.php"
+      },
+      {
+        "text": "Sou novo usuário",
+        "href": "https://www.maisjuridico.com.br/cadastro.php"
+      }
+    ]
+  },
+  "stats": {
+    "before": [
+      {
+        "text": "",
+        "href": "https://www.maisjuridico.com.br/"
+      },
+      {
+        "text": "Planos",
+        "href": "https://www.maisjuridico.com.br/planos.php"
+      },
+      {
+        "text": "Controle de processos",
+        "href": "https://www.maisjuridico.com.br/software-juridico-para-controle-processos.php"
+      },
+      {
+        "text": "Publicações dos diários oficiais",
+        "href": "https://www.maisjuridico.com.br/publicacoes-dos-diarios-oficiais.php"
+      },
+      {
+        "text": "Andamentos processuais",
+        "href": "https://www.maisjuridico.com.br/andamentos-processuais.php"
+      },
+      {
+        "text": "Agenda de compromissos",
+        "href": "https://www.maisjuridico.com.br/agenda-de-prazos-e-compromissos.php"
+      },
+      {
+        "text": "Controle financeiro",
+        "href": "https://www.maisjuridico.com.br/controle-financeiro.php"
+      },
+      {
+        "text": "Gestão de clientes",
+        "href": "https://www.maisjuridico.com.br/gestao-de-clientes.php"
+      },
+      {
+        "text": "Site para advocacia",
+        "href": "https://www.maisjuridico.com.br/site-para-advogados.php"
+      },
+      {
+        "text": "Relatórios e estatísticas",
+        "href": "https://www.maisjuridico.com.br/relatorios-e-estatisticas.php"
+      },
+      {
+        "text": "Armazenamento em nuvem",
+        "href": "https://www.maisjuridico.com.br/armazenamento-em-nuvem.php"
+      },
+      {
+        "text": "Editor de textos e contratos",
+        "href": "https://www.maisjuridico.com.br/editor-de-textos-e-contratos.php"
+      },
+      {
+        "text": "Contato",
+        "href": "https://www.maisjuridico.com.br/faleconosco.php"
+      },
+      {
+        "text": "Entrar",
+        "href": "https://www.maisjuridico.com.br/login.php"
+      },
+      {
+        "text": "CRIAR CONTA GRATUITA",
+        "href": "https://www.maisjuridico.com.br/cadastro.php"
+      },
+      {
+        "text": "Esqueci minha senha",
+        "href": "https://www.maisjuridico.com.br/esqueci10.php"
+      },
+      {
+        "text": "Sou novo usuário",
+        "href": "https://www.maisjuridico.com.br/cadastro.php"
+      }
+    ],
+    "after": [
+      {
+        "text": "",
+        "href": "https://www.maisjuridico.com.br/"
+      },
+      {
+        "text": "Planos",
+        "href": "https://www.maisjuridico.com.br/planos.php"
+      },
+      {
+        "text": "Controle de processos",
+        "href": "https://www.maisjuridico.com.br/software-juridico-para-controle-processos.php"
+      },
+      {
+        "text": "Publicações dos diários oficiais",
+        "href": "https://www.maisjuridico.com.br/publicacoes-dos-diarios-oficiais.php"
+      },
+      {
+        "text": "Andamentos processuais",
+        "href": "https://www.maisjuridico.com.br/andamentos-processuais.php"
+      },
+      {
+        "text": "Agenda de compromissos",
+        "href": "https://www.maisjuridico.com.br/agenda-de-prazos-e-compromissos.php"
+      },
+      {
+        "text": "Controle financeiro",
+        "href": "https://www.maisjuridico.com.br/controle-financeiro.php"
+      },
+      {
+        "text": "Gestão de clientes",
+        "href": "https://www.maisjuridico.com.br/gestao-de-clientes.php"
+      },
+      {
+        "text": "Site para advocacia",
+        "href": "https://www.maisjuridico.com.br/site-para-advogados.php"
+      },
+      {
+        "text": "Relatórios e estatísticas",
+        "href": "https://www.maisjuridico.com.br/relatorios-e-estatisticas.php"
+      },
+      {
+        "text": "Armazenamento em nuvem",
+        "href": "https://www.maisjuridico.com.br/armazenamento-em-nuvem.php"
+      },
+      {
+        "text": "Editor de textos e contratos",
+        "href": "https://www.maisjuridico.com.br/editor-de-textos-e-contratos.php"
+      },
+      {
+        "text": "Contato",
+        "href": "https://www.maisjuridico.com.br/faleconosco.php"
+      },
+      {
+        "text": "Entrar",
+        "href": "https://www.maisjuridico.com.br/login.php"
+      },
+      {
+        "text": "CRIAR CONTA GRATUITA",
+        "href": "https://www.maisjuridico.com.br/cadastro.php"
+      },
+      {
+        "text": "Esqueci minha senha",
+        "href": "https://www.maisjuridico.com.br/esqueci10.php"
+      },
+      {
+        "text": "Sou novo usuário",
+        "href": "https://www.maisjuridico.com.br/cadastro.php"
+      }
+    ]
+  },
+  "finalUrl": "https://www.maisjuridico.com.br/cp/dashboard.php",
+  "title": "Entrar | MaisJurídico Software Jurídico Para Advocacias"
+}

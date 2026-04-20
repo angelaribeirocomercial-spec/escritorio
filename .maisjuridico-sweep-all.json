@@ -1,0 +1,116 @@
+[
+  {
+    "key": "dashboard",
+    "url": "https://www.maisjuridico.com.br/cp/dashboard.php",
+    "title": "Entrar | MaisJurídico Software Jurídico Para Advocacias",
+    "preview": "PLANOS FERRAMENTAS Controle de processos Publicações dos diários oficiais Andamentos processuais Agenda de compromissos Controle financeiro Gestão de clientes Site para advocacia Relatórios e estatísticas Armazenamento em nuvem Editor de textos e contratos CONTATO ENTRAR CRIAR CONTA GRATUITA Bem-vindo ao MaisJurídico! Faça seu login. Login: Senha: Esqueci minha senha ENTRAR SOU NOVO USUÁRIO"
+  },
+  {
+    "key": "processos",
+    "url": "https://www.maisjuridico.com.br/cp/processo_aba1.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found nginx"
+  },
+  {
+    "key": "pessoas-clientes",
+    "url": "https://www.maisjuridico.com.br/cp/cliente_lista.php",
+    "title": "Entrar | MaisJurídico Software Jurídico Para Advocacias",
+    "preview": "PLANOS FERRAMENTAS Controle de processos Publicações dos diários oficiais Andamentos processuais Agenda de compromissos Controle financeiro Gestão de clientes Site para advocacia Relatórios e estatísticas Armazenamento em nuvem Editor de textos e contratos CONTATO ENTRAR CRIAR CONTA GRATUITA Bem-vindo ao MaisJurídico! Faça seu login. Login: Senha: Esqueci minha senha ENTRAR SOU NOVO USUÁRIO"
+  },
+  {
+    "key": "pessoas-adversos",
+    "url": "https://www.maisjuridico.com.br/cp/adverso_lista.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found nginx"
+  },
+  {
+    "key": "equipe-advogados",
+    "url": "https://www.maisjuridico.com.br/cp/advogado_lista.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found nginx"
+  },
+  {
+    "key": "agenda-compromissos",
+    "url": "https://www.maisjuridico.com.br/cp/compromisso_aba2.php",
+    "title": "Entrar | MaisJurídico Software Jurídico Para Advocacias",
+    "preview": "PLANOS FERRAMENTAS Controle de processos Publicações dos diários oficiais Andamentos processuais Agenda de compromissos Controle financeiro Gestão de clientes Site para advocacia Relatórios e estatísticas Armazenamento em nuvem Editor de textos e contratos CONTATO ENTRAR CRIAR CONTA GRATUITA Bem-vindo ao MaisJurídico! Faça seu login. Login: Senha: Esqueci minha senha ENTRAR SOU NOVO USUÁRIO"
+  },
+  {
+    "key": "agenda-tarefas",
+    "url": "https://www.maisjuridico.com.br/cp/tarefa_aba2.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found nginx"
+  },
+  {
+    "key": "financeiro-despesas",
+    "url": "https://www.maisjuridico.com.br/cp/despesa_lista.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found nginx"
+  },
+  {
+    "key": "financeiro-receitas",
+    "url": "https://www.maisjuridico.com.br/cp/receita_lista.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found nginx"
+  },
+  {
+    "key": "financeiro-vencimentos",
+    "url": "https://www.maisjuridico.com.br/cp/vencimento_lista.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found nginx"
+  },
+  {
+    "key": "relatorios-resumo",
+    "url": "https://www.maisjuridico.com.br/cp/relatorio_resumo.php",
+    "title": "Entrar | MaisJurídico Software Jurídico Para Advocacias",
+    "preview": "PLANOS FERRAMENTAS Controle de processos Publicações dos diários oficiais Andamentos processuais Agenda de compromissos Controle financeiro Gestão de clientes Site para advocacia Relatórios e estatísticas Armazenamento em nuvem Editor de textos e contratos CONTATO ENTRAR CRIAR CONTA GRATUITA Bem-vindo ao MaisJurídico! Faça seu login. Login: Senha: Esqueci minha senha ENTRAR SOU NOVO USUÁRIO"
+  },
+  {
+    "key": "relatorios-financeiro",
+    "url": "https://www.maisjuridico.com.br/cp/relatorio_financeiro.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found nginx"
+  },
+  {
+    "key": "estatisticas-atrasados",
+    "url": "https://www.maisjuridico.com.br/cp/estatistica_andamento_atrasado.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found nginx"
+  },
+  {
+    "key": "estatisticas-cadastro",
+    "url": "https://www.maisjuridico.com.br/cp/estatistica_processo_cadastro.php",
+    "title": "Entrar | MaisJurídico Software Jurídico Para Advocacias",
+    "preview": "PLANOS FERRAMENTAS Controle de processos Publicações dos diários oficiais Andamentos processuais Agenda de compromissos Controle financeiro Gestão de clientes Site para advocacia Relatórios e estatísticas Armazenamento em nuvem Editor de textos e contratos CONTATO ENTRAR CRIAR CONTA GRATUITA Bem-vindo ao MaisJurídico! Faça seu login. Login: Senha: Esqueci minha senha ENTRAR SOU NOVO USUÁRIO"
+  },
+  {
+    "key": "diario-publicacoes",
+    "url": "https://www.maisjuridico.com.br/cp/publicacao_lista.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found nginx"
+  },
+  {
+    "key": "andamentos-automaticos",
+    "url": "https://www.maisjuridico.com.br/cp/andamento_automatico_lista.php",
+    "title": "Entrar | MaisJurídico Software Jurídico Para Advocacias",
+    "preview": "PLANOS FERRAMENTAS Controle de processos Publicações dos diários oficiais Andamentos processuais Agenda de compromissos Controle financeiro Gestão de clientes Site para advocacia Relatórios e estatísticas Armazenamento em nuvem Editor de textos e contratos CONTATO ENTRAR CRIAR CONTA GRATUITA Bem-vindo ao MaisJurídico! Faça seu login. Login: Senha: Esqueci minha senha ENTRAR SOU NOVO USUÁRIO"
+  },
+  {
+    "key": "arquivos-meus",
+    "url": "https://www.maisjuridico.com.br/ged/index.php",
+    "title": "Entrar | MaisJurídico Software Jurídico Para Advocacias",
+    "preview": "PLANOS FERRAMENTAS Controle de processos Publicações dos diários oficiais Andamentos processuais Agenda de compromissos Controle financeiro Gestão de clientes Site para advocacia Relatórios e estatísticas Armazenamento em nuvem Editor de textos e contratos CONTATO ENTRAR CRIAR CONTA GRATUITA Bem-vindo ao MaisJurídico! Faça seu login. Login: Senha: Esqueci minha senha ENTRAR SOU NOVO USUÁRIO"
+  },
+  {
+    "key": "site-paginas",
+    "url": "https://www.maisjuridico.com.br/cp/site_lista.php",
+    "title": "404 Not Found",
+    "preview": "404 Not Found nginx"
+  },
+  {
+    "key": "editor-textos",
+    "url": "https://www.maisjuridico.com.br/cp/texto_lista.php",
+    "title": "Entrar | MaisJurídico Software Jurídico Para Advocacias",
+    "preview": "PLANOS FERRAMENTAS Controle de processos Publicações dos diários oficiais Andamentos processuais Agenda de compromissos Controle financeiro Gestão de clientes Site para advocacia Relatórios e estatísticas Armazenamento em nuvem Editor de textos e contratos CONTATO ENTRAR CRIAR CONTA GRATUITA Bem-vindo ao MaisJurídico! Faça seu login. Login: Senha: Esqueci minha senha ENTRAR SOU NOVO USUÁRIO"
+  }
+]

@@ -1,0 +1,726 @@
+{
+  "title": "MaisJurídico",
+  "bodyPreview": "FERRAMENTAS\nDashboard\nProcessos\nPessoas\nEquipe\nAgenda\nFinanceiro\nSAC\nRelatórios\nResumo\nProcessos\nFinanceiro\nCustas\nHonorários\nCompromissos\nTarefas\nPrazos\nHoras trabalhadas\nPessoas\nTorpedos SMS\nE-mails\nEtiquetas\nEstatísticas\nDiário Oficial\nAndamentos\nArquivos\nSite\nEditor de texto\n|\nAtendimento\n|\nPlanos\n|\nangelaribeiro.comercial@gmail.com\n \nRelatório resumido\nRelatório\nÚltimos andamentos\nCompromissos futuros\nProcesso\nCliente\nAdvogado / Equipe\nOutras partes\nData de início\nData de término\nClasses processuais\nTodos\nAção de cobrança\nAção de despejo\nAção de indenização\nDivórcio\nExecução de alimentos\nImpugnação do valor da causa\nNatureza\nTodos\nCível\nCriminal\nFamília\nNão definido\nTrabalhista\nFórum\nTodos\nVara\nTodos\nComarca\nTodos\nOrdenar\nProcesso ascendente\nProcesso descendente\nCliente ascendente\nCliente descendente\nPasta ascendente\nPasta descendente\nControle ascendente\nControle descendente\nData da abertura ascendente\nData da abertura descendente\nData do andamento ascendente\nData do andamento descendente\nFórum ascendente\nFórum descendente\nVara ascendente\nVara descendente\nFiltro\nMostrar apenas processos ativos\nMostrar apenas processos baixados\nMostrar apenas processos suspensos\nMostrar todos os processos\nPrivacidade\nExibir todas as informações\nNão exibir informações confidenciais\nQuantidade\n1 item\n2 itens\n3 itens\nQuantidade de processos por página\n20 processos\n50 processos\n100 processos\n200 processos\n300 processos\n400 processos\n500 processos\nExibir\nExibir processos sem andamentos ou compromissos\nModo do relatório PDF\nRetrato\nPaisagem\nObservação: Para imprimir o relatório em modo paisagem você deve deve configurar também nas opções da impressora.\nRelatórios\nDefina suas configurações para refinar a busca.",
+  "inputs": [
+    {
+      "tag": "A",
+      "text": "",
+      "name": null,
+      "href": "javascript:void(0)"
+    },
+    {
+      "tag": "A",
+      "text": "Dashboard",
+      "name": null,
+      "href": "/cp/dashboard.php"
+    },
+    {
+      "tag": "A",
+      "text": "Processos",
+      "name": null,
+      "href": "/cp/processo_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Pessoas",
+      "name": null,
+      "href": "/cp/cliente_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Clientes",
+      "name": null,
+      "href": "/cp/cliente_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Adversos",
+      "name": null,
+      "href": "/cp/adverso_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Advogados Adversos",
+      "name": null,
+      "href": "/cp/adv_adverso_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Contatos / Partes",
+      "name": null,
+      "href": "/cp/outras_partes.php"
+    },
+    {
+      "tag": "A",
+      "text": "Equipe",
+      "name": null,
+      "href": "/cp/advogado_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Advogados / Equipe",
+      "name": null,
+      "href": "/cp/advogado_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Grupo de advogados",
+      "name": null,
+      "href": "/cp/grupo_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Agenda",
+      "name": null,
+      "href": "/cp/compromisso_aba2.php"
+    },
+    {
+      "tag": "A",
+      "text": "Compromissos",
+      "name": null,
+      "href": "/cp/agenda.php"
+    },
+    {
+      "tag": "A",
+      "text": "Tarefas",
+      "name": null,
+      "href": "/cp/tarefa_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Prazos",
+      "name": null,
+      "href": "/cp/processo_prazo.php"
+    },
+    {
+      "tag": "A",
+      "text": "Financeiro",
+      "name": null,
+      "href": "/cp/fin_values.php"
+    },
+    {
+      "tag": "A",
+      "text": "Despesas",
+      "name": null,
+      "href": "/cp/fin_values.php?limpar_filtro=0"
+    },
+    {
+      "tag": "A",
+      "text": "Receitas",
+      "name": null,
+      "href": "/cp/fin_values_r.php?limpar_filtro=0"
+    },
+    {
+      "tag": "A",
+      "text": "Transferências",
+      "name": null,
+      "href": "/cp/fin_values_t.php?limpar_filtro=0"
+    },
+    {
+      "tag": "A",
+      "text": "Vencimentos",
+      "name": null,
+      "href": "/cp/fin_lembrete.php"
+    },
+    {
+      "tag": "A",
+      "text": "Gráficos",
+      "name": null,
+      "href": "/cp/graficos.php"
+    },
+    {
+      "tag": "A",
+      "text": "SAC",
+      "name": null,
+      "href": "/cp/atendimento_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Atendimentos",
+      "name": null,
+      "href": "/cp/atendimento_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Envio de SMS",
+      "name": null,
+      "href": "/cp/sms_lista10.php"
+    },
+    {
+      "tag": "A",
+      "text": "Aniversariantes",
+      "name": null,
+      "href": "/cp/aniversariantes.php"
+    },
+    {
+      "tag": "A",
+      "text": "Relatórios",
+      "name": null,
+      "href": "/cp/relatorio_resumo.php"
+    },
+    {
+      "tag": "A",
+      "text": "Resumo",
+      "name": null,
+      "href": "/cp/relatorio_resumo.php"
+    },
+    {
+      "tag": "A",
+      "text": "Processos",
+      "name": null,
+      "href": "/cp/relatorio_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Financeiro",
+      "name": null,
+      "href": "/cp/fin_rels.php"
+    },
+    {
+      "tag": "A",
+      "text": "Custas",
+      "name": null,
+      "href": "/cp/relatorio_custas.php"
+    },
+    {
+      "tag": "A",
+      "text": "Honorários",
+      "name": null,
+      "href": "/cp/relatorio_honorarios.php"
+    },
+    {
+      "tag": "A",
+      "text": "Compromissos",
+      "name": null,
+      "href": "/cp/relatorio_compromisso.php"
+    },
+    {
+      "tag": "A",
+      "text": "Tarefas",
+      "name": null,
+      "href": "/cp/relatorio_tarefas.php"
+    },
+    {
+      "tag": "A",
+      "text": "Prazos",
+      "name": null,
+      "href": "/cp/relatorio_prazos.php"
+    },
+    {
+      "tag": "A",
+      "text": "Horas trabalhadas",
+      "name": null,
+      "href": "/cp/relatorio_horas.php"
+    },
+    {
+      "tag": "A",
+      "text": "Pessoas",
+      "name": null,
+      "href": "/cp/relatorio_pessoas.php"
+    },
+    {
+      "tag": "A",
+      "text": "Torpedos SMS",
+      "name": null,
+      "href": "/cp/relatorio_sms.php"
+    },
+    {
+      "tag": "A",
+      "text": "E-mails",
+      "name": null,
+      "href": "/cp/relatorio_email.php"
+    },
+    {
+      "tag": "A",
+      "text": "Etiquetas",
+      "name": null,
+      "href": "/cp/relatorio_etiqueta.php"
+    },
+    {
+      "tag": "A",
+      "text": "Estatísticas",
+      "name": null,
+      "href": "/cp/estatistica_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Andamentos atrasados",
+      "name": null,
+      "href": "/cp/estatistica_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Andamentos dos processos",
+      "name": null,
+      "href": "/cp/estatistica_andproc.php"
+    },
+    {
+      "tag": "A",
+      "text": "Últimos andamentos",
+      "name": null,
+      "href": "/cp/estatistica_ult_and.php"
+    },
+    {
+      "tag": "A",
+      "text": "Andamentos automáticos",
+      "name": null,
+      "href": "/cp/estatistica_andauto.php"
+    },
+    {
+      "tag": "A",
+      "text": "Clientes",
+      "name": null,
+      "href": "/cp/estatistica_cliente.php"
+    },
+    {
+      "tag": "A",
+      "text": "Processos",
+      "name": null,
+      "href": "/cp/estatistica_processo.php"
+    },
+    {
+      "tag": "A",
+      "text": "Abertura de processos",
+      "name": null,
+      "href": "/cp/estatistica_processo_abertura.php"
+    },
+    {
+      "tag": "A",
+      "text": "Cadastro de processos",
+      "name": null,
+      "href": "/cp/estatistica_processo_cadastro.php"
+    },
+    {
+      "tag": "A",
+      "text": "Fase do processo",
+      "name": null,
+      "href": "/cp/estatistica_fase.php"
+    },
+    {
+      "tag": "A",
+      "text": "Natureza da ação",
+      "name": null,
+      "href": "/cp/estatistica_natureza.php"
+    },
+    {
+      "tag": "A",
+      "text": "Financeiro",
+      "name": null,
+      "href": "/cp/fin_graficos.php"
+    },
+    {
+      "tag": "A",
+      "text": "Personalizados",
+      "name": null,
+      "href": "/cp/estatistica_personalizados.php"
+    },
+    {
+      "tag": "A",
+      "text": "Atendimento geral",
+      "name": null,
+      "href": "/cp/relatorio_sac_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Atendimento atendente",
+      "name": null,
+      "href": "/cp/relatorio_atendente.php"
+    },
+    {
+      "tag": "A",
+      "text": "Atendimento categorias",
+      "name": null,
+      "href": "/cp/relatorio_cat.php"
+    },
+    {
+      "tag": "A",
+      "text": "Atendimento clientes",
+      "name": null,
+      "href": "/cp/relatorio_cliente.php"
+    },
+    {
+      "tag": "A",
+      "text": "Diário Oficial",
+      "name": null,
+      "href": "/cp/do_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Publicações",
+      "name": null,
+      "href": "/cp/do_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Advogados",
+      "name": null,
+      "href": "/cp/do_adv_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Palavras-chave",
+      "name": null,
+      "href": "/cp/do_pchave_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Lixeira",
+      "name": null,
+      "href": "/cp/do_lixeira.php"
+    },
+    {
+      "tag": "A",
+      "text": "Andamentos",
+      "name": null,
+      "href": "/cp/andamento_automatico_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Andamentos automáticos",
+      "name": null,
+      "href": "/cp/andamento_automatico_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Configurar monitoramentos",
+      "name": null,
+      "href": "/cp/monitoramento_processos_add10.php"
+    },
+    {
+      "tag": "A",
+      "text": "Arquivos",
+      "name": null,
+      "href": "/ged/index.php"
+    },
+    {
+      "tag": "A",
+      "text": "Meus arquivos",
+      "name": null,
+      "href": "/ged/index.php"
+    },
+    {
+      "tag": "A",
+      "text": "Enviar arquivos",
+      "name": null,
+      "href": "/ged/upload10.php"
+    },
+    {
+      "tag": "A",
+      "text": "Relatórios",
+      "name": null,
+      "href": "/ged/relatorio_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Site",
+      "name": null,
+      "href": "/cp/siteadv_config.php"
+    },
+    {
+      "tag": "A",
+      "text": "Páginas do site",
+      "name": null,
+      "href": "/cp/siteadv_paginas.php"
+    },
+    {
+      "tag": "A",
+      "text": "Banco de imagens",
+      "name": null,
+      "href": "/cp/siteadv_banco_imagem.php"
+    },
+    {
+      "tag": "A",
+      "text": "E-mail",
+      "name": null,
+      "href": "/cp/siteadv_email.php"
+    },
+    {
+      "tag": "A",
+      "text": "Configurações",
+      "name": null,
+      "href": "/cp/siteadv_config_add10.php"
+    },
+    {
+      "tag": "A",
+      "text": "Editor de texto",
+      "name": null,
+      "href": "/cp/texto_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Meus textos",
+      "name": null,
+      "href": "/cp/texto_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Modelos",
+      "name": null,
+      "href": "/cp/contrato_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "",
+      "name": null,
+      "href": "/cp/processo_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "",
+      "name": null,
+      "href": "javascript:void(0)"
+    },
+    {
+      "tag": "A",
+      "text": "",
+      "name": null,
+      "href": "/novidades.php"
+    },
+    {
+      "tag": "A",
+      "text": "",
+      "name": null,
+      "href": "#"
+    },
+    {
+      "tag": "A",
+      "text": "Visualizar publicações",
+      "name": null,
+      "href": "/cp/do_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Visualizar Andamentos Automáticos",
+      "name": null,
+      "href": "/cp/andamento_automatico_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "",
+      "name": null,
+      "href": "#"
+    },
+    {
+      "tag": "A",
+      "text": "Boas-vindas",
+      "name": null,
+      "href": "/notificacoes/exibir_mensagem.php?msgid=43003"
+    },
+    {
+      "tag": "A",
+      "text": "Exibir todas",
+      "name": null,
+      "href": "/notificacoes/lista_notificacoes.php"
+    },
+    {
+      "tag": "A",
+      "text": "",
+      "name": null,
+      "href": "#"
+    },
+    {
+      "tag": "A",
+      "text": "Configurações gerais",
+      "name": null,
+      "href": "/cp/config_opcao.php"
+    },
+    {
+      "tag": "A",
+      "text": "Andamentos",
+      "name": null,
+      "href": "/cp/config_andamento.php"
+    },
+    {
+      "tag": "A",
+      "text": "Classes processuais",
+      "name": null,
+      "href": "/cp/config_acao.php"
+    },
+    {
+      "tag": "A",
+      "text": "Compromissos",
+      "name": null,
+      "href": "/cp/class_comp_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Comarcas",
+      "name": null,
+      "href": "/cp/config_comarca.php"
+    },
+    {
+      "tag": "A",
+      "text": "Fases",
+      "name": null,
+      "href": "/cp/config_fase.php"
+    },
+    {
+      "tag": "A",
+      "text": "Fóruns",
+      "name": null,
+      "href": "/cp/config_forum.php"
+    },
+    {
+      "tag": "A",
+      "text": "Natureza da ação",
+      "name": null,
+      "href": "/cp/config_juizo.php"
+    },
+    {
+      "tag": "A",
+      "text": "Posições das partes",
+      "name": null,
+      "href": "/cp/config_posicao.php"
+    },
+    {
+      "tag": "A",
+      "text": "Ritos",
+      "name": null,
+      "href": "/cp/config_rito.php"
+    },
+    {
+      "tag": "A",
+      "text": "Varas",
+      "name": null,
+      "href": "/cp/config_vara.php"
+    },
+    {
+      "tag": "A",
+      "text": "Campos personalizados",
+      "name": null,
+      "href": "/cp/campo_person_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Configurações gerais",
+      "name": null,
+      "href": "/cp/fin_config_geral10.php"
+    },
+    {
+      "tag": "A",
+      "text": "Categorias de despesas",
+      "name": null,
+      "href": "/cp/cat_list10.php?mode=d"
+    },
+    {
+      "tag": "A",
+      "text": "Categorias de receitas",
+      "name": null,
+      "href": "/cp/cat_list10.php?mode=r"
+    },
+    {
+      "tag": "A",
+      "text": "Contas",
+      "name": null,
+      "href": "/cp/conta_lista10.php"
+    },
+    {
+      "tag": "A",
+      "text": "Filtros",
+      "name": null,
+      "href": "/cp/filtro_lista10.php"
+    },
+    {
+      "tag": "A",
+      "text": "Exportar para excel",
+      "name": null,
+      "href": "/cp/export_excel.php"
+    },
+    {
+      "tag": "A",
+      "text": "Categorias e sub-categorias",
+      "name": null,
+      "href": "/sac/categoria_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Histórico de atividades",
+      "name": null,
+      "href": "/cp/usuario_log10.php?id1=0"
+    },
+    {
+      "tag": "A",
+      "text": "Histórico de acessos",
+      "name": null,
+      "href": "/cp/historico_acessos.php"
+    },
+    {
+      "tag": "A",
+      "text": "Google Agenda",
+      "name": null,
+      "href": "/cp/google_agenda_config.php"
+    },
+    {
+      "tag": "A",
+      "text": "",
+      "name": null,
+      "href": "/manual/apresentacao_software_juridico_maisjuridico"
+    },
+    {
+      "tag": "A",
+      "text": "Atendimento",
+      "name": null,
+      "href": "/atendimento_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Planos",
+      "name": null,
+      "href": "/planos.php"
+    },
+    {
+      "tag": "A",
+      "text": "angelaribeiro.comercial@gmail.com",
+      "name": null,
+      "href": "#"
+    },
+    {
+      "tag": "A",
+      "text": "Meus dados",
+      "name": null,
+      "href": "/cadastro10.php"
+    },
+    {
+      "tag": "A",
+      "text": "Minha assinatura",
+      "name": null,
+      "href": "/pagamentos.php"
+    },
+    {
+      "tag": "A",
+      "text": "Cartão de crédito",
+      "name": null,
+      "href": "/edita_cartao10.php"
+    },
+    {
+      "tag": "A",
+      "text": "Atendimento",
+      "name": null,
+      "href": "/atendimento_lista.php"
+    },
+    {
+      "tag": "A",
+      "text": "Notificações",
+      "name": null,
+      "href": "/notificacoes/lista_notificacoes.php"
+    },
+    {
+      "tag": "A",
+      "text": "Alterar logotipo",
+      "name": null,
+      "href": "/logotipo10_imp.php"
+    },
+    {
+      "tag": "A",
+      "text": "Alterar login",
+      "name": null,
+      "href": "/altera_login10.php"
+    },
+    {
+      "tag": "A",
+      "text": "Alterar senha",
+      "name": null,
+      "href": "/altera_senha10.php"
+    }
+  ]
+}
