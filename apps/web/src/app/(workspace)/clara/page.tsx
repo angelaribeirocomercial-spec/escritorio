@@ -496,7 +496,6 @@ export default async function ClaraPage({
       keywords: compactKeywords([
         record.kind,
         record.workflowStatus,
-        record.ownerId,
         record.id,
         record.sourceAction
       ])
@@ -996,6 +995,18 @@ export default async function ClaraPage({
     recordKindByTab["proximos-passos"] = "agenda";
   }
   const recordKind = recordKindByTab[activeTab];
+  const recordPiece =
+    activeNiche === "revisional" && selectedAction === "Gerar minuta inicial revisional"
+      ? "acao-revisional"
+      : activeTab === "analise" && selectedAction === "Gerar resumo executivo"
+        ? "resumo-executivo"
+        : activeTab === "intimacao" && selectedAction === "Gerar resposta a intimacao"
+          ? "resposta-intimacao"
+          : "peticao-inicial";
+  const recordObjective =
+    activeNiche === "revisional"
+      ? searchParams?.objetivo ?? revisionalWorkspace?.objectiveProfile.label ?? ""
+      : searchParams?.objetivo ?? "";
   const recordOwnerType =
     recordKind === "agenda" || recordKind === "deadline" || recordKind === "task"
       ? "agenda-item"
@@ -1264,6 +1275,32 @@ export default async function ClaraPage({
         const payload = record.payload as Awaited<ReturnType<typeof getClaraClientArtifact>>;
         return payload.highlights;
       }
+      default:
+        return [];
+    }
+  }
+
+  function confidenceLabel(level: "high" | "medium" | "low") {
+    switch (level) {
+      case "high":
+        return "Confianca alta";
+      case "medium":
+        return "Confianca media";
+      default:
+        return "Confianca baixa";
+    }
+  }
+
+  function historyEventLabel(record: ClaraRecord["history"][number]) {
+    switch (record.event) {
+      case "workflow-transition":
+        return "Transicao de status";
+      case "review-note-updated":
+        return "Observacao de revisao";
+      case "content-updated":
+        return "Conteudo revisado";
+      default:
+        return "Criacao do registro";
     }
   }
 
@@ -1731,9 +1768,11 @@ export default async function ClaraPage({
                   <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-500">
                     {adapter.status === "failed"
                       ? "Falhou"
-                      : adapter.status === "available"
-                        ? "Consultado"
-                        : "Nao consultado"}
+                      : adapter.status === "unavailable"
+                        ? "Indisponivel"
+                        : adapter.status === "consulted"
+                          ? "Consultado"
+                          : "Nao consultado"}
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-300">{adapter.scope}</p>
                   <p className="mt-2 text-xs leading-5 text-slate-400">{adapter.queryHint}</p>
@@ -1773,6 +1812,9 @@ export default async function ClaraPage({
                         <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-slate-400">
                           {entry.confirmed ? "confirmado" : "inferencia"}
                         </span>
+                        <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-cyan-100">
+                          {confidenceLabel(entry.confidence)}
+                        </span>
                       </div>
                       <p className="mt-2 text-sm leading-6 text-slate-300">{entry.detail}</p>
                     </div>
@@ -1796,6 +1838,18 @@ export default async function ClaraPage({
                     <ul className="mt-2 space-y-2 text-sm leading-6 text-rose-50">
                       {clara.structuredCore.auditTrail.failures.map((failure) => (
                         <li key={failure}>{failure}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {clara.structuredCore.auditTrail.unavailableSources.length > 0 ? (
+                  <div className="mt-4 rounded-[4px] border border-amber-300/20 bg-amber-300/10 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
+                      Fontes indisponiveis
+                    </p>
+                    <ul className="mt-2 space-y-2 text-sm leading-6 text-amber-50">
+                      {clara.structuredCore.auditTrail.unavailableSources.map((source) => (
+                        <li key={source}>{source}</li>
                       ))}
                     </ul>
                   </div>
@@ -1871,10 +1925,10 @@ export default async function ClaraPage({
                   <input name="document2" type="hidden" value={selectedDocument2.id} />
                   <input name="process" type="hidden" value={selectedProcess.id} />
                   <input name="task" type="hidden" value={selectedTask.id} />
-                  <input name="piece" type="hidden" value="peticao-inicial" />
+                  <input name="piece" type="hidden" value={recordPiece} />
                   <input name="deadlineAction" type="hidden" value={selectedAction} />
                   <input name="focus" type="hidden" value={activeNiche === "revisional" && selectedAction === "Organizar provas e calculos" ? "revisional" : ""} />
-                  <input name="objective" type="hidden" value={searchParams?.objetivo ?? ""} />
+                  <input name="objective" type="hidden" value={recordObjective} />
                   <button
                     className="clara-secondary-button inline-flex rounded-[4px] border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
                     type="submit"
@@ -2136,6 +2190,30 @@ export default async function ClaraPage({
                 <p className="mt-4 text-xs text-slate-500">
                   Ultima atualizacao: {new Date(selectedHistoryRecord.updatedAt).toLocaleString("pt-BR")}
                 </p>
+                <div className="mt-4 rounded-[4px] border border-white/10 bg-white/[0.03] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Historico de execucao
+                  </p>
+                  <div className="mt-3 space-y-3">
+                    {selectedHistoryRecord.history
+                      .slice()
+                      .reverse()
+                      .map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="rounded-[4px] border border-white/10 bg-black/20 px-3 py-3"
+                        >
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                            <span className="rounded-full border border-white/10 px-2 py-1 text-slate-300">
+                              {historyEventLabel(entry)}
+                            </span>
+                            <span>{new Date(entry.at).toLocaleString("pt-BR")}</span>
+                          </div>
+                          <p className="mt-2 text-sm leading-6 text-slate-200">{entry.detail}</p>
+                        </div>
+                      ))}
+                  </div>
+                </div>
                 {
                   // @ts-expect-error Next server action form binding
                   <form action={updateClaraReviewNoteAction} className="mt-4">

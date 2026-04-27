@@ -15,6 +15,10 @@ export const mockDocuments: readonly DocumentRecord[] = [
     pageCount: 18,
     uploadedAt: "2026-04-02",
     previewLabel: "Preview mockado do contrato com clausulas destacadas.",
+    storageBucket: "mock-clara-documents",
+    storagePath: "case-101/contrato-financiamento-veiculo-mariana.pdf",
+    storageMimeType: "application/pdf",
+    storageSizeBytes: 248320,
     actions: [
       "Analisar com IA",
       "Resumir",
@@ -37,6 +41,11 @@ export const mockDocuments: readonly DocumentRecord[] = [
     pageCount: 4,
     uploadedAt: "2026-04-03",
     previewLabel: "Preview mockado da memoria de calculo e das parcelas.",
+    storageBucket: "mock-clara-documents",
+    storagePath: "case-101/planilha-parcelas-mariana.xlsx",
+    storageMimeType:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    storageSizeBytes: 68412,
     actions: ["Analisar com IA", "Resumir", "Extrair tese"]
   },
   {
@@ -53,6 +62,10 @@ export const mockDocuments: readonly DocumentRecord[] = [
     pageCount: 9,
     uploadedAt: "2026-04-04",
     previewLabel: "Preview mockado dos comprovantes e da cronologia do evento.",
+    storageBucket: "mock-clara-documents",
+    storagePath: "case-205/comprovantes-pix-carlos.pdf",
+    storageMimeType: "application/pdf",
+    storageSizeBytes: 154221,
     actions: ["Analisar com IA", "Resumir", "Buscar jurisprudencia"]
   },
   {
@@ -69,6 +82,10 @@ export const mockDocuments: readonly DocumentRecord[] = [
     pageCount: 22,
     uploadedAt: "2026-04-01",
     previewLabel: "Preview mockado da CCB com clausulas sensiveis destacadas.",
+    storageBucket: "mock-clara-documents",
+    storagePath: "case-311/ccb-capital-giro-araujo.pdf",
+    storageMimeType: "application/pdf",
+    storageSizeBytes: 312845,
     actions: [
       "Analisar com IA",
       "Resumir",
@@ -91,6 +108,10 @@ export const mockDocuments: readonly DocumentRecord[] = [
     pageCount: 3,
     uploadedAt: "2026-04-05",
     previewLabel: "Preview mockado da notificacao de negativacao.",
+    storageBucket: "mock-clara-documents",
+    storagePath: "case-312/notificacao-negativacao-araujo.pdf",
+    storageMimeType: "application/pdf",
+    storageSizeBytes: 58210,
     actions: ["Analisar com IA", "Resumir", "Gerar peca"]
   }
 ];

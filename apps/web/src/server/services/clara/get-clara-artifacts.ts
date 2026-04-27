@@ -1,27 +1,71 @@
-import { mockCases, mockClients, mockDocuments, mockProcesses, mockTasks } from "@lexia/mocks";
-
+import { getCaseById, getCases } from "@/server/services/cases/get-cases";
+import { getClientById, getClients } from "@/server/services/clients/get-clients";
 import { getBankingRevisionalWorkspace } from "@/server/services/clara/get-banking-revisional-workspace";
+import { getDocumentById, getDocuments } from "@/server/services/documents/get-documents";
+import { getProcessById, getProcesses } from "@/server/services/processes/get-processes";
+import { getTaskById, getTasks } from "@/server/services/tasks/get-tasks";
 
-function findCase(caseId?: string | null) {
-  return caseId ? mockCases.find((item) => item.id === caseId) ?? mockCases[0] : mockCases[0];
+async function findCase(caseId?: string | null) {
+  if (caseId) {
+    const bankingCase = await getCaseById(caseId);
+    if (bankingCase) {
+      return bankingCase;
+    }
+  }
+
+  return (await getCases())[0];
 }
 
-function findClient(clientId?: string | null) {
-  return clientId ? mockClients.find((item) => item.id === clientId) ?? mockClients[0] : mockClients[0];
+async function findClient(clientId?: string | null) {
+  if (clientId) {
+    const client = await getClientById(clientId);
+    if (client) {
+      return client;
+    }
+  }
+
+  return (await getClients())[0];
 }
 
-function findDocument(documentId?: string | null, fallbackIndex = 0) {
-  return documentId
-    ? mockDocuments.find((item) => item.id === documentId) ?? mockDocuments[fallbackIndex]
-    : mockDocuments[fallbackIndex];
+async function findDocument(documentId?: string | null, fallbackIndex = 0) {
+  if (documentId) {
+    const document = await getDocumentById(documentId);
+    if (document) {
+      return document;
+    }
+  }
+
+  const documents = await getDocuments();
+  return documents[fallbackIndex] ?? documents[0];
 }
 
-function findTask(taskId?: string | null) {
-  return taskId ? mockTasks.find((item) => item.id === taskId) ?? mockTasks[0] : mockTasks[0];
+async function findTask(taskId?: string | null) {
+  if (taskId) {
+    const task = await getTaskById(taskId);
+    if (task) {
+      return task;
+    }
+  }
+
+  const tasks = await getTasks();
+  const fallbackTask = tasks[0];
+
+  if (!fallbackTask) {
+    throw new Error("No tasks available to build Clara task artifacts.");
+  }
+
+  return fallbackTask;
 }
 
-function findProcess(processId?: string | null) {
-  return processId ? mockProcesses.find((item) => item.id === processId) ?? mockProcesses[0] : mockProcesses[0];
+async function findProcess(processId?: string | null) {
+  if (processId) {
+    const process = await getProcessById(processId);
+    if (process) {
+      return process;
+    }
+  }
+
+  return (await getProcesses())[0];
 }
 
 function getRevisionalScenario(caseTitle: string, documentType: string, bankName: string) {
@@ -105,9 +149,9 @@ export async function getClaraProcessArtifact(
   documentId?: string | null,
   committed?: boolean
 ) {
-  const process = findProcess(processId);
-  const client = findClient(clientId ?? process.clientId);
-  const document = findDocument(documentId);
+  const process = await findProcess(processId);
+  const client = await findClient(clientId ?? process.clientId);
+  const document = await findDocument(documentId);
 
   return {
     recordId: `PRC-${process.id.toUpperCase()}`,
@@ -127,7 +171,7 @@ export async function getClaraProcessArtifact(
 }
 
 export async function getClaraCaseArtifact(caseId?: string | null, committed?: boolean) {
-  const bankingCase = findCase(caseId);
+  const bankingCase = await findCase(caseId);
 
   return {
     recordId: `CAS-${bankingCase.id.toUpperCase()}`,
@@ -147,8 +191,8 @@ export async function getClaraCaseArtifact(caseId?: string | null, committed?: b
 }
 
 export async function getClaraClientArtifact(clientId?: string | null, caseId?: string | null, committed?: boolean) {
-  const client = findClient(clientId);
-  const bankingCase = findCase(caseId);
+  const client = await findClient(clientId);
+  const bankingCase = await findCase(caseId);
 
   return {
     recordId: `CLI-${client.id.toUpperCase()}`,
@@ -172,9 +216,9 @@ export async function getClaraTaskArtifact(
   caseId?: string | null,
   committed?: boolean
 ) {
-  const task = findTask(taskId);
-  const bankingCase = findCase(caseId ?? task.caseId);
-  const client = findClient(task.clientId);
+  const task = await findTask(taskId);
+  const bankingCase = await findCase(caseId ?? task.caseId);
+  const client = await findClient(task.clientId);
 
   return {
     recordId: `CLT-${task.id.toUpperCase()}`,
@@ -242,8 +286,8 @@ export async function getClaraAgendaArtifact(
   caseId?: string | null,
   committed?: boolean
 ) {
-  const client = findClient(clientId);
-  const bankingCase = findCase(caseId);
+  const client = await findClient(clientId);
+  const bankingCase = await findCase(caseId);
 
   return {
     recordId: `AGE-${client.id.toUpperCase()}-${bankingCase.id.toUpperCase()}`,
@@ -311,13 +355,14 @@ export async function getClaraTextDraftArtifact(params: {
   chargedInstallment?: string | null;
   contractedInstallment?: string | null;
 }) {
-  const bankingCase = findCase(params.caseId);
-  const document = findDocument(params.documentId);
   const pieceLabel = params.piece ?? "peticao-inicial";
   const isRevisionalPiece = pieceLabel === "acao-revisional";
   const objectiveLabel = params.objective ?? "Revisar clausulas e parcelas";
+  const bankingCase = await findCase(params.caseId);
+  const document = await findDocument(params.documentId);
   const revisionalWorkspace = isRevisionalPiece
     ? await getBankingRevisionalWorkspace({
+        clientId: bankingCase.clientId,
         documentId: params.documentId ?? undefined,
         objective: params.objective ?? undefined
       })
@@ -335,6 +380,8 @@ export async function getClaraTextDraftArtifact(params: {
     stageLabel: params.committed ? "Disponivel no editor" : "Rascunho em preparacao",
     pieceLabel,
     caseLabel: bankingCase.title,
+    bankLabel: bankingCase.bankName,
+    processLabel: bankingCase.processNumber,
     documentLabel: document.fileName,
     sections: isRevisionalPiece
       ? [
@@ -408,8 +455,8 @@ export async function getClaraComparisonArtifact(
   documentId2?: string | null,
   committed?: boolean
 ) {
-  const firstDocument = findDocument(documentId, 0);
-  const secondDocument = findDocument(documentId2, 1);
+  const firstDocument = await findDocument(documentId, 0);
+  const secondDocument = await findDocument(documentId2, 1);
 
   return {
     recordId: `CMP-${firstDocument.id.toUpperCase()}-${secondDocument.id.toUpperCase()}`,

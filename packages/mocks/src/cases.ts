@@ -18,6 +18,7 @@ export const mockCases: readonly BankingCaseRecord[] = [
     suggestedStrategy:
       "Consolidar memoria de calculo, destacar venda casada e estruturar pedido de revisao contratual com tutela para suspensao de cobranca excessiva.",
     ownerLabel: "Dra. Helena Siqueira",
+    niche: "revisional",
     linkedDocuments: [
       "Contrato bancario",
       "Planilha de parcelas",
@@ -56,6 +57,7 @@ export const mockCases: readonly BankingCaseRecord[] = [
     suggestedStrategy:
       "Fechar cronologia do evento, reforcar prova documental e estruturar narrativa de falha na seguranca da operacao PIX.",
     ownerLabel: "Dr. Caio Nascimento",
+    niche: "fraude",
     linkedDocuments: [
       "Comprovantes PIX",
       "Atendimento bancario",
@@ -91,6 +93,7 @@ export const mockCases: readonly BankingCaseRecord[] = [
     suggestedStrategy:
       "Combinar revisao contratual com pedido de tutela para limitar cobranca e reforcar a leitura economica do capital de giro.",
     ownerLabel: "Dra. Julia Ramalho",
+    niche: "revisional",
     linkedDocuments: [
       "CCB",
       "Extratos da conta",
@@ -129,6 +132,7 @@ export const mockCases: readonly BankingCaseRecord[] = [
     suggestedStrategy:
       "Estruturar urgencia na retirada da restricao e combinar pedido declaratorio com danos morais bancarios.",
     ownerLabel: "Dra. Julia Ramalho",
+    niche: "revisional",
     linkedDocuments: [
       "Email de cobranca",
       "Comprovantes bancarios",
