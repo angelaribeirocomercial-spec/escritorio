@@ -31,6 +31,21 @@ export type ClaraRecordWorkflowStatus =
   | "reviewed"
   | "completed";
 
+export type ClaraRecordHistoryEvent =
+  | "created"
+  | "workflow-transition"
+  | "review-note-updated"
+  | "content-updated";
+
+export type ClaraRecordHistoryEntry = {
+  id: string;
+  at: string;
+  event: ClaraRecordHistoryEvent;
+  actor: "clara";
+  detail: string;
+  metadata?: Record<string, string>;
+};
+
 type ClaraRecordPayload =
   | Awaited<ReturnType<typeof getClaraAgendaArtifact>>
   | Awaited<ReturnType<typeof getClaraCaseArtifact>>
@@ -55,6 +70,7 @@ export type ClaraRecord = {
   editedTitle?: string;
   editedDetail?: string;
   reviewNote?: string;
+  history: ClaraRecordHistoryEntry[];
   payload: ClaraRecordPayload;
 };
 
@@ -74,7 +90,11 @@ async function ensureStore() {
 async function readStore(): Promise<{ records: ClaraRecord[] }> {
   await ensureStore();
   const raw = await readFile(STORE_PATH, "utf8");
-  return JSON.parse(raw) as { records: ClaraRecord[] };
+  const store = JSON.parse(raw) as { records: ClaraRecord[] };
+
+  return {
+    records: store.records.map(normalizeRecord)
+  };
 }
 
 async function writeStore(store: { records: ClaraRecord[] }) {
@@ -84,6 +104,50 @@ async function writeStore(store: { records: ClaraRecord[] }) {
 
 function buildRecordId(kind: ClaraRecordKind) {
   return `clara-${kind}-${Date.now()}`;
+}
+
+function buildHistoryEntry(input: {
+  event: ClaraRecordHistoryEvent;
+  detail: string;
+  metadata?: Record<string, string>;
+}): ClaraRecordHistoryEntry {
+  return {
+    id: `event-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    at: new Date().toISOString(),
+    event: input.event,
+    actor: "clara",
+    detail: input.detail,
+    metadata: input.metadata
+  };
+}
+
+function normalizeRecord(record: ClaraRecord): ClaraRecord {
+  if (record.history?.length) {
+    return record;
+  }
+
+  return {
+    ...record,
+    history: [
+      buildHistoryEntry({
+        event: "created",
+        detail: `Registro ${record.kind} criado a partir da acao ${record.sourceAction}.`,
+        metadata: {
+          workflowStatus: record.workflowStatus,
+          sourceAction: record.sourceAction
+        }
+      })
+    ]
+  };
+}
+
+function readDraftParamsFromTargetPath(targetPath: string) {
+  const url = new URL(targetPath, "http://localhost");
+
+  return {
+    objective: url.searchParams.get("objetivo") ?? undefined,
+    piece: url.searchParams.get("piece") ?? undefined
+  };
 }
 
 export async function createClaraRecord(input: {
@@ -148,12 +212,16 @@ export async function createClaraRecord(input: {
       payload = await getClaraClientArtifact(input.clientId, input.caseId, true);
       break;
     case "text-draft":
+      {
+        const targetDraftParams = readDraftParamsFromTargetPath(input.targetPath);
       payload = await getClaraTextDraftArtifact({
         caseId: input.caseId,
         committed: true,
         documentId: input.documentId,
-        piece: input.piece
+        objective: input.objective ?? targetDraftParams.objective,
+        piece: input.piece ?? targetDraftParams.piece
       });
+      }
       break;
     case "comparison":
       payload = await getClaraComparisonArtifact(input.documentId, input.documentId2, true);
@@ -178,7 +246,18 @@ export async function createClaraRecord(input: {
     payload,
     sourceAction: input.sourceAction,
     targetPath: input.targetPath,
-    workflowStatus: "created"
+    workflowStatus: "created",
+    history: [
+      buildHistoryEntry({
+        event: "created",
+        detail: `Registro ${input.kind} criado a partir da acao ${input.sourceAction}.`,
+        metadata: {
+          workflowStatus: "created",
+          sourceAction: input.sourceAction,
+          targetPath: input.targetPath
+        }
+      })
+    ]
   };
 
   const store = await readStore();
@@ -213,8 +292,19 @@ export async function updateClaraRecordWorkflowStatus(
     return null;
   }
 
+  const previousStatus = record.workflowStatus;
   record.workflowStatus = workflowStatus;
   record.updatedAt = new Date().toISOString();
+  record.history.push(
+    buildHistoryEntry({
+      event: "workflow-transition",
+      detail: `Status alterado de ${previousStatus} para ${workflowStatus}.`,
+      metadata: {
+        from: previousStatus,
+        to: workflowStatus
+      }
+    })
+  );
 
   await writeStore(store);
 
@@ -231,6 +321,17 @@ export async function updateClaraRecordReviewNote(recordId: string, reviewNote: 
 
   record.reviewNote = reviewNote.trim();
   record.updatedAt = new Date().toISOString();
+  record.history.push(
+    buildHistoryEntry({
+      event: "review-note-updated",
+      detail: record.reviewNote
+        ? "Observacao de revisao humana atualizada."
+        : "Observacao de revisao humana removida.",
+      metadata: {
+        hasReviewNote: record.reviewNote ? "true" : "false"
+      }
+    })
+  );
 
   await writeStore(store);
 
@@ -252,6 +353,16 @@ export async function updateClaraRecordContent(input: {
   record.editedTitle = input.editedTitle.trim();
   record.editedDetail = input.editedDetail.trim();
   record.updatedAt = new Date().toISOString();
+  record.history.push(
+    buildHistoryEntry({
+      event: "content-updated",
+      detail: "Conteudo revisado do registro atualizado.",
+      metadata: {
+        hasEditedTitle: record.editedTitle ? "true" : "false",
+        hasEditedDetail: record.editedDetail ? "true" : "false"
+      }
+    })
+  );
 
   await writeStore(store);
 
