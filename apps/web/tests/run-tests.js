@@ -32,6 +32,8 @@ assert.equal(true, true);
   "src/app/(workspace)/agenda/compromissos/page.tsx",
   "src/app/(workspace)/agenda/tarefas/page.tsx",
   "src/app/(workspace)/agenda/prazos/page.tsx",
+  "src/app/(workspace)/crm/page.tsx",
+  "src/app/(workspace)/operacao/page.tsx",
   "src/app/(workspace)/financeiro/page.tsx",
   "src/app/(workspace)/financeiro/despesas/page.tsx",
   "src/app/(workspace)/financeiro/receitas/page.tsx",
@@ -50,6 +52,7 @@ assert.equal(true, true);
   "src/app/(workspace)/lexia/page.tsx",
   "src/app/(workspace)/equipe/page.tsx",
   "src/app/(workspace)/configuracoes/page.tsx",
+  "src/components/layout/workspace-navigation.ts",
   "src/components/layout/workspace-shell.tsx",
   "src/components/layout/lexia-context-actions.tsx",
   "src/components/layout/session-actions.tsx",
@@ -76,5 +79,55 @@ assert.equal(true, true);
     `Expected file to exist: ${relativePath}`
   );
 });
+
+const workspaceNavigationSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/components/layout/workspace-navigation.ts"),
+  "utf8"
+);
+assert.match(
+  workspaceNavigationSource,
+  /label: "Hoje"/,
+  "Expected navigation config to expose Hoje in the primary flow."
+);
+assert.match(
+  workspaceNavigationSource,
+  /label: "CRM"/,
+  "Expected navigation config to expose CRM in the primary flow."
+);
+assert.match(
+  workspaceNavigationSource,
+  /label: "Operacao"/,
+  "Expected navigation config to expose Operacao in the primary flow."
+);
+assert.match(
+  workspaceNavigationSource,
+  /label: "Clara"/,
+  "Expected navigation config to keep Clara in the primary flow."
+);
+assert.doesNotMatch(
+  workspaceNavigationSource,
+  /label: "Lexia"|label: "Site"/,
+  "Expected navigation config to hide Lexia and Site from visible navigation."
+);
+
+const workspaceShellSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/components/layout/workspace-shell.tsx"),
+  "utf8"
+);
+assert.match(
+  workspaceShellSource,
+  /navSections\.map/,
+  "Expected workspace shell to render grouped navigation sections."
+);
+assert.match(
+  workspaceShellSource,
+  /renderNavItem\(item, pathname, openSections, toggleSection, "mobile"\)/,
+  "Expected mobile navigation to render the same grouped items with child access."
+);
+assert.doesNotMatch(
+  workspaceShellSource,
+  /â€º|Â·/,
+  "Expected workspace shell to avoid corrupted UI characters."
+);
 
 console.log("Workspace shell tests passed.");
