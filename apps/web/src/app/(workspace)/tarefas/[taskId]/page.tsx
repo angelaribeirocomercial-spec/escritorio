@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { ClaraContextActions } from "@/components/layout/clara-context-actions";
 import { WorkspacePage } from "@/components/layout/workspace-page";
@@ -34,7 +35,33 @@ export default async function TaskDetailPage({
 }: {
   params: { taskId: string };
 }) {
-  const task = await getTaskById(params.taskId);
+  let task = null;
+
+  try {
+    task = await getTaskById(params.taskId);
+  } catch {
+    return (
+      <WorkspacePage
+        description="Nao foi possivel abrir o detalhe da tarefa na base real."
+        eyebrow="Tarefa"
+        metrics={[
+          { label: "Estado", value: "Indisponivel" },
+          { label: "Fonte", value: "Supabase" },
+          { label: "Tenant", value: "Nao resolvido" },
+          { label: "Acao", value: "Validar vertical" }
+        ]}
+        title="Detalhe indisponivel"
+      >
+        <WorkspaceStatePanel
+          actionHref="/agenda/tarefas"
+          actionLabel="Voltar para tarefas"
+          description="Valide a configuracao do Supabase, as migrations da vertical de tarefas e a seed do tenant ativo."
+          title="Falha ao carregar tarefa"
+          tone="danger"
+        />
+      </WorkspacePage>
+    );
+  }
 
   if (!task) {
     notFound();
@@ -59,12 +86,9 @@ export default async function TaskDetailPage({
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <p className="text-sm text-slate-400">
-          {task.client.fullName} · {task.bankingCase.title} · {task.assigneeLabel}
+          {task.client.fullName} | {task.bankingCase.title} | {task.assigneeLabel}
         </p>
-        <Link
-          className="detail-link-button px-4 py-3 text-sm font-semibold"
-          href="/agenda/tarefas"
-        >
+        <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href="/agenda/tarefas">
           Voltar para tarefas
         </Link>
       </div>
@@ -88,10 +112,7 @@ export default async function TaskDetailPage({
           <p className="text-sm font-semibold text-white">Checklist detalhado</p>
           <div className="mt-5 space-y-3">
             {task.checklist.map((item) => (
-              <div
-                key={item.id}
-                className="detail-soft-row flex items-start gap-3 px-4 py-4"
-              >
+              <div key={item.id} className="detail-soft-row flex items-start gap-3 px-4 py-4">
                 <div
                   className={`mt-0.5 h-5 w-5 rounded-full border ${
                     item.done ? "border-cyan-400 bg-cyan-400" : "border-white/20 bg-transparent"
@@ -99,9 +120,7 @@ export default async function TaskDetailPage({
                 />
                 <div>
                   <p className="text-sm font-medium text-white">{item.label}</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {item.done ? "Concluido" : "Pendente"}
-                  </p>
+                  <p className="mt-1 text-xs text-slate-500">{item.done ? "Concluido" : "Pendente"}</p>
                 </div>
               </div>
             ))}
@@ -148,6 +167,7 @@ export default async function TaskDetailPage({
       </section>
 
       <ClaraContextActions
+        actionHref={`/clara?tab=checklist&task=${task.id}&case=${task.caseId}&client=${task.clientId}#clara-workbench`}
         basis={[
           statusLabel(task.status),
           priorityLabel(task.priority),
@@ -156,13 +176,13 @@ export default async function TaskDetailPage({
         ]}
         cautionLabel="A priorizacao sugerida pela Clara deve respeitar a revisao do responsavel da carteira."
         conclusion="A tarefa ja possui contexto suficiente para a Clara orientar a ordem de execucao, indicar o item que desbloqueia o caso e transformar andamento em proxima entrega objetiva."
-        eyebrow="Clara na Tarefa"
+        eyebrow="Fluxo Clara"
         nextActions={[
           "Reordenar prioridades",
           "Gerar checklist complementar",
           "Montar atualizacao ao cliente"
         ]}
-        title="Acoes contextuais de execucao operacional"
+        title="Continuar esta tarefa dentro da Clara"
       />
     </WorkspacePage>
   );

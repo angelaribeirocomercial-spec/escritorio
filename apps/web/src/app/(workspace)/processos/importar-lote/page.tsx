@@ -1,19 +1,13 @@
-import { ReferenceListPage } from "@/components/layout/reference-list-page";
+import { WorkspaceStatePanel } from "@lexia/ui";
 
 export default function ProcessosImportarLotePage() {
   return (
-    <ReferenceListPage
-      actions={[{ label: "Importar", tone: "primary" }]}
-      count={1}
-      emptyState="Nenhum arquivo importado em lote."
-      rows={[
-        {
-          id: "batch",
-          title: "Importacao em lote",
-          detail: "Area preparada para onboarding massivo da carteira."
-        }
-      ]}
-      title="Importar lote"
+    <WorkspaceStatePanel
+      actionHref="/processos"
+      actionLabel="Voltar para processos"
+      description="A lista real de processos ja esta disponivel. A importacao em lote precisa de backend proprio antes de ser liberada para uso operacional."
+      title="Importacao em lote indisponivel"
+      tone="warning"
     />
   );
 }

@@ -1,18 +1,24 @@
+import { WorkspaceStatePanel } from "@lexia/ui";
+
 import { getClaraRecord, getClaraRecordDisplay } from "@/server/services/clara/clara-record-store";
 import {
   getClaraAgendaArtifact,
   getClaraRevisionalAgendaArtifact
 } from "@/server/services/clara/get-clara-artifacts";
+import { getAgendaCommitments } from "@/server/services/agenda/get-agenda-workspace";
 
-const days = [
-  "DOM. 05/04",
-  "SEG. 06/04",
-  "TER. 07/04",
-  "QUA. 08/04",
-  "QUI. 09/04",
-  "SEX. 10/04",
-  "SAB. 11/04"
-];
+function categoryLabel(category: string) {
+  switch (category) {
+    case "hearing":
+      return "Audiencia";
+    case "client-follow-up":
+      return "Retorno ao cliente";
+    case "internal-review":
+      return "Revisao interna";
+    default:
+      return "Reuniao";
+  }
+}
 
 export default async function AgendaCompromissosPage({
   searchParams
@@ -29,6 +35,24 @@ export default async function AgendaCompromissosPage({
     objetivo?: string;
   };
 }) {
+  let commitments: Awaited<ReturnType<typeof getAgendaCommitments>> = [];
+  let state: {
+    title: string;
+    description: string;
+    tone?: "neutral" | "warning" | "danger";
+  } | null = null;
+
+  try {
+    commitments = await getAgendaCommitments();
+  } catch {
+    state = {
+      title: "Compromissos indisponiveis no momento",
+      description:
+        "Nao foi possivel carregar a agenda real de compromissos. Valide a configuracao do Supabase, a migration da vertical e o seed do tenant ativo.",
+      tone: "danger"
+    };
+  }
+
   const claraRecord = await getClaraRecord(searchParams?.record);
   const claraArtifact =
     claraRecord?.kind === "agenda"
@@ -43,7 +67,11 @@ export default async function AgendaCompromissosPage({
               objective: searchParams.objetivo,
               processId: searchParams.process
             })
-          : await getClaraAgendaArtifact(searchParams.client, searchParams.case, searchParams.created === "1")
+          : await getClaraAgendaArtifact(
+              searchParams.client,
+              searchParams.case,
+              searchParams.created === "1"
+            )
         : null;
   const claraDisplay = claraArtifact
     ? getClaraRecordDisplay(claraRecord, "Compromisso preparado pela Clara", claraArtifact.message)
@@ -52,14 +80,14 @@ export default async function AgendaCompromissosPage({
   return (
     <div className="mj-model-page space-y-4">
       <div className="flex items-start justify-between gap-4">
-        <p className="mj-model-title">Compromissos</p>
+        <div>
+          <p className="mj-model-title">Compromissos</p>
+          <p className="mj-model-subtitle">Exibindo {commitments.length} resultado(s)</p>
+        </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <button className="mj-model-button-gray" type="button">
             Integrar com o Google Agenda
           </button>
-          <span className="rounded-[2px] bg-sky-500 px-2 py-1 text-[11px] font-semibold text-white">
-            Novo!
-          </span>
           <button className="mj-model-button-gray" type="button">
             Modo lista
           </button>
@@ -82,9 +110,15 @@ export default async function AgendaCompromissosPage({
             Compromisso preparado pela Clara
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-slate-300">
-            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">{claraArtifact.statusLabel}</span>
-            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">{claraArtifact.stageLabel}</span>
-            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">{claraArtifact.recordId}</span>
+            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">
+              {claraArtifact.statusLabel}
+            </span>
+            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">
+              {claraArtifact.stageLabel}
+            </span>
+            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">
+              {claraArtifact.recordId}
+            </span>
           </div>
           <p className="mt-3 text-[15px] font-semibold text-white">{claraArtifact.clientLabel}</p>
           <p className="mt-2 text-[13px] leading-6 text-slate-300">{claraDisplay?.detail}</p>
@@ -92,63 +126,68 @@ export default async function AgendaCompromissosPage({
           <div className="mt-3 space-y-2">
             {claraArtifact.talkingPoints.map((item) => (
               <p key={item} className="text-[13px] leading-6 text-slate-300">
-                • {item}
+                - {item}
               </p>
             ))}
           </div>
         </section>
       ) : null}
 
-      <section className="mj-model-panel px-4 py-4">
-        <div className="mb-4 grid gap-3 xl:grid-cols-[8rem_1fr_12rem] xl:items-center">
-          <div className="flex gap-2">
-            <button className="mj-model-button-gray !min-h-0 !w-[2.4rem] !px-0" type="button">
-              {"<"}
-            </button>
-            <button className="mj-model-button-gray !min-h-0 !w-[2.4rem] !px-0" type="button">
-              {">"}
-            </button>
-            <button className="mj-model-button-gray !min-h-0" type="button">
-              Hoje
-            </button>
+      {state ? (
+        <WorkspaceStatePanel
+          description={state.description}
+          title={state.title}
+          tone={state.tone ?? "neutral"}
+        />
+      ) : commitments.length === 0 ? (
+        <WorkspaceStatePanel
+          description="Nenhum compromisso foi encontrado para o tenant ativo."
+          title="Agenda sem compromissos"
+          tone="neutral"
+        />
+      ) : (
+        <section className="mj-model-panel overflow-hidden">
+          <div className="grid grid-cols-[10rem_1.2fr_1fr_10rem_9rem] border-b bg-black/10 px-3 py-3 text-[13px] font-semibold text-slate-300 mj-model-gridline">
+            <span>Horario</span>
+            <span>Compromisso</span>
+            <span>Cliente / Caso</span>
+            <span>Responsavel</span>
+            <span>Categoria</span>
           </div>
 
-          <div className="text-center text-[18px] font-medium text-slate-300">
-            5 - 11 de abr. de 2026
-          </div>
-
-          <div className="flex justify-end gap-1">
-            <button className="mj-model-button-gray !min-h-0 !px-3" type="button">
-              Mes
-            </button>
-            <button className="mj-model-button-gray !min-h-0 !px-3" type="button">
-              Semana
-            </button>
-            <button className="mj-model-button-gray !min-h-0 !px-3" type="button">
-              Dia
-            </button>
-            <button className="mj-model-button-gray !min-h-0 !px-3" type="button">
-              Lista
-            </button>
-          </div>
-        </div>
-
-        <div className="overflow-hidden border mj-model-gridline">
-          <div className="grid grid-cols-7 border-b bg-black/10 text-[12px] font-semibold text-slate-300 mj-model-gridline">
-            {days.map((day) => (
-              <div key={day} className="border-l px-4 py-2 text-center first:border-l-0 mj-model-gridline">
-                {day}
+          {commitments.map((commitment, index) => (
+            <div
+              key={commitment.id}
+              className="grid grid-cols-[10rem_1.2fr_1fr_10rem_9rem] items-center px-3 py-3 text-[13px]"
+              style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}
+            >
+              <div className="text-slate-300">
+                <p>{new Date(commitment.scheduledFor).toLocaleDateString("pt-BR")}</p>
+                <p className="text-[12px] text-slate-400">
+                  {new Date(commitment.scheduledFor).toLocaleTimeString("pt-BR", {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  })}
+                </p>
               </div>
-            ))}
-          </div>
-
-          <div className="grid min-h-[30rem] grid-cols-7">
-            {days.map((day) => (
-              <div key={day} className="border-l first:border-l-0 mj-model-gridline" />
-            ))}
-          </div>
-        </div>
-      </section>
+              <div className="min-w-0">
+                <p className="truncate text-slate-200">{commitment.title}</p>
+                <p className="truncate text-[12px] text-slate-400">{commitment.locationLabel}</p>
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-slate-200">
+                  {commitment.client?.fullName ?? "Sem cliente vinculado"}
+                </p>
+                <p className="truncate text-[12px] text-slate-400">
+                  {commitment.bankingCase?.title ?? "Sem caso vinculado"}
+                </p>
+              </div>
+              <span className="truncate text-slate-300">{commitment.responsibleLabel}</span>
+              <span className="text-slate-300">{categoryLabel(commitment.category)}</span>
+            </div>
+          ))}
+        </section>
+      )}
     </div>
   );
 }

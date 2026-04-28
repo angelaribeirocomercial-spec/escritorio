@@ -167,77 +167,32 @@ export function ClaraSideCopilot() {
   const context = contextualFixtures[getContextKey(pathname)];
 
   return (
-    <div className="grid gap-5 xl:grid-cols-3">
-      <section className="relative min-w-0 overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(145deg,rgba(10,18,34,0.96),rgba(13,25,48,0.88)_58%,rgba(96,37,112,0.32))] p-5 shadow-soft backdrop-blur">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan-200">
-              Clara
-            </p>
-            <h3 className="mt-1 text-lg font-semibold text-white">
-              Copiloto lateral persistente
-            </h3>
-          </div>
-          <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-200">
-            Contextual
-          </span>
-        </div>
-
-        <div className="relative mt-5 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-            {context.eyebrow}
+    <section className="workspace-panel p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="workspace-kicker">Clara Hub</p>
+          <h3 className="mt-2 text-lg font-semibold text-white">{context.title}</h3>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+            {context.conclusion}
           </p>
-          <div className="mt-3 rounded-[18px] bg-[linear-gradient(180deg,#142847,#10213d)] px-4 py-4 text-sm text-slate-100">
-            {context.prompt}
-          </div>
-          <div className="mt-3 space-y-3 rounded-[20px] border border-white/10 bg-black/20 p-4 text-sm text-slate-300">
-            <p className="font-semibold text-white">{context.title}</p>
-            <p className="leading-6 text-slate-300">{context.conclusion}</p>
-            <p className="text-xs font-medium leading-5 text-slate-400">
-              Contexto inferido da rota ativa e dos objetos juridicos ja vinculados.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative min-w-0 overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(145deg,rgba(10,18,34,0.96),rgba(13,25,48,0.88)_58%,rgba(96,37,112,0.32))] p-5 shadow-soft">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-          Proximas acoes
-        </p>
-        <div className="mt-4 grid gap-3">
-          {context.actions.map((action) => (
-            <button
-              key={action}
-              className="rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3 text-left text-sm font-semibold text-slate-100 transition hover:border-amber-300/25 hover:bg-white/[0.08]"
-              type="button"
-            >
-              {action}
-            </button>
-          ))}
         </div>
         <Link
-          className="mt-4 block rounded-[18px] bg-[linear-gradient(90deg,#f5b942,#ffd273)] px-4 py-3 text-center text-sm font-semibold text-slate-950 shadow-soft"
+          className="detail-link-button px-4 py-3 text-sm font-semibold"
           href="/clara"
         >
-          Abrir workspace da Clara
+          Abrir fluxo da Clara
         </Link>
-      </section>
-
-      <section className="relative min-w-0 overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(145deg,rgba(10,18,34,0.96),rgba(13,25,48,0.88)_58%,rgba(96,37,112,0.32))] p-5 shadow-soft">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-          Modos da IA
-        </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-          {["Atendimento", "Analise", "Producao", "Operacional"].map((mode) => (
-            <div
-              key={mode}
-              className="rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-100"
-            >
-              {mode}
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {context.actions.map((action) => (
+          <span
+            key={action}
+            className="rounded-[4px] border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300"
+          >
+            {action}
+          </span>
+        ))}
+      </div>
+    </section>
   );
 }

@@ -1,16 +1,32 @@
-const fallbackUrl = "https://example.supabase.co";
-const fallbackAnonKey = "public-anon-key-placeholder";
+export class SupabaseConfigError extends Error {
+  constructor(message = "Supabase environment variables are not configured.") {
+    super(message);
+    this.name = "SupabaseConfigError";
+  }
+}
+
+function readSupabaseEnv() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    return null;
+  }
+
+  return { url, anonKey };
+}
 
 export function getSupabaseEnv() {
-  return {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? fallbackUrl,
-    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? fallbackAnonKey
-  };
+  const env = readSupabaseEnv();
+
+  if (!env) {
+    throw new SupabaseConfigError();
+  }
+
+  return env;
 }
 
 export function isSupabaseConfigured() {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+  return Boolean(readSupabaseEnv());
 }

@@ -2,9 +2,10 @@
 
 type SignInFormProps = {
   error?: string;
+  supabaseConfigured: boolean;
 };
 
-export function SignInForm({ error }: SignInFormProps) {
+export function SignInForm({ error, supabaseConfigured }: SignInFormProps) {
   return (
     <div className="space-y-5">
       <form action="/api/auth/sign-in" className="space-y-5" method="post">
@@ -41,7 +42,8 @@ export function SignInForm({ error }: SignInFormProps) {
         ) : null}
 
         <button
-          className="rounded-[18px] bg-[linear-gradient(90deg,#f5b942,#ffd273)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-soft transition hover:opacity-95"
+          className="rounded-[18px] bg-[linear-gradient(90deg,#f5b942,#ffd273)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-soft transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={!supabaseConfigured}
           type="submit"
         >
           Entrar no workspace
@@ -53,7 +55,7 @@ export function SignInForm({ error }: SignInFormProps) {
           className="w-full rounded-[18px] border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-cyan-300/25 hover:bg-white/[0.08]"
           type="submit"
         >
-          Entrar na demonstracao local
+          Entrar na demonstracao
         </button>
       </form>
 

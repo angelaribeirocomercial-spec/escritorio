@@ -1,15 +1,22 @@
 import Link from "next/link";
 
 import { ClientRecord } from "@lexia/domain";
+import { WorkspaceStatePanel } from "@lexia/ui";
 
 type SimpleClientListProps = {
   clients: ClientRecord[];
   searchValue?: string;
+  state?: {
+    title: string;
+    description: string;
+    tone?: "neutral" | "warning" | "danger";
+  } | null;
 };
 
 export function SimpleClientList({
   clients,
-  searchValue = ""
+  searchValue = "",
+  state = null
 }: SimpleClientListProps) {
   return (
     <div className="mj-model-page space-y-4">
@@ -39,6 +46,14 @@ export function SimpleClientList({
           </form>
         </div>
       </section>
+
+      {state ? (
+        <WorkspaceStatePanel
+          description={state.description}
+          title={state.title}
+          tone={state.tone ?? "neutral"}
+        />
+      ) : null}
 
       {clients.length === 0 ? (
         <div className="mj-model-panel px-4 py-4">

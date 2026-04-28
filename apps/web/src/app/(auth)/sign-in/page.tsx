@@ -38,7 +38,7 @@ export default async function SignInPage({
           ) : null}
 
           <div className="mt-8 max-w-md">
-            <SignInForm error={searchParams?.error} />
+            <SignInForm error={searchParams?.error} supabaseConfigured={configured} />
           </div>
         </section>
 

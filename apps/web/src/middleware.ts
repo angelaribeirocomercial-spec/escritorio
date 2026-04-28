@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { DEMO_AUTH_COOKIE, isLocalDemoAccessEnabled } from "@/lib/auth/demo-access";
+import { DEMO_AUTH_COOKIE, isDemoAccessEnabled } from "@/lib/auth/demo-access";
 
 const protectedPrefixes = [
   "/dashboard",
@@ -36,7 +36,7 @@ export function middleware(request: NextRequest) {
     .some((cookie) => cookie.name.startsWith("sb-"));
 
   const hasDemoCookie =
-    isLocalDemoAccessEnabled() &&
+    isDemoAccessEnabled() &&
     request.cookies.get(DEMO_AUTH_COOKIE)?.value === "enabled";
 
   if (hasSupabaseAuthCookie || hasDemoCookie) {

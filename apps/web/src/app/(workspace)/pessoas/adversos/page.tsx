@@ -1,17 +1,39 @@
-const adversos = [
-  { title: "Banco Pan", detail: "Revisional de financiamento de veiculo" },
-  { title: "Itau", detail: "Fraude bancaria via PIX" },
-  { title: "Santander", detail: "Capital de giro e negativacao indevida" }
-];
+import { AdversaryRecord } from "@lexia/domain";
+import { WorkspaceStatePanel } from "@lexia/ui";
 
-export default function PessoasAdversosPage({
+import { getAdversaries } from "@/server/services/adversaries/get-adversaries";
+
+export default async function PessoasAdversosPage({
   searchParams
 }: {
   searchParams?: { pesquisa?: string };
 }) {
+  let adversaries: AdversaryRecord[] = [];
+  let state: {
+    title: string;
+    description: string;
+    tone?: "neutral" | "warning" | "danger";
+  } | null = null;
+
+  try {
+    adversaries = await getAdversaries();
+  } catch {
+    state = {
+      title: "Adversos indisponiveis no momento",
+      description:
+        "Nao foi possivel carregar a base real de adversos. Valide Supabase, migration e seed do tenant ativo.",
+      tone: "danger"
+    };
+  }
+
   const search = searchParams?.pesquisa?.toLowerCase().trim() ?? "";
-  const filteredItems = adversos.filter((item) =>
-    !search ? true : `${item.title} ${item.detail}`.toLowerCase().includes(search)
+  const filteredItems = adversaries.filter((item) =>
+    !search
+      ? true
+      : [item.name, item.documentId, item.bankName, item.caseSummary, item.attorneyLabel]
+          .join(" ")
+          .toLowerCase()
+          .includes(search)
   );
 
   return (
@@ -34,7 +56,12 @@ export default function PessoasAdversosPage({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="min-w-[6rem] text-[13px] font-semibold text-slate-400">Busca</div>
           <form className="flex w-full gap-3" method="get">
-            <input className="mj-model-input w-full px-3 outline-none" defaultValue={searchParams?.pesquisa ?? ""} name="pesquisa" type="text" />
+            <input
+              className="mj-model-input w-full px-3 outline-none"
+              defaultValue={searchParams?.pesquisa ?? ""}
+              name="pesquisa"
+              type="text"
+            />
             <button className="mj-model-button-gray" type="submit">
               Buscar
             </button>
@@ -42,7 +69,13 @@ export default function PessoasAdversosPage({
         </div>
       </section>
 
-      {filteredItems.length === 0 ? (
+      {state ? (
+        <WorkspaceStatePanel
+          description={state.description}
+          title={state.title}
+          tone={state.tone ?? "neutral"}
+        />
+      ) : filteredItems.length === 0 ? (
         <div className="mj-model-panel px-4 py-4">
           <p className="mj-model-empty">Voce ainda nao cadastrou nenhum adverso.</p>
         </div>
@@ -50,9 +83,11 @@ export default function PessoasAdversosPage({
         <div className="mj-model-panel overflow-hidden">
           <div className="divide-y divide-white/10">
             {filteredItems.map((item) => (
-              <div key={item.title} className="px-5 py-4">
-                <p className="text-[15px] font-semibold text-slate-100">{item.title}</p>
-                <p className="mt-1 text-[13px] text-slate-400">{item.detail}</p>
+              <div key={item.id} className="px-5 py-4">
+                <p className="text-[15px] font-semibold text-slate-100">{item.name}</p>
+                <p className="mt-1 text-[13px] text-slate-400">
+                  {item.caseSummary} | {item.attorneyLabel}
+                </p>
               </div>
             ))}
           </div>

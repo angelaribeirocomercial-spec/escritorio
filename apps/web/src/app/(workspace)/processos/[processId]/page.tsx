@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { ClaraContextActions } from "@/components/layout/clara-context-actions";
 import { WorkspacePage } from "@/components/layout/workspace-page";
@@ -85,32 +86,62 @@ export default async function ProcessDetailPage({
     case_context?: string;
   };
 }) {
-  const processItem = await getProcessById(params.processId);
-  const linkedUpdates = await getProceduralUpdatesByProcessId(params.processId);
-  const claraRecord = await getClaraRecord(searchParams?.record);
-  const relatedClaraRecords = processItem
-    ? (await listClaraRecords(80)).filter((record) => {
-        if (record.kind !== "process") {
-          return false;
-        }
+  let processItem = null;
 
-        const payload = record.payload as Awaited<ReturnType<typeof getClaraProcessArtifact>>;
-        return payload.processLabel === processItem.processNumber;
-      })
-    : [];
-  const claraArtifact =
-    claraRecord?.kind === "process"
-      ? (claraRecord.payload as Awaited<ReturnType<typeof getClaraProcessArtifact>>)
-      : searchParams?.clara
-        ? await getClaraProcessArtifact(params.processId, searchParams.client, searchParams.document, false)
-        : null;
-  const claraDisplay = claraArtifact
-    ? getClaraRecordDisplay(claraRecord, "Analise carregada nesta tela", claraArtifact.summary)
-    : null;
+  try {
+    processItem = await getProcessById(params.processId);
+  } catch {
+    return (
+      <WorkspacePage
+        description="Nao foi possivel abrir o detalhe do processo na base real."
+        eyebrow="Processo Judicial"
+        metrics={[
+          { label: "Estado", value: "Indisponivel" },
+          { label: "Fonte", value: "Supabase" },
+          { label: "Tenant", value: "Nao resolvido" },
+          { label: "Acao", value: "Validar vertical" }
+        ]}
+        title="Detalhe indisponivel"
+      >
+        <WorkspaceStatePanel
+          actionHref="/processos"
+          actionLabel="Voltar para processos"
+          description="Valide a configuracao do Supabase, as migrations da vertical de processos e a seed do tenant ativo."
+          title="Falha ao carregar processo"
+          tone="danger"
+        />
+      </WorkspacePage>
+    );
+  }
 
   if (!processItem) {
     notFound();
   }
+
+  const linkedUpdates = await getProceduralUpdatesByProcessId(params.processId);
+  const claraRecord = await getClaraRecord(searchParams?.record);
+  const relatedClaraRecords = (await listClaraRecords(80)).filter((record) => {
+    if (record.kind !== "process") {
+      return false;
+    }
+
+    const payload = record.payload as Awaited<ReturnType<typeof getClaraProcessArtifact>>;
+    return payload.processLabel === processItem.processNumber;
+  });
+  const claraArtifact =
+    claraRecord?.kind === "process"
+      ? (claraRecord.payload as Awaited<ReturnType<typeof getClaraProcessArtifact>>)
+      : searchParams?.clara
+        ? await getClaraProcessArtifact(
+            params.processId,
+            searchParams.client,
+            searchParams.document,
+            false
+          )
+        : null;
+  const claraDisplay = claraArtifact
+    ? getClaraRecordDisplay(claraRecord, "Analise carregada nesta tela", claraArtifact.summary)
+    : null;
 
   const metrics = [
     { label: "Status", value: statusLabel(processItem.status) },
@@ -128,14 +159,14 @@ export default async function ProcessDetailPage({
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <p className="text-sm text-slate-400">
-          {processItem.client.fullName} · {processItem.tribunal} · {processItem.courtDistrict}
+          {processItem.client.fullName} | {processItem.tribunal} | {processItem.courtDistrict}
         </p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link
             className="detail-link-button px-4 py-3 text-sm font-semibold"
             href={`/clara?tab=analise&process=${params.processId}&client=${processItem.client.id}#clara-workbench`}
           >
-            Abrir na Clara
+            Continuar na Clara
           </Link>
           <Link
             className="detail-link-button px-4 py-3 text-sm font-semibold"
@@ -153,43 +184,14 @@ export default async function ProcessDetailPage({
       </div>
 
       {claraArtifact ? (
-        <section className="detail-panel-accent p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-100/85">
-            Handoff da Clara
-          </p>
-          <h2 className="mt-3 text-lg font-semibold text-white">{claraDisplay?.title}</h2>
-          <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-            <span className="rounded-[4px] border border-white/10 px-2 py-1 text-white/90">
-              {claraArtifact.statusLabel}
-            </span>
-            <span className="rounded-[4px] border border-white/10 px-2 py-1 text-white/90">
-              {claraArtifact.stageLabel}
-            </span>
-            <span className="rounded-[4px] border border-white/10 px-2 py-1 text-white/90">
-              {claraArtifact.recordId}
-            </span>
-          </div>
-          <p className="mt-3 text-sm leading-7 text-slate-200">{claraDisplay?.detail}</p>
-          {claraDisplay?.reviewNote ? (
-            <p className="mt-3 text-sm leading-7 text-slate-300">Revisao humana: {claraDisplay.reviewNote}</p>
-          ) : null}
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div className="detail-soft-row px-4 py-3 text-sm text-slate-300">
-              Processo: <span className="font-semibold text-white">{claraArtifact.processLabel}</span>
-            </div>
-            <div className="detail-soft-row px-4 py-3 text-sm text-slate-300">
-              Cliente: <span className="font-semibold text-white">{claraArtifact.clientLabel}</span>
-            </div>
-            <div className="detail-soft-row px-4 py-3 text-sm text-slate-300">
-              Documento: <span className="font-semibold text-white">{claraArtifact.documentLabel}</span>
-            </div>
-          </div>
-          <ul className="mt-4 space-y-2 text-sm text-slate-200">
-            {claraArtifact.highlights.map((item) => (
-              <li key={item}>• {item}</li>
-            ))}
-          </ul>
-        </section>
+        <WorkspaceStatePanel
+          actionHref={`/clara?tab=analise&process=${params.processId}&client=${processItem.client.id}#clara-history`}
+          actionLabel="Ver historico completo na Clara"
+          description={`${claraDisplay?.title}: ${claraDisplay?.detail}`}
+          footer={`Status ${claraArtifact.statusLabel} | Etapa ${claraArtifact.stageLabel} | Registro ${claraArtifact.recordId}`}
+          title="Resumo ativo da Clara para este processo"
+          tone="warning"
+        />
       ) : null}
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]" id="caso-bancario">
@@ -302,10 +304,7 @@ export default async function ProcessDetailPage({
           <p className="text-sm font-semibold text-white">Timeline processual</p>
           <ol className="mt-5 space-y-3">
             {processItem.latestTimeline.map((timelineItem, index) => (
-              <li
-                key={timelineItem.id}
-                className="detail-soft-row px-4 py-4 text-sm"
-              >
+              <li key={timelineItem.id} className="detail-soft-row px-4 py-4 text-sm">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex gap-4">
                     <span className="detail-step-badge flex h-8 w-8 shrink-0 items-center justify-center rounded-[4px] text-xs font-semibold">
@@ -314,7 +313,7 @@ export default async function ProcessDetailPage({
                     <div>
                       <p className="font-semibold text-white">{timelineItem.title}</p>
                       <p className="mt-1 text-slate-400">
-                        {timelineItem.occurredAt} · {timelineItem.source}
+                        {timelineItem.occurredAt} | {timelineItem.source}
                       </p>
                       <p className="mt-3 leading-6 text-slate-300">
                         {timelineItem.description}
@@ -373,10 +372,7 @@ export default async function ProcessDetailPage({
             <p className="text-sm font-semibold text-white">Prazos e marcos</p>
             <ul className="mt-5 space-y-3">
               {processItem.bankingCase.linkedDeadlines.map((deadline) => (
-                <li
-                  key={deadline}
-                  className="detail-soft-row px-4 py-3 text-sm text-slate-300"
-                >
+                <li key={deadline} className="detail-soft-row px-4 py-3 text-sm text-slate-300">
                   {deadline}
                 </li>
               ))}
@@ -411,7 +407,7 @@ export default async function ProcessDetailPage({
                 <div className="min-w-0">
                   <p className="font-semibold text-white">{update.movementType}</p>
                   <p className="mt-1 text-slate-400">
-                    {new Date(update.occurredAt).toLocaleDateString("pt-BR")} ·{" "}
+                    {new Date(update.occurredAt).toLocaleDateString("pt-BR")} |{" "}
                     {update.sourceLabel}
                   </p>
                   <p className="mt-3 leading-6 text-slate-300">
@@ -428,6 +424,7 @@ export default async function ProcessDetailPage({
       </section>
 
       <ClaraContextActions
+        actionHref={`/clara?tab=analise&process=${params.processId}&client=${processItem.client.id}#clara-workbench`}
         basis={[
           processItem.tribunal,
           processItem.proceduralPhase,
@@ -437,13 +434,13 @@ export default async function ProcessDetailPage({
         ]}
         cautionLabel="A leitura da Clara organiza impacto e proxima medida, mas a decisao processual continua sob revisao do advogado responsavel."
         conclusion="Este processo ja tem dados suficientes para leitura contextual da Clara sobre risco imediato, proxima medida e pontos que precisam ser reforcados na conducao juridica."
-        eyebrow="Clara no Processo"
+        eyebrow="Fluxo Clara"
         nextActions={[
           "Resumir impacto do ultimo andamento",
           "Priorizar proxima medida juridica",
           "Cruzar processo com estrategia do caso"
         ]}
-        title="Leitura contextual da Clara para o processo"
+        title="Continuar este processo dentro da Clara"
       />
     </WorkspacePage>
   );

@@ -66,6 +66,53 @@ export interface ClientRecord {
 
 export type BankingCaseStatus = "draft" | "active" | "awaiting-action" | "closed";
 export type BankingCaseRisk = "low" | "medium" | "high";
+export type BankingNiche = "revisional" | "fraude" | "busca-apreensao";
+export type BankingWorkflowStepState = "done" | "current" | "pending";
+export type BankingChecklistItemState = "received" | "missing";
+
+export const BANKING_NICHES: ReadonlyArray<{
+  value: BankingNiche;
+  label: string;
+}> = [
+  { value: "revisional", label: "Revisional de contratos" },
+  { value: "fraude", label: "Fraude bancaria" },
+  { value: "busca-apreensao", label: "Busca e apreensao" }
+] as const;
+
+export function getBankingNicheLabel(niche: BankingNiche): string {
+  return (
+    BANKING_NICHES.find((entry) => entry.value === niche)?.label ?? "Nicho bancario"
+  );
+}
+
+export interface BankingCaseWorkflowStepRecord {
+  id: string;
+  title: string;
+  detail: string;
+  state: BankingWorkflowStepState;
+}
+
+export interface BankingCaseWorkflowStateRecord {
+  phaseLabel: string;
+  nextStep: string;
+  completionLabel: string;
+  currentStepId: string;
+  steps: readonly BankingCaseWorkflowStepRecord[];
+}
+
+export interface BankingCaseChecklistItemRecord {
+  id: string;
+  label: string;
+  state: BankingChecklistItemState;
+  required: boolean;
+}
+
+export interface BankingCaseChecklistStateRecord {
+  completionLabel: string;
+  requiredDocuments: readonly string[];
+  missingDocuments: readonly string[];
+  items: readonly BankingCaseChecklistItemRecord[];
+}
 
 export interface BankingCaseRecord {
   id: string;
@@ -83,10 +130,13 @@ export interface BankingCaseRecord {
   legalRisk: BankingCaseRisk;
   suggestedStrategy: string;
   ownerLabel: string;
+  niche: BankingNiche;
   linkedDocuments: readonly string[];
   linkedTasks: readonly string[];
   linkedDeadlines: readonly string[];
   lexiaInsights: readonly string[];
+  workflowState: BankingCaseWorkflowStateRecord;
+  checklistState: BankingCaseChecklistStateRecord;
 }
 
 export type JudicialProcessStatus =
@@ -140,6 +190,7 @@ export interface OfficialDiaryPublicationRecord {
   responsibleLawyer: string;
   suggestedTaskTitle: string;
   suggestedTaskDescription: string;
+  archivedAt?: string;
 }
 
 export type ProceduralUpdateCriticality = "low" | "medium" | "high";
@@ -196,6 +247,7 @@ export interface DocumentRecord {
   clientId: string;
   caseId: string;
   fileName: string;
+  originalFileName?: string;
   documentType: string;
   category: string;
   tags: readonly string[];
@@ -204,6 +256,10 @@ export interface DocumentRecord {
   pageCount: number;
   uploadedAt: string;
   previewLabel: string;
+  storageBucket: string;
+  storagePath: string;
+  storageMimeType: string;
+  storageSizeBytes: number;
   actions: readonly string[];
 }
 
@@ -268,4 +324,34 @@ export interface ContractAnalysisRecord {
   proceduralRisk: "low" | "medium" | "high";
   suggestedRequests: readonly string[];
   executiveSummary: string;
+}
+
+export type FinancialEntryKind = "income" | "expense" | "transfer";
+export type FinancialEntryStatus = "open" | "settled";
+
+export interface FinancialEntryRecord {
+  id: string;
+  clientId?: string;
+  caseId?: string;
+  kind: FinancialEntryKind;
+  title: string;
+  description: string;
+  accountLabel: string;
+  counterpartyLabel: string;
+  amount: number;
+  dueDate: string;
+  settledAt?: string;
+  status: FinancialEntryStatus;
+  categoryLabel: string;
+}
+
+export interface AdversaryRecord {
+  id: string;
+  name: string;
+  documentId: string;
+  bankName: string;
+  caseSummary: string;
+  attorneyLabel: string;
+  contactLabel: string;
+  status: "active" | "inactive";
 }

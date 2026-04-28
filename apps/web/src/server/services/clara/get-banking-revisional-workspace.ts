@@ -1,12 +1,15 @@
-import {
-  mockCases,
-  mockClients,
-  mockContractAnalyses,
-  mockDocuments,
-  mockProcesses
-} from "@lexia/mocks";
+import type { ContractAnalysisRecord } from "@lexia/domain";
 
 import { getBankingRevisionalCalculation } from "@/server/services/clara/get-banking-revisional-calculation";
+import { getContractAnalysisByDocumentId } from "@/server/services/contract-analysis/get-contract-analysis";
+import { getCaseById, getCases } from "@/server/services/cases/get-cases";
+import { getClientById, getClients } from "@/server/services/clients/get-clients";
+import { getDocumentById, getDocuments } from "@/server/services/documents/get-documents";
+import { getProcessById, getProcesses } from "@/server/services/processes/get-processes";
+
+type ClientData = Awaited<ReturnType<typeof getClients>>[number];
+type BankingCaseData = Awaited<ReturnType<typeof getCases>>[number];
+type DocumentData = Awaited<ReturnType<typeof getDocuments>>[number];
 
 function getRiskLabel(risk: "low" | "medium" | "high") {
   if (risk === "low") return "Baixo";
@@ -267,8 +270,8 @@ function getUrgencyProfile(params: {
 }
 
 function getPriorityTheses(params: {
-  analysis: typeof mockContractAnalyses[number];
-  bankingCase: typeof mockCases[number];
+  analysis: ContractAnalysisRecord;
+  bankingCase: BankingCaseData;
   productProfile: ReturnType<typeof getProductProfile>;
   scenarioProfile: ReturnType<typeof getScenarioProfile>;
   objectiveProfile: ReturnType<typeof getObjectiveProfile>;
@@ -318,7 +321,7 @@ function getPriorityTheses(params: {
 }
 
 function getDocumentReadiness(params: {
-  selectedDocument: typeof mockDocuments[number];
+  selectedDocument: DocumentData;
   productProfile: ReturnType<typeof getProductProfile>;
   urgencyProfile: ReturnType<typeof getUrgencyProfile>;
 }) {
@@ -394,8 +397,8 @@ function getFilingChecklist(params: {
 }
 
 function getFilingPackage(params: {
-  client: typeof mockClients[number];
-  bankingCase: typeof mockCases[number];
+  client: ClientData;
+  bankingCase: BankingCaseData;
   objectiveProfile: ReturnType<typeof getObjectiveProfile>;
   documentReadiness: ReturnType<typeof getDocumentReadiness>;
   filingChecklist: ReturnType<typeof getFilingChecklist>;
@@ -441,24 +444,53 @@ export async function getBankingRevisionalWorkspace(params?: {
   chargedInstallment?: string;
   targetReductionPercent?: string;
 }) {
-  const contractDocuments = mockDocuments.filter((document) =>
+  const allDocuments = await getDocuments();
+  const contractDocuments = allDocuments.filter((document) =>
     ["Contrato bancario", "CCB"].includes(document.documentType)
   );
 
+  if (!contractDocuments.length) {
+    throw new Error("No contract documents are available to build the Clara revisional workspace.");
+  }
+
   const selectedDocument =
-    contractDocuments.find((document) => document.id === params?.documentId) ?? contractDocuments[0];
-  const analysis =
-    mockContractAnalyses.find((item) => item.documentId === selectedDocument.id) ??
-    mockContractAnalyses[0];
-  const client =
-    mockClients.find((item) => item.id === (params?.clientId ?? selectedDocument.clientId)) ??
-    mockClients[0];
+    (params?.documentId ? await getDocumentById(params.documentId) : null) ??
+    contractDocuments.find((document) => document.id === params?.documentId) ??
+    contractDocuments[0];
+  const analysis = await getContractAnalysisByDocumentId(selectedDocument.id);
+
+  if (!analysis) {
+    throw new Error("No contract analysis is available to build the Clara revisional workspace.");
+  }
+
+  const documentCase = await getCaseById(selectedDocument.caseId);
   const bankingCase =
-    mockCases.find((item) => item.id === selectedDocument.caseId) ?? mockCases[0];
+    documentCase ??
+    (await getCases())[0];
+
+  if (!bankingCase) {
+    throw new Error("No case is available to build the Clara revisional workspace.");
+  }
+
+  const client =
+    (params?.clientId ? await getClientById(params.clientId) : null) ??
+    selectedDocument.client ??
+    (await getClientById(bankingCase.clientId)) ??
+    (await getClients())[0];
+
+  if (!client) {
+    throw new Error("No client is available to build the Clara revisional workspace.");
+  }
+
+  const allProcesses = await getProcesses();
   const process =
-    mockProcesses.find(
-      (item) => item.id === params?.processId || item.caseId === bankingCase.id
-    ) ?? mockProcesses[0];
+    (params?.processId ? await getProcessById(params.processId) : null) ??
+    allProcesses.find((item) => item.caseId === bankingCase.id) ??
+    allProcesses[0];
+
+  if (!process) {
+    throw new Error("No process is available to build the Clara revisional workspace.");
+  }
   const scenarioProfile = getScenarioProfile({
     bankName: bankingCase.bankName,
     caseTitle: bankingCase.title,
@@ -661,7 +693,7 @@ export async function getBankingRevisionalWorkspace(params?: {
           chargedInstallment: 10185,
           targetReductionPercent: 21.8,
           basis:
-            "Simulacao mockada considerando expurgo de capitalizacao abusiva, tarifas agregadas e recalibragem do CET."
+            "Estimativa preliminar considerando expurgo de capitalizacao abusiva, tarifas agregadas e recalibragem do CET."
         }
       : {
           financedAmount: 68400,
@@ -670,7 +702,7 @@ export async function getBankingRevisionalWorkspace(params?: {
           chargedInstallment: 2214,
           targetReductionPercent: 27.8,
           basis:
-            "Simulacao mockada considerando exclusao de seguro embutido, encargos cumulativos e revisao do custo efetivo."
+            "Estimativa preliminar considerando exclusao de seguro embutido, encargos cumulativos e revisao do custo efetivo."
         }
   );
 

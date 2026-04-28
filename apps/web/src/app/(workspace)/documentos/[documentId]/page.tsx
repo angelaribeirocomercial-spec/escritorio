@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { ClaraContextActions } from "@/components/layout/clara-context-actions";
 import { WorkspacePage } from "@/components/layout/workspace-page";
+import { getDocumentFileSignedUrl } from "@/server/services/documents/get-document-file-url";
 import { getDocumentById } from "@/server/services/documents/get-documents";
 
 function aiStatusLabel(status: string) {
@@ -21,7 +23,33 @@ export default async function DocumentDetailPage({
 }: {
   params: { documentId: string };
 }) {
-  const document = await getDocumentById(params.documentId);
+  let document = null;
+
+  try {
+    document = await getDocumentById(params.documentId);
+  } catch {
+    return (
+      <WorkspacePage
+        description="Nao foi possivel abrir o detalhe do documento na base real."
+        eyebrow="Documento"
+        metrics={[
+          { label: "Estado", value: "Indisponivel" },
+          { label: "Fonte", value: "Supabase" },
+          { label: "Tenant", value: "Nao resolvido" },
+          { label: "Acao", value: "Validar vertical" }
+        ]}
+        title="Detalhe indisponivel"
+      >
+        <WorkspaceStatePanel
+          actionHref="/documentos/meus-arquivos"
+          actionLabel="Voltar para documentos"
+          description="Valide a configuracao do Supabase, as migrations da vertical de documentos e a seed do tenant ativo."
+          title="Falha ao carregar documento"
+          tone="danger"
+        />
+      </WorkspacePage>
+    );
+  }
 
   if (!document) {
     notFound();
@@ -31,8 +59,12 @@ export default async function DocumentDetailPage({
     { label: "Paginas", value: `${document.pageCount}` },
     { label: "IA", value: aiStatusLabel(document.aiStatus) },
     { label: "Cliente", value: document.client.fullName },
-    { label: "Caso", value: document.bankingCase.id }
+    { label: "Arquivo", value: document.storageSizeBytes ? `${Math.ceil(document.storageSizeBytes / 1024)} KB` : "Pendente" }
   ];
+  const signedUrl = await getDocumentFileSignedUrl({
+    bucket: document.storageBucket,
+    path: document.storagePath
+  });
 
   return (
     <WorkspacePage
@@ -54,6 +86,14 @@ export default async function DocumentDetailPage({
               Abrir analise premium
             </Link>
           ) : null}
+          {signedUrl ? (
+            <a
+              className="detail-link-button px-4 py-3 text-sm font-semibold"
+              href={signedUrl}
+            >
+              Baixar arquivo
+            </a>
+          ) : null}
           <Link
             className="detail-link-button px-4 py-3 text-sm font-semibold"
             href="/documentos"
@@ -69,11 +109,11 @@ export default async function DocumentDetailPage({
           <div className="detail-subpanel mt-5 flex min-h-[24rem] items-center justify-center border border-dashed p-8 text-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                Preview mockado
+                Preview indisponivel
               </p>
               <p className="mt-4 text-lg font-semibold text-white">{document.previewLabel}</p>
               <p className="mt-3 text-sm leading-6 text-slate-400">
-                Esta area esta pronta para receber preview de PDF, OCR e leitura estruturada nas proximas fases.
+                Esta area depende de preview de PDF, OCR e leitura estruturada antes de exibir o arquivo processado.
               </p>
             </div>
           </div>
@@ -101,6 +141,18 @@ export default async function DocumentDetailPage({
             <div>
               <dt className="text-slate-500">Resumo</dt>
               <dd className="mt-1 text-slate-200">{document.summary}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Storage</dt>
+              <dd className="mt-1 break-all text-slate-200">
+                {document.storagePath || "Arquivo ainda nao enviado ao storage"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Tipo e tamanho</dt>
+              <dd className="mt-1 text-slate-200">
+                {document.storageMimeType} | {document.storageSizeBytes} bytes
+              </dd>
             </div>
           </dl>
         </article>
@@ -138,6 +190,7 @@ export default async function DocumentDetailPage({
       </section>
 
       <ClaraContextActions
+        actionHref={`/clara?tab=comparador&document=${document.id}&case=${document.caseId}&client=${document.clientId}#clara-workbench`}
         basis={[
           document.documentType,
           document.category,
@@ -147,13 +200,13 @@ export default async function DocumentDetailPage({
         ]}
         cautionLabel="A leitura documental da Clara e sugestiva e deve ser conferida antes de uso processual."
         conclusion="Este documento ja carrega contexto suficiente para virar resumo juridico, tese aplicavel ou insumo direto da proxima peca do caso."
-        eyebrow="Clara no Documento"
+        eyebrow="Fluxo Clara"
         nextActions={[
           "Resumir documento",
           "Extrair tese principal",
           "Buscar jurisprudencia relacionada"
         ]}
-        title="Acoes contextuais de leitura documental"
+        title="Continuar este documento dentro da Clara"
       />
     </WorkspacePage>
   );

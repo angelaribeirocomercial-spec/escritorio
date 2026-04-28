@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   DEMO_AUTH_COOKIE,
-  isLocalDemoAccessEnabled
+  isDemoAccessEnabled
 } from "@/lib/auth/demo-access";
 
 export async function POST(request: NextRequest) {
-  if (!isLocalDemoAccessEnabled()) {
+  if (!isDemoAccessEnabled()) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
     value: "enabled",
     httpOnly: true,
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     path: "/"
   });
 

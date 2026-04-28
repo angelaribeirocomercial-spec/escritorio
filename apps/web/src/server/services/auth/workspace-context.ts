@@ -11,41 +11,15 @@ export type WorkspaceContext = {
   membership: MembershipSummary;
 };
 
-function buildFallbackContext(userId: string, email: string | null): WorkspaceContext {
-  const tenantSlug = "lexia-demo";
-  const tenantName = email?.split("@")[1]?.split(".")[0]
-    ? `Escritorio ${email.split("@")[1].split(".")[0]}`
-    : "LexIA Demo";
-
-  const role: UserRole =
-    email?.includes("owner") || email?.includes("socio")
-      ? "owner"
-      : email?.includes("admin")
-        ? "admin"
-        : email?.includes("assist")
-          ? "assistant"
-          : "lawyer";
-
-  return {
-    tenant: {
-      id: "tenant-demo",
-      name: tenantName,
-      slug: tenantSlug,
-      plan: "pro"
-    },
-    membership: {
-      id: "membership-demo",
-      userId,
-      tenantId: "tenant-demo",
-      role,
-      isActive: true
-    }
-  };
+export class WorkspaceContextError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WorkspaceContextError";
+  }
 }
 
 export async function resolveWorkspaceContext(
-  userId: string,
-  email: string | null
+  userId: string
 ): Promise<WorkspaceContext> {
   const supabase = getSupabaseServerClient();
 
@@ -71,14 +45,24 @@ export async function resolveWorkspaceContext(
     .limit(1)
     .maybeSingle();
 
-  if (error || !data?.tenant) {
-    return buildFallbackContext(userId, email);
+  if (error) {
+    throw new WorkspaceContextError(
+      `Failed to resolve workspace membership for user ${userId}.`
+    );
+  }
+
+  if (!data?.tenant) {
+    throw new WorkspaceContextError(
+      `No active workspace membership found for user ${userId}.`
+    );
   }
 
   const tenantRecord = Array.isArray(data.tenant) ? data.tenant[0] : data.tenant;
 
   if (!tenantRecord) {
-    return buildFallbackContext(userId, email);
+    throw new WorkspaceContextError(
+      `Membership for user ${userId} does not include a tenant record.`
+    );
   }
 
   return {

@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { WorkspaceStatePanel } from "@lexia/ui";
 
-import { getProcesses } from "@/server/services/processes/get-processes";
+import {
+  JudicialProcessWithRelations,
+  getProcesses
+} from "@/server/services/processes/get-processes";
 
 type FilterType = "cliente" | "advogado" | "processo" | "adverso" | "pasta";
 type StatusFilter = "all" | "ativo" | "baixado" | "suspenso";
@@ -43,7 +47,24 @@ export default async function ProcessosPage({
     localizar?: string;
   };
 }) {
-  const processes = await getProcesses();
+  let processes: JudicialProcessWithRelations[] = [];
+  let state: {
+    title: string;
+    description: string;
+    tone?: "neutral" | "warning" | "danger";
+  } | null = null;
+
+  try {
+    processes = await getProcesses();
+  } catch {
+    state = {
+      title: "Processos indisponiveis no momento",
+      description:
+        "Nao foi possivel carregar a base real de processos. Valide a configuracao do Supabase, a migration da vertical e o seed do tenant ativo.",
+      tone: "danger"
+    };
+  }
+
   const statusFilter = searchParams?.status ?? "all";
   const filterType = searchParams?.tipo ?? "cliente";
   const fieldFilter = searchParams?.filtro?.toLowerCase().trim() ?? "";
@@ -90,27 +111,6 @@ export default async function ProcessosPage({
           <p className="mj-model-subtitle">Exibindo {filteredProcesses.length} resultado(s)</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link className="mj-model-button-gray inline-flex items-center justify-center" href="/processos/lixeira">
-            Lixeira
-          </Link>
-          <Link
-            className="mj-model-button-gray inline-flex items-center justify-center"
-            href="/processos/ultimos-andamentos"
-          >
-            Ultimos andamentos
-          </Link>
-          <Link
-            className="mj-model-button-gray inline-flex items-center justify-center"
-            href="/processos/importar-lote"
-          >
-            Importar lote
-          </Link>
-          <Link
-            className="mj-model-button-gray inline-flex items-center justify-center"
-            href="/processos/importar-oab"
-          >
-            Importar via OAB
-          </Link>
           <button className="mj-model-button-green" type="button">
             Adicionar
           </button>
@@ -201,14 +201,19 @@ export default async function ProcessosPage({
         </form>
       </div>
 
-      {filteredProcesses.length === 0 ? (
+      {state ? (
+        <WorkspaceStatePanel
+          description={state.description}
+          title={state.title}
+          tone={state.tone ?? "neutral"}
+        />
+      ) : null}
+
+      {!state && filteredProcesses.length === 0 ? (
         <div className="mj-model-panel px-4 py-4">
-          <p className="mj-model-empty">
-            Duvidas sobre como comecar? Assista a apresentacao da ferramenta. Acesse o
-            manual do usuario.
-          </p>
+          <p className="mj-model-empty">Nenhum processo encontrado para o filtro atual.</p>
         </div>
-      ) : (
+      ) : !state ? (
         <div className="mj-model-panel overflow-hidden">
           <div className="divide-y mj-model-gridline">
             {filteredProcesses.map((processItem) => (
@@ -233,7 +238,7 @@ export default async function ProcessosPage({
             ))}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

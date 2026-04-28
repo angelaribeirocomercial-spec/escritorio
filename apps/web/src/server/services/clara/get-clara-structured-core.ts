@@ -1,8 +1,19 @@
-import { BANKING_NICHES, getBankingNicheLabel } from "@lexia/domain";
-import { mockCases, mockClients, mockContractAnalyses, mockDocuments, mockProcesses } from "@lexia/mocks";
+import { BANKING_NICHES, getBankingNicheLabel, type ContractAnalysisRecord } from "@lexia/domain";
 
 import { buildClaraAuditTrail, type ClaraAuditTrail } from "@/server/services/clara/clara-audit-trail";
 import { getClaraSourceAdapters, type ClaraSourceAdapterResult } from "@/server/services/clara/clara-source-adapters";
+import {
+  resolveClaraWorkspaceContext,
+  type ClaraWorkspaceCase,
+  type ClaraWorkspaceClient,
+  type ClaraWorkspaceDocument,
+  type ClaraWorkspaceProcess
+} from "@/server/services/clara/clara-workspace-context";
+import { getDocuments } from "@/server/services/documents/get-documents";
+
+// Shared resolver keeps the real workspace lookups centralized:
+// getClients(), getClientById(), getCases(), getCaseById(), getProcesses(), getProcessById(),
+// getDocuments(), getDocumentById(), getContractAnalysisByDocumentId().
 
 type StructuredCoreParams = {
   clientId?: string;
@@ -19,8 +30,21 @@ type StructuredDocumentRequirement = {
   importance: "essential" | "supporting";
 };
 
+type ClientData = ClaraWorkspaceClient;
+type BankingCaseData = ClaraWorkspaceCase;
+type ProcessData = ClaraWorkspaceProcess;
+type DocumentData = ClaraWorkspaceDocument;
+
 export type ClaraStructuredCore = {
   summary: string;
+  context: {
+    client: ClientData;
+    bankingCase: BankingCaseData;
+    process: ProcessData;
+    selectedDocument: DocumentData;
+    caseDocuments: DocumentData[];
+    primaryAnalysis: ContractAnalysisRecord | null;
+  };
   classification: {
     nicheId: string;
     nicheLabel: string;
@@ -50,6 +74,15 @@ export type ClaraStructuredCore = {
   auditTrail: ClaraAuditTrail;
 };
 
+type ResolvedStructuredCore = {
+  client: ClientData;
+  bankingCase: BankingCaseData;
+  process: ProcessData;
+  selectedDocument: DocumentData;
+  caseDocuments: DocumentData[];
+  primaryAnalysis: ContractAnalysisRecord | null;
+};
+
 function normalize(value: string) {
   return value
     .toLowerCase()
@@ -63,58 +96,11 @@ function includesAny(haystack: string, tokens: readonly string[]) {
   return tokens.some((token) => haystack.includes(normalize(token)));
 }
 
-function resolveCase(params?: StructuredCoreParams) {
-  const selectedDocument = params?.documentId
-    ? mockDocuments.find((document) => document.id === params.documentId) ?? mockDocuments[0]
-    : mockDocuments[0];
-
-  const fromProcess = params?.processId
-    ? mockProcesses.find((process) => process.id === params.processId)
-    : undefined;
-
-  const fromCase = params?.caseId
-    ? mockCases.find((bankingCase) => bankingCase.id === params.caseId)
-    : undefined;
-
-  const bankingCase =
-    fromCase ??
-    (selectedDocument
-      ? mockCases.find((item) => item.id === selectedDocument.caseId)
-      : undefined) ??
-    (fromProcess ? mockCases.find((item) => item.id === fromProcess.caseId) : undefined) ??
-    mockCases[0];
-
-  const client =
-    params?.clientId
-      ? mockClients.find((item) => item.id === params.clientId) ??
-        mockClients.find((item) => item.id === bankingCase.clientId) ??
-        mockClients[0]
-      : mockClients.find((item) => item.id === bankingCase.clientId) ?? mockClients[0];
-
-  const process =
-    fromProcess ??
-    (params?.processId
-      ? mockProcesses.find((item) => item.caseId === bankingCase.id)
-      : undefined) ??
-    mockProcesses.find((item) => item.caseId === bankingCase.id) ??
-    mockProcesses[0];
-
-  const caseDocuments = mockDocuments.filter((document) => document.caseId === bankingCase.id);
-  const primaryAnalysis =
-    mockContractAnalyses.find((analysis) => analysis.documentId === selectedDocument.id) ??
-    mockContractAnalyses.find((analysis) => analysis.documentId === caseDocuments[0]?.id);
-
-  return {
-    client,
-    bankingCase,
-    process,
-    selectedDocument,
-    caseDocuments,
-    primaryAnalysis
-  };
+async function resolveCase(params?: StructuredCoreParams): Promise<ResolvedStructuredCore> {
+  return resolveClaraWorkspaceContext(params);
 }
 
-function classifyScenario(params: ReturnType<typeof resolveCase>) {
+function classifyScenario(params: ResolvedStructuredCore) {
   const normalizedClaim = normalize(params.bankingCase.claimType);
   const normalizedTitle = normalize(params.bankingCase.title);
   const selectedDocumentText = normalize(
@@ -187,7 +173,7 @@ function classifyScenario(params: ReturnType<typeof resolveCase>) {
     decisionLabel: "Triagem juridica assistida",
     rationale:
       "Nao foi possivel fechar uma classificacao forte apenas pela base atual, entao a Clara manteve a leitura guiada pela estrutura do caso."
-  };
+    };
 }
 
 function requiredDocumentsForNiche(nicheId: string): StructuredDocumentRequirement[] {
@@ -217,20 +203,22 @@ function requiredDocumentsForNiche(nicheId: string): StructuredDocumentRequireme
   ];
 }
 
-function describeDocument(document: (typeof mockDocuments)[number]) {
+function describeDocument(document: Awaited<ReturnType<typeof getDocuments>>[number]) {
   return {
     id: document.id,
     label: document.fileName,
-    detail: `${document.documentType} · ${document.category} · ${document.summary}`
+    detail: `${document.documentType} | ${document.category} | ${document.summary}`
   };
 }
 
-export function getClaraStructuredCore(params?: StructuredCoreParams): ClaraStructuredCore {
-  const resolved = resolveCase(params);
+export async function getClaraStructuredCore(
+  params?: StructuredCoreParams
+): Promise<ClaraStructuredCore> {
+  const resolved = await resolveCase(params);
   const classification = classifyScenario(resolved);
   const requiredDocuments = requiredDocumentsForNiche(classification.nicheId);
   const caseDocuments = resolved.caseDocuments;
-  const sourceAdapters = getClaraSourceAdapters({
+  const sourceAdapters = await getClaraSourceAdapters({
     clientId: resolved.client.id,
     caseId: resolved.bankingCase.id,
     processId: resolved.process.id,
@@ -245,7 +233,7 @@ export function getClaraStructuredCore(params?: StructuredCoreParams): ClaraStru
           document.summary,
           document.tags.join(" "),
           document.fileName,
-          document.originalFileName
+          document.originalFileName ?? ""
         ].join(" ")
       )
     )
@@ -264,15 +252,15 @@ export function getClaraStructuredCore(params?: StructuredCoreParams): ClaraStru
     `Processo: ${resolved.process.processNumber}`,
     `Fase atual: ${resolved.bankingCase.stage}`,
     `Tese principal: ${resolved.bankingCase.mainThesis}`,
-    `Documento selecionado: ${resolved.selectedDocument.documentType} · ${resolved.selectedDocument.fileName}`
+    `Documento selecionado: ${resolved.selectedDocument.documentType} | ${resolved.selectedDocument.fileName}`
   ];
 
-  if (resolved.primaryAnalysis) {
-    confirmedFacts.push(
-      `Analise contratual: ${resolved.primaryAnalysis.executiveSummary}`,
-      `CET identificado: ${resolved.primaryAnalysis.cetLabel}`
-    );
-  }
+  const analyticFacts = resolved.primaryAnalysis
+    ? [
+        `Analise contratual sugere: ${resolved.primaryAnalysis.executiveSummary}`,
+        `CET apontado na analise: ${resolved.primaryAnalysis.cetLabel}`
+      ]
+    : [];
 
   const risks = [
     `Risco processual informado na base: ${resolved.bankingCase.legalRisk}.`,
@@ -316,6 +304,7 @@ export function getClaraStructuredCore(params?: StructuredCoreParams): ClaraStru
       rationale: classification.rationale
     },
     confirmedFacts,
+    analyticFacts,
     documentsFound: foundDocuments,
     documentsMissing: missingDocuments,
     risks,
@@ -327,6 +316,14 @@ export function getClaraStructuredCore(params?: StructuredCoreParams): ClaraStru
 
   return {
     summary: `Clara classificou ${resolved.bankingCase.title} como ${classification.scenarioLabel.toLowerCase()} com decisao orientada para ${classification.decisionLabel.toLowerCase()}.`,
+    context: {
+      client: resolved.client,
+      bankingCase: resolved.bankingCase,
+      process: resolved.process,
+      selectedDocument: resolved.selectedDocument,
+      caseDocuments,
+      primaryAnalysis: resolved.primaryAnalysis
+    },
     classification: {
       ...classification,
       sourceTrail: {
@@ -338,8 +335,9 @@ export function getClaraStructuredCore(params?: StructuredCoreParams): ClaraStru
         origem_documental: caseDocuments.map((document) => document.id),
         origem_api: sourceAdapters.map((adapter) => `${adapter.sourceLabel}: ${adapter.status}`),
         inferencia_controlada: [
-          "Classificacao baseada em claimType, tese principal, tipo documental e narrativa da base mockada.",
-          "Checklist documental calculado a partir da combinacao entre documentos encontrados e requisitos do nicho."
+          "Classificacao baseada em claimType, tese principal, tipo documental e narrativa da base real do tenant.",
+          "Checklist documental calculado a partir da combinacao entre documentos encontrados e requisitos do nicho.",
+          ...analyticFacts
         ]
       }
     },

@@ -1,4 +1,11 @@
-import { mockCases, mockClients, mockDocuments, mockProcesses } from "@lexia/mocks";
+import {
+  resolveClaraWorkspaceContext,
+  type ClaraWorkspaceContext
+} from "@/server/services/clara/clara-workspace-context";
+
+// Shared resolver keeps the real workspace lookups centralized:
+// getClients(), getClientById(), getCases(), getCaseById(), getProcesses(), getProcessById(),
+// getDocuments(), getDocumentById().
 
 export type ClaraSourceAdapterId =
   | "cnj-datajud"
@@ -7,7 +14,39 @@ export type ClaraSourceAdapterId =
   | "stf"
   | "consumidor-gov";
 
-export type ClaraSourceAdapterStatus = "not_consulted" | "available" | "failed";
+export type ClaraSourceAdapterStatus = "not_consulted" | "consulted" | "unavailable" | "failed";
+
+export type ClaraSourceAdapterReference = {
+  referenceId: string;
+  kind: "process" | "document" | "case" | "institution" | "jurisprudence" | "consumer-complaint";
+  label: string;
+  detail: string;
+  sourceHandle: string;
+  metadata: Record<string, string>;
+};
+
+export type ClaraSourceAdapterFinding = {
+  findingId: string;
+  category: "process-monitoring" | "financial-indicator" | "precedent" | "consumer-signal";
+  title: string;
+  detail: string;
+  referenceIds: string[];
+};
+
+export type ClaraSourceAdapterPayload = {
+  summary: string;
+  mode: "prepared_stub";
+  persistenceKey: string;
+  responseMetadata: {
+    scope: string;
+    queryHint: string;
+    canPersist: boolean;
+    canLog: boolean;
+  };
+  records: ClaraSourceAdapterReference[];
+  findings: ClaraSourceAdapterFinding[];
+  rawReferenceHandles: string[];
+};
 
 export type ClaraSourceAdapterResult = {
   sourceId: ClaraSourceAdapterId;
@@ -24,6 +63,7 @@ export type ClaraSourceAdapterResult = {
     origem_api: string[];
     inferencia_controlada: string[];
   };
+  payload: ClaraSourceAdapterPayload;
 };
 
 export type ClaraSourceAdapterContext = {
@@ -34,148 +74,285 @@ export type ClaraSourceAdapterContext = {
   simulateFailedSources?: ClaraSourceAdapterId[];
 };
 
-function resolveContext(params?: ClaraSourceAdapterContext) {
-  const selectedDocument =
-    params?.documentId
-      ? mockDocuments.find((document) => document.id === params.documentId) ?? mockDocuments[0]
-      : mockDocuments[0];
-  const bankingCase =
-    params?.caseId
-      ? mockCases.find((item) => item.id === params.caseId) ??
-        mockCases.find((item) => item.id === selectedDocument.caseId) ??
-        mockCases[0]
-      : mockCases.find((item) => item.id === selectedDocument.caseId) ?? mockCases[0];
-  const client =
-    params?.clientId
-      ? mockClients.find((item) => item.id === params.clientId) ??
-        mockClients.find((item) => item.id === bankingCase.clientId) ??
-        mockClients[0]
-      : mockClients.find((item) => item.id === bankingCase.clientId) ?? mockClients[0];
-  const process =
-    params?.processId
-      ? mockProcesses.find((item) => item.id === params.processId) ??
-        mockProcesses.find((item) => item.caseId === bankingCase.id) ??
-        mockProcesses[0]
-      : mockProcesses.find((item) => item.caseId === bankingCase.id) ?? mockProcesses[0];
+type AdapterDescriptor = {
+  sourceId: ClaraSourceAdapterId;
+  sourceLabel: string;
+  scope: string;
+  queryHint: (context: ClaraWorkspaceContext) => string;
+  buildPayload: (
+    context: ClaraWorkspaceContext
+  ) => Omit<ClaraSourceAdapterPayload, "mode" | "persistenceKey" | "responseMetadata">;
+};
 
-  return {
-    client,
-    bankingCase,
-    process,
-    selectedDocument
-  };
-}
-
-function buildSourceResult(
-  sourceId: ClaraSourceAdapterId,
-  sourceLabel: string,
-  scope: string,
-  queryHint: string,
-  contextTrail: string[],
-  consulted = false,
-  failureReason?: string
-): ClaraSourceAdapterResult {
-  return {
-    sourceId,
-    sourceLabel,
-    scope,
-    status: failureReason ? "failed" : consulted ? "available" : "not_consulted",
-    consulted,
-    queryHint,
-    failureReason,
-    sourceTrail: {
-      origem_interna: contextTrail,
-      origem_documental: [],
-      origem_api: consulted ? [`${sourceLabel} consulted`] : [],
-      inferencia_controlada: [
-        "Adapter contract prepared without live consultation in this story.",
-        "External source access remains isolated in server services."
-      ]
-    }
-  };
-}
-
-export function getClaraSourceAdapters(params?: ClaraSourceAdapterContext) {
-  const context = resolveContext(params);
-  const contextTrail = [
+function buildContextTrail(context: ClaraWorkspaceContext) {
+  return [
     `Cliente ${context.client.id}`,
     `Caso ${context.bankingCase.id}`,
     `Processo ${context.process.id}`,
     `Documento ${context.selectedDocument.id}`
   ];
-  const failed = new Set(params?.simulateFailedSources ?? []);
-
-  return [
-    buildSourceResult(
-      "cnj-datajud",
-      "CNJ / DataJud",
-      "Metadados processuais, andamento e fase processual",
-      `Consultar o processo ${context.bankingCase.processNumber} para metadados processuais e movimentacoes.`,
-      contextTrail,
-      false,
-      failed.has("cnj-datajud") ? "DataJud indisponivel no momento da consulta simulada." : undefined
-    ),
-    buildSourceResult(
-      "bcb",
-      "Banco Central do Brasil",
-      "Tarifas, series economicas, PTAX e indicadores financeiros",
-      `Consultar relacoes economicas ligadas a ${context.bankingCase.bankName} e ao contexto bancario do caso.`,
-      contextTrail,
-      false,
-      failed.has("bcb") ? "Banco Central nao consultado nesta execucao simulada." : undefined
-    ),
-    buildSourceResult(
-      "stj",
-      "STJ",
-      "Pesquisa de jurisprudencia bancaria e precedentes relevantes",
-      `Pesquisar teses para ${context.bankingCase.title} com foco em direito bancario.`,
-      contextTrail,
-      false,
-      failed.has("stj") ? "STJ indisponivel ou nao consultado na execucao simulada." : undefined
-    ),
-    buildSourceResult(
-      "stf",
-      "STF",
-      "Pesquisa constitucional e repercussao geral quando aplicavel",
-      `Consultar apenas quando houver recorte constitucional real para ${context.bankingCase.title}.`,
-      contextTrail,
-      false,
-      failed.has("stf") ? "STF indisponivel ou nao consultado na execucao simulada." : undefined
-    ),
-    buildSourceResult(
-      "consumidor-gov",
-      "Consumidor.gov.br / Senacon",
-      "Inteligencia complementar sobre reclamacoes bancarias",
-      `Buscar padroes de reclamacao relacionados a ${context.bankingCase.bankName}.`,
-      contextTrail,
-      false,
-      failed.has("consumidor-gov") ? "Consumidor.gov.br / Senacon nao consultado nesta execucao simulada." : undefined
-    )
-  ];
 }
 
-export function getClaraSourceAdapterFailure(
+function buildDocumentTrail(context: ClaraWorkspaceContext) {
+  return context.caseDocuments.map((document) => document.id);
+}
+
+function buildPayloadBase(
+  descriptor: AdapterDescriptor,
+  context: ClaraWorkspaceContext,
+  queryHint: string
+): Pick<ClaraSourceAdapterPayload, "mode" | "persistenceKey" | "responseMetadata"> {
+  return {
+    mode: "prepared_stub",
+    persistenceKey: `${descriptor.sourceId}:${context.bankingCase.id}:${context.process.id}:${context.selectedDocument.id}`,
+    responseMetadata: {
+      scope: descriptor.scope,
+      queryHint,
+      canPersist: true,
+      canLog: true
+    }
+  };
+}
+
+function buildSourceResult(
+  descriptor: AdapterDescriptor,
+  context: ClaraWorkspaceContext,
+  status: ClaraSourceAdapterStatus,
+  failureReason?: string
+): ClaraSourceAdapterResult {
+  const queryHint = descriptor.queryHint(context);
+  const payload = descriptor.buildPayload(context);
+  const consulted = status === "consulted";
+
+  return {
+    sourceId: descriptor.sourceId,
+    sourceLabel: descriptor.sourceLabel,
+    scope: descriptor.scope,
+    status,
+    consulted,
+    queryHint,
+    failureReason,
+    consultedAt: consulted ? new Date().toISOString() : undefined,
+    sourceTrail: {
+      origem_interna: buildContextTrail(context),
+      origem_documental: buildDocumentTrail(context),
+      origem_api: consulted ? [`${descriptor.sourceLabel} consultado no contrato do adapter.`] : [],
+      inferencia_controlada: [
+        "Adapter preparado como boundary server-side, sem acoplamento direto com a UI.",
+        "Payload estruturado permanece logavel e persistivel mesmo quando a consulta real ainda nao foi executada."
+      ]
+    },
+    payload: {
+      ...payload,
+      ...buildPayloadBase(descriptor, context, queryHint)
+    }
+  };
+}
+
+const ADAPTERS: AdapterDescriptor[] = [
+  {
+    sourceId: "cnj-datajud",
+    sourceLabel: "CNJ / DataJud",
+    scope: "Metadados processuais, andamento e fase processual",
+    queryHint: (context) =>
+      `Consultar o processo ${context.process.processNumber} para metadados processuais e movimentacoes oficiais.`,
+    buildPayload: (context) => ({
+      summary: `Stub preparado para monitorar o processo ${context.process.processNumber} no CNJ / DataJud.`,
+      records: [
+        {
+          referenceId: `${context.process.id}-process`,
+          kind: "process",
+          label: context.process.processNumber,
+          detail: `${context.process.tribunal} | ${context.process.courtName} | ${context.process.proceduralPhase}`,
+          sourceHandle: `process:${context.process.id}`,
+          metadata: {
+            caseId: context.bankingCase.id,
+            clientId: context.client.id,
+            tribunal: context.process.tribunal
+          }
+        }
+      ],
+      findings: [
+        {
+          findingId: `${context.process.id}-phase`,
+          category: "process-monitoring",
+          title: "Monitoramento processual preparado",
+          detail: "A consulta oficial ainda nao foi executada, mas o adapter ja expoe um registro estruturado para futuros andamentos.",
+          referenceIds: [`${context.process.id}-process`]
+        }
+      ],
+      rawReferenceHandles: [`process:${context.process.id}`]
+    })
+  },
+  {
+    sourceId: "bcb",
+    sourceLabel: "Banco Central do Brasil",
+    scope: "Tarifas, series economicas, PTAX e indicadores financeiros",
+    queryHint: (context) =>
+      `Consultar series e referencias economicas ligadas a ${context.bankingCase.bankName} no contexto do caso ${context.bankingCase.id}.`,
+    buildPayload: (context) => ({
+      summary: `Stub preparado para referencias economicas do Banco Central relacionadas a ${context.bankingCase.bankName}.`,
+      records: [
+        {
+          referenceId: `${context.bankingCase.id}-institution`,
+          kind: "institution",
+          label: context.bankingCase.bankName,
+          detail: "Instituicao financeira vinculada ao caso",
+          sourceHandle: `bank:${context.bankingCase.bankName}`,
+          metadata: {
+            caseId: context.bankingCase.id,
+            processId: context.process.id,
+            niche: context.bankingCase.niche
+          }
+        }
+      ],
+      findings: [
+        {
+          findingId: `${context.bankingCase.id}-financial-context`,
+          category: "financial-indicator",
+          title: "Contexto economico preparado",
+          detail: "O adapter organiza referencias para PTAX, tarifas e series economicas sem executar chamada externa nesta story.",
+          referenceIds: [`${context.bankingCase.id}-institution`]
+        }
+      ],
+      rawReferenceHandles: [`bank:${context.bankingCase.bankName}`]
+    })
+  },
+  {
+    sourceId: "stj",
+    sourceLabel: "STJ",
+    scope: "Pesquisa de jurisprudencia bancaria e precedentes relevantes",
+    queryHint: (context) =>
+      `Pesquisar precedentes do STJ para ${context.bankingCase.title} com foco em ${context.bankingCase.mainThesis}.`,
+    buildPayload: (context) => ({
+      summary: `Stub preparado para jurisprudencia do STJ sobre ${context.bankingCase.title}.`,
+      records: [
+        {
+          referenceId: `${context.bankingCase.id}-stj-theme`,
+          kind: "jurisprudence",
+          label: context.bankingCase.title,
+          detail: context.bankingCase.mainThesis,
+          sourceHandle: `thesis:${context.bankingCase.id}:stj`,
+          metadata: {
+            caseId: context.bankingCase.id,
+            processId: context.process.id,
+            thesis: context.bankingCase.mainThesis
+          }
+        }
+      ],
+      findings: [
+        {
+          findingId: `${context.bankingCase.id}-stj-precedent`,
+          category: "precedent",
+          title: "Pesquisa de precedentes preparada",
+          detail: "A consulta oficial ao STJ nao foi executada, mas o adapter ja entrega o pacote de referencias para logging e persistencia.",
+          referenceIds: [`${context.bankingCase.id}-stj-theme`]
+        }
+      ],
+      rawReferenceHandles: [`thesis:${context.bankingCase.id}:stj`]
+    })
+  },
+  {
+    sourceId: "stf",
+    sourceLabel: "STF",
+    scope: "Pesquisa constitucional e repercussao geral quando aplicavel",
+    queryHint: (context) =>
+      `Consultar o STF apenas se houver recorte constitucional real em ${context.bankingCase.title}.`,
+    buildPayload: (context) => ({
+      summary: `Stub preparado para pesquisa constitucional do STF vinculada ao caso ${context.bankingCase.id}.`,
+      records: [
+        {
+          referenceId: `${context.bankingCase.id}-stf-scope`,
+          kind: "jurisprudence",
+          label: context.bankingCase.title,
+          detail: "Recorte constitucional condicionado a necessidade real",
+          sourceHandle: `constitutional-scope:${context.bankingCase.id}`,
+          metadata: {
+            caseId: context.bankingCase.id,
+            processId: context.process.id,
+            stage: context.bankingCase.stage
+          }
+        }
+      ],
+      findings: [
+        {
+          findingId: `${context.bankingCase.id}-stf-pre-screen`,
+          category: "precedent",
+          title: "Triagem constitucional preparada",
+          detail: "O adapter delimita quando o STF faz sentido e preserva essa triagem como dado estruturado.",
+          referenceIds: [`${context.bankingCase.id}-stf-scope`]
+        }
+      ],
+      rawReferenceHandles: [`constitutional-scope:${context.bankingCase.id}`]
+    })
+  },
+  {
+    sourceId: "consumidor-gov",
+    sourceLabel: "Consumidor.gov.br / Senacon",
+    scope: "Inteligencia complementar sobre reclamacoes bancarias",
+    queryHint: (context) =>
+      `Buscar padroes de reclamacao relacionados a ${context.bankingCase.bankName} sem misturar contextos de outros casos.`,
+    buildPayload: (context) => ({
+      summary: `Stub preparado para sinais de reclamacao ligados a ${context.bankingCase.bankName}.`,
+      records: [
+        {
+          referenceId: `${context.bankingCase.id}-consumer-bank`,
+          kind: "consumer-complaint",
+          label: context.bankingCase.bankName,
+          detail: "Instituicao alvo de pesquisa em reclamacoes publicas",
+          sourceHandle: `consumer-bank:${context.bankingCase.bankName}`,
+          metadata: {
+            caseId: context.bankingCase.id,
+            processId: context.process.id,
+            clientId: context.client.id
+          }
+        }
+      ],
+      findings: [
+        {
+          findingId: `${context.bankingCase.id}-consumer-signal`,
+          category: "consumer-signal",
+          title: "Pesquisa de reclamacoes preparada",
+          detail: "O adapter separa a fonte de sinais do workspace interno e deixa o output pronto para trilha de auditoria.",
+          referenceIds: [`${context.bankingCase.id}-consumer-bank`]
+        }
+      ],
+      rawReferenceHandles: [`consumer-bank:${context.bankingCase.bankName}`]
+    })
+  }
+];
+
+function getDescriptor(sourceId: ClaraSourceAdapterId) {
+  return ADAPTERS.find((adapter) => adapter.sourceId === sourceId);
+}
+
+export async function getClaraSourceAdapters(params?: ClaraSourceAdapterContext) {
+  const context = await resolveClaraWorkspaceContext(params);
+  const unavailableSources = new Set(params?.simulateFailedSources ?? []);
+
+  return ADAPTERS.map((descriptor) =>
+    buildSourceResult(
+      descriptor,
+      context,
+      unavailableSources.has(descriptor.sourceId) ? "unavailable" : "not_consulted",
+      unavailableSources.has(descriptor.sourceId)
+        ? `${descriptor.sourceLabel} indisponivel na execucao simulada. Nenhuma consulta externa foi realizada.`
+        : undefined
+    )
+  );
+}
+
+export async function getClaraSourceAdapterFailure(
   sourceId: ClaraSourceAdapterId,
   reason: string,
   params?: ClaraSourceAdapterContext
 ) {
-  const context = resolveContext(params);
+  const context = await resolveClaraWorkspaceContext(params);
+  const descriptor = getDescriptor(sourceId);
 
-  return buildSourceResult(
-    sourceId,
-    sourceId === "cnj-datajud"
-      ? "CNJ / DataJud"
-      : sourceId === "bcb"
-        ? "Banco Central do Brasil"
-        : sourceId === "stj"
-          ? "STJ"
-          : sourceId === "stf"
-            ? "STF"
-            : "Consumidor.gov.br / Senacon",
-    "Adapter falhou na consulta",
-    `${context.bankingCase.processNumber} | ${context.bankingCase.bankName}`,
-    [`Cliente ${context.client.id}`, `Caso ${context.bankingCase.id}`, `Processo ${context.process.id}`],
-    false,
-    reason
-  );
+  if (!descriptor) {
+    throw new Error(`Unknown Clara source adapter: ${sourceId}`);
+  }
+
+  return buildSourceResult(descriptor, context, "failed", reason);
 }

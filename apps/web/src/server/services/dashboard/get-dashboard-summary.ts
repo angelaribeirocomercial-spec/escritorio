@@ -1,4 +1,8 @@
-import { mockCases, mockClients, mockDocuments, mockTasks } from "@lexia/mocks";
+import { getAgendaCommitments, getProceduralDeadlines } from "@/server/services/agenda/get-agenda-workspace";
+import { getCases } from "@/server/services/cases/get-cases";
+import { getClients } from "@/server/services/clients/get-clients";
+import { getDocuments } from "@/server/services/documents/get-documents";
+import { getTasks } from "@/server/services/tasks/get-tasks";
 
 function formatClaimType(claimType: string) {
   return claimType
@@ -8,95 +12,80 @@ function formatClaimType(claimType: string) {
 }
 
 export async function getDashboardSummary() {
-  const activeClients = mockClients.filter(
-    (client) => client.serviceStatus === "active"
-  ).length;
-  const activeCases = mockCases.filter((bankingCase) => bankingCase.status === "active").length;
-  const pendingTasks = mockTasks.filter((task) => task.status !== "done").length;
-  const urgentTasks = mockTasks.filter((task) => task.priority === "urgent").length;
-  const analyzedContracts = mockDocuments.filter((document) =>
+  const [clients, cases, documents, tasks, commitments, deadlines] = await Promise.all([
+    getClients(),
+    getCases(),
+    getDocuments(),
+    getTasks(),
+    getAgendaCommitments(),
+    getProceduralDeadlines()
+  ]);
+
+  const activeClients = clients.filter((client) => client.serviceStatus === "active").length;
+  const activeCases = cases.filter((bankingCase) => bankingCase.status === "active").length;
+  const pendingTasks = tasks.filter((task) => task.status !== "done").length;
+  const urgentTasks = tasks.filter((task) => task.priority === "urgent").length;
+  const analyzedContracts = documents.filter((document) =>
     ["Contrato bancario", "CCB"].includes(document.documentType)
   ).length;
-  const totalPotential = mockCases.reduce(
-    (sum, bankingCase) => sum + bankingCase.estimatedValue,
-    0
-  );
-  const stalledClients = mockClients.filter(
-    (client) => client.serviceStatus === "waiting-docs"
-  ).length;
-  const teamProductivity = Math.round(
-    (mockTasks.filter((task) => task.status === "done").length / mockTasks.length) * 100
-  );
+  const totalPotential = cases.reduce((sum, bankingCase) => sum + bankingCase.estimatedValue, 0);
+  const stalledClients = clients.filter((client) => client.serviceStatus === "waiting-docs").length;
+  const teamProductivity = tasks.length
+    ? Math.round((tasks.filter((task) => task.status === "done").length / tasks.length) * 100)
+    : 0;
 
-  const deadlines = mockCases
-    .flatMap((bankingCase) =>
-      bankingCase.linkedDeadlines.map((deadline, index) => {
-        const dateMatch = deadline.match(/(\d{2}\/\d{2}\/\d{4})/);
-        return {
-          id: `${bankingCase.id}-deadline-${index}`,
-          title: deadline.replace(/\s+ate\s+\d{2}\/\d{2}\/\d{4}/, ""),
-          bankingCaseTitle: bankingCase.title,
-          bankName: bankingCase.bankName,
-          dateLabel: dateMatch?.[1] ?? "Sem data",
-          sortKey: dateMatch
-            ? dateMatch[1].split("/").reverse().join("-")
-            : "9999-12-31"
-        };
-      })
-    )
-    .sort((left, right) => left.sortKey.localeCompare(right.sortKey))
-    .slice(0, 4);
-
-  const urgentTaskList = mockTasks
+  const urgentTaskList = tasks
     .filter((task) => task.priority === "urgent" || task.priority === "high")
     .sort((left, right) => left.dueDate.localeCompare(right.dueDate))
     .slice(0, 4)
-    .map((task) => {
-      const bankingCase = mockCases.find((caseItem) => caseItem.id === task.caseId);
-      const client = mockClients.find((clientItem) => clientItem.id === task.clientId);
+    .map((task) => ({
+      id: task.id,
+      title: task.title,
+      dueDate: task.dueDate,
+      priority: task.priority,
+      clientName: task.client.fullName,
+      bankingCaseTitle: task.bankingCase.title
+    }));
 
-      return {
-        id: task.id,
-        title: task.title,
-        dueDate: task.dueDate,
-        priority: task.priority,
-        clientName: client?.fullName ?? "Cliente indisponivel",
-        bankingCaseTitle: bankingCase?.title ?? "Caso indisponivel"
-      };
-    });
+  const nextDeadlines = deadlines
+    .sort((left, right) => left.dueDate.localeCompare(right.dueDate))
+    .slice(0, 4)
+    .map((deadline) => ({
+      id: deadline.id,
+      title: deadline.title,
+      bankingCaseTitle: deadline.bankingCase.title,
+      bankName: deadline.bankingCase.bankName,
+      dateLabel: new Date(deadline.dueDate).toLocaleDateString("pt-BR"),
+      sortKey: deadline.dueDate
+    }));
 
-  const activities = [
-    {
-      id: "activity-1",
-      label: "Novo contrato bancario analisado",
-      detail: "CCB de Patricia Gomes Araujo marcada com capitalizacao mensal e CET sensivel."
-    },
-    {
-      id: "activity-2",
+  const latestActivities = [
+    ...documents.slice(0, 2).map((document) => ({
+      id: `document-${document.id}`,
+      label: `Documento ${document.documentType.toLowerCase()} carregado`,
+      detail: `${document.fileName} vinculado a ${document.client.fullName}.`
+    })),
+    ...tasks.slice(0, 1).map((task) => ({
+      id: `task-${task.id}`,
       label: "Fluxo operacional atualizado",
-      detail: "Checklist revisional de Mariana Torres Lima avancou para definicao de tese."
-    },
-    {
-      id: "activity-3",
-      label: "Pendencia documental detectada",
-      detail: "Caso de fraude PIX segue aguardando boletim de ocorrencia para robustecer a prova."
-    },
-    {
-      id: "activity-4",
-      label: "Tutela priorizada pela operacao",
-      detail: "Negativacao indevida de Patricia foi movida para a fila urgente."
-    }
-  ];
+      detail: `${task.title} esta com status ${task.status} para ${task.client.fullName}.`
+    })),
+    ...commitments.slice(0, 1).map((commitment) => ({
+      id: `commitment-${commitment.id}`,
+      label: "Compromisso agendado",
+      detail: `${commitment.title} com ${commitment.client?.fullName ?? "contexto operacional"} foi consolidado na agenda.`
+    }))
+  ].slice(0, 4);
 
   const lexiaInsights = [
-    `Voce possui ${urgentTasks} tarefas de alta urgencia impactando a execucao da carteira.`,
+    `Voce possui ${urgentTasks} tarefa(s) de alta urgencia impactando a execucao da carteira.`,
     `${stalledClients} cliente(s) seguem aguardando documentacao complementar e exigem acompanhamento.`,
     `${analyzedContracts} contratos bancarios ja foram classificados para leitura juridica especializada.`,
-    "Ha repeticao de tese revisional com foco em CET e capitalizacao entre os contratos mais sensiveis."
+    `${nextDeadlines.length} prazo(s) imediato(s) entraram no radar operacional do tenant.`
   ];
 
   const casesByType = Object.entries(
-    mockCases.reduce<Record<string, number>>((accumulator, bankingCase) => {
+    cases.reduce<Record<string, number>>((accumulator, bankingCase) => {
       const key = formatClaimType(bankingCase.claimType);
       accumulator[key] = (accumulator[key] ?? 0) + 1;
       return accumulator;
@@ -104,19 +93,19 @@ export async function getDashboardSummary() {
   ).map(([label, value]) => ({ label, value }));
 
   const casesByBank = Object.entries(
-    mockCases.reduce<Record<string, number>>((accumulator, bankingCase) => {
+    cases.reduce<Record<string, number>>((accumulator, bankingCase) => {
       accumulator[bankingCase.bankName] = (accumulator[bankingCase.bankName] ?? 0) + 1;
       return accumulator;
     }, {})
   ).map(([label, value]) => ({ label, value }));
 
   const monthlyEvolution = [
-    { label: "Nov", value: 42 },
-    { label: "Dez", value: 54 },
-    { label: "Jan", value: 61 },
-    { label: "Fev", value: 67 },
-    { label: "Mar", value: 79 },
-    { label: "Abr", value: 88 }
+    { label: "Clientes", value: clients.length },
+    { label: "Casos", value: cases.length },
+    { label: "Docs", value: documents.length },
+    { label: "Tarefas", value: tasks.length },
+    { label: "Agenda", value: commitments.length },
+    { label: "Prazos", value: deadlines.length }
   ];
 
   return {
@@ -133,9 +122,9 @@ export async function getDashboardSummary() {
     monthlyEvolution,
     casesByType,
     casesByBank,
-    deadlines,
+    deadlines: nextDeadlines,
     urgentTaskList,
-    activities,
+    activities: latestActivities,
     lexiaInsights
   };
 }

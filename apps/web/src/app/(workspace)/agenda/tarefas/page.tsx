@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { getClaraRecord, getClaraRecordDisplay } from "@/server/services/clara/clara-record-store";
 import {
@@ -56,7 +57,24 @@ export default async function AgendaTarefasPage({
     objetivo?: string;
   };
 }) {
-  const tasks = await getTasks();
+  let tasks: Awaited<ReturnType<typeof getTasks>> = [];
+  let state: {
+    title: string;
+    description: string;
+    tone?: "neutral" | "warning" | "danger";
+  } | null = null;
+
+  try {
+    tasks = await getTasks();
+  } catch {
+    state = {
+      title: "Tarefas indisponiveis no momento",
+      description:
+        "Nao foi possivel carregar a base real da agenda operacional. Valide a configuracao do Supabase, a migration da vertical e o seed do tenant ativo.",
+      tone: "danger"
+    };
+  }
+
   const preparedTask = searchParams?.publication
     ? await getOfficialDiaryTaskDraft(searchParams.publication)
     : null;
@@ -74,7 +92,11 @@ export default async function AgendaTarefasPage({
               objective: searchParams.objetivo,
               processId: searchParams.process
             })
-          : await getClaraTaskArtifact(searchParams.task, searchParams.case, searchParams.created === "1")
+          : await getClaraTaskArtifact(
+              searchParams.task,
+              searchParams.case,
+              searchParams.created === "1"
+            )
         : null;
   const claraDisplay = claraArtifact
     ? getClaraRecordDisplay(claraRecord, claraArtifact.title, claraArtifact.summary)
@@ -130,13 +152,15 @@ export default async function AgendaTarefasPage({
           <p className="mt-3 text-[15px] font-semibold text-white">{preparedTask.title}</p>
           <p className="mt-2 text-[13px] leading-6 text-slate-300">{preparedTask.description}</p>
           <p className="mt-3 text-[13px] text-slate-400">
-            {preparedTask.clientName} · {preparedTask.caseTitle} · Processo {preparedTask.processNumber}
+            {preparedTask.clientName} | {preparedTask.caseTitle} | Processo {preparedTask.processNumber}
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-slate-300">
             <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">
               Prioridade {priorityLabel(preparedTask.priority)}
             </span>
-            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">{preparedTask.sourceLabel}</span>
+            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">
+              {preparedTask.sourceLabel}
+            </span>
           </div>
         </section>
       ) : null}
@@ -147,19 +171,29 @@ export default async function AgendaTarefasPage({
             Tarefa preparada pela Clara
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-slate-300">
-            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">{claraArtifact.statusLabel}</span>
-            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">{claraArtifact.stageLabel}</span>
-            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">{claraArtifact.recordId}</span>
+            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">
+              {claraArtifact.statusLabel}
+            </span>
+            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">
+              {claraArtifact.stageLabel}
+            </span>
+            <span className="rounded-[2px] border px-2 py-1 mj-model-gridline">
+              {claraArtifact.recordId}
+            </span>
           </div>
           <p className="mt-3 text-[15px] font-semibold text-white">{claraDisplay?.title}</p>
           <p className="mt-2 text-[13px] leading-6 text-slate-300">{claraDisplay?.detail}</p>
           <p className="mt-3 text-[13px] text-slate-400">
-            Responsavel: {claraArtifact.ownerLabel} · Prioridade {priorityLabel(claraArtifact.priorityLabel)}
+            Responsavel: {claraArtifact.ownerLabel} | Prioridade{" "}
+            {priorityLabel(claraArtifact.priorityLabel)}
           </p>
           <p className="mt-2 text-[13px] text-slate-300">Proxima medida: {claraArtifact.nextStep}</p>
           {relatedTask ? (
             <div className="mt-3">
-              <Link className="text-[13px] text-slate-300 transition hover:text-white" href={`/tarefas/${relatedTask.id}`}>
+              <Link
+                className="text-[13px] text-slate-300 transition hover:text-white"
+                href={`/tarefas/${relatedTask.id}`}
+              >
                 Abrir detalhe da tarefa
               </Link>
             </div>
@@ -203,47 +237,59 @@ export default async function AgendaTarefasPage({
         </form>
       </section>
 
-      <section className="mj-model-panel overflow-hidden">
-        <div className="grid grid-cols-[8rem_1.1fr_1fr_9rem_8rem_7rem] border-b bg-black/10 px-3 py-3 text-[13px] font-semibold text-slate-300 mj-model-gridline">
-          <span>Prazo</span>
-          <span>Tarefa</span>
-          <span>Cliente / Caso</span>
-          <span>Responsavel</span>
-          <span>Status</span>
-          <span className="text-right">Abrir</span>
-        </div>
-
-        {filteredTasks.length ? (
-          filteredTasks.map((task, index) => (
-            <div
-              key={task.id}
-              className="grid grid-cols-[8rem_1.1fr_1fr_9rem_8rem_7rem] items-center px-3 py-3 text-[13px]"
-              style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}
-            >
-              <span className="text-slate-300">{new Date(task.dueDate).toLocaleDateString("pt-BR")}</span>
-              <div className="min-w-0">
-                <p className="truncate text-slate-200">{task.title}</p>
-                <p className="truncate text-[12px] text-slate-400">Prioridade {priorityLabel(task.priority)}</p>
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-slate-200">{task.client.fullName}</p>
-                <p className="truncate text-[12px] text-slate-400">{task.bankingCase.title}</p>
-              </div>
-              <span className="truncate text-slate-300">{task.assigneeLabel}</span>
-              <span className="text-slate-300">{statusLabel(task.status)}</span>
-              <div className="text-right">
-                <Link className="text-slate-300 transition hover:text-white" href={`/tarefas/${task.id}`}>
-                  abrir
-                </Link>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="px-3 py-3">
-            <p className="mj-model-empty">Voce ainda nao cadastrou nenhuma tarefa.</p>
+      {state ? (
+        <WorkspaceStatePanel
+          description={state.description}
+          title={state.title}
+          tone={state.tone ?? "neutral"}
+        />
+      ) : (
+        <section className="mj-model-panel overflow-hidden">
+          <div className="grid grid-cols-[8rem_1.1fr_1fr_9rem_8rem_7rem] border-b bg-black/10 px-3 py-3 text-[13px] font-semibold text-slate-300 mj-model-gridline">
+            <span>Prazo</span>
+            <span>Tarefa</span>
+            <span>Cliente / Caso</span>
+            <span>Responsavel</span>
+            <span>Status</span>
+            <span className="text-right">Abrir</span>
           </div>
-        )}
-      </section>
+
+          {filteredTasks.length ? (
+            filteredTasks.map((task, index) => (
+              <div
+                key={task.id}
+                className="grid grid-cols-[8rem_1.1fr_1fr_9rem_8rem_7rem] items-center px-3 py-3 text-[13px]"
+                style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}
+              >
+                <span className="text-slate-300">
+                  {new Date(task.dueDate).toLocaleDateString("pt-BR")}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-slate-200">{task.title}</p>
+                  <p className="truncate text-[12px] text-slate-400">
+                    Prioridade {priorityLabel(task.priority)}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-slate-200">{task.client.fullName}</p>
+                  <p className="truncate text-[12px] text-slate-400">{task.bankingCase.title}</p>
+                </div>
+                <span className="truncate text-slate-300">{task.assigneeLabel}</span>
+                <span className="text-slate-300">{statusLabel(task.status)}</span>
+                <div className="text-right">
+                  <Link className="text-slate-300 transition hover:text-white" href={`/tarefas/${task.id}`}>
+                    abrir
+                  </Link>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="px-3 py-3">
+              <p className="mj-model-empty">Nenhuma tarefa encontrada para o tenant ativo.</p>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }
