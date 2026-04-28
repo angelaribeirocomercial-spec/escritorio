@@ -24,12 +24,16 @@ export function SimpleClientList({
         <p className="mj-model-title">Clientes</p>
 
         <div className="flex gap-2">
-          <button className="mj-model-button-gray" type="button">
+          <button
+            aria-disabled="true"
+            className="mj-model-button-gray cursor-not-allowed opacity-70"
+            type="button"
+          >
             Importar lote
           </button>
-          <button className="mj-model-button-green" type="button">
-            Adicionar
-          </button>
+          <Link className="mj-model-button-green inline-flex items-center justify-center" href="/novo-atendimento-bancario">
+            Novo atendimento bancario
+          </Link>
         </div>
       </div>
 
