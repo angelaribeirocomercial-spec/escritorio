@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const signInSchema = z.object({
@@ -15,6 +16,13 @@ function redirectWithError(request: NextRequest, message: string) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isSupabaseConfigured()) {
+    return redirectWithError(
+      request,
+      "Supabase nao configurado. Configure as variaveis de ambiente ou use a demonstracao local."
+    );
+  }
+
   const formData = await request.formData();
   const parsed = signInSchema.safeParse({
     email: formData.get("email"),

@@ -1,6 +1,9 @@
 ﻿import Link from "next/link";
 
+import { WorkspaceStatePanel } from "@lexia/ui";
+
 import { ClaraConversationCard } from "@/components/layout/clara-conversation-card";
+import { WorkspacePage } from "@/components/layout/workspace-page";
 import {
   commitClaraExecutionAction,
   updateClaraRecordContentAction,
@@ -165,32 +168,60 @@ export default async function ClaraPage({
       ? "revisional"
       : null;
   const activeTab = isTabId(searchParams?.tab) ? searchParams.tab : "analise";
-  const clara = await getClaraWorkspace({
-    clientId: searchParams?.client,
-    caseId: searchParams?.case,
-    processId: searchParams?.process,
-    documentId: searchParams?.document,
-    documentId2: searchParams?.document2,
-    niche: activeNiche ?? undefined,
-    tab: activeTab,
-    objective: searchParams?.objetivo
-  });
-  const recentRecords = await listClaraRecords(24);
+  let clara: Awaited<ReturnType<typeof getClaraWorkspace>>;
+  let recentRecords: Awaited<ReturnType<typeof listClaraRecords>>;
+  let revisionalWorkspace: Awaited<ReturnType<typeof getBankingRevisionalWorkspace>> | null;
+
+  try {
+    clara = await getClaraWorkspace({
+      clientId: searchParams?.client,
+      caseId: searchParams?.case,
+      processId: searchParams?.process,
+      documentId: searchParams?.document,
+      documentId2: searchParams?.document2,
+      niche: activeNiche ?? undefined,
+      tab: activeTab,
+      objective: searchParams?.objetivo
+    });
+    recentRecords = await listClaraRecords(24);
+    revisionalWorkspace =
+      activeNiche === "revisional"
+        ? await getBankingRevisionalWorkspace({
+            clientId: searchParams?.client,
+            documentId: searchParams?.document,
+            processId: searchParams?.process,
+            objective: searchParams?.objetivo,
+            financedAmount: searchParams?.financedAmount,
+            installmentCount: searchParams?.installmentCount,
+            contractedInstallment: searchParams?.contractedInstallment,
+            chargedInstallment: searchParams?.chargedInstallment,
+            targetReductionPercent: searchParams?.targetReductionPercent
+          })
+        : null;
+  } catch {
+    return (
+      <WorkspacePage
+        description="A Clara nao conseguiu resolver contexto suficiente para abrir a sessao com seguranca."
+        eyebrow="Clara"
+        metrics={[
+          { label: "Estado", value: "Indisponivel" },
+          { label: "Fonte", value: "Workspace real" },
+          { label: "Acao", value: "Validar contexto" },
+          { label: "Fallback", value: "Protegido" }
+        ]}
+        title="Clara indisponivel no momento"
+      >
+        <WorkspaceStatePanel
+          actionHref="/novo-atendimento-bancario"
+          actionLabel="Abrir novo atendimento bancario"
+          description="Faltou contexto real suficiente para a Clara montar cliente, caso, processo e documento com seguranca. Continue pelo atendimento bancario ou valide a base do tenant/demo."
+          title="Falha ao montar o contexto da Clara"
+          tone="danger"
+        />
+      </WorkspacePage>
+    );
+  }
   const activeWorkspace = clara.tabs[activeTab];
-  const revisionalWorkspace =
-    activeNiche === "revisional"
-      ? await getBankingRevisionalWorkspace({
-          clientId: searchParams?.client,
-          documentId: searchParams?.document,
-          processId: searchParams?.process,
-          objective: searchParams?.objetivo,
-          financedAmount: searchParams?.financedAmount,
-          installmentCount: searchParams?.installmentCount,
-          contractedInstallment: searchParams?.contractedInstallment,
-          chargedInstallment: searchParams?.chargedInstallment,
-          targetReductionPercent: searchParams?.targetReductionPercent
-        })
-      : null;
   const nicheConfig = activeNiche
     ? {
         revisional: {
@@ -350,6 +381,30 @@ export default async function ClaraPage({
     selectedTaskFromParam ??
     taskOptions[0] ??
     clara.selectors.tasks[0];
+
+  if (!selectedClient || !selectedProcess || !selectedCase || !selectedDocument || !selectedTask) {
+    return (
+      <WorkspacePage
+        description="A Clara exige pelo menos um cliente, caso, processo, documento e tarefa para abrir a sessao operacional completa."
+        eyebrow="Clara"
+        metrics={[
+          { label: "Clientes", value: `${clara.selectors.clients.length}` },
+          { label: "Casos", value: `${clara.selectors.cases.length}` },
+          { label: "Processos", value: `${clara.selectors.processes.length}` },
+          { label: "Documentos", value: `${clara.selectors.documents.length}` }
+        ]}
+        title="Contexto insuficiente para abrir a Clara"
+      >
+        <WorkspaceStatePanel
+          actionHref="/pessoas/clientes"
+          actionLabel="Abrir clientes"
+          description="A base atual ainda nao fornece todos os objetos minimos para a Clara operar com seguranca. Cadastre ou complete cliente, caso, processo, documento e tarefa antes de voltar."
+          title="Workspace minimo ainda incompleto"
+          tone="warning"
+        />
+      </WorkspacePage>
+    );
+  }
   const nicheOperational = activeNiche
     ? {
         revisional: null,
@@ -1348,63 +1403,47 @@ export default async function ClaraPage({
           <ClaraConversationCard
             badgeLabel="CLARA"
             badgeSubtitle="Orquestrador do sistema"
-            responseDetail="Pergunte � Clara. Ela localiza clientes, processos, documentos e andamentos e leva voc� direto ao que precisa."
+            responseDetail="Converse com a Clara para localizar contexto, escolher o nicho bancario certo e seguir para a proxima acao real do caso."
             interactive
             searchIndex={searchIndex}
-            statusLabel="Hub"
-            statusLine="Nicho define o motor de trabalho. A busca continua global."
+            statusLabel="Entrada"
+            statusLine="A Clara deve abrir o fluxo correto do caso, nao espalhar atalhos soltos."
           />
         </section>
 
         <section className="workspace-panel p-6">
           <div className="flex flex-col gap-2">
-            <p className="workspace-kicker">Acesso rapido</p>
+            <p className="workspace-kicker">Entrada unica do caso</p>
             <p className="text-sm leading-6 text-slate-300">
-              Atalhos operacionais para iniciar um caso novo sem cair em telas intermediarias.
+              Inicie um novo atendimento bancario por um unico ponto de entrada. O onboarding completo sera consolidado nas proximas entregas em vez de espalhar o fluxo por varias telas.
             </p>
           </div>
-            <div className="mt-4 grid gap-3 lg:grid-cols-2 xl:grid-cols-5">
-            {[
-              {
-                label: "Cadastrar cliente",
-                href: "/pessoas/clientes/adicionar",
-                detail: "Abre o cadastro do cliente novo para iniciar o fluxo."
-              },
-              {
-                label: "Registrar caso",
-                href: "/casos/adicionar",
-                detail: "Classifica o caso por nicho, tese e urgencia."
-              },
-              {
-                label: "Anexar documentos",
-                href: "/documentos/enviar-arquivos",
-                detail: "Leva para o envio e vinculacao de documentos do caso."
-              },
-              {
-                label: "Abrir processo",
-                href: "/processos/adicionar",
-                detail: "Cria o processo manualmente quando o caso ja estiver pronto."
-              },
-              {
-                label: "Abrir editor formal",
-                href: "/editor-de-texto/criar-texto",
-                detail: "Comeca a minuta formal com revisao humana e salvamento."
-              }
-            ].map((item) => (
-                <Link
-                  key={item.label}
-                  className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.07]"
-                  href={item.href}
-                >
-                  <div>
-                    <p className="text-[15px] font-semibold leading-6 text-white">{item.label}</p>
-                    <p className="mt-2 text-[13px] leading-6 text-slate-300">{item.detail}</p>
-                  </div>
-                  <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[11px] font-semibold text-emerald-100">
-                    Abrir atalho
-                  </span>
-                </Link>
-            ))}
+          <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <Link
+              className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 p-5 transition hover:bg-emerald-300/15"
+              href="/novo-atendimento-bancario"
+            >
+              <div>
+                <p className="text-lg font-semibold text-white">Novo atendimento bancario</p>
+                <p className="mt-2 text-sm leading-6 text-slate-200">
+                  Cliente, caso, nicho, documentos e objetivo inicial devem nascer do mesmo ponto de entrada.
+                </p>
+              </div>
+              <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/30 bg-emerald-300/15 px-3 py-1 text-xs font-semibold text-emerald-100">
+                Abrir entrada unica
+              </span>
+            </Link>
+
+            <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Direcao desta fase
+              </p>
+              <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
+                <li>1. Escolher o nicho bancario correto</li>
+                <li>2. Abrir o caso por uma unica entrada</li>
+                <li>3. Levar o caso para o cockpit do cliente</li>
+              </ul>
+            </div>
           </div>
         </section>
 
@@ -1508,13 +1547,13 @@ export default async function ClaraPage({
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                   Cliente
                 </label>
-                <select className="reference-search-input w-full px-3 py-2 text-sm outline-none" name="client">
+                <select
+                  className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                  defaultValue={selectedClient.id}
+                  name="client"
+                >
                   {clara.selectors.clients.map((option) => (
-                    <option
-                      key={option.id}
-                      selected={option.id === selectedClient.id}
-                      value={option.id}
-                    >
+                    <option key={option.id} value={option.id}>
                       {option.label}
                     </option>
                   ))}
@@ -1543,19 +1582,17 @@ export default async function ClaraPage({
                           ))}
                         </select>
                       ) : (
-                        <select className="reference-search-input w-full px-3 py-2 text-sm outline-none" name={name}>
+                        <select
+                          className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                          defaultValue={(searchParams as Record<string, string | undefined> | undefined)?.[name]}
+                          name={name}
+                        >
                           {(
                             field.type === "process"
                               ? processOptions
                               : getOptions(field.type)
                           ).map((option) => (
-                            <option
-                              key={option.id}
-                              selected={
-                                (searchParams as Record<string, string | undefined> | undefined)?.[name] === option.id
-                              }
-                              value={option.id}
-                            >
+                            <option key={option.id} value={option.id}>
                               {option.label}
                             </option>
                           ))}
@@ -1595,19 +1632,17 @@ export default async function ClaraPage({
                             ))}
                           </select>
                         ) : (
-                          <select className="reference-search-input w-full px-3 py-2 text-sm outline-none" name={name}>
+                          <select
+                            className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                            defaultValue={(searchParams as Record<string, string | undefined> | undefined)?.[name]}
+                            name={name}
+                          >
                             {(
                               field.type === "process"
                                 ? processOptions
                                 : getOptions(field.type)
                             ).map((option) => (
-                              <option
-                                key={option.id}
-                                selected={
-                                  (searchParams as Record<string, string | undefined> | undefined)?.[name] === option.id
-                                }
-                                value={option.id}
-                              >
+                              <option key={option.id} value={option.id}>
                                 {option.label}
                               </option>
                             ))}

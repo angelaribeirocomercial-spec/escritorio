@@ -67,6 +67,8 @@ export interface ClientRecord {
 export type BankingCaseStatus = "draft" | "active" | "awaiting-action" | "closed";
 export type BankingCaseRisk = "low" | "medium" | "high";
 export type BankingNiche = "revisional" | "fraude" | "busca-apreensao";
+export type BankingWorkflowStepState = "done" | "current" | "pending";
+export type BankingChecklistItemState = "received" | "missing";
 
 export const BANKING_NICHES: ReadonlyArray<{
   value: BankingNiche;
@@ -81,6 +83,35 @@ export function getBankingNicheLabel(niche: BankingNiche): string {
   return (
     BANKING_NICHES.find((entry) => entry.value === niche)?.label ?? "Nicho bancario"
   );
+}
+
+export interface BankingCaseWorkflowStepRecord {
+  id: string;
+  title: string;
+  detail: string;
+  state: BankingWorkflowStepState;
+}
+
+export interface BankingCaseWorkflowStateRecord {
+  phaseLabel: string;
+  nextStep: string;
+  completionLabel: string;
+  currentStepId: string;
+  steps: readonly BankingCaseWorkflowStepRecord[];
+}
+
+export interface BankingCaseChecklistItemRecord {
+  id: string;
+  label: string;
+  state: BankingChecklistItemState;
+  required: boolean;
+}
+
+export interface BankingCaseChecklistStateRecord {
+  completionLabel: string;
+  requiredDocuments: readonly string[];
+  missingDocuments: readonly string[];
+  items: readonly BankingCaseChecklistItemRecord[];
 }
 
 export interface BankingCaseRecord {
@@ -104,6 +135,8 @@ export interface BankingCaseRecord {
   linkedTasks: readonly string[];
   linkedDeadlines: readonly string[];
   lexiaInsights: readonly string[];
+  workflowState: BankingCaseWorkflowStateRecord;
+  checklistState: BankingCaseChecklistStateRecord;
 }
 
 export type JudicialProcessStatus =

@@ -1,19 +1,13 @@
-import { ReferenceListPage } from "@/components/layout/reference-list-page";
+import { WorkspaceStatePanel } from "@lexia/ui";
 
 export default function ProcessosImportarOabPage() {
   return (
-    <ReferenceListPage
-      actions={[{ label: "Importar", tone: "primary" }]}
-      count={1}
-      emptyState="Nenhum processo importado via OAB."
-      rows={[
-        {
-          id: "oab",
-          title: "Importacao via OAB",
-          detail: "Area preparada para captacao automatizada por numero de registro."
-        }
-      ]}
-      title="Importar via OAB"
+    <WorkspaceStatePanel
+      actionHref="/processos"
+      actionLabel="Voltar para processos"
+      description="A importacao automatizada por OAB depende de integracao externa especifica. Use a lista real de processos enquanto esse conector nao estiver implementado."
+      title="Importacao via OAB indisponivel"
+      tone="warning"
     />
   );
 }

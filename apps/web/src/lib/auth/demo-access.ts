@@ -4,8 +4,8 @@ import { WorkspaceSession } from "@/lib/auth/session";
 
 export const DEMO_AUTH_COOKIE = "lexia-demo-auth";
 
-export function isLocalDemoAccessEnabled() {
-  return process.env.NODE_ENV !== "production";
+export function isDemoAccessEnabled() {
+  return process.env.LEXIA_DISABLE_DEMO_ACCESS !== "true";
 }
 
 export function buildDemoWorkspaceSession(): WorkspaceSession {

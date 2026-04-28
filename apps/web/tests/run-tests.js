@@ -10,6 +10,7 @@ assert.equal(true, true);
   "src/app/(auth)/sign-in/sign-in-form.tsx",
   "src/app/(workspace)/layout.tsx",
   "src/app/(workspace)/dashboard/page.tsx",
+  "src/app/(workspace)/crm/page.tsx",
   "src/app/(workspace)/pessoas/page.tsx",
   "src/app/(workspace)/pessoas/clientes/page.tsx",
   "src/app/(workspace)/pessoas/adversos/page.tsx",
@@ -32,6 +33,7 @@ assert.equal(true, true);
   "src/app/(workspace)/agenda/compromissos/page.tsx",
   "src/app/(workspace)/agenda/tarefas/page.tsx",
   "src/app/(workspace)/agenda/prazos/page.tsx",
+  "src/app/(workspace)/operacao/page.tsx",
   "src/app/(workspace)/financeiro/page.tsx",
   "src/app/(workspace)/financeiro/despesas/page.tsx",
   "src/app/(workspace)/financeiro/receitas/page.tsx",
@@ -42,7 +44,10 @@ assert.equal(true, true);
   "src/app/(workspace)/estatisticas/page.tsx",
   "src/app/(workspace)/documentos/page.tsx",
   "src/app/(workspace)/documentos/[documentId]/page.tsx",
+  "src/app/(workspace)/documentos/enviar-arquivos/page.tsx",
+  "src/app/(workspace)/documentos/relatorios/page.tsx",
   "src/app/(workspace)/site/page.tsx",
+  "src/app/(workspace)/site/[subpage]/page.tsx",
   "src/app/(workspace)/editor-de-texto/page.tsx",
   "src/app/(workspace)/analise-contrato/page.tsx",
   "src/app/(workspace)/tarefas/page.tsx",
@@ -50,6 +55,7 @@ assert.equal(true, true);
   "src/app/(workspace)/lexia/page.tsx",
   "src/app/(workspace)/equipe/page.tsx",
   "src/app/(workspace)/configuracoes/page.tsx",
+  "src/components/layout/workspace-navigation.ts",
   "src/components/layout/workspace-shell.tsx",
   "src/components/layout/lexia-context-actions.tsx",
   "src/components/layout/session-actions.tsx",
@@ -68,6 +74,7 @@ assert.equal(true, true);
   "src/server/services/clients/get-clients.ts",
   "src/server/services/cases/get-cases.ts",
   "src/server/services/documents/get-documents.ts",
+  "src/server/services/documents/get-document-file-url.ts",
   "src/server/services/tasks/get-tasks.ts"
 ].forEach((relativePath) => {
   assert.equal(
@@ -76,5 +83,1436 @@ assert.equal(true, true);
     `Expected file to exist: ${relativePath}`
   );
 });
+
+const supabaseEnvSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/lib/supabase/env.ts"),
+  "utf8"
+);
+assert.match(
+  supabaseEnvSource,
+  /throw new SupabaseConfigError/,
+  "Expected Supabase env loader to fail explicitly when env is missing."
+);
+assert.match(
+  supabaseEnvSource,
+  /process\.env\.SUPABASE_URL/,
+  "Expected Supabase env loader to accept server-side SUPABASE_URL aliases."
+);
+assert.match(
+  supabaseEnvSource,
+  /process\.env\.SUPABASE_ANON_KEY/,
+  "Expected Supabase env loader to accept server-side SUPABASE_ANON_KEY aliases."
+);
+assert.doesNotMatch(
+  supabaseEnvSource,
+  /example\.supabase\.co|public-anon-key-placeholder/,
+  "Expected Supabase env loader to avoid placeholder credentials."
+);
+
+const workspaceContextSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/auth/workspace-context.ts"),
+  "utf8"
+);
+assert.match(
+  workspaceContextSource,
+  /No active workspace membership found/,
+  "Expected workspace context resolution to fail explicitly when membership is missing."
+);
+assert.doesNotMatch(
+  workspaceContextSource,
+  /buildFallbackContext/,
+  "Expected workspace context fallback to be removed."
+);
+
+const sessionSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/lib/auth/session.ts"),
+  "utf8"
+);
+assert.match(
+  sessionSource,
+  /Configure%20NEXT_PUBLIC_SUPABASE_URL%20e%20NEXT_PUBLIC_SUPABASE_ANON_KEY/,
+  "Expected protected routes to redirect with explicit Supabase configuration guidance."
+);
+
+const dashboardServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/dashboard/get-dashboard-summary.ts"),
+  "utf8"
+);
+assert.match(
+  dashboardServiceSource,
+  /getClients\(\)/,
+  "Expected dashboard summary to read real clients."
+);
+assert.match(
+  dashboardServiceSource,
+  /getCases\(\)/,
+  "Expected dashboard summary to read real cases."
+);
+assert.match(
+  dashboardServiceSource,
+  /getDocuments\(\)/,
+  "Expected dashboard summary to read real documents."
+);
+assert.match(
+  dashboardServiceSource,
+  /getTasks\(\)/,
+  "Expected dashboard summary to read real tasks."
+);
+assert.match(
+  dashboardServiceSource,
+  /getAgendaCommitments\(\)/,
+  "Expected dashboard summary to read real agenda commitments."
+);
+assert.match(
+  dashboardServiceSource,
+  /getProceduralDeadlines\(\)/,
+  "Expected dashboard summary to read real procedural deadlines."
+);
+assert.doesNotMatch(
+  dashboardServiceSource,
+  /mockClients|mockCases|mockDocuments|mockTasks/,
+  "Expected dashboard summary to stop using primary mock sources."
+);
+
+const dashboardPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/dashboard/page.tsx"),
+  "utf8"
+);
+assert.match(
+  dashboardPageSource,
+  /Dashboard indisponivel no momento/,
+  "Expected dashboard page to render a controlled error state."
+);
+
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/dashboard/loading.tsx")),
+  true,
+  "Expected loading state for the dashboard route."
+);
+
+const clientServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/clients/get-clients.ts"),
+  "utf8"
+);
+assert.match(
+  clientServiceSource,
+  /\.from\("clients"\)/,
+  "Expected clients service to read from the real clients table."
+);
+assert.doesNotMatch(
+  clientServiceSource,
+  /mockClients/,
+  "Expected clients service to stop using mock clients as its primary source."
+);
+
+const clientsPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/pessoas/clientes/page.tsx"),
+  "utf8"
+);
+assert.match(
+  clientsPageSource,
+  /Clientes indisponiveis no momento/,
+  "Expected clients page to render a controlled error state."
+);
+
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/pessoas/clientes/loading.tsx")),
+  true,
+  "Expected loading state for the clients list route."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/pessoas/clientes/[clientId]/loading.tsx")),
+  true,
+  "Expected loading state for the client detail route."
+);
+
+const adversaryServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/adversaries/get-adversaries.ts"),
+  "utf8"
+);
+assert.match(
+  adversaryServiceSource,
+  /\.from\("adversaries"\)/,
+  "Expected adversary service to read from the real adversaries table."
+);
+assert.doesNotMatch(
+  adversaryServiceSource,
+  /mock/,
+  "Expected adversary service to avoid mock adversary sources."
+);
+
+const adversariesPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/pessoas/adversos/page.tsx"),
+  "utf8"
+);
+assert.match(
+  adversariesPageSource,
+  /getAdversaries\(\)/,
+  "Expected adversaries page to read real adversaries."
+);
+assert.match(
+  adversariesPageSource,
+  /Adversos indisponiveis no momento/,
+  "Expected adversaries page to render a controlled error state."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/pessoas/adversos/loading.tsx")),
+  true,
+  "Expected loading state for the adversaries route."
+);
+
+const peopleSubpageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/pessoas/[subpage]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  peopleSubpageSource,
+  /getAdversaries\(\)/,
+  "Expected people subpage to read real adversaries for opposing attorneys."
+);
+assert.match(
+  peopleSubpageSource,
+  /getClients\(\)/,
+  "Expected people subpage to read real clients for contacts and parties."
+);
+assert.match(
+  peopleSubpageSource,
+  /Diretorio indisponivel no momento/,
+  "Expected people subpage to render a controlled error state."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/pessoas/[subpage]/loading.tsx")),
+  true,
+  "Expected loading state for people directory subpages."
+);
+
+const processServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/processes/get-processes.ts"),
+  "utf8"
+);
+assert.match(
+  processServiceSource,
+  /\.from\("processes"\)/,
+  "Expected processes service to read from the real processes table."
+);
+assert.doesNotMatch(
+  processServiceSource,
+  /mockProcesses/,
+  "Expected processes service to stop using mock processes as its primary source."
+);
+
+const processPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/page.tsx"),
+  "utf8"
+);
+assert.match(
+  processPageSource,
+  /Processos indisponiveis no momento/,
+  "Expected processes page to render a controlled error state."
+);
+
+const processListPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/lista/page.tsx"),
+  "utf8"
+);
+assert.match(
+  processListPageSource,
+  /redirect\("\/processos"\)/,
+  "Expected process list shortcut route to redirect to the canonical real process list."
+);
+
+const processTrashPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/lixeira/page.tsx"),
+  "utf8"
+);
+assert.match(
+  processTrashPageSource,
+  /getProcesses\(\)/,
+  "Expected process trash page to read real processes."
+);
+assert.match(
+  processTrashPageSource,
+  /status === "closed"/,
+  "Expected process trash page to filter archived or closed processes."
+);
+assert.doesNotMatch(
+  processTrashPageSource,
+  /Area preparada/,
+  "Expected process trash page to stop rendering static placeholder rows."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/processos/lixeira/loading.tsx")),
+  true,
+  "Expected loading state for the process trash route."
+);
+
+[
+  "importar-lote",
+  "importar-oab"
+].forEach((route) => {
+  const source = fs.readFileSync(
+    path.join(__dirname, "..", `src/app/(workspace)/processos/${route}/page.tsx`),
+    "utf8"
+  );
+
+  assert.match(
+    source,
+    /WorkspaceStatePanel/,
+    `Expected processos/${route} to render a controlled unavailable state.`
+  );
+  assert.doesNotMatch(
+    source,
+    /Area preparada/,
+    `Expected processos/${route} to stop rendering a placeholder prepared area.`
+  );
+});
+
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/processos/loading.tsx")),
+  true,
+  "Expected loading state for the processes list route."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/processos/[processId]/loading.tsx")),
+  true,
+  "Expected loading state for the process detail route."
+);
+
+const proceduralUpdatesServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/procedural-updates/get-procedural-updates.ts"),
+  "utf8"
+);
+assert.match(
+  proceduralUpdatesServiceSource,
+  /\.from\("procedural_updates"\)/,
+  "Expected procedural updates service to read from the real procedural updates table."
+);
+assert.match(
+  proceduralUpdatesServiceSource,
+  /getClients\(\)/,
+  "Expected procedural updates service to preserve real client context."
+);
+assert.match(
+  proceduralUpdatesServiceSource,
+  /getCases\(\)/,
+  "Expected procedural updates service to preserve real case context."
+);
+assert.match(
+  proceduralUpdatesServiceSource,
+  /getProcesses\(\)/,
+  "Expected procedural updates service to preserve real process context."
+);
+assert.doesNotMatch(
+  proceduralUpdatesServiceSource,
+  /mockProceduralUpdates|mockClients|mockCases|mockProcesses/,
+  "Expected procedural updates service to stop using primary mock sources."
+);
+
+const officialDiaryServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/official-diary/get-official-diary.ts"),
+  "utf8"
+);
+assert.match(
+  officialDiaryServiceSource,
+  /\.from\("official_diary_publications"\)/,
+  "Expected official diary service to read from the real official diary publications table."
+);
+assert.match(
+  officialDiaryServiceSource,
+  /getClients\(\)/,
+  "Expected official diary service to preserve real client context."
+);
+assert.match(
+  officialDiaryServiceSource,
+  /getCases\(\)/,
+  "Expected official diary service to preserve real case context."
+);
+assert.match(
+  officialDiaryServiceSource,
+  /getProcesses\(\)/,
+  "Expected official diary service to preserve real process context."
+);
+assert.match(
+  officialDiaryServiceSource,
+  /mapUrgencyToPriority/,
+  "Expected official diary task draft priority mapping to remain available."
+);
+assert.match(
+  officialDiaryServiceSource,
+  /getArchivedOfficialDiaryPublications/,
+  "Expected official diary service to expose archived publications."
+);
+assert.doesNotMatch(
+  officialDiaryServiceSource,
+  /mockOfficialDiaryPublications|mockClients|mockCases|mockProcesses/,
+  "Expected official diary service to stop using primary mock sources."
+);
+
+const officialDiaryPublicationsPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/diario-oficial/publicacoes/page.tsx"),
+  "utf8"
+);
+assert.match(
+  officialDiaryPublicationsPageSource,
+  /getOfficialDiaryPublications\(\)/,
+  "Expected official diary publications page to read real publications."
+);
+assert.match(
+  officialDiaryPublicationsPageSource,
+  /Publicacoes indisponiveis no momento/,
+  "Expected official diary publications page to render a controlled error state."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/diario-oficial/publicacoes/loading.tsx")),
+  true,
+  "Expected loading state for the official diary publications route."
+);
+
+const officialDiaryLawyersPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/diario-oficial/advogados/page.tsx"),
+  "utf8"
+);
+assert.match(
+  officialDiaryLawyersPageSource,
+  /getProcesses\(\)/,
+  "Expected official diary lawyers page to derive monitored lawyers from real processes."
+);
+assert.match(
+  officialDiaryLawyersPageSource,
+  /Advogados indisponiveis no momento/,
+  "Expected official diary lawyers page to render a controlled error state."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/diario-oficial/advogados/loading.tsx")),
+  true,
+  "Expected loading state for the official diary lawyers route."
+);
+
+const officialDiaryKeywordsPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/diario-oficial/palavras-chave/page.tsx"),
+  "utf8"
+);
+assert.match(
+  officialDiaryKeywordsPageSource,
+  /getAdversaries\(\)/,
+  "Expected official diary keywords page to derive terms from real adversaries."
+);
+assert.match(
+  officialDiaryKeywordsPageSource,
+  /getOfficialDiaryPublications\(\)/,
+  "Expected official diary keywords page to derive terms from real publications."
+);
+assert.match(
+  officialDiaryKeywordsPageSource,
+  /Palavras-chave indisponiveis no momento/,
+  "Expected official diary keywords page to render a controlled error state."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/diario-oficial/palavras-chave/loading.tsx")),
+  true,
+  "Expected loading state for the official diary keywords route."
+);
+
+const officialDiaryTrashPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/diario-oficial/lixeira/page.tsx"),
+  "utf8"
+);
+assert.match(
+  officialDiaryTrashPageSource,
+  /getArchivedOfficialDiaryPublications\(\)/,
+  "Expected official diary trash page to read archived real publications."
+);
+assert.match(
+  officialDiaryTrashPageSource,
+  /Publicacoes excluidas indisponiveis/,
+  "Expected official diary trash page to render a controlled error state."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/diario-oficial/lixeira/loading.tsx")),
+  true,
+  "Expected loading state for the official diary trash route."
+);
+
+const proceduralUpdatesPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/andamentos/automaticos/page.tsx"),
+  "utf8"
+);
+assert.match(
+  proceduralUpdatesPageSource,
+  /getProceduralUpdates\(\)/,
+  "Expected automatic procedural updates page to read real procedural updates."
+);
+assert.match(
+  proceduralUpdatesPageSource,
+  /Andamentos indisponiveis no momento/,
+  "Expected automatic procedural updates page to render a controlled error state."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/andamentos/automaticos/loading.tsx")),
+  true,
+  "Expected loading state for the automatic procedural updates route."
+);
+
+const proceduralMonitoringPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/andamentos/monitoramentos/page.tsx"),
+  "utf8"
+);
+assert.match(
+  proceduralMonitoringPageSource,
+  /getProcesses\(\)/,
+  "Expected procedural monitoring page to read real processes."
+);
+assert.match(
+  proceduralMonitoringPageSource,
+  /Monitoramentos indisponiveis no momento/,
+  "Expected procedural monitoring page to render a controlled error state."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/andamentos/monitoramentos/loading.tsx")),
+  true,
+  "Expected loading state for the procedural monitoring route."
+);
+
+const processLatestUpdatesPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/ultimos-andamentos/page.tsx"),
+  "utf8"
+);
+assert.match(
+  processLatestUpdatesPageSource,
+  /getProceduralUpdates\(\)/,
+  "Expected process latest updates page to read real procedural updates."
+);
+assert.match(
+  processLatestUpdatesPageSource,
+  /Ultimos andamentos indisponiveis/,
+  "Expected process latest updates page to render a controlled error state."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/processos/ultimos-andamentos/loading.tsx")),
+  true,
+  "Expected loading state for the process latest updates route."
+);
+
+const claraArtifactsSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/clara/get-clara-artifacts.ts"),
+  "utf8"
+);
+assert.match(
+  claraArtifactsSource,
+  /bankLabel: bankingCase\.bankName/,
+  "Expected Clara text draft artifact to expose the real banking case bank."
+);
+assert.match(
+  claraArtifactsSource,
+  /processLabel: bankingCase\.processNumber/,
+  "Expected Clara text draft artifact to expose the real banking case process number."
+);
+
+const textEditorSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/editor-de-texto/[subpage]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  textEditorSource,
+  /draftArtifact\.processLabel/,
+  "Expected text editor draft to use the process label from Clara artifact."
+);
+assert.match(
+  textEditorSource,
+  /draftArtifact\.bankLabel/,
+  "Expected text editor draft to use the bank label from Clara artifact."
+);
+assert.doesNotMatch(
+  textEditorSource,
+  /mockCases|@lexia\/mocks/,
+  "Expected text editor draft to stop using mock cases."
+);
+assert.match(
+  textEditorSource,
+  /listClaraRecords\(80\)/,
+  "Expected text editor to list persisted Clara text draft records."
+);
+assert.doesNotMatch(
+  textEditorSource,
+  /const modelRows = \[/,
+  "Expected text editor models to stop using fixed model rows."
+);
+assert.doesNotMatch(
+  textEditorSource,
+  /Exibindo 0 resultado\(s\)/,
+  "Expected text editor to stop showing a fixed zero-result count."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/editor-de-texto/[subpage]/loading.tsx")),
+  true,
+  "Expected loading state for editor text subpages."
+);
+
+const caseServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/cases/get-cases.ts"),
+  "utf8"
+);
+assert.match(
+  caseServiceSource,
+  /\.from\("cases"\)/,
+  "Expected cases service to read from the real cases table."
+);
+assert.doesNotMatch(
+  caseServiceSource,
+  /mockCases/,
+  "Expected cases service to stop using mock cases as its primary source."
+);
+
+const claraWorkspaceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/clara/get-clara-workspace.ts"),
+  "utf8"
+);
+assert.match(
+  claraWorkspaceSource,
+  /getCases\(\)/,
+  "Expected Clara workspace to read real cases."
+);
+assert.match(
+  claraWorkspaceSource,
+  /getClients\(\)/,
+  "Expected Clara workspace to read real clients."
+);
+assert.match(
+  claraWorkspaceSource,
+  /getProcesses\(\)/,
+  "Expected Clara workspace to read real processes."
+);
+assert.match(
+  claraWorkspaceSource,
+  /getDocuments\(\)/,
+  "Expected Clara workspace to read real documents."
+);
+assert.match(
+  claraWorkspaceSource,
+  /await getClaraStructuredCore\(/,
+  "Expected Clara workspace to await the structured Clara core."
+);
+assert.match(
+  claraWorkspaceSource,
+  /getContractAnalyses\(\)/,
+  "Expected Clara workspace to read real contract analyses."
+);
+assert.doesNotMatch(
+  claraWorkspaceSource,
+  /@lexia\/mocks|mockContractAnalyses/,
+  "Expected Clara workspace to stop using the mocks package."
+);
+assert.match(
+  claraWorkspaceSource,
+  /claraResponseTemplates/,
+  "Expected Clara workspace to keep static response templates locally."
+);
+assert.match(
+  claraWorkspaceSource,
+  /getClaraFixtureByContextKey/,
+  "Expected Clara fixture helper to remain available for legacy LexIA compatibility."
+);
+
+const claraStructuredCoreSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/clara/get-clara-structured-core.ts"),
+  "utf8"
+);
+assert.match(
+  claraStructuredCoreSource,
+  /getClients\(\)|getClientById\(/,
+  "Expected Clara structured core to read real clients."
+);
+assert.match(
+  claraStructuredCoreSource,
+  /getCases\(\)|getCaseById\(/,
+  "Expected Clara structured core to read real cases."
+);
+assert.match(
+  claraStructuredCoreSource,
+  /getProcesses\(\)|getProcessById\(/,
+  "Expected Clara structured core to read real processes."
+);
+assert.match(
+  claraStructuredCoreSource,
+  /getDocuments\(\)|getDocumentById\(/,
+  "Expected Clara structured core to read real documents."
+);
+assert.match(
+  claraStructuredCoreSource,
+  /getContractAnalysisByDocumentId\(/,
+  "Expected Clara structured core to read real contract analyses."
+);
+assert.doesNotMatch(
+  claraStructuredCoreSource,
+  /mockClients|mockCases|mockDocuments|mockProcesses|mockContractAnalyses/,
+  "Expected Clara structured core to stop using primary mock context sources."
+);
+
+const claraSourceAdaptersSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/clara/clara-source-adapters.ts"),
+  "utf8"
+);
+assert.match(
+  claraSourceAdaptersSource,
+  /getClients\(\)|getClientById\(/,
+  "Expected Clara source adapters to read real clients."
+);
+assert.match(
+  claraSourceAdaptersSource,
+  /getCases\(\)|getCaseById\(/,
+  "Expected Clara source adapters to read real cases."
+);
+assert.match(
+  claraSourceAdaptersSource,
+  /getProcesses\(\)|getProcessById\(/,
+  "Expected Clara source adapters to read real processes."
+);
+assert.match(
+  claraSourceAdaptersSource,
+  /getDocuments\(\)|getDocumentById\(/,
+  "Expected Clara source adapters to read real documents."
+);
+assert.doesNotMatch(
+  claraSourceAdaptersSource,
+  /mockClients|mockCases|mockDocuments|mockProcesses/,
+  "Expected Clara source adapters to stop using primary mock context sources."
+);
+
+const claraRevisionalWorkspaceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/clara/get-banking-revisional-workspace.ts"),
+  "utf8"
+);
+assert.match(
+  claraRevisionalWorkspaceSource,
+  /getClients\(\)|getClientById\(/,
+  "Expected Clara revisional workspace to read real clients."
+);
+assert.match(
+  claraRevisionalWorkspaceSource,
+  /getCases\(\)|getCaseById\(/,
+  "Expected Clara revisional workspace to read real cases."
+);
+assert.match(
+  claraRevisionalWorkspaceSource,
+  /getProcesses\(\)|getProcessById\(/,
+  "Expected Clara revisional workspace to read real processes."
+);
+assert.match(
+  claraRevisionalWorkspaceSource,
+  /getDocuments\(\)|getDocumentById\(/,
+  "Expected Clara revisional workspace to read real documents."
+);
+assert.match(
+  claraRevisionalWorkspaceSource,
+  /getContractAnalysisByDocumentId\(/,
+  "Expected Clara revisional workspace to read real contract analyses."
+);
+assert.doesNotMatch(
+  claraRevisionalWorkspaceSource,
+  /mockClients|mockCases|mockDocuments|mockProcesses|mockContractAnalyses/,
+  "Expected Clara revisional workspace to stop using primary mock context sources."
+);
+
+const contractAnalysisSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/contract-analysis/get-contract-analysis.ts"),
+  "utf8"
+);
+assert.match(
+  contractAnalysisSource,
+  /getClients\(\)|getClientById\(/,
+  "Expected contract analysis workspace to read real clients."
+);
+assert.match(
+  contractAnalysisSource,
+  /getCases\(\)|getCaseById\(/,
+  "Expected contract analysis workspace to read real cases."
+);
+assert.match(
+  contractAnalysisSource,
+  /getDocuments\(\)|getDocumentById\(/,
+  "Expected contract analysis workspace to read real documents."
+);
+assert.match(
+  contractAnalysisSource,
+  /\.from\("contract_analyses"\)/,
+  "Expected contract analysis workspace to read from the real contract analyses table."
+);
+assert.doesNotMatch(
+  contractAnalysisSource,
+  /Simulacao mockada/,
+  "Expected contract analysis workspace to avoid mock simulation language."
+);
+assert.doesNotMatch(
+  contractAnalysisSource,
+  /mockClients|mockCases|mockDocuments|mockContractAnalyses/,
+  "Expected contract analysis workspace to stop using primary mock context sources."
+);
+
+const documentServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/documents/get-documents.ts"),
+  "utf8"
+);
+assert.match(
+  documentServiceSource,
+  /\.from\("documents"\)/,
+  "Expected documents service to read from the real documents table."
+);
+assert.doesNotMatch(
+  documentServiceSource,
+  /mockDocuments/,
+  "Expected documents service to stop using mock documents as its primary source."
+);
+assert.match(
+  documentServiceSource,
+  /storage_bucket/,
+  "Expected documents service to expose storage bucket metadata."
+);
+assert.match(
+  documentServiceSource,
+  /storage_path/,
+  "Expected documents service to expose storage path metadata."
+);
+
+const documentsPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/documentos/meus-arquivos/page.tsx"),
+  "utf8"
+);
+assert.match(
+  documentsPageSource,
+  /Documentos indisponiveis no momento/,
+  "Expected document GED page to render a controlled error state."
+);
+assert.match(
+  documentsPageSource,
+  /Base real: \{documents\.length\} docs/,
+  "Expected document GED page to show an indicator derived from real documents."
+);
+assert.doesNotMatch(
+  documentsPageSource,
+  /Utilizado: 0\.0%/,
+  "Expected document GED page to stop rendering a fixed storage percentage."
+);
+
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/documentos/meus-arquivos/loading.tsx")),
+  true,
+  "Expected loading state for the documents GED route."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/documentos/[documentId]/loading.tsx")),
+  true,
+  "Expected loading state for the document detail route."
+);
+
+const documentDetailSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/documentos/[documentId]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  documentDetailSource,
+  /getDocumentFileSignedUrl/,
+  "Expected document detail to request a signed storage URL."
+);
+assert.match(
+  documentDetailSource,
+  /Baixar arquivo/,
+  "Expected document detail to expose secure file download when storage is available."
+);
+assert.match(
+  documentDetailSource,
+  /Preview indisponivel/,
+  "Expected document detail to clearly mark preview as unavailable."
+);
+assert.doesNotMatch(
+  documentDetailSource,
+  /Preview mockado/,
+  "Expected document detail to stop rendering mock preview language."
+);
+
+const documentFileUrlSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/documents/get-document-file-url.ts"),
+  "utf8"
+);
+assert.match(
+  documentFileUrlSource,
+  /createSignedUrl/,
+  "Expected document file service to create signed storage URLs."
+);
+assert.match(
+  documentFileUrlSource,
+  /expiresInSeconds \?\? 300/,
+  "Expected document file service to use short-lived signed URLs by default."
+);
+
+const documentUploadSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/documentos/enviar-arquivos/page.tsx"),
+  "utf8"
+);
+assert.match(
+  documentUploadSource,
+  /uploadDocumentAction/,
+  "Expected document upload UI to use the real server action."
+);
+assert.match(
+  documentUploadSource,
+  /getCases\(\)/,
+  "Expected document upload UI to load real cases for required linking."
+);
+assert.match(
+  documentUploadSource,
+  /type="file"/,
+  "Expected document upload UI to expose a real file input."
+);
+assert.doesNotMatch(
+  documentUploadSource,
+  /Envio de arquivos indisponivel|Escolher arquivos|Criar pasta de destino|Nenhum envio em andamento/,
+  "Expected document upload to stop rendering unavailable or fake upload flow."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/documentos/enviar-arquivos/loading.tsx")),
+  true,
+  "Expected loading state for the document upload route."
+);
+
+const rootPackageSource = fs.readFileSync(
+  path.join(__dirname, "..", "..", "..", "package.json"),
+  "utf8"
+);
+assert.match(
+  rootPackageSource,
+  /"documents:upload": "node scripts\/documents\/upload-document\.cjs"/,
+  "Expected document upload to start with a CLI command."
+);
+assert.match(
+  rootPackageSource,
+  /"supabase:bootstrap:sql": "node scripts\/supabase\/build-bootstrap-sql\.cjs"/,
+  "Expected a CLI command to generate the consolidated Supabase bootstrap SQL."
+);
+
+const documentUploadCliSource = fs.readFileSync(
+  path.join(__dirname, "..", "..", "..", "scripts/documents/upload-document.cjs"),
+  "utf8"
+);
+assert.match(
+  documentUploadCliSource,
+  /\.storage\s*\.\s*listBuckets\(/,
+  "Expected document upload CLI to inspect existing storage buckets."
+);
+assert.match(
+  documentUploadCliSource,
+  /\.storage\s*\.\s*createBucket\(BUCKET/,
+  "Expected document upload CLI to bootstrap the document bucket when missing."
+);
+assert.match(
+  documentUploadCliSource,
+  /\.storage\s*\.\s*from\(BUCKET\)\s*\.\s*upload/,
+  "Expected document upload CLI to upload files to Supabase Storage."
+);
+assert.match(
+  documentUploadCliSource,
+  /\.from\("documents"\)\.insert/,
+  "Expected document upload CLI to register document metadata."
+);
+assert.match(
+  documentUploadCliSource,
+  /SUPABASE_SERVICE_ROLE_KEY/,
+  "Expected document upload CLI to require a service role key for server-side ingestion."
+);
+assert.match(
+  documentUploadCliSource,
+  /loadLocalEnv\(\)/,
+  "Expected document upload CLI to load local .env before execution."
+);
+
+const documentUploadActionSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/documentos/enviar-arquivos/actions.ts"),
+  "utf8"
+);
+assert.match(
+  documentUploadActionSource,
+  /uploadTenantDocument\(/,
+  "Expected document upload action to delegate storage upload to the shared document helper."
+);
+assert.match(
+  documentUploadActionSource,
+  /requireWorkspaceSession\(\)/,
+  "Expected document upload action to require an authenticated workspace session."
+);
+
+const tenantDocumentUploadHelperSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/documents/upload-tenant-document.ts"),
+  "utf8"
+);
+assert.match(
+  tenantDocumentUploadHelperSource,
+  /\.storage\s*\.\s*from\(TENANT_DOCUMENT_BUCKET\)\s*\.\s*upload/,
+  "Expected shared tenant document helper to upload files to Supabase Storage."
+);
+assert.match(
+  tenantDocumentUploadHelperSource,
+  /\.from\("documents"\)\.insert/,
+  "Expected shared tenant document helper to register document metadata."
+);
+assert.match(
+  tenantDocumentUploadHelperSource,
+  /\.storage\.from\(TENANT_DOCUMENT_BUCKET\)\.remove/,
+  "Expected shared tenant document helper to clean up storage when metadata persistence fails."
+);
+
+const documentStorageMigrationSource = fs.readFileSync(
+  path.join(__dirname, "..", "..", "..", "supabase/migrations/0013_document_storage_metadata.sql"),
+  "utf8"
+);
+assert.match(
+  documentStorageMigrationSource,
+  /tenant-documents/,
+  "Expected document storage migration to create the tenant document bucket."
+);
+assert.match(
+  documentStorageMigrationSource,
+  /storage_path/,
+  "Expected document storage migration to add storage metadata columns."
+);
+
+const supabaseBootstrapSource = fs.readFileSync(
+  path.join(__dirname, "..", "..", "..", "scripts/supabase/build-bootstrap-sql.cjs"),
+  "utf8"
+);
+assert.match(
+  supabaseBootstrapSource,
+  /supabase\/migrations/,
+  "Expected Supabase bootstrap builder to include migrations."
+);
+assert.match(
+  supabaseBootstrapSource,
+  /supabase\/policies/,
+  "Expected Supabase bootstrap builder to include policies."
+);
+assert.match(
+  supabaseBootstrapSource,
+  /supabase\/seeds/,
+  "Expected Supabase bootstrap builder to include seeds."
+);
+assert.match(
+  supabaseBootstrapSource,
+  /001_full_bootstrap\.sql/,
+  "Expected Supabase bootstrap builder to write the consolidated SQL file."
+);
+
+const documentReportsSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/documentos/relatorios/page.tsx"),
+  "utf8"
+);
+assert.match(
+  documentReportsSource,
+  /Relatorios de arquivos indisponiveis/,
+  "Expected document reports to render a controlled unavailable state."
+);
+assert.doesNotMatch(
+  documentReportsSource,
+  /314572800 B|Uso atual: 0\.0%|Espaco utilizado/,
+  "Expected document reports to stop rendering fixed storage metrics."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/documentos/relatorios/loading.tsx")),
+  true,
+  "Expected loading state for the document reports route."
+);
+
+const taskServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/tasks/get-tasks.ts"),
+  "utf8"
+);
+assert.match(
+  taskServiceSource,
+  /\.from\("tasks"\)/,
+  "Expected tasks service to read from the real tasks table."
+);
+assert.doesNotMatch(
+  taskServiceSource,
+  /mockTasks/,
+  "Expected tasks service to stop using mock tasks as its primary source."
+);
+
+const agendaTasksPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/agenda/tarefas/page.tsx"),
+  "utf8"
+);
+assert.match(
+  agendaTasksPageSource,
+  /Tarefas indisponiveis no momento/,
+  "Expected agenda tasks page to render a controlled error state."
+);
+
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/agenda/tarefas/loading.tsx")),
+  true,
+  "Expected loading state for the agenda tasks route."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/tarefas/[taskId]/loading.tsx")),
+  true,
+  "Expected loading state for the task detail route."
+);
+
+assert.match(
+  claraWorkspaceSource,
+  /getTasks\(\)/,
+  "Expected Clara workspace to read real tasks."
+);
+
+const agendaServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/agenda/get-agenda-workspace.ts"),
+  "utf8"
+);
+assert.match(
+  agendaServiceSource,
+  /\.from\("agenda_commitments"\)/,
+  "Expected agenda service to read from the real agenda commitments table."
+);
+assert.match(
+  agendaServiceSource,
+  /\.from\("procedural_deadlines"\)/,
+  "Expected agenda service to read from the real procedural deadlines table."
+);
+assert.doesNotMatch(
+  agendaServiceSource,
+  /mockAgendaCommitments|mockProceduralDeadlines/,
+  "Expected agenda service to stop using mock commitments and deadlines as its primary source."
+);
+
+const agendaCommitmentsPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/agenda/compromissos/page.tsx"),
+  "utf8"
+);
+assert.match(
+  agendaCommitmentsPageSource,
+  /Compromissos indisponiveis no momento/,
+  "Expected agenda commitments page to render a controlled error state."
+);
+
+const agendaDeadlinesPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/agenda/prazos/page.tsx"),
+  "utf8"
+);
+assert.match(
+  agendaDeadlinesPageSource,
+  /Prazos indisponiveis no momento/,
+  "Expected agenda deadlines page to render a controlled error state."
+);
+
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/agenda/compromissos/loading.tsx")),
+  true,
+  "Expected loading state for the agenda commitments route."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/agenda/prazos/loading.tsx")),
+  true,
+  "Expected loading state for the agenda deadlines route."
+);
+
+const agendaFallbackSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/agenda/[subpage]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  agendaFallbackSource,
+  /redirect\(route\)/,
+  "Expected generic agenda subpage route to redirect to canonical real agenda routes."
+);
+assert.doesNotMatch(
+  agendaFallbackSource,
+  /rows:|Abrir agenda completa|Abrir tarefas/,
+  "Expected generic agenda subpage route to stop rendering static shortcut rows."
+);
+
+const financeServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/finance/get-financial-entries.ts"),
+  "utf8"
+);
+assert.match(
+  financeServiceSource,
+  /\.from\("financial_entries"\)/,
+  "Expected finance service to read from the real financial entries table."
+);
+assert.doesNotMatch(
+  financeServiceSource,
+  /mock/,
+  "Expected finance service to avoid mock financial sources."
+);
+
+[
+  ["receitas", "Receitas indisponiveis no momento"],
+  ["despesas", "Despesas indisponiveis no momento"],
+  ["transferencias", "Transferencias indisponiveis no momento"],
+  ["vencimentos", "Vencimentos indisponiveis no momento"]
+].forEach(([route, errorLabel]) => {
+  const source = fs.readFileSync(
+    path.join(__dirname, "..", `src/app/(workspace)/financeiro/${route}/page.tsx`),
+    "utf8"
+  );
+
+  assert.match(
+    source,
+    /getFinancialEntries\(/,
+    `Expected financeiro/${route} page to read real financial entries.`
+  );
+  assert.match(
+    source,
+    new RegExp(errorLabel),
+    `Expected financeiro/${route} page to render a controlled error state.`
+  );
+  assert.equal(
+    fs.existsSync(path.join(__dirname, "..", `src/app/(workspace)/financeiro/${route}/loading.tsx`)),
+    true,
+    `Expected loading state for financeiro/${route}.`
+  );
+});
+
+const financeFallbackSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/financeiro/[subpage]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  financeFallbackSource,
+  /redirect\(`\/financeiro\/\$\{params\.subpage\}`\)/,
+  "Expected generic finance subpage route to redirect to canonical finance routes."
+);
+assert.doesNotMatch(
+  financeFallbackSource,
+  /Exibindo 0 resultado/,
+  "Expected generic finance subpage route to stop rendering a static empty list."
+);
+
+const teamSubpageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/equipe/[subpage]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  teamSubpageSource,
+  /getProcesses\(\)/,
+  "Expected team subpage to derive team members from real processes."
+);
+assert.match(
+  teamSubpageSource,
+  /getTasks\(\)/,
+  "Expected team subpage to derive team members from real tasks."
+);
+assert.match(
+  teamSubpageSource,
+  /Equipe indisponivel no momento/,
+  "Expected team subpage to render a controlled error state."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/equipe/[subpage]/loading.tsx")),
+  true,
+  "Expected loading state for team subpages."
+);
+
+const reportsSubpageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/relatorios/[subpage]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  reportsSubpageSource,
+  /getFinancialEntries\(\)/,
+  "Expected reports page to build financial summaries from real financial entries."
+);
+assert.match(
+  reportsSubpageSource,
+  /getProcesses\(\)/,
+  "Expected reports page to build process summaries from real processes."
+);
+assert.match(
+  reportsSubpageSource,
+  /getTasks\(\)/,
+  "Expected reports page to build task summaries from real tasks."
+);
+assert.match(
+  reportsSubpageSource,
+  /Relatorio indisponivel no momento/,
+  "Expected reports page to render a controlled error state."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/relatorios/[subpage]/loading.tsx")),
+  true,
+  "Expected loading state for report subpages."
+);
+
+const statsSubpageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/estatisticas/[subpage]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  statsSubpageSource,
+  /getProcesses\(\)/,
+  "Expected statistics page to derive metrics from real processes."
+);
+assert.match(
+  statsSubpageSource,
+  /getClients\(\)/,
+  "Expected statistics page to derive metrics from real clients."
+);
+assert.match(
+  statsSubpageSource,
+  /getFinancialEntries\(\)/,
+  "Expected statistics page to derive financial metrics from real entries."
+);
+assert.match(
+  statsSubpageSource,
+  /Estatisticas indisponiveis no momento/,
+  "Expected statistics page to render a controlled error state."
+);
+assert.doesNotMatch(
+  statsSubpageSource,
+  /Warning:|mysqli|implode|emptyDates/,
+  "Expected statistics page to stop rendering legacy PHP warnings or fixed empty matrices."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/estatisticas/[subpage]/loading.tsx")),
+  true,
+  "Expected loading state for statistics subpages."
+);
+
+const siteSubpageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/site/[subpage]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  siteSubpageSource,
+  /WorkspaceStatePanel/,
+  "Expected site subpages to render a controlled unavailable state."
+);
+assert.match(
+  siteSubpageSource,
+  /Criador de site indisponivel/,
+  "Expected site creator to be explicitly unavailable until backend exists."
+);
+assert.doesNotMatch(
+  siteSubpageSource,
+  /Criar meu site agora|Voce nao possui imagens cadastradas|Servico nao configurado|Salvar/,
+  "Expected site subpages to stop rendering legacy functional placeholders."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/site/[subpage]/loading.tsx")),
+  true,
+  "Expected loading state for site subpages."
+);
+
+const settingsSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/configuracoes/page.tsx"),
+  "utf8"
+);
+assert.match(
+  settingsSource,
+  /requireWorkspaceSession\(\)/,
+  "Expected settings to read the real workspace session."
+);
+assert.match(
+  settingsSource,
+  /Preferencias editaveis indisponiveis/,
+  "Expected settings to block editable preferences without persistence."
+);
+assert.doesNotMatch(
+  settingsSource,
+  /ADVX Demo|Navy \+ Amber|Modo Escuro|Blocos previstos/,
+  "Expected settings to stop rendering demo tenant metrics and planned blocks."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/configuracoes/loading.tsx")),
+  true,
+  "Expected loading state for settings."
+);
+
+const workspaceNavigationSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/components/layout/workspace-navigation.ts"),
+  "utf8"
+);
+assert.match(
+  workspaceNavigationSource,
+  /label: "Clara"/,
+  "Expected navigation config to expose Clara in the primary flow."
+);
+assert.match(
+  workspaceNavigationSource,
+  /label: "CRM"/,
+  "Expected navigation config to expose CRM in the primary flow."
+);
+assert.match(
+  workspaceNavigationSource,
+  /label: "Clientes"/,
+  "Expected navigation config to expose Clientes in the primary flow."
+);
+assert.match(
+  workspaceNavigationSource,
+  /label: "Diario oficial"/,
+  "Expected navigation config to expose Diario oficial in the primary flow."
+);
+assert.match(
+  workspaceNavigationSource,
+  /label: "Andamentos"/,
+  "Expected navigation config to expose Andamentos in the primary flow."
+);
+assert.match(
+  workspaceNavigationSource,
+  /label: "Agenda"/,
+  "Expected navigation config to expose Agenda in the primary flow."
+);
+assert.match(
+  workspaceNavigationSource,
+  /label: "Configuracoes"/,
+  "Expected navigation config to expose Configuracoes in the primary flow."
+);
+assert.doesNotMatch(
+  workspaceNavigationSource,
+  /label: "Hoje"|label: "Arquivos"|label: "Editor"|label: "Relatorios"|label: "Estatisticas"|label: "Equipe"/,
+  "Expected absorbed or repositioned modules to stay out of the visible sidebar navigation."
+);
+assert.doesNotMatch(
+  workspaceNavigationSource,
+  /label: "Operacao"/,
+  "Expected navigation config to stop exposing Operacao in the visible primary flow."
+);
+assert.doesNotMatch(
+  workspaceNavigationSource,
+  /label: "Lexia"|label: "Site"/,
+  "Expected navigation config to hide Lexia and Site from visible navigation."
+);
+
+const workspaceShellSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/components/layout/workspace-shell.tsx"),
+  "utf8"
+);
+assert.match(
+  workspaceShellSource,
+  /navSections\.filter\(\(section\) => section\.items\.length > 0\)\.map/,
+  "Expected workspace shell to render grouped navigation sections."
+);
+assert.doesNotMatch(
+  workspaceShellSource,
+  /label: "Dashboard"|label: "Pessoas"|label: "Lexia"|label: "Site"/,
+  "Expected workspace shell to stop hardcoding legacy labels in the visible navigation."
+);
+
+const claraRevisionalSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/clara/get-banking-revisional-workspace.ts"),
+  "utf8"
+);
+assert.doesNotMatch(
+  claraRevisionalSource,
+  /Simulacao mockada/,
+  "Expected Clara revisional workspace to avoid mock simulation language."
+);
+
+const documentsSeedSource = fs.readFileSync(
+  path.join(__dirname, "..", "..", "..", "supabase/seeds/0005_documents_vertical_seed.sql"),
+  "utf8"
+);
+assert.doesNotMatch(
+  documentsSeedSource,
+  /Preview mockado/,
+  "Expected document seed labels to avoid mock preview language."
+);
 
 console.log("Workspace shell tests passed.");

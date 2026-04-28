@@ -1,4 +1,12 @@
 import { notFound } from "next/navigation";
+import { WorkspaceStatePanel } from "@lexia/ui";
+
+import { getAgendaCommitments, getProceduralDeadlines } from "@/server/services/agenda/get-agenda-workspace";
+import { getAdversaries } from "@/server/services/adversaries/get-adversaries";
+import { getClients } from "@/server/services/clients/get-clients";
+import { formatFinancialAmount, getFinancialEntries } from "@/server/services/finance/get-financial-entries";
+import { getProcesses } from "@/server/services/processes/get-processes";
+import { getTasks } from "@/server/services/tasks/get-tasks";
 
 type SelectFilter = {
   kind: "select";
@@ -33,6 +41,12 @@ type ReportConfig = {
   emptyMessage?: string;
   emptyHeading?: string;
   filters: FilterField[];
+};
+
+type ReportSummary = {
+  heading: string;
+  message: string;
+  rows: Array<{ label: string; value: string }>;
 };
 
 const reportConfigs: Record<string, ReportConfig> = {
@@ -297,7 +311,94 @@ function renderFilter(field: FilterField) {
   );
 }
 
-export default function RelatoriosSubpage({
+async function getReportSummary(subpage: string): Promise<ReportSummary> {
+  if (subpage === "financeiro" || subpage === "honorarios" || subpage === "custas") {
+    const entries = await getFinancialEntries();
+    const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
+    const open = entries.filter((entry) => entry.status === "open").length;
+
+    return {
+      heading: "Resumo financeiro real",
+      message: `${entries.length} lancamento(s) financeiro(s) encontrado(s) no tenant ativo.`,
+      rows: [
+        { label: "Lancamentos", value: `${entries.length}` },
+        { label: "Em aberto", value: `${open}` },
+        { label: "Valor total", value: formatFinancialAmount(total) }
+      ]
+    };
+  }
+
+  if (subpage === "processos" || subpage === "resumo") {
+    const processes = await getProcesses();
+
+    return {
+      heading: "Resumo processual real",
+      message: `${processes.length} processo(s) encontrado(s) no tenant ativo.`,
+      rows: [
+        { label: "Processos", value: `${processes.length}` },
+        { label: "Ativos", value: `${processes.filter((item) => item.status === "active").length}` },
+        { label: "Monitorados", value: `${processes.filter((item) => item.monitoringMode !== "manual").length}` }
+      ]
+    };
+  }
+
+  if (subpage === "compromissos") {
+    const commitments = await getAgendaCommitments();
+    return {
+      heading: "Resumo de compromissos real",
+      message: `${commitments.length} compromisso(s) encontrado(s) no tenant ativo.`,
+      rows: [
+        { label: "Compromissos", value: `${commitments.length}` },
+        { label: "Com cliente", value: `${commitments.filter((item) => item.clientId).length}` }
+      ]
+    };
+  }
+
+  if (subpage === "tarefas") {
+    const tasks = await getTasks();
+    return {
+      heading: "Resumo de tarefas real",
+      message: `${tasks.length} tarefa(s) encontrada(s) no tenant ativo.`,
+      rows: [
+        { label: "Tarefas", value: `${tasks.length}` },
+        { label: "Urgentes", value: `${tasks.filter((item) => item.priority === "urgent").length}` },
+        { label: "Pendentes", value: `${tasks.filter((item) => item.status !== "done").length}` }
+      ]
+    };
+  }
+
+  if (subpage === "prazos") {
+    const deadlines = await getProceduralDeadlines();
+    return {
+      heading: "Resumo de prazos real",
+      message: `${deadlines.length} prazo(s) encontrado(s) no tenant ativo.`,
+      rows: [
+        { label: "Prazos", value: `${deadlines.length}` },
+        { label: "Alta severidade", value: `${deadlines.filter((item) => item.severity === "high").length}` }
+      ]
+    };
+  }
+
+  if (subpage === "pessoas") {
+    const [clients, adversaries] = await Promise.all([getClients(), getAdversaries()]);
+    return {
+      heading: "Resumo de pessoas real",
+      message: `${clients.length + adversaries.length} pessoa(s) encontrada(s) no tenant ativo.`,
+      rows: [
+        { label: "Clientes", value: `${clients.length}` },
+        { label: "Adversos", value: `${adversaries.length}` }
+      ]
+    };
+  }
+
+  return {
+    heading: "Relatorio configurado",
+    message: "Este relatorio ainda nao possui agregador especifico, mas usa a configuracao real da rota.",
+    rows: []
+  };
+}
+
+export default async function RelatoriosSubpage({
   params
 }: {
   params: { subpage: string };
@@ -308,6 +409,24 @@ export default function RelatoriosSubpage({
     notFound();
   }
 
+  let summary: ReportSummary | null = null;
+  let state: {
+    title: string;
+    description: string;
+    tone?: "neutral" | "warning" | "danger";
+  } | null = null;
+
+  try {
+    summary = await getReportSummary(params.subpage);
+  } catch {
+    state = {
+      title: "Relatorio indisponivel no momento",
+      description:
+        "Nao foi possivel montar o resumo real deste relatorio. Valide Supabase, migrations e seed do tenant ativo.",
+      tone: "danger"
+    };
+  }
+
   return (
     <div className="space-y-4">
       <p className="text-[2rem] font-semibold" style={{ color: "hsl(var(--foreground))" }}>
@@ -316,6 +435,14 @@ export default function RelatoriosSubpage({
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
         <section className="reference-list-shell px-4 py-4">
+          {state ? (
+            <WorkspaceStatePanel
+              description={state.description}
+              title={state.title}
+              tone={state.tone ?? "neutral"}
+            />
+          ) : null}
+
           {page.topActions ? (
             <div className="mb-3 flex justify-end gap-2">
               <button className="reference-action-secondary px-4 py-2 text-xs font-semibold" type="button">
@@ -341,7 +468,28 @@ export default function RelatoriosSubpage({
             </div>
           ) : null}
 
-          <ClipboardEmpty heading={page.emptyHeading} message={page.emptyMessage} />
+          {!state && summary ? (
+            <div className="flex min-h-[16rem] flex-col justify-center">
+              <p className="text-3xl font-semibold" style={{ color: "rgba(203,213,225,0.9)" }}>
+                {summary.heading}
+              </p>
+              <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
+                {summary.message}
+              </p>
+              {summary.rows.length ? (
+                <div className="mt-5 grid gap-3 md:grid-cols-3">
+                  {summary.rows.map((row) => (
+                    <div key={row.label} className="rounded-[10px] border px-4 py-3" style={lightSurfaceStyle}>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{row.label}</p>
+                      <p className="mt-1 text-lg font-semibold">{row.value}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!state && !summary ? <ClipboardEmpty heading={page.emptyHeading} message={page.emptyMessage} /> : null}
         </section>
 
         <aside className="reference-list-shell px-3 py-3">

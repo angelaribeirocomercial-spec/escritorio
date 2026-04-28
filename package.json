@@ -11,7 +11,9 @@
     "build": "npm run build --workspace @lexia/web",
     "lint": "npm run lint --workspace @lexia/web",
     "typecheck": "npm run typecheck --workspace @lexia/web",
-    "test": "npm run test --workspace @lexia/web"
+    "test": "npm run test --workspace @lexia/web",
+    "documents:upload": "node scripts/documents/upload-document.cjs",
+    "supabase:bootstrap:sql": "node scripts/supabase/build-bootstrap-sql.cjs"
   },
   "engines": {
     "node": ">=20.0.0"

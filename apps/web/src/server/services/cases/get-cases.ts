@@ -1,32 +1,216 @@
 import { BankingCaseRecord, ClientRecord } from "@lexia/domain";
-import { mockCases, mockClients } from "@lexia/mocks";
+
+import { getWorkspaceSession } from "@/lib/auth/session";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 type BankingCaseWithClient = BankingCaseRecord & {
   client: ClientRecord;
 };
 
-export async function getCases(): Promise<BankingCaseWithClient[]> {
-  const resolvedCases: BankingCaseWithClient[] = [];
+type ClientRow = {
+  id: string;
+  full_name: string;
+  document_id: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  address: string;
+  lead_source: string;
+  bank_name: string;
+  service_status: ClientRecord["serviceStatus"];
+  signed_contract: boolean;
+  legal_viability_score: number;
+  fees_label: string;
+  documents_sent: number;
+  notes: string;
+  ia_context: string;
+  linked_cases: ClientRecord["linkedCases"] | null;
+  linked_documents: string[] | null;
+  timeline: string[] | null;
+};
 
-  for (const caseItem of mockCases) {
-    const client = mockClients.find((entry) => entry.id === caseItem.clientId);
+type CaseRow = {
+  id: string;
+  client_id: string;
+  title: string;
+  bank_name: string;
+  process_number: string;
+  contract_number: string;
+  claim_type: string;
+  stage: string;
+  status: BankingCaseRecord["status"];
+  amount_in_dispute: number;
+  estimated_value: number;
+  main_thesis: string;
+  legal_risk: BankingCaseRecord["legalRisk"];
+  suggested_strategy: string;
+  owner_label: string;
+  niche: BankingCaseRecord["niche"];
+  linked_documents: string[] | null;
+  linked_tasks: string[] | null;
+  linked_deadlines: string[] | null;
+  lexia_insights: string[] | null;
+  workflow_state: BankingCaseRecord["workflowState"] | null;
+  checklist_state: BankingCaseRecord["checklistState"] | null;
+  client: ClientRow | ClientRow[] | null;
+};
 
-    if (!client) {
-      continue;
-    }
-
-    resolvedCases.push({
-      ...caseItem,
-      client
-    });
-  }
-
-  return resolvedCases;
+function mapClientRow(row: ClientRow): ClientRecord {
+  return {
+    id: row.id,
+    fullName: row.full_name,
+    documentId: row.document_id,
+    email: row.email,
+    phone: row.phone,
+    whatsapp: row.whatsapp,
+    address: row.address,
+    leadSource: row.lead_source,
+    bankName: row.bank_name,
+    serviceStatus: row.service_status,
+    signedContract: row.signed_contract,
+    legalViabilityScore: row.legal_viability_score,
+    feesLabel: row.fees_label,
+    documentsSent: row.documents_sent,
+    notes: row.notes,
+    iaContext: row.ia_context,
+    linkedCases: row.linked_cases ?? [],
+    linkedDocuments: row.linked_documents ?? [],
+    timeline: row.timeline ?? []
+  };
 }
 
-export async function getCaseById(
-  caseId: string
-): Promise<BankingCaseWithClient | null> {
-  const cases = await getCases();
-  return cases.find((caseItem) => caseItem.id === caseId) ?? null;
+function mapCaseRow(row: CaseRow): BankingCaseWithClient | null {
+  const clientRow = Array.isArray(row.client) ? row.client[0] : row.client;
+
+  if (!clientRow) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    clientId: row.client_id,
+    title: row.title,
+    bankName: row.bank_name,
+    processNumber: row.process_number,
+    contractNumber: row.contract_number,
+    claimType: row.claim_type,
+    stage: row.stage,
+    status: row.status,
+    amountInDispute: row.amount_in_dispute,
+    estimatedValue: row.estimated_value,
+    mainThesis: row.main_thesis,
+    legalRisk: row.legal_risk,
+    suggestedStrategy: row.suggested_strategy,
+    ownerLabel: row.owner_label,
+    niche: row.niche,
+    linkedDocuments: row.linked_documents ?? [],
+    linkedTasks: row.linked_tasks ?? [],
+    linkedDeadlines: row.linked_deadlines ?? [],
+    lexiaInsights: row.lexia_insights ?? [],
+    workflowState: row.workflow_state ?? {
+      phaseLabel: row.stage,
+      nextStep: row.suggested_strategy,
+      completionLabel: "0/0 documentos-base no caso",
+      currentStepId: "cadastro",
+      steps: []
+    },
+    checklistState: row.checklist_state ?? {
+      completionLabel: "0/0 documentos-base no caso",
+      requiredDocuments: [],
+      missingDocuments: [],
+      items: []
+    },
+    client: mapClientRow(clientRow)
+  };
+}
+
+const CASE_SELECT = `
+  id,
+  client_id,
+  title,
+  bank_name,
+  process_number,
+  contract_number,
+  claim_type,
+  stage,
+  status,
+  amount_in_dispute,
+  estimated_value,
+  main_thesis,
+  legal_risk,
+  suggested_strategy,
+  owner_label,
+  niche,
+  linked_documents,
+  linked_tasks,
+  linked_deadlines,
+  lexia_insights,
+  workflow_state,
+  checklist_state,
+  client:clients (
+    id,
+    full_name,
+    document_id,
+    email,
+    phone,
+    whatsapp,
+    address,
+    lead_source,
+    bank_name,
+    service_status,
+    signed_contract,
+    legal_viability_score,
+    fees_label,
+    documents_sent,
+    notes,
+    ia_context,
+    linked_cases,
+    linked_documents,
+    timeline
+  )
+`;
+
+export async function getCases(): Promise<BankingCaseWithClient[]> {
+  const session = await getWorkspaceSession();
+
+  if (!session) {
+    throw new Error("Workspace session is required to load cases.");
+  }
+
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("cases")
+    .select(CASE_SELECT)
+    .eq("tenant_id", session.workspace.tenant.id)
+    .order("process_number", { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to load cases for tenant ${session.workspace.tenant.id}.`);
+  }
+
+  return (data ?? [])
+    .map((row) => mapCaseRow(row as CaseRow))
+    .filter((row): row is BankingCaseWithClient => row !== null);
+}
+
+export async function getCaseById(caseId: string): Promise<BankingCaseWithClient | null> {
+  const session = await getWorkspaceSession();
+
+  if (!session) {
+    throw new Error("Workspace session is required to load case details.");
+  }
+
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("cases")
+    .select(CASE_SELECT)
+    .eq("tenant_id", session.workspace.tenant.id)
+    .eq("id", caseId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load case ${caseId} for tenant ${session.workspace.tenant.id}.`);
+  }
+
+  return data ? mapCaseRow(data as CaseRow) : null;
 }

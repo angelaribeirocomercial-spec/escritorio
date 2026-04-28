@@ -1,492 +1,139 @@
 import { notFound } from "next/navigation";
+import { WorkspaceStatePanel } from "@lexia/ui";
 
-type TableRow = string[];
+import { getClients } from "@/server/services/clients/get-clients";
+import { formatFinancialAmount, getFinancialEntries } from "@/server/services/finance/get-financial-entries";
+import { getProceduralUpdates } from "@/server/services/procedural-updates/get-procedural-updates";
+import { getProcesses } from "@/server/services/processes/get-processes";
+import { getTasks } from "@/server/services/tasks/get-tasks";
 
-type StatConfig =
-  | {
-      kind: "chart-table";
-      title: string;
-      headers: string[];
-      rows: TableRow[];
-      legend?: { label: string; color: string }[];
-      warnings?: string[];
-      footerLabel?: string;
-    }
-  | {
-      kind: "date-table";
-      title: string;
-      headers: string[];
-      rows: TableRow[];
-    }
-  | {
-      kind: "financial-chart";
-      title: string;
-    }
-  | {
-      kind: "message";
-      title: string;
-      message: string;
-    }
-  | {
-      kind: "client-service";
-      title: string;
-    };
-
-const emptyDates = [
-  "09/03/2026",
-  "10/03/2026",
-  "11/03/2026",
-  "12/03/2026",
-  "13/03/2026",
-  "14/03/2026",
-  "15/03/2026",
-  "16/03/2026",
-  "17/03/2026",
-  "18/03/2026",
-  "19/03/2026",
-  "20/03/2026",
-  "21/03/2026",
-  "22/03/2026",
-  "23/03/2026",
-  "24/03/2026",
-  "25/03/2026",
-  "26/03/2026",
-  "27/03/2026",
-  "28/03/2026",
-  "29/03/2026",
-  "30/03/2026",
-  "31/03/2026",
-  "01/04/2026",
-  "02/04/2026",
-  "03/04/2026",
-  "04/04/2026",
-  "05/04/2026",
-  "06/04/2026",
-  "07/04/2026",
-  "08/04/2026",
-  "09/04/2026"
-].map((date) => [date, "0"]);
-
-const statConfigs: Record<string, StatConfig> = {
-  "andamentos-atrasados": {
-    kind: "chart-table",
-    title: "Andamentos atrasados",
-    headers: ["Periodo sem andamentos", "Processo", "%"],
-    rows: [["Total", "", "100,00%"]],
-    warnings: [
-      "Warning: implode(): Invalid arguments passed in /home/www/maisjuridico.com.br/cp/estatistica_lista.php on line 181",
-      "Warning: mysqli_num_rows() expects parameter 1 to be mysqli_result, boolean given in /home/www/maisjuridico.com.br/fu_mysql2mysqli.php on line 90"
-    ]
-  },
-  "andamentos-dos-processos": {
-    kind: "chart-table",
-    title: "Andamentos dos processos",
-    headers: ["Andamento", "Qtde"],
-    rows: []
-  },
-  "ultimos-andamentos": {
-    kind: "chart-table",
-    title: "Ultimos andamentos dos processos",
-    headers: ["Andamento", "Qtde"],
-    rows: []
-  },
-  "andamentos-automaticos": {
-    kind: "chart-table",
-    title: "Andamentos Automaticos",
-    headers: ["PROCESSOS", "TOTAL"],
-    rows: [
-      ["Monitorados", "0"],
-      ["Em fase de cadastramento", "0"],
-      ["Nao monitorados", "0"]
-    ]
-  },
-  clientes: {
-    kind: "chart-table",
-    title: "Clientes",
-    headers: ["Status dos processos", "Qtde"],
-    rows: [
-      ["Pessoa Fisica", "0"],
-      ["Pessoa Juridica", "0"],
-      ["Nao especificado", "0"]
-    ],
-    legend: [
-      { label: "Pessoa Fisica", color: "#ff5b89" },
-      { label: "Pessoa Juridica", color: "#68a6d9" },
-      { label: "Nao especificado", color: "#f4be3f" }
-    ]
-  },
-  processos: {
-    kind: "chart-table",
-    title: "Clientes e processos",
-    headers: ["Status dos processos", "Qtde"],
-    rows: [["Qtde. Clientes", "Qtde. Processos"]],
-    warnings: [
-      "Warning: implode(): Invalid arguments passed in /home/www/maisjuridico.com.br/cp/estatistica_processo.php on line 170",
-      "Warning: mysqli_num_rows() expects parameter 1 to be mysqli_result, boolean given in /home/www/maisjuridico.com.br/fu_mysql2mysqli.php on line 90"
-    ],
-    footerLabel: "Clientes"
-  },
-  "abertura-de-processos": {
-    kind: "date-table",
-    title: "Data de abertura e processos",
-    headers: ["Data de abertura", "Qtde. Processos"],
-    rows: emptyDates
-  },
-  "cadastro-de-processos": {
-    kind: "date-table",
-    title: "Data de cadastro de processos no sistema",
-    headers: ["Data de cadastro", "Qtde. Processos"],
-    rows: emptyDates
-  },
-  "fase-do-processo": {
-    kind: "chart-table",
-    title: "Processos e fase",
-    headers: ["Fase", "Qtde. de processos"],
-    rows: []
-  },
-  "natureza-da-acao": {
-    kind: "chart-table",
-    title: "Processos e naturezas",
-    headers: ["Natureza", "Qtde. de processos"],
-    rows: []
-  },
-  "atendimento-clientes": {
-    kind: "client-service",
-    title: "Atendimento por clientes"
-  },
-  financeiro: {
-    kind: "financial-chart",
-    title: "Grafico financeiro"
-  },
-  personalizados: {
-    kind: "message",
-    title: "Campos personalizados",
-    message: "Voce nao possui estatisticas de campos personalizados para serem exibidas neste momento."
-  }
+const statTitles: Record<string, string> = {
+  "abertura-de-processos": "Data de abertura e processos",
+  "andamentos-atrasados": "Andamentos atrasados",
+  "andamentos-automaticos": "Andamentos Automaticos",
+  "andamentos-dos-processos": "Andamentos dos processos",
+  "atendimento-clientes": "Atendimento por clientes",
+  "cadastro-de-processos": "Data de cadastro de processos no sistema",
+  clientes: "Clientes",
+  "fase-do-processo": "Processos e fase",
+  financeiro: "Grafico financeiro",
+  "natureza-da-acao": "Processos e naturezas",
+  personalizados: "Campos personalizados",
+  processos: "Clientes e processos",
+  "ultimos-andamentos": "Ultimos andamentos dos processos"
 };
 
-const tableHeadStyle = {
-  color: "rgba(100, 116, 139, 0.92)"
-} as const;
+type StatRow = {
+  label: string;
+  value: string;
+  detail: string;
+};
 
-function GraphPlaceholder({ legend }: { legend?: { label: string; color: string }[] }) {
-  return (
-    <div className="mj-model-panel px-4 py-4">
-      <div className="flex min-h-[14rem] flex-col justify-center">
-        {legend ? (
-          <div className="mb-4 flex flex-wrap justify-center gap-4 text-[10px]" style={tableHeadStyle}>
-            {legend.map((item) => (
-              <div key={item.label} className="flex items-center gap-1.5">
-                <span className="h-2 w-8 rounded-[2px]" style={{ background: item.color }} />
-                <span>{item.label}</span>
-              </div>
-            ))}
-          </div>
-        ) : null}
+async function getStatisticRows(subpage: string): Promise<StatRow[]> {
+  if (subpage === "financeiro") {
+    const entries = await getFinancialEntries();
+    const income = entries.filter((entry) => entry.kind === "income").reduce((sum, entry) => sum + entry.amount, 0);
+    const expenses = entries.filter((entry) => entry.kind === "expense").reduce((sum, entry) => sum + entry.amount, 0);
 
-        <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-[8px] border-[10px] border-slate-200">
-          <div className="h-10 w-10 rounded-[4px] border-[8px] border-slate-300 border-t-transparent" />
-        </div>
-      </div>
-    </div>
-  );
+    return [
+      { label: "Receitas", value: formatFinancialAmount(income), detail: "Lancamentos de receita persistidos" },
+      { label: "Despesas", value: formatFinancialAmount(expenses), detail: "Lancamentos de despesa persistidos" },
+      { label: "Saldo", value: formatFinancialAmount(income - expenses), detail: "Receitas menos despesas" }
+    ];
+  }
+
+  if (subpage === "clientes" || subpage === "atendimento-clientes") {
+    const clients = await getClients();
+    const active = clients.filter((client) => client.serviceStatus === "active").length;
+    const waiting = clients.filter((client) => client.serviceStatus === "waiting-docs").length;
+
+    return [
+      { label: "Clientes", value: `${clients.length}`, detail: "Total de clientes do tenant" },
+      { label: "Ativos", value: `${active}`, detail: "Clientes em atendimento ativo" },
+      { label: "Aguardando documentos", value: `${waiting}`, detail: "Clientes com gargalo documental" }
+    ];
+  }
+
+  if (subpage.includes("andamentos")) {
+    const [updates, processes] = await Promise.all([getProceduralUpdates(), getProcesses()]);
+    const high = updates.filter((update) => update.criticality === "high").length;
+
+    return [
+      { label: "Andamentos", value: `${updates.length}`, detail: "Movimentos processuais persistidos" },
+      { label: "Criticos", value: `${high}`, detail: "Andamentos com criticidade alta" },
+      { label: "Processos monitorados", value: `${processes.filter((processItem) => processItem.monitoringMode !== "manual").length}`, detail: "Monitoramento OAB ou tribunal" }
+    ];
+  }
+
+  if (subpage === "personalizados") {
+    const tasks = await getTasks();
+    return [
+      { label: "Campos operacionais", value: `${tasks.length}`, detail: "Tarefas usadas como indicadores customizados" },
+      { label: "Urgentes", value: `${tasks.filter((task) => task.priority === "urgent").length}`, detail: "Tarefas com prioridade urgente" }
+    ];
+  }
+
+  const [processes, clients] = await Promise.all([getProcesses(), getClients()]);
+  return [
+    { label: "Processos", value: `${processes.length}`, detail: "Total de processos do tenant" },
+    { label: "Clientes", value: `${clients.length}`, detail: "Total de clientes vinculados" },
+    { label: "Ativos", value: `${processes.filter((processItem) => processItem.status === "active").length}`, detail: "Processos em status ativo" }
+  ];
 }
 
-function SummaryTable({
-  headers,
-  rows
-}: {
-  headers: string[];
-  rows: TableRow[];
-}) {
-  return (
-    <div className="mj-model-panel overflow-hidden">
-      <div className={`grid border-b px-3 py-2 text-[10px] font-semibold mj-model-gridline ${headers.length === 3 ? "grid-cols-[1.2fr_0.8fr_0.5fr]" : "grid-cols-[1fr_4rem]"}`} style={tableHeadStyle}>
-        {headers.map((header) => (
-          <span key={header}>{header}</span>
-        ))}
-      </div>
-      {rows.length ? (
-        rows.map((row, index) => (
-          <div
-            key={`${row.join("-")}-${index}`}
-            className={`grid px-3 py-2 text-[10px] ${headers.length === 3 ? "grid-cols-[1.2fr_0.8fr_0.5fr]" : "grid-cols-[1fr_4rem]"}`}
-            style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}
-          >
-            {row.map((cell, cellIndex) => (
-              <span key={`${cell}-${cellIndex}`}>{cell}</span>
-            ))}
-          </div>
-        ))
-      ) : (
-        <div className="px-3 py-4 text-[10px]" style={tableHeadStyle}>
-          Sem dados.
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FilterCard() {
-  return (
-    <aside className="mj-model-panel px-3 py-3">
-      <div className="space-y-3">
-        <div>
-          <label className="mb-1 block text-[10px] font-semibold" style={tableHeadStyle}>
-            Data inicial
-          </label>
-          <input className="mj-model-input w-full px-2 py-2 text-[10px] outline-none" defaultValue="09/03/2026" type="text" />
-        </div>
-        <div>
-          <label className="mb-1 block text-[10px] font-semibold" style={tableHeadStyle}>
-            Data final
-          </label>
-          <input className="mj-model-input w-full px-2 py-2 text-[10px] outline-none" defaultValue="09/04/2026" type="text" />
-        </div>
-        <button className="mj-model-button-green w-full px-3 py-2 text-[10px] font-semibold" type="button">
-          Consultar
-        </button>
-      </div>
-    </aside>
-  );
-}
-
-function DateTableLayout({ config }: { config: Extract<StatConfig, { kind: "date-table" }> }) {
-  return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_10rem]">
-      <section className="space-y-3">
-        <GraphPlaceholder legend={[{ label: "", color: "#ff5b89" }]} />
-        <div className="mj-model-panel overflow-hidden">
-          <div className="mj-model-gridline grid grid-cols-[1fr_9rem] border-b px-3 py-2 text-[10px] font-semibold" style={tableHeadStyle}>
-            {config.headers.map((header) => (
-              <span key={header}>{header}</span>
-            ))}
-          </div>
-          {config.rows.map((row, index) => (
-            <div key={`${row[0]}-${index}`} className="grid grid-cols-[1fr_9rem] px-3 py-2 text-[10px]" style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}>
-              <span>{row[0]}</span>
-              <span>{row[1]}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <FilterCard />
-    </div>
-  );
-}
-
-function FinancialLayout() {
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <button className="mj-model-button-gray px-4 py-2 text-[10px] font-semibold" type="button">
-          Imprimir
-        </button>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_12rem]">
-        <section className="mj-model-panel px-4 py-4">
-          <div className="flex min-h-[14rem] flex-col items-center justify-center text-center">
-            <svg aria-hidden="true" className="h-24 w-24 text-slate-300" fill="none" viewBox="0 0 96 96">
-              <circle cx="48" cy="48" r="24" fill="currentColor" opacity="0.25" />
-              <path d="M48 24a24 24 0 0 1 20.8 12H48V24Z" fill="currentColor" opacity="0.75" />
-              <path d="M25 58.5A24 24 0 0 0 48 72V48L25 58.5Z" fill="currentColor" />
-            </svg>
-            <p className="mt-2 text-xl font-medium text-slate-300">Estatisticas</p>
-            <p className="text-[10px]" style={tableHeadStyle}>
-              Sem dados para a filtragem atual.
-            </p>
-          </div>
-        </section>
-
-        <aside className="mj-model-panel px-3 py-3">
-          <form className="space-y-3">
-            <div>
-              <label className="mb-1 block text-[10px] font-semibold" style={tableHeadStyle}>
-                Tipo de Relatorio
-              </label>
-              <select className="mj-model-input w-full px-2 py-2 text-[10px] outline-none">
-                <option>MODO MANUAL</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-[10px] font-semibold" style={tableHeadStyle}>
-                Grafico
-              </label>
-              <select className="mj-model-input w-full px-2 py-2 text-[10px] outline-none">
-                <option>Grafico de pizza das despesas</option>
-                <option>Grafico de pizza das receitas</option>
-                <option>Despesas (mensal)</option>
-                <option>Receitas (mensal)</option>
-                <option>Despesas e Receitas (mensal)</option>
-                <option>Lucro / Prejuizo (Receitas - Despesas)</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-[10px] font-semibold" style={tableHeadStyle}>
-                Conta
-              </label>
-              <select className="mj-model-input w-full px-2 py-2 text-[10px] outline-none">
-                <option>Todas as contas</option>
-                <option>Conta Principal</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-[10px] font-semibold" style={tableHeadStyle}>
-                Analise por
-              </label>
-              <select className="mj-model-input w-full px-2 py-2 text-[10px] outline-none">
-                <option>data do movimento</option>
-                <option>data do pagamento</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-[10px] font-semibold" style={tableHeadStyle}>
-                Situacao
-              </label>
-              <select className="mj-model-input w-full px-2 py-2 text-[10px] outline-none">
-                <option>Aberto e realizadas</option>
-                <option>Somente em aberto</option>
-                <option>Somente realizadas</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-[10px] font-semibold" style={tableHeadStyle}>
-                Periodo Inicio
-              </label>
-              <input className="mj-model-input w-full px-2 py-2 text-[10px] outline-none" defaultValue="04/2026" type="text" />
-            </div>
-            <div>
-              <label className="mb-1 block text-[10px] font-semibold" style={tableHeadStyle}>
-                Periodo Fim
-              </label>
-              <input className="mj-model-input w-full px-2 py-2 text-[10px] outline-none" defaultValue="04/2026" type="text" />
-            </div>
-            <label className="flex items-start gap-2 text-[10px]" style={tableHeadStyle}>
-              <input className="mt-0.5" type="checkbox" />
-              <span>Incluir transferencias no relatorio</span>
-            </label>
-            <button className="mj-model-button-green w-full px-3 py-2 text-[10px] font-semibold" type="button">
-              Exibir
-            </button>
-          </form>
-        </aside>
-      </div>
-    </div>
-  );
-}
-
-function ClientServiceLayout() {
-  return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_12rem]">
-      <section className="space-y-3">
-        <div className="mj-model-panel px-4 py-4">
-          <div className="flex min-h-[14rem] flex-col items-center justify-center text-center">
-            <svg aria-hidden="true" className="h-24 w-24 text-slate-300" fill="none" viewBox="0 0 96 96">
-              <circle cx="48" cy="48" r="24" fill="currentColor" opacity="0.18" />
-              <path d="M48 24a24 24 0 0 1 20.8 12H48V24Z" fill="currentColor" opacity="0.7" />
-              <path d="M25 58.5A24 24 0 0 0 48 72V48L25 58.5Z" fill="currentColor" />
-            </svg>
-            <p className="mt-2 text-xl font-medium text-slate-300">Estatisticas</p>
-          </div>
-        </div>
-
-        <div className="mj-model-panel overflow-hidden">
-          <div className="mj-model-gridline border-b px-3 py-2 text-[10px] font-semibold" style={tableHeadStyle}>
-            Atendimentos por status
-          </div>
-          <div className="grid grid-cols-[1fr_4rem] px-3 py-2 text-[10px]" style={{ borderTop: "1px solid var(--surface-border)" }}>
-            <span>Total</span>
-            <span>0</span>
-          </div>
-        </div>
-      </section>
-
-      <aside className="mj-model-panel px-3 py-3">
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1 block text-[10px] font-semibold" style={tableHeadStyle}>
-              Periodo inicio
-            </label>
-            <input className="mj-model-input w-full px-2 py-2 text-[10px] outline-none" defaultValue="10/03/2026" type="text" />
-          </div>
-          <div>
-            <label className="mb-1 block text-[10px] font-semibold" style={tableHeadStyle}>
-              Periodo fim
-            </label>
-            <input className="mj-model-input w-full px-2 py-2 text-[10px] outline-none" defaultValue="09/04/2026" type="text" />
-          </div>
-          <div>
-            <label className="mb-1 block text-[10px] font-semibold" style={tableHeadStyle}>
-              Cliente
-            </label>
-            <select className="mj-model-input w-full px-2 py-2 text-[10px] outline-none">
-              <option>Todos</option>
-            </select>
-          </div>
-          <button className="mj-model-button-green w-full px-3 py-2 text-[10px] font-semibold" type="button">
-            Consultar
-          </button>
-        </div>
-      </aside>
-    </div>
-  );
-}
-
-export default function EstatisticasSubpage({
+export default async function EstatisticasSubpage({
   params
 }: {
   params: { subpage: string };
 }) {
-  const config = statConfigs[params.subpage];
+  const title = statTitles[params.subpage];
 
-  if (!config) {
+  if (!title) {
     notFound();
+  }
+
+  let rows: StatRow[] = [];
+  let state: {
+    title: string;
+    description: string;
+    tone?: "neutral" | "warning" | "danger";
+  } | null = null;
+
+  try {
+    rows = await getStatisticRows(params.subpage);
+  } catch {
+    state = {
+      title: "Estatisticas indisponiveis no momento",
+      description:
+        "Nao foi possivel calcular estatisticas reais. Valide Supabase, migrations e seed do tenant ativo.",
+      tone: "danger"
+    };
   }
 
   return (
     <div className="mj-model-page space-y-4">
       <div>
-        <p className="mj-model-title">{config.title}</p>
-        <p className="mj-model-subtitle">Leitura estatistica no mesmo padrao visual do workspace principal.</p>
+        <p className="mj-model-title">{title}</p>
+        <p className="mj-model-subtitle">Leitura estatistica baseada na base real do tenant.</p>
       </div>
 
-      {config.kind === "chart-table" ? (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_11rem]">
-          <section className="space-y-3">
-            <GraphPlaceholder legend={config.legend} />
-
-            {config.warnings?.length ? (
-              <div className="mj-model-panel px-3 py-2 text-[10px]">
-                {config.warnings.map((warning) => (
-                  <p key={warning} className="mb-2 last:mb-0">
-                    {warning}
-                  </p>
-                ))}
-              </div>
-            ) : null}
-
-            {config.footerLabel ? (
-              <div className="mj-model-panel px-3 py-2 text-[10px] font-semibold">
-                {config.footerLabel}
-              </div>
-            ) : null}
-          </section>
-
-          <SummaryTable headers={config.headers} rows={config.rows} />
-        </div>
-      ) : null}
-
-      {config.kind === "date-table" ? <DateTableLayout config={config} /> : null}
-      {config.kind === "financial-chart" ? <FinancialLayout /> : null}
-      {config.kind === "client-service" ? <ClientServiceLayout /> : null}
-
-      {config.kind === "message" ? (
-        <div className="mj-model-panel px-4 py-4 text-sm">
-          {config.message}
-        </div>
-      ) : null}
+      {state ? (
+        <WorkspaceStatePanel
+          description={state.description}
+          title={state.title}
+          tone={state.tone ?? "neutral"}
+        />
+      ) : (
+        <section className="grid gap-4 md:grid-cols-3">
+          {rows.map((row) => (
+            <article key={row.label} className="mj-model-panel px-4 py-4">
+              <p className="text-[13px] text-slate-400">{row.label}</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-100">{row.value}</p>
+              <p className="mt-2 text-[12px] leading-5 text-slate-400">{row.detail}</p>
+            </article>
+          ))}
+        </section>
+      )}
     </div>
   );
 }

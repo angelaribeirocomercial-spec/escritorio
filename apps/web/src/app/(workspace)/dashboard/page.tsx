@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { getDashboardSummary } from "@/server/services/dashboard/get-dashboard-summary";
 
@@ -42,9 +43,7 @@ function MiniCard({
     <Link className="mj-model-panel block overflow-hidden transition hover:bg-white/[0.03]" href={href}>
       <div className="flex items-center justify-between border-b px-4 py-3 mj-model-gridline">
         <span className="text-[15px] font-semibold text-white">{title}</span>
-        <span className="text-[13px] text-slate-400 transition hover:text-white">
-          Ver todos
-        </span>
+        <span className="text-[13px] text-slate-400 transition hover:text-white">Ver todos</span>
       </div>
       <div className="px-4 py-4">
         <p className="mj-model-empty">{body}</p>
@@ -54,38 +53,60 @@ function MiniCard({
 }
 
 export default async function DashboardPage() {
-  const dashboard = await getDashboardSummary();
+  let dashboard = null;
+
+  try {
+    dashboard = await getDashboardSummary();
+  } catch {
+    return (
+      <div className="mj-model-page space-y-4">
+        <WorkspaceStatePanel
+          description="Nao foi possivel consolidar o dashboard operacional com a base real. Valide a configuracao do Supabase e as migracoes das verticais ativas do tenant."
+          title="Dashboard indisponivel no momento"
+          tone="danger"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="mj-model-page space-y-4">
       <section className="mj-model-toolbar px-4 py-4">
-        <input className="mj-model-input w-full px-4 outline-none" placeholder="Numero do processo..." type="text" />
+        <input
+          className="mj-model-input w-full px-4 outline-none"
+          placeholder="Numero do processo..."
+          type="text"
+        />
       </section>
 
       <section className="grid gap-3 xl:grid-cols-[1.2fr_1.2fr_1.2fr_1.6fr]">
         <MetricCard
           label="Receitas recebidas este mes"
-          sublabel="Receitas recebidas este mes"
+          sublabel="Potencial estimado da carteira ativa"
           value={formatCurrency(dashboard.metrics.totalPotential)}
         />
         <MetricCard
           label="Eventos"
-          sublabel="Agendado(s) para este mes"
+          sublabel="Prazos imediatos no radar operacional"
           value={String(dashboard.deadlines.length)}
         />
         <MetricCard
           label="Processos"
-          sublabel="Adicionado(s) este mes"
+          sublabel="Casos ativos na base real"
           value={String(dashboard.metrics.activeCases)}
         />
 
         <article className="mj-model-panel px-4 py-4">
-          <p className="text-[13px] text-slate-400">Financeiro - receitas</p>
-          <p className="mt-1 text-[18px] font-semibold text-white">Ultimos 12 meses</p>
-          <div className="mt-5 grid h-[6.2rem] grid-cols-12 items-end gap-1">
-            {[10, 18, 22, 15, 28, 36, 20, 42, 32, 48, 40, 52].map((height, index) => (
-              <div key={index} className="flex flex-col items-center gap-1">
-                <div className="w-full rounded-t-[2px] bg-slate-300/55" style={{ height }} />
+          <p className="text-[13px] text-slate-400">Operacao consolidada</p>
+          <p className="mt-1 text-[18px] font-semibold text-white">Volumes atuais do tenant</p>
+          <div className="mt-5 grid h-[6.2rem] grid-cols-6 items-end gap-2">
+            {dashboard.monthlyEvolution.map((entry) => (
+              <div key={entry.label} className="flex flex-col items-center gap-2">
+                <div
+                  className="w-full min-w-[1.8rem] rounded-t-[2px] bg-slate-300/55"
+                  style={{ height: `${Math.max(18, entry.value * 8)}px` }}
+                />
+                <span className="text-[11px] text-slate-400">{entry.label}</span>
               </div>
             ))}
           </div>
@@ -93,9 +114,32 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-3 xl:grid-cols-3">
-        <MiniCard href="/agenda/compromissos" title="Compromissos" body="Nenhum compromisso entre hoje e amanha" />
-        <MiniCard href="/agenda/tarefas" title="Tarefas" body="Nenhuma tarefa entre hoje e amanha" />
-        <MiniCard href="/agenda/prazos" title="Prazos" body="Nenhum prazo entre hoje e amanha" />
+        <MiniCard
+          href="/agenda/compromissos"
+          title="Compromissos"
+          body={
+            dashboard.activities[3]?.detail ??
+            "Nenhum compromisso operacional relevante foi consolidado na base real."
+          }
+        />
+        <MiniCard
+          href="/agenda/tarefas"
+          title="Tarefas"
+          body={
+            dashboard.urgentTaskList[0]
+              ? `${dashboard.urgentTaskList[0].title} | ${dashboard.urgentTaskList[0].clientName}`
+              : "Nenhuma tarefa urgente encontrada na base real."
+          }
+        />
+        <MiniCard
+          href="/agenda/prazos"
+          title="Prazos"
+          body={
+            dashboard.deadlines[0]
+              ? `${dashboard.deadlines[0].title} | ${dashboard.deadlines[0].dateLabel}`
+              : "Nenhum prazo imediato encontrado na base real."
+          }
+        />
       </section>
     </div>
   );

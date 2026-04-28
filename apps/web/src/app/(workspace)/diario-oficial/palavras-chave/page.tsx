@@ -1,17 +1,50 @@
+import { WorkspaceStatePanel } from "@lexia/ui";
+
+import { getAdversaries } from "@/server/services/adversaries/get-adversaries";
+import { getOfficialDiaryPublications } from "@/server/services/official-diary/get-official-diary";
+
 const diaryWarnings = [
-  "Esta ferramenta e fornecida a titulo de cortesia para nossos assinantes.",
-  "A utilizacao do MJ Diario Oficial nao desobriga o advogado a ler o Diario Oficial.",
-  "Nao nos responsabilizamos por eventuais perdas em decorrencia da utilizacao desta ferramenta.",
-  "As publicacoes permanecem armazenadas por 90 dias."
+  "As palavras abaixo sao derivadas de adversos e publicacoes reais do tenant.",
+  "A configuracao oficial de captura depende da integracao do Diario Oficial."
 ];
 
-export default function DiarioOficialPalavrasPage() {
+export default async function DiarioOficialPalavrasPage() {
+  let keywords: string[] = [];
+  let state: { title: string; description: string; tone?: "neutral" | "warning" | "danger" } | null = null;
+
+  try {
+    const [adversaries, publications] = await Promise.all([
+      getAdversaries(),
+      getOfficialDiaryPublications()
+    ]);
+    keywords = [
+      ...new Set(
+        [
+          ...adversaries.flatMap((adversary) => [adversary.name, adversary.bankName]),
+          ...publications.flatMap((publication) => [
+            publication.client.fullName,
+            publication.bankingCase.bankName,
+            publication.judicialProcess.processNumber
+          ])
+        ]
+          .filter(Boolean)
+          .sort()
+      )
+    ];
+  } catch {
+    state = {
+      title: "Palavras-chave indisponiveis no momento",
+      description: "Nao foi possivel derivar palavras-chave a partir da base real do tenant ativo.",
+      tone: "danger"
+    };
+  }
+
   return (
     <div className="mj-model-page space-y-4">
       <div className="flex items-start justify-between">
         <div>
           <p className="mj-model-title">Palavras-chave para recebimento de publicacoes</p>
-          <p className="mj-model-subtitle">Exibindo 0 resultado(s)</p>
+          <p className="mj-model-subtitle">Exibindo {keywords.length} resultado(s)</p>
         </div>
         <button className="mj-model-button-green" type="button">
           Adicionar
@@ -21,16 +54,12 @@ export default function DiarioOficialPalavrasPage() {
       <div className="grid gap-4 xl:grid-cols-[22rem_1fr]">
         <div className="mj-model-panel overflow-hidden">
           <div className="mj-model-gridline grid grid-cols-[1fr_3rem] border-b px-3 py-2 text-[13px] font-semibold text-slate-400">
-            <span>Quantidade de monitoramentos permitidos</span>
-            <span>1</span>
-          </div>
-          <div className="mj-model-gridline grid grid-cols-[1fr_3rem] border-b px-3 py-2 text-[13px] text-slate-300">
-            <span>Quantidade em uso</span>
-            <span>0</span>
+            <span>Quantidade de monitoramentos derivados</span>
+            <span>{keywords.length}</span>
           </div>
           <div className="grid grid-cols-[1fr_3rem] px-3 py-2 text-[13px] text-slate-300">
             <span>Status</span>
-            <span>uso normal</span>
+            <span>real</span>
           </div>
         </div>
 
@@ -43,9 +72,21 @@ export default function DiarioOficialPalavrasPage() {
         </div>
       </div>
 
-      <div className="mj-model-panel px-4 py-4 text-[13px] text-slate-300">
-        Voce ainda nao cadastrou nenhuma palavra-chave.
-      </div>
+      {state ? (
+        <WorkspaceStatePanel description={state.description} title={state.title} tone={state.tone ?? "neutral"} />
+      ) : keywords.length ? (
+        <div className="mj-model-panel overflow-hidden">
+          {keywords.map((keyword, index) => (
+            <div key={keyword} className="px-4 py-3 text-[13px] text-slate-300" style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}>
+              {keyword}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mj-model-panel px-4 py-4 text-[13px] text-slate-300">
+          Nenhuma palavra-chave foi derivada da base real.
+        </div>
+      )}
     </div>
   );
 }

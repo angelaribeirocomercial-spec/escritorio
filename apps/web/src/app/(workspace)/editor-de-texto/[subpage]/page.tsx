@@ -1,20 +1,19 @@
 import { notFound } from "next/navigation";
 
-import { mockCases } from "@lexia/mocks";
-
-import { getClaraRecord, getClaraRecordDisplay } from "@/server/services/clara/clara-record-store";
+import {
+  getClaraRecord,
+  getClaraRecordDisplay,
+  listClaraRecords,
+  type ClaraRecord
+} from "@/server/services/clara/clara-record-store";
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
-
-const modelRows = [
-  { protocol: "145592", name: "Contrato de honorarios advocaticios" },
-  { protocol: "145591", name: "Procuracao pessoa fisica" },
-  { protocol: "145590", name: "Recibo padrao" }
-];
 
 type RevisionalDraftBlock = {
   title: string;
   body: string[];
 };
+
+type TextDraftPayload = Awaited<ReturnType<typeof getClaraTextDraftArtifact>>;
 
 function buildRevisionalDraftBlocks(
   draftArtifact: Awaited<ReturnType<typeof getClaraTextDraftArtifact>>
@@ -23,9 +22,8 @@ function buildRevisionalDraftBlocks(
     return null;
   }
 
-  const bankingCase = mockCases.find((item) => item.title === draftArtifact.caseLabel);
-  const processNumber = bankingCase?.processNumber ?? "numero do processo em definicao";
-  const bankName = bankingCase?.bankName ?? "instituicao financeira re";
+  const processNumber = draftArtifact.processLabel;
+  const bankName = draftArtifact.bankLabel;
   const scenarioLabel = draftArtifact.revisionalMemory.scenarioLabel;
   const objectiveLabel = draftArtifact.revisionalMemory.objectiveLabel;
   const urgencyLabel = draftArtifact.revisionalMemory.urgencyLabel;
@@ -284,17 +282,19 @@ function ClaraDraftPanel({
 
 function MeusTextosInner({
   draftArtifact,
-  claraDisplay
+  claraDisplay,
+  textDraftRecords
 }: {
   draftArtifact: Awaited<ReturnType<typeof getClaraTextDraftArtifact>> | null;
   claraDisplay: ReturnType<typeof getClaraRecordDisplay> | null;
+  textDraftRecords: ClaraRecord[];
 }) {
   return (
     <div className="mj-model-page space-y-4">
       <div className="flex items-start justify-between">
         <div>
           <p className="mj-model-title">Meus textos</p>
-          <p className="mj-model-subtitle">Exibindo 0 resultado(s)</p>
+          <p className="mj-model-subtitle">Exibindo {textDraftRecords.length} resultado(s)</p>
         </div>
         <button className="mj-model-button-green" type="button">
           Criar texto v
@@ -311,22 +311,55 @@ function MeusTextosInner({
         </div>
       </section>
 
-      <div className="mj-model-panel px-4 py-4">
-        <p className="mj-model-empty">Voce ainda nao cadastrou nenhum texto.</p>
-      </div>
+      {textDraftRecords.length ? (
+        <div className="mj-model-panel overflow-hidden">
+          {textDraftRecords.map((record, index) => {
+            const payload = record.payload as TextDraftPayload;
+
+            return (
+              <div
+                key={record.id}
+                className="grid grid-cols-[1fr_9rem] px-4 py-3 text-[13px]"
+                style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}
+              >
+                <div>
+                  <p className="font-semibold text-slate-100">{payload.caseLabel}</p>
+                  <p className="mt-1 text-slate-400">
+                    {payload.pieceLabel} | {payload.documentLabel}
+                  </p>
+                </div>
+                <span className="text-slate-400">{record.workflowStatus}</span>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="mj-model-panel px-4 py-4">
+          <p className="mj-model-empty">Nenhum texto da Clara foi registrado ainda.</p>
+        </div>
+      )}
 
       {draftArtifact ? <ClaraDraftPanel claraDisplay={claraDisplay} draftArtifact={draftArtifact} /> : null}
     </div>
   );
 }
 
-function ModelosPage() {
+function ModelosPage({ textDraftRecords }: { textDraftRecords: ClaraRecord[] }) {
+  const modelRows = textDraftRecords.map((record) => {
+    const payload = record.payload as TextDraftPayload;
+
+    return {
+      protocol: record.id,
+      name: `${payload.pieceLabel} | ${payload.caseLabel}`
+    };
+  });
+
   return (
     <div className="mj-model-page space-y-4">
       <div className="flex items-start justify-between">
         <div>
           <p className="mj-model-title">Meus modelos</p>
-          <p className="mj-model-subtitle">Exibindo 3 resultado(s)</p>
+          <p className="mj-model-subtitle">Exibindo {modelRows.length} resultado(s)</p>
         </div>
         <div className="flex gap-2">
           <button className="mj-model-button-gray" type="button">
@@ -338,31 +371,37 @@ function ModelosPage() {
         </div>
       </div>
 
-      <section className="mj-model-panel overflow-hidden">
-        <div className="grid grid-cols-[1.8rem_6rem_1fr_8rem] border-b bg-black/10 px-3 py-3 text-[13px] font-semibold text-slate-300 mj-model-gridline">
-          <span />
-          <span>Protocolo</span>
-          <span>Nome</span>
-          <span className="text-right">Opcoes</span>
-        </div>
-
-        {modelRows.map((row, index) => (
-          <div
-            key={row.protocol}
-            className="grid grid-cols-[1.8rem_6rem_1fr_8rem] items-center px-3 py-3 text-[13px]"
-            style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}
-          >
-            <input type="checkbox" />
-            <span className="text-slate-300">{row.protocol}</span>
-            <span className="text-slate-200">{row.name}</span>
-            <div className="flex justify-end gap-3 text-slate-300">
-              <span>abrir</span>
-              <span>copiar</span>
-              <span>apagar</span>
-            </div>
+      {modelRows.length ? (
+        <section className="mj-model-panel overflow-hidden">
+          <div className="grid grid-cols-[1.8rem_10rem_1fr_8rem] border-b bg-black/10 px-3 py-3 text-[13px] font-semibold text-slate-300 mj-model-gridline">
+            <span />
+            <span>Registro</span>
+            <span>Nome</span>
+            <span className="text-right">Opcoes</span>
           </div>
-        ))}
-      </section>
+
+          {modelRows.map((row, index) => (
+            <div
+              key={row.protocol}
+              className="grid grid-cols-[1.8rem_10rem_1fr_8rem] items-center px-3 py-3 text-[13px]"
+              style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}
+            >
+              <input type="checkbox" />
+              <span className="truncate text-slate-300">{row.protocol}</span>
+              <span className="text-slate-200">{row.name}</span>
+              <div className="flex justify-end gap-3 text-slate-300">
+                <span>abrir</span>
+                <span>copiar</span>
+                <span>apagar</span>
+              </div>
+            </div>
+          ))}
+        </section>
+      ) : (
+        <div className="mj-model-panel px-4 py-4">
+          <p className="mj-model-empty">Nenhum modelo foi derivado dos textos da Clara ainda.</p>
+        </div>
+      )}
 
       <div className="flex justify-end">
         <button className="rounded-[2px] bg-red-500 px-4 py-2 text-[13px] font-semibold text-white" type="button">
@@ -392,6 +431,7 @@ export default async function EditorSubpage({
     contractedInstallment?: string;
   };
 }) {
+  const textDraftRecords = (await listClaraRecords(80)).filter((record) => record.kind === "text-draft");
   const claraRecord = await getClaraRecord(searchParams?.record);
   const draftArtifact =
     claraRecord?.kind === "text-draft"
@@ -414,11 +454,17 @@ export default async function EditorSubpage({
     : null;
 
   if (params.subpage === "meus-textos") {
-    return <MeusTextosInner claraDisplay={claraDisplay} draftArtifact={draftArtifact} />;
+    return (
+      <MeusTextosInner
+        claraDisplay={claraDisplay}
+        draftArtifact={draftArtifact}
+        textDraftRecords={textDraftRecords}
+      />
+    );
   }
 
   if (params.subpage === "modelos") {
-    return <ModelosPage />;
+    return <ModelosPage textDraftRecords={textDraftRecords} />;
   }
 
   notFound();
