@@ -273,6 +273,76 @@ export default async function ClaraPage({
     );
   }
   const activeWorkspace = clara.tabs[activeTab];
+  const hasResolvedProcess = Boolean(clara.structuredCore.context.process);
+  const hasResolvedDocument = Boolean(clara.structuredCore.context.selectedDocument);
+
+  if (activeNiche && (!hasResolvedProcess || !hasResolvedDocument)) {
+    return (
+      <WorkspacePage
+        description="A Clara contextual minima segue operando com clientId e caseId resolvidos, mas sem fingir que processo ou documento ja existem quando o caso ainda esta em fase inicial."
+        eyebrow="Clara"
+        metrics={[
+          { label: "Cliente", value: clara.structuredCore.context.client.fullName },
+          { label: "Caso", value: clara.structuredCore.context.bankingCase.title },
+          { label: "Processo", value: hasResolvedProcess ? "Resolvido" : "Pendente" },
+          { label: "Documento", value: hasResolvedDocument ? "Resolvido" : "Pendente" }
+        ]}
+        title="Clara em estado controlado"
+      >
+        <WorkspaceStatePanel
+          actionHref={`/pessoas/clientes/${clara.structuredCore.context.client.id}?case=${clara.structuredCore.context.bankingCase.id}`}
+          actionLabel="Voltar ao cockpit do cliente"
+          description="O contrato contextual da Clara foi resolvido com cliente e caso reais, mas a sessao completa permanece em estado controlado ate o caso ganhar processo vinculado e pelo menos um documento base."
+          title="Contexto juridico minimo preservado"
+          tone="warning"
+        />
+
+        {!hasResolvedDocument ? (
+          <WorkspaceStatePanel
+            actionHref={`/documentos/enviar-arquivos?caseId=${clara.structuredCore.context.bankingCase.id}`}
+            actionLabel="Anexar documento ao caso"
+            description="Sem documento base, a Clara registra fatos e bloqueios do caso, mas nao abre leitura contratual nem minuta assistida."
+            title="Documento base ainda pendente"
+            tone="warning"
+          />
+        ) : null}
+
+        {!hasResolvedProcess ? (
+          <WorkspaceStatePanel
+            actionHref={`/pessoas/clientes/${clara.structuredCore.context.client.id}?case=${clara.structuredCore.context.bankingCase.id}`}
+            actionLabel="Continuar pelo cockpit do caso"
+            description="O handoff arquitetural permite que o processo nasca vazio no onboarding. A Clara nao trava por isso, mas tambem nao promete acompanhamento processual antes do vinculo real."
+            title="Processo ainda nao vinculado"
+            tone="warning"
+          />
+        ) : null}
+
+        {contextualAnalysis ? (
+          <section className="clara-secondary-surface rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Resposta contextual minima
+            </p>
+            <p className="mt-3 text-sm leading-7 text-slate-200">{contextualAnalysis.summary}</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="rounded-[4px] border border-white/10 bg-black/20 px-4 py-4 text-sm text-slate-300">
+                Fatos confirmados:{" "}
+                <span className="font-semibold text-white">
+                  {contextualAnalysis.caseAnalysis.confirmedFacts.length}
+                </span>
+              </div>
+              <div className="rounded-[4px] border border-white/10 bg-black/20 px-4 py-4 text-sm text-slate-300">
+                Lacunas documentais:{" "}
+                <span className="font-semibold text-white">
+                  {contextualAnalysis.caseAnalysis.documentsMissing.length}
+                </span>
+              </div>
+            </div>
+          </section>
+        ) : null}
+      </WorkspacePage>
+    );
+  }
+
   const nicheConfig = activeNiche
     ? {
         revisional: {

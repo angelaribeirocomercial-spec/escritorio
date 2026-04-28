@@ -74,17 +74,22 @@ export type ClaraSourceAdapterContext = {
   simulateFailedSources?: ClaraSourceAdapterId[];
 };
 
+type ResolvedAdapterContext = ClaraWorkspaceContext & {
+  process: NonNullable<ClaraWorkspaceContext["process"]>;
+  selectedDocument: NonNullable<ClaraWorkspaceContext["selectedDocument"]>;
+};
+
 type AdapterDescriptor = {
   sourceId: ClaraSourceAdapterId;
   sourceLabel: string;
   scope: string;
-  queryHint: (context: ClaraWorkspaceContext) => string;
+  queryHint: (context: ResolvedAdapterContext) => string;
   buildPayload: (
-    context: ClaraWorkspaceContext
+    context: ResolvedAdapterContext
   ) => Omit<ClaraSourceAdapterPayload, "mode" | "persistenceKey" | "responseMetadata">;
 };
 
-function buildContextTrail(context: ClaraWorkspaceContext) {
+function buildContextTrail(context: ResolvedAdapterContext) {
   return [
     `Cliente ${context.client.id}`,
     `Caso ${context.bankingCase.id}`,
@@ -93,13 +98,13 @@ function buildContextTrail(context: ClaraWorkspaceContext) {
   ];
 }
 
-function buildDocumentTrail(context: ClaraWorkspaceContext) {
+function buildDocumentTrail(context: ResolvedAdapterContext) {
   return context.caseDocuments.map((document) => document.id);
 }
 
 function buildPayloadBase(
   descriptor: AdapterDescriptor,
-  context: ClaraWorkspaceContext,
+  context: ResolvedAdapterContext,
   queryHint: string
 ): Pick<ClaraSourceAdapterPayload, "mode" | "persistenceKey" | "responseMetadata"> {
   return {
@@ -116,7 +121,7 @@ function buildPayloadBase(
 
 function buildSourceResult(
   descriptor: AdapterDescriptor,
-  context: ClaraWorkspaceContext,
+  context: ResolvedAdapterContext,
   status: ClaraSourceAdapterStatus,
   failureReason?: string
 ): ClaraSourceAdapterResult {
@@ -330,10 +335,16 @@ export async function getClaraSourceAdapters(params?: ClaraSourceAdapterContext)
   const context = await resolveClaraWorkspaceContext(params);
   const unavailableSources = new Set(params?.simulateFailedSources ?? []);
 
+  if (!context.process || !context.selectedDocument) {
+    return [];
+  }
+
+  const resolvedContext = context as ResolvedAdapterContext;
+
   return ADAPTERS.map((descriptor) =>
     buildSourceResult(
       descriptor,
-      context,
+      resolvedContext,
       unavailableSources.has(descriptor.sourceId) ? "unavailable" : "not_consulted",
       unavailableSources.has(descriptor.sourceId)
         ? `${descriptor.sourceLabel} indisponivel na execucao simulada. Nenhuma consulta externa foi realizada.`
@@ -354,5 +365,9 @@ export async function getClaraSourceAdapterFailure(
     throw new Error(`Unknown Clara source adapter: ${sourceId}`);
   }
 
-  return buildSourceResult(descriptor, context, "failed", reason);
+  if (!context.process || !context.selectedDocument) {
+    throw new Error("Clara source adapter failure requires resolved process and document context.");
+  }
+
+  return buildSourceResult(descriptor, context as ResolvedAdapterContext, "failed", reason);
 }

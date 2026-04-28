@@ -22,8 +22,8 @@ export type ClaraWorkspaceDocument = Awaited<ReturnType<typeof getDocuments>>[nu
 export type ClaraWorkspaceContext = {
   client: ClaraWorkspaceClient;
   bankingCase: ClaraWorkspaceCase;
-  process: ClaraWorkspaceProcess;
-  selectedDocument: ClaraWorkspaceDocument;
+  process: ClaraWorkspaceProcess | null;
+  selectedDocument: ClaraWorkspaceDocument | null;
   caseDocuments: ClaraWorkspaceDocument[];
   primaryAnalysis: ContractAnalysisRecord | null;
 };
@@ -74,11 +74,8 @@ export async function resolveClaraWorkspaceContext(
   const caseDocuments = allDocuments.filter((document) => document.caseId === bankingCase.id);
   const selectedDocument =
     (requestedDocument?.caseId === bankingCase.id ? requestedDocument : null) ??
-    caseDocuments[0];
-
-  if (!selectedDocument) {
-    throw new Error(`No documents linked to case ${bankingCase.id} are available to build Clara workspace context.`);
-  }
+    caseDocuments[0] ??
+    null;
 
   const client =
     (requestedClient?.id === bankingCase.clientId ? requestedClient : null) ??
@@ -93,18 +90,15 @@ export async function resolveClaraWorkspaceContext(
 
   const process =
     (requestedProcess?.caseId === bankingCase.id ? requestedProcess : null) ??
-    allProcesses.find((item) => item.caseId === bankingCase.id);
-
-  if (!process) {
-    throw new Error(`No process linked to case ${bankingCase.id} is available to build Clara workspace context.`);
-  }
+    allProcesses.find((item) => item.caseId === bankingCase.id) ??
+    null;
 
   const primaryAnalysis =
-    (await getContractAnalysisByDocumentId(selectedDocument.id)) ??
+    (selectedDocument ? await getContractAnalysisByDocumentId(selectedDocument.id) : null) ??
     (
       await Promise.all(
         caseDocuments
-          .filter((document) => document.id !== selectedDocument.id)
+          .filter((document) => document.id !== selectedDocument?.id)
           .map((document) => getContractAnalysisByDocumentId(document.id))
       )
     ).find((analysis) => analysis !== null) ??

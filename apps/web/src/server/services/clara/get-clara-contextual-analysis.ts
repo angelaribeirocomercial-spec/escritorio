@@ -17,8 +17,8 @@ type ClaraExecutionLog = {
   contextSnapshot: {
     clientId: string;
     caseId: string;
-    processId: string;
-    documentId: string;
+    processId: string | null;
+    documentId: string | null;
     niche: string;
     stage: string;
     workflowStep: string;
@@ -78,8 +78,8 @@ export async function getClaraContextualAnalysis(params: {
   const contextSnapshot = {
     clientId: structuredCore.context.client.id,
     caseId: structuredCore.context.bankingCase.id,
-    processId: structuredCore.context.process.id,
-    documentId: structuredCore.context.selectedDocument.id,
+    processId: structuredCore.context.process?.id ?? null,
+    documentId: structuredCore.context.selectedDocument?.id ?? null,
     niche: structuredCore.classification.nicheId,
     stage: structuredCore.context.bankingCase.stage,
     workflowStep: structuredCore.context.bankingCase.workflowState.currentStepId

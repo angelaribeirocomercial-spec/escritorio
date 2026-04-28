@@ -30,12 +30,14 @@ const WORKFLOW_BLUEPRINTS: Record<
     steps: [
       { id: "cadastro", title: "Cadastro concluido", detail: "Cliente, banco, nicho e objetivo inicial registrados." },
       { id: "documentos", title: "Documentos essenciais", detail: "Contrato, comprovantes e base minima para leitura revisional." },
-      { id: "analise", title: "Analise contratual", detail: "Leitura juridica e economica do contrato e das abusividades." },
-      { id: "memoria", title: "Memoria inicial", detail: "Consolidacao da narrativa economica e dos pontos de revisao." },
+      { id: "contrato", title: "Leitura automatica do contrato", detail: "Leitura juridica e economica inicial do contrato e das clausulas sensiveis." },
+      { id: "parecer", title: "Parecer tecnico inicial", detail: "Primeira consolidacao tecnica sobre abusividades, lacunas e viabilidade." },
+      { id: "memoria", title: "Memoria de calculo e abusividades", detail: "Consolidacao da narrativa economica, memoria de calculo e pontos de revisao." },
       { id: "estrategia", title: "Estrategia juridica", detail: "Definicao do pedido, da tese principal e do reforco probatorio." },
-      { id: "inicial", title: "Peticao inicial", detail: "Preparacao da minuta e dos pedidos principais da revisional." },
+      { id: "minuta", title: "Minuta da peca", detail: "Preparacao da minuta e dos pedidos principais da revisional." },
       { id: "revisao", title: "Revisao do advogado", detail: "Checagem humana final antes da distribuicao." },
-      { id: "distribuicao", title: "Distribuicao e acompanhamento", detail: "Protocolo, cadastro do processo e monitoramento continuo." }
+      { id: "distribuicao", title: "Distribuicao", detail: "Protocolo e cadastro do processo principal." },
+      { id: "acompanhamento", title: "Acompanhamento", detail: "Monitoramento continuo do caso depois da distribuicao." }
     ],
     requiredDocuments: [
       "Contrato bancario ou CCB",
@@ -127,8 +129,16 @@ function detectCurrentStepIndex(
     return WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "distribuicao");
   }
 
+  if (normalizedStage.includes("acompanh")) {
+    return WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "acompanhamento");
+  }
+
   if (normalizedStage.includes("revisao")) {
     return WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "revisao");
+  }
+
+  if (normalizedStage.includes("minuta") || normalizedStage.includes("peticao") || normalizedStage.includes("inicial")) {
+    return WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "minuta");
   }
 
   if (normalizedStage.includes("estrateg")) {
@@ -139,11 +149,19 @@ function detectCurrentStepIndex(
     return WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "memoria");
   }
 
-  if (normalizedStage.includes("analise")) {
-    return missingDocuments.length > 0 ? 1 : 2;
+  if (normalizedStage.includes("parecer")) {
+    return WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "parecer");
   }
 
-  return missingDocuments.length > 0 ? 1 : 2;
+  if (normalizedStage.includes("analise") || normalizedStage.includes("contrato")) {
+    return missingDocuments.length > 0
+      ? WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "documentos")
+      : WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "contrato");
+  }
+
+  return missingDocuments.length > 0
+    ? WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "documentos")
+    : WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "contrato");
 }
 
 function hasRequiredDocument(
@@ -157,23 +175,35 @@ function hasRequiredDocument(
 
 function stageReached(
   stage: string,
-  candidate: "analise" | "memoria" | "estrategia" | "inicial" | "revisao" | "distribuicao"
+  candidate:
+    | "contrato"
+    | "parecer"
+    | "memoria"
+    | "estrategia"
+    | "minuta"
+    | "revisao"
+    | "distribuicao"
+    | "acompanhamento"
 ) {
   const normalizedStage = normalizeLabel(stage);
 
   switch (candidate) {
+    case "acompanhamento":
+      return normalizedStage.includes("acompanh");
     case "distribuicao":
-      return normalizedStage.includes("distribu");
+      return normalizedStage.includes("distribu") || normalizedStage.includes("acompanh");
     case "revisao":
-      return normalizedStage.includes("revisao") || normalizedStage.includes("distribu");
-    case "inicial":
-      return normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu");
+      return normalizedStage.includes("revisao") || normalizedStage.includes("distribu") || normalizedStage.includes("acompanh");
+    case "minuta":
+      return normalizedStage.includes("minuta") || normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu") || normalizedStage.includes("acompanh");
     case "estrategia":
-      return normalizedStage.includes("estrateg") || normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu");
+      return normalizedStage.includes("estrateg") || normalizedStage.includes("minuta") || normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu") || normalizedStage.includes("acompanh");
     case "memoria":
-      return normalizedStage.includes("memoria") || normalizedStage.includes("estrateg") || normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu");
-    case "analise":
-      return normalizedStage.includes("analise") || normalizedStage.includes("memoria") || normalizedStage.includes("estrateg") || normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu");
+      return normalizedStage.includes("memoria") || normalizedStage.includes("estrateg") || normalizedStage.includes("minuta") || normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu") || normalizedStage.includes("acompanh");
+    case "parecer":
+      return normalizedStage.includes("parecer") || normalizedStage.includes("memoria") || normalizedStage.includes("estrateg") || normalizedStage.includes("minuta") || normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu") || normalizedStage.includes("acompanh");
+    case "contrato":
+      return normalizedStage.includes("analise") || normalizedStage.includes("contrato") || normalizedStage.includes("parecer") || normalizedStage.includes("memoria") || normalizedStage.includes("estrateg") || normalizedStage.includes("minuta") || normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu") || normalizedStage.includes("acompanh");
     default:
       return false;
   }

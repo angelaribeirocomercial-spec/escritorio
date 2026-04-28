@@ -111,13 +111,38 @@ export async function getClaraWorkspace(params?: {
   const caseDocuments = structuredCore.context.caseDocuments;
   const primaryRevisionAnalysis =
     structuredCore.context.primaryAnalysis ??
-    contractAnalyses.find((analysis) => analysis.documentId === selectedDocument.id) ??
+    (selectedDocument
+      ? contractAnalyses.find((analysis) => analysis.documentId === selectedDocument.id) ?? null
+      : null) ??
     contractAnalyses.find((analysis) => caseDocuments.some((document) => document.id === analysis.documentId)) ??
     null;
+  const fallbackDocument = {
+    id: "no-document",
+    clientId: workspaceClient.id,
+    caseId: workspaceCase.id,
+    fileName: "Nenhum documento vinculado",
+    originalFileName: null,
+    documentType: "Sem documento",
+    category: "pendencia",
+    summary: "A Clara segue em estado controlado ate o primeiro documento ser anexado ao caso.",
+    tags: [] as string[],
+    createdAt: new Date(0).toISOString(),
+    updatedAt: new Date(0).toISOString(),
+    uploadedBy: "Sistema",
+    source: "internal" as const,
+    storagePath: null,
+    mimeType: null,
+    sizeInBytes: 0,
+    client: workspaceClient,
+    bankingCase: workspaceCase,
+    lexiaInsights: []
+  };
+  const resolvedSelectedDocument = selectedDocument ?? fallbackDocument;
   const comparisonDocuments = [
-    selectedDocument,
-    caseDocuments.find((document) => document.id !== selectedDocument.id) ?? selectedDocument
+    resolvedSelectedDocument,
+    caseDocuments.find((document) => document.id !== resolvedSelectedDocument.id) ?? resolvedSelectedDocument
   ];
+  const processLabel = workspaceProcess?.processNumber ?? "Processo ainda nao vinculado";
   const urgentTasks = tasks.filter((task) => task.priority === "urgent" || task.priority === "high");
   const caseTasks = tasks.filter((task) => task.caseId === workspaceCase.id);
   const caseUrgentTasks = caseTasks.filter((task) => task.priority === "urgent" || task.priority === "high");
@@ -174,13 +199,13 @@ export async function getClaraWorkspace(params?: {
       },
       {
         id: "thread-2",
-        label: workspaceProcess.processNumber,
+        label: processLabel,
         detail: `${structuredCore.classification.scenarioLabel} com proximo passo de ${structuredCore.nextStep.toLowerCase()}.`
       },
       {
         id: "thread-3",
         label: "Contrato em leitura",
-        detail: `Documento ${selectedDocument.documentType} pronto para aprofundamento juridico e producao dentro do caso selecionado.`
+        detail: `Documento ${resolvedSelectedDocument.documentType} pronto para aprofundamento juridico e producao dentro do caso selecionado.`
       }
     ],
     selectors: {
@@ -240,7 +265,7 @@ export async function getClaraWorkspace(params?: {
         title: "Intimacao",
         subtitle: "Leitura objetiva de intimacoes para extrair prazo, ato e proxima providencia.",
         summary:
-          `Clara organiza a intimacao do processo ${workspaceProcess.processNumber} para destacar o prazo, o ato exigido e a resposta humana ou automatica que precisa sair agora.`,
+          `Clara organiza a intimacao do processo ${processLabel.toLowerCase()} para destacar o prazo, o ato exigido e a resposta humana ou automatica que precisa sair agora.`,
         highlights: [
           "Extrair o ato intimado e a data limite de resposta.",
           "Separar o que exige revisao humana antes do protocolo.",
@@ -265,7 +290,7 @@ export async function getClaraWorkspace(params?: {
         title: "Motor revisional bancario",
         subtitle: "Viabilidade, abusividades, estrategia, prova e minuta no mesmo fluxo.",
         summary:
-          `Clara consolida a leitura a partir de ${selectedDocument.documentType.toLowerCase()}, memoria de calculo e sinais do caso ${workspaceCase.title.toLowerCase()} para decidir se vale entrar com acao, quais clausulas atacar e qual minuta abrir primeiro.`,
+          `Clara consolida a leitura a partir de ${resolvedSelectedDocument.documentType.toLowerCase()}, memoria de calculo e sinais do caso ${workspaceCase.title.toLowerCase()} para decidir se vale entrar com acao, quais clausulas atacar e qual minuta abrir primeiro.`,
         highlights: [
           primaryRevisionAnalysis
             ? `Tese sugerida: ${primaryRevisionAnalysis.suggestedThesis}.`
@@ -277,7 +302,7 @@ export async function getClaraWorkspace(params?: {
           defaultRevisionalHighlight
         ],
         cards: [
-          { label: "Contrato foco", value: selectedDocument.documentType },
+          { label: "Contrato foco", value: resolvedSelectedDocument.documentType },
           {
             label: "Tese revisional",
             value:
@@ -452,7 +477,7 @@ export async function getClaraWorkspace(params?: {
           "Comparar clausulas sensiveis, encargos, capitalizacao e pedidos possiveis."
         ],
         cards: [
-          { label: "Documento base", value: selectedDocument.documentType },
+          { label: "Documento base", value: resolvedSelectedDocument.documentType },
           { label: "Comparado com", value: comparisonDocuments[1].documentType },
           { label: "Objetivo", value: "Divergencias e tese" },
           { label: "Saida", value: "Resumo comparativo" }

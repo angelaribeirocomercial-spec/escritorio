@@ -41,8 +41,8 @@ export type ClaraStructuredCore = {
   context: {
     client: ClientData;
     bankingCase: BankingCaseData;
-    process: ProcessData;
-    selectedDocument: DocumentData;
+    process: ProcessData | null;
+    selectedDocument: DocumentData | null;
     caseDocuments: DocumentData[];
     primaryAnalysis: ContractAnalysisRecord | null;
   };
@@ -78,8 +78,8 @@ export type ClaraStructuredCore = {
 type ResolvedStructuredCore = {
   client: ClientData;
   bankingCase: BankingCaseData;
-  process: ProcessData;
-  selectedDocument: DocumentData;
+  process: ProcessData | null;
+  selectedDocument: DocumentData | null;
   caseDocuments: DocumentData[];
   primaryAnalysis: ContractAnalysisRecord | null;
 };
@@ -105,13 +105,15 @@ function classifyScenario(params: ResolvedStructuredCore) {
   const normalizedClaim = normalize(params.bankingCase.claimType);
   const normalizedTitle = normalize(params.bankingCase.title);
   const selectedDocumentText = normalize(
-    [
-      params.selectedDocument.documentType,
-      params.selectedDocument.category,
-      params.selectedDocument.summary,
-      params.selectedDocument.tags.join(" "),
-      params.selectedDocument.fileName
-    ].join(" ")
+    params.selectedDocument
+      ? [
+          params.selectedDocument.documentType,
+          params.selectedDocument.category,
+          params.selectedDocument.summary,
+          params.selectedDocument.tags.join(" "),
+          params.selectedDocument.fileName
+        ].join(" ")
+      : ""
   );
 
   if (
@@ -152,8 +154,8 @@ function classifyScenario(params: ResolvedStructuredCore) {
     normalizedClaim.includes("juros abusivos") ||
     normalizedTitle.includes("revisional") ||
     normalizedTitle.includes("juros abusivos") ||
-    params.selectedDocument.documentType === "CCB" ||
-    normalizedTitle.includes("capital de giro")
+      params.selectedDocument?.documentType === "CCB" ||
+      normalizedTitle.includes("capital de giro")
   ) {
     return {
       nicheId: BANKING_NICHES[0].value,
@@ -219,12 +221,15 @@ export async function getClaraStructuredCore(
   const classification = classifyScenario(resolved);
   const requiredDocuments = requiredDocumentsForNiche(classification.nicheId);
   const caseDocuments = resolved.caseDocuments;
-  const sourceAdapters = await getClaraSourceAdapters({
-    clientId: resolved.client.id,
-    caseId: resolved.bankingCase.id,
-    processId: resolved.process.id,
-    documentId: resolved.selectedDocument.id
-  });
+  const sourceAdapters =
+    resolved.process && resolved.selectedDocument
+      ? await getClaraSourceAdapters({
+          clientId: resolved.client.id,
+          caseId: resolved.bankingCase.id,
+          processId: resolved.process.id,
+          documentId: resolved.selectedDocument.id
+        })
+      : [];
   const existingDocumentText = caseDocuments
     .map((document) =>
       normalize(
@@ -250,10 +255,14 @@ export async function getClaraStructuredCore(
     `Cliente: ${resolved.client.fullName}`,
     `Caso: ${resolved.bankingCase.title}`,
     `Banco: ${resolved.bankingCase.bankName}`,
-    `Processo: ${resolved.process.processNumber}`,
     `Fase atual: ${resolved.bankingCase.stage}`,
     `Tese principal: ${resolved.bankingCase.mainThesis}`,
-    `Documento selecionado: ${resolved.selectedDocument.documentType} | ${resolved.selectedDocument.fileName}`
+    resolved.process
+      ? `Processo: ${resolved.process.processNumber}`
+      : "Processo: ainda nao vinculado ao caso",
+    resolved.selectedDocument
+      ? `Documento selecionado: ${resolved.selectedDocument.documentType} | ${resolved.selectedDocument.fileName}`
+      : "Documento selecionado: ainda nao existe documento vinculado ao caso"
   ];
 
   const analyticFacts = resolved.primaryAnalysis
@@ -331,7 +340,7 @@ export async function getClaraStructuredCore(
         origem_interna: [
           `Caso ${resolved.bankingCase.id}`,
           `Cliente ${resolved.client.id}`,
-          `Processo ${resolved.process.id}`
+          ...(resolved.process ? [`Processo ${resolved.process.id}`] : [])
         ],
         origem_documental: caseDocuments.map((document) => document.id),
         origem_api: sourceAdapters.map((adapter) => `${adapter.sourceLabel}: ${adapter.status}`),
