@@ -1,26 +1,20 @@
-﻿---
-task: ds-extend-pattern
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Extend Existing Pattern
 
 > Task ID: atlas-extend-pattern
-> Agent: Atlas (Design System Builder)
-> Version: 1.0.0
+> Agent: Merovingian (Design System Builder)
+> Version: 1.1.0
+> v4.0-compatible: true
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[ds-build-component]` · enables: `[]` · workflow: `greenfield`
 
 ## Description
 
 Add new variant, size, or feature to existing component without breaking compatibility. Maintains consistency with design system patterns.
+
+## Input Schema
+- **requires:** Output from `ds-build-component`
+- **format:** TypeScript source (existing component)
+- **location:** `outputs/design-system/{project}/components/{Component}/`
 
 ## Prerequisites
 
@@ -48,6 +42,13 @@ Add new variant, size, or feature to existing component without breaking compati
 - Updated tests
 - Updated documentation
 
+## Failure Handling
+
+- **Component not found:** If target component file does not exist at expected path, abort with "Component {ComponentName} not found at {path}. Verify component name and run *build first if component does not exist."
+- **Breaking API change detected:** If new variant requires changing existing prop types (e.g., string to union), abort with "Proposed change breaks backward compatibility: {change}. Add new prop instead of modifying existing."
+- **Token missing for new variant:** If new variant requires design token that does not exist in tokens file, abort with "Token {tokenName} not found for {variantName} variant. Add token to tokens.yaml before extending component."
+- **Existing variant tests failing:** If adding new variant causes existing tests to fail, abort with "{N} existing tests failing after extension: {list}. Fix regressions before proceeding—new variant must not break existing functionality."
+
 ## Success Criteria
 
 - [ ] New variant implemented correctly
@@ -61,12 +62,12 @@ Add new variant, size, or feature to existing component without breaking compati
 ```bash
 *extend button --variant warning
 
-Atlas: "Adding 'warning' variant to Button..."
-âœ“ Updated Button.tsx (new variant prop)
-âœ“ Updated Button.module.css (warning styles)
-âœ“ Updated Button.test.tsx (warning tests)
-âœ“ Updated Button.stories.tsx (warning story)
-âœ“ Backward compatibility: âœ“
+Merovingian: "Adding 'warning' variant to Button..."
+✓ Updated Button.tsx (new variant prop)
+✓ Updated Button.module.css (warning styles)
+✓ Updated Button.test.tsx (warning tests)
+✓ Updated Button.stories.tsx (warning story)
+✓ Backward compatibility: ✓
 
 Warning variant uses:
   - color: var(--color-warning)
@@ -80,3 +81,11 @@ Warning variant uses:
 - Test existing variants still work
 - Document migration if API changes
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+- `squads/design/checklists/ds-pattern-audit-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

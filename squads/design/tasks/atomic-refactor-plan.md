@@ -1,17 +1,3 @@
-﻿---
-task: atomic-refactor-plan
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Atomic Design Refactoring Plan
 
 > Task ID: atomic-refactor-plan
@@ -19,15 +5,23 @@ Checklist:
 > Version: 2.0.0
 >
 > **ATUALIZADO Jan/2026:** Adicionados gates anti-over-engineering.
+> **Execution Type:** `Hybrid`
+> **Human Checkpoint:** Review and approve the refactoring plan, component classification, and complexity gates before execution begins
+> **Dependencies:** depends_on: `[]` · enables: `[atomic-refactor-execute]` · workflow: `refactoring`
 
-## â›” LIÃ‡ÃƒO APRENDIDA (LER PRIMEIRO)
+## Output Schema
+- **produces:** `outputs/design-system/{project}/refactoring/refactor-plan.yaml`
+- **format:** YAML data
+- **consumed_by:** atomic-refactor-execute
+
+## ⛔ LIÇÃO APRENDIDA (LER PRIMEIRO)
 
 Em Jan/2026 atomizamos 22 componentes. Resultado em alguns casos:
-- FragmentsTab: 475 â†’ 1003 linhas (+111%)
+- FragmentsTab: 475 → 1003 linhas (+111%)
 - 73% dos hooks criados sem reuso externo
 - 476 arquivos <30 linhas (boilerplate)
 
-**Nova regra:** SÃ³ incluir na lista componentes que realmente precisam E terÃ£o hooks reusÃ¡veis.
+**Nova regra:** Só incluir na lista componentes que realmente precisam E terão hooks reusáveis.
 
 ## Description
 
@@ -66,56 +60,56 @@ This task automates the analysis workflow used to create `docs/refactoring/COMPO
    - Find all `.tsx` files in target directory
    - Count lines per file (excluding imports/whitespace)
    - Filter by threshold
-   - Validation: List of candidate components
+   - Check: candidate count > 0 AND each has file path + line count — log "Found {N} components above {threshold} line threshold"
 
 2. **Group by Domain**
    - Extract domain from path (e.g., `creator/`, `ops/`, `books/`)
    - Aggregate by domain
    - Calculate total lines per domain
-   - Validation: Domain groupings complete
+   - Check: all candidates assigned to a domain AND no component unassigned — log "{N} domains with {total} components, {lines} total lines"
 
 3. **Classify by Tier**
    - TIER 1: >800 lines (critical, start first)
    - TIER 2: 500-800 lines (medium priority)
    - ~~TIER 3: 300-500 lines~~ **REMOVIDO v2.0** - muito pequeno, organizar inline
-   - Validation: All components classified
+   - Check: every candidate has TIER 1 or TIER 2 classification — log "TIER 1: {N1} components, TIER 2: {N2} components"
 
-4. **â›” NEW: Filtrar por Potencial de Reuso**
-   - Para cada componente, perguntar: "Os hooks serÃ£o reusados?"
-   - Se NÃƒO â†’ **EXCLUIR DA LISTA**
-   - Apenas componentes com hooks reusÃ¡veis em 2+ lugares passam
-   - Validation: Only high-value components remain
+4. **⛔ NEW: Filtrar por Potencial de Reuso**
+   - Para cada componente, perguntar: "Os hooks serão reusados?"
+   - Se NÃO → **EXCLUIR DA LISTA**
+   - Apenas componentes com hooks reusáveis em 2+ lugares passam
+   - Check: all remaining candidates have reusable hooks (used in 2+ places) — log "{N} components passed reuse filter, {excluded} excluded"
 
 5. **Identify Patterns**
-   - Scan for `render{X}()` functions â†’ organisms
-   - Count `useState` hooks â†’ custom hooks needed
-   - Find repeated UI patterns â†’ molecules
-   - Validation: Pattern analysis complete
+   - Scan for `render{X}()` functions → organisms
+   - Count `useState` hooks → custom hooks needed
+   - Find repeated UI patterns → molecules
+   - Check: each component has render function count + useState count + repeated pattern count — log "Pattern analysis: {hooks} hooks, {renders} render fns, {patterns} repeated patterns"
 
 5. **Distribute Work**
    - Group domains into N agents
-   - Balance line count across agents (Â±20%)
+   - Balance line count across agents (±20%)
    - Ensure no domain split across agents
-   - Validation: Work distribution balanced
+   - Check: max agent line count <= min agent line count * 1.4 (within 20% balance) — log "Distribution: {N} agents, range {min}-{max} lines, variance {pct}%"
 
 6. **Generate Shared Components List**
    - Identify commonly needed molecules
    - List hooks that can be generalized
    - Create shared component checklist
-   - Validation: Shared dependencies identified
+   - Check: shared component list count >= 0 AND generalized hooks list exists — log "{N} shared molecules, {M} generalizable hooks identified"
 
 7. **Generate Agent Prompts**
    - Create detailed prompt for each agent
    - Include domain assignments
    - Add checklist and rules
    - Include reference to existing pattern
-   - Validation: Prompts generated
+   - Check: prompt file count == agent count AND each file size > 0 — abort with "Prompt generation failed for agent {N}"
 
 8. **Generate Documentation**
    - Update/create COMPONENT_REFACTORING_ROADMAP.md
    - Update/create PARALLEL_REFACTORING_PLAN.md
    - Create SHARED_REQUESTS.md template
-   - Validation: Documentation complete
+   - Check: `test -f COMPONENT_REFACTORING_ROADMAP.md` AND `test -f PARALLEL_REFACTORING_PLAN.md` AND `test -f SHARED_REQUESTS.md` — abort with "Documentation generation failed: {missing file}"
 
 ## Output
 
@@ -123,6 +117,11 @@ This task automates the analysis workflow used to create `docs/refactoring/COMPO
 - **docs/refactoring/PARALLEL_REFACTORING_PLAN.md**: Work distribution
 - **docs/refactoring/SHARED_REQUESTS.md**: Shared component request template
 - **Console output**: Ready-to-use prompts for each agent
+
+## Related Checklists
+
+- `squads/design/checklists/atomic-refactor-checklist.md`
+- `squads/design/checklists/ds-component-quality-checklist.md`
 
 ### Output Format
 
@@ -151,12 +150,19 @@ Copy the prompt for each agent from:
 - docs/refactoring/prompts/agent-3-prompt.md
 ```
 
+## Failure Handling
+
+- **Component too complex to refactor atomically:** Decompose into sub-components first. Create intermediate refactoring step
+- **Missing design tokens for component:** Run *tokenize for the component's patterns before planning refactor
+- **Breaking changes unavoidable:** Document all consumers. Create compatibility layer with deprecation timeline (minimum 2 sprints)
+- **No test coverage on target component:** Write characterization tests BEFORE refactoring to prevent regressions
+
 ## Success Criteria
 
 - [ ] All components >threshold identified
 - [ ] Components classified by tier (TIER 1/2/3)
 - [ ] Domains grouped without overlap
-- [ ] Work balanced across agents (Â±20% lines)
+- [ ] Work balanced across agents (±20% lines)
 - [ ] Agent prompts include all rules and checklists
 - [ ] Documentation files generated/updated
 
@@ -177,39 +183,39 @@ Copy the prompt for each agent from:
 
 Output:
 ```
-ðŸ” Uma: Analyzing codebase for refactoring opportunities...
+🔍 Uma: Analyzing codebase for refactoring opportunities...
 
-ðŸ“Š Scan Results:
+📊 Scan Results:
   Directory: app/components/
   Threshold: 300 lines
   Files scanned: 847
   Candidates found: 131
 
-ðŸ“ Domains Found:
+📁 Domains Found:
   ops/           20 components  ~11,200 lines
   design-system/ 19 components  ~11,700 lines
   books/         18 components  ~8,600 lines
   ...
 
-ðŸ“ˆ Tier Classification:
-  TIER 1 (>800)  : 10 components  ~10,800 lines âš ï¸ Priority
+📈 Tier Classification:
+  TIER 1 (>800)  : 10 components  ~10,800 lines ⚠️ Priority
   TIER 2 (500-800): 41 components  ~25,500 lines
   TIER 3 (300-500): 80 components  ~29,000 lines
 
-ðŸ¤– Work Distribution (3 agents):
-  Agent 1: creator/, lms/       â†’ 21 components (~12,600 lines)
-  Agent 2: ops/, books/, auth/  â†’ 39 components (~20,400 lines)
+🤖 Work Distribution (3 agents):
+  Agent 1: creator/, lms/       → 21 components (~12,600 lines)
+  Agent 2: ops/, books/, auth/  → 39 components (~20,400 lines)
   Agent 3: shared/, design-system/, minds/, prd/, marketing/, sales/
-                                â†’ 69 components (~35,300 lines)
+                                → 69 components (~35,300 lines)
 
-ðŸ“ Generated:
-  âœ“ docs/refactoring/COMPONENT_REFACTORING_ROADMAP.md
-  âœ“ docs/refactoring/PARALLEL_REFACTORING_PLAN.md
-  âœ“ docs/refactoring/prompts/agent-1-prompt.md
-  âœ“ docs/refactoring/prompts/agent-2-prompt.md
-  âœ“ docs/refactoring/prompts/agent-3-prompt.md
+📝 Generated:
+  ✓ docs/refactoring/COMPONENT_REFACTORING_ROADMAP.md
+  ✓ docs/refactoring/PARALLEL_REFACTORING_PLAN.md
+  ✓ docs/refactoring/prompts/agent-1-prompt.md
+  ✓ docs/refactoring/prompts/agent-2-prompt.md
+  ✓ docs/refactoring/prompts/agent-3-prompt.md
 
-ðŸš€ Ready! Copy prompts and start agents in parallel.
+🚀 Ready! Copy prompts and start agents in parallel.
 
 Uma says: "Structure before style. Architecture before aesthetics."
 ```
@@ -251,3 +257,6 @@ Each generated prompt includes:
 - Update status in ROADMAP.md as components are completed
 - Use SHARED_REQUESTS.md to coordinate cross-agent dependencies
 
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

@@ -1,22 +1,11 @@
-﻿---
-task: audit-tailwind-config
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Audit Tailwind v4 Configuration & Utility Health
 
 > Task ID: brad-audit-tailwind-config  
 > Agent: Brad (Design System Architect)  
-> Version: 1.0.0
+> Version: 1.1.0
+> v4.0-compatible: true
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `modernization`
 
 ## Description
 
@@ -36,7 +25,7 @@ Review Tailwind CSS v4 setup to guarantee @theme layering, content scanning, uti
    - Read `.state.yaml` for current Tailwind metadata (if available)
 
 2. **Validate @theme Layers**
-   - Ensure tokens defined within `@theme` grouped as core â†’ semantic â†’ component
+   - Ensure tokens defined within `@theme` grouped as core → semantic → component
    - Confirm dark mode overrides (`[data-theme="dark"]`) map to semantic tokens
    - Check no residual `theme.extend` references exist
 
@@ -44,7 +33,7 @@ Review Tailwind CSS v4 setup to guarantee @theme layering, content scanning, uti
    - `@layer base`: Resets, typography, `focus-visible`
    - `@layer components`: Reusable abstractions (e.g., `.form-label`)
    - `@layer utilities`: Custom utility definitions with `@utility`
-   - Verify ordering (base â†’ components â†’ utilities) and duplication avoidance
+   - Verify ordering (base → components → utilities) and duplication avoidance
 
 4. **Content & Purge Coverage**
    - Review Tailwind CLI entry for `content` globs (JIT purge)
@@ -72,6 +61,13 @@ Review Tailwind CSS v4 setup to guarantee @theme layering, content scanning, uti
 - Updated `.state.yaml` under `tooling.tailwind` (validation + metrics)
 - Optional lint/config patches (ESLint Tailwind rules, Prettier plugin settings)
 
+## Failure Handling
+
+- **@theme layer structure invalid or missing:** Abort audit, provide migration guide from theme.extend to @theme syntax, generate conversion script for existing token files, require manual review before re-running
+- **Content glob paths exclude significant template files:** Analyze build output for unpurged classes, cross-reference with file structure to identify missing patterns, update content config with discovered paths, validate with test build
+- **Tailwind-merge reports >50 class conflicts:** Generate conflict resolution report grouping by conflict type (responsive collisions, arbitrary value conflicts), provide automated cva refactoring suggestions, prioritize by usage frequency
+- **Build performance degrades >30% vs baseline:** Profile build with --debug flag, identify slow plugins or @layer definitions, recommend selective imports or JIT optimizations, consider splitting config for multi-app monorepos
+
 ## Success Criteria
 
 - [ ] `@theme` defines full token stack with no missing categories
@@ -92,6 +88,14 @@ Review Tailwind CSS v4 setup to guarantee @theme layering, content scanning, uti
 ## Notes
 
 - Encourage automated linting (ESLint + prettier-plugin-tailwindcss) post-audit
-- Document class naming conventions (order: layout â†’ size â†’ spacing â†’ typography â†’ color â†’ effect)
+- Document class naming conventions (order: layout → size → spacing → typography → color → effect)
 - Track manual overrides (safelist patterns, arbitrary values) for future cleanup
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+- `squads/design/checklists/ds-pattern-audit-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

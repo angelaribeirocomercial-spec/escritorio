@@ -1,32 +1,29 @@
-﻿---
-task: ds-audit-codebase
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Audit Codebase for UI Pattern Redundancy
 
 > Task ID: brad-audit-codebase
 > Agent: Brad (Design System Architect)
-> Version: 1.0.0
+> Version: 1.1.0
+> v4.0-compatible: true
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[ds-consolidate-patterns]` · workflow: `brownfield-audit`
+> **On Fail:** If scan finds 0 patterns → verify path and file extensions. If scan errors → check file permissions and memory limits (`--max-old-space-size=4096`). Do NOT proceed to consolidate with empty/corrupt inventory. Re-run audit after fixing root cause.
 
 ## Description
 
-Scan codebase to detect UI pattern redundancies (buttons, colors, spacing, typography, forms) and quantify technical debt with hard metrics. Brad's specialty: showing you the horror show you've created.
+Scan codebase to detect UI pattern redundancies (buttons, colors, spacing, typography, forms) and quantify technical debt with hard metrics. Brad's specialty: showing you the horror show you've created. **v4.0: Also evaluates machine-readability for agentic DS workflows and motion token coverage.**
+
+## Output Schema
+- **produces:** `outputs/design-system/{project}/audit/pattern-inventory.json`
+- **format:** JSON data
+- **consumed_by:** ds-consolidate-patterns
 
 ## Prerequisites
 
 - Codebase with UI code (React, Vue, HTML, or vanilla CSS)
 - Bash shell access
 - grep, find, awk utilities available
+- Reference: Read data/agentic-ds-principles.md for machine-readability checks
+- Reference: Read data/motion-tokens-guide.md for animation audit criteria
 
 ## Workflow
 
@@ -40,8 +37,8 @@ This task uses interactive elicitation to gather scan parameters.
    - Confirm output directory (default: outputs/design-system/{project}/audit/)
 
 2. **Validate Scan Path**
-   - Check path exists and is readable
-   - Count total files to scan
+   - Run `test -d $path && test -r $path` and confirm both return exit code 0
+   - Count total files with `find $path -type f \( -name "*.tsx" -o -name "*.jsx" -o -name "*.vue" -o -name "*.css" \) | wc -l`
    - Estimate scan time (100k LOC ~2 min)
 
 3. **Confirm and Execute**
@@ -52,24 +49,24 @@ This task uses interactive elicitation to gather scan parameters.
 ### Steps
 
 1. **Validate Environment**
-   - Check scan path exists
-   - Verify read permissions
-   - Create output directory structure
-   - Validation: Path exists and is readable
+   - Run `test -d $path` to confirm scan path exists; abort if exit code != 0
+   - Run `test -r $path` to confirm read permissions; abort if exit code != 0
+   - Create output directory structure with `mkdir -p`
+   - Check: `test -d $path && test -r $path` — abort with "Path not found or not readable: $path"
 
 2. **Detect Frameworks**
    - Count React/JSX files (*.jsx, *.tsx)
    - Count Vue files (*.vue)
    - Count HTML files (*.html)
    - Count CSS files (*.css, *.scss, *.sass)
-   - Validation: At least 1 UI file type found
+   - Check: file count > 0 for at least one of (.jsx, .tsx, .vue, .html, .css) — abort with "No UI files found in $path"
 
 3. **Scan Button Patterns**
    - Detect button elements (<button, <Button, className="btn")
    - Count total button instances across all files
    - Extract unique button class names and patterns
    - Calculate redundancy factor (instances / unique patterns)
-   - Validation: Patterns detected or zero if none exist
+   - Check: button_count is integer >= 0 — log "Found {N} button patterns across {M} files"
 
 4. **Scan Color Usage**
    - Extract hex colors (#RGB, #RRGGBB)
@@ -78,46 +75,58 @@ This task uses interactive elicitation to gather scan parameters.
    - Count total color usage instances
    - Identify top 10 most-used colors
    - Calculate redundancy factor
-   - Validation: Color list generated
+   - Check: unique_colors array length > 0 OR log "No colors found — verify CSS/SCSS files exist in scan path"
 
 5. **Scan Spacing Patterns**
    - Extract padding values (padding: Npx)
    - Extract margin values (margin: Npx)
    - Count unique spacing values
    - Identify most common patterns
-   - Validation: Spacing inventory complete
+   - Check: spacing_values array populated — log "{N} unique spacing values found"
 
 6. **Scan Typography**
    - Extract font-family declarations
    - Extract font-size values
    - Extract font-weight values
    - Count unique typography patterns
-   - Validation: Typography catalog created
+   - Check: font_families count >= 1 AND font_sizes count >= 1 — log "{N} font families, {M} font sizes cataloged"
 
 7. **Scan Form Patterns**
    - Count input elements
    - Extract unique input class patterns
    - Count form elements
    - Extract unique form patterns
-   - Validation: Form patterns documented
+   - Check: input_instances and form_instances are integers >= 0 — log "{N} input elements, {M} form elements found"
 
 8. **Generate Inventory Report**
    - Create pattern-inventory.json with all metrics
    - Include scan metadata (timestamp, path, file counts)
    - Calculate redundancy factors for each pattern type
-   - Validation: Valid JSON output generated
+   - Check: `python -m json.tool pattern-inventory.json` returns exit code 0 — abort with "Invalid JSON in pattern-inventory.json"
 
 9. **Create State File**
-   - Generate .state.yaml for Atlas handoff
+   - Generate .state.yaml for Merovingian handoff
    - Record all pattern counts and metrics
    - Log agent history
    - Set phase to "audit_complete"
-   - Validation: State file created and valid YAML
+   - Write inventory summary to .state.yaml:
+     ```yaml
+     last_command: audit
+     audit_complete: true
+     inventory_file: pattern-inventory.json
+     scan_path: {path}
+     timestamp: {ISO-8601}
+     summary:
+       total_files: {count}
+       patterns_found: {count}
+       redundancy_score: {score}
+     ```
+   - Check: `test -f .state.yaml` AND YAML parses without error — abort with "State file missing or invalid YAML"
 
 ## Output
 
 - **pattern-inventory.json**: Structured data with all pattern counts, redundancy factors, and usage statistics
-- **.state.yaml**: Brad's state file for handoff to Atlas or next command
+- **.state.yaml**: Brad's state file for handoff to Merovingian or next command
 - **Console summary**: Key metrics displayed for immediate review
 
 ### Output Format
@@ -166,6 +175,21 @@ This task uses interactive elicitation to gather scan parameters.
 }
 ```
 
+## Anti-Patterns
+
+- **"Grep and pray"** — Running generic grep without framework-specific patterns. A React codebase needs JSX-aware scanning (`className=`, `styled.`), not just CSS selectors. Always detect framework FIRST
+- **"Color counting without context"** — Counting `#fff` and `#FFF` as different colors. Normalize all colors to lowercase hex before counting. Also convert `rgb(255,255,255)` to hex for deduplication
+- **"Ignoring dynamic patterns"** — Only scanning static CSS while missing Tailwind classes (`bg-blue-500`), CSS-in-JS (`styled.div`), or theme variables. Scan ALL style sources, not just .css files
+- **"Partial scan, full conclusions"** — Scanning only `/components` but making claims about the entire codebase. Always state scan scope clearly and don't extrapolate beyond scanned files
+- **"Redundancy without severity"** — Reporting "47 unique colors" without indicating which are close duplicates (e.g., #333 vs #343434). Use HSL clustering to group near-duplicates and show actual waste
+
+## Failure Handling
+
+- **Scan timeout (>5 min for <100k LOC):** Reduce scan scope — split into subdirectories and audit individually
+- **Zero patterns detected:** Verify scan path contains UI code. Try alternate file extensions. If truly zero, document as "clean codebase"
+- **Permission errors >10%:** Run with elevated permissions or exclude restricted directories. Document excluded paths
+- **Invalid JSON output:** Re-run scan step that failed. If persistent, generate partial report with available data
+
 ## Success Criteria
 
 - [ ] Scan completes in <2 minutes for 100k LOC
@@ -200,27 +224,27 @@ This task uses interactive elicitation to gather scan parameters.
 
 Output:
 ```
-ðŸ” Brad: Scanning ./src for UI chaos...
+🔍 Brad: Scanning ./src for UI chaos...
 
-ðŸ“Š Files found:
+📊 Files found:
   - React/JSX: 234
   - CSS/SCSS: 89
   - TOTAL: 323
 
-ðŸ” Scanning BUTTONS...
-ðŸ“Š BUTTONS:
+🔍 Scanning BUTTONS...
+📊 BUTTONS:
   - Total instances: 327
   - Unique patterns: 47
   - Redundancy factor: 7.0x
 
-ðŸŽ¨ Scanning COLORS...
-ðŸ“Š COLORS:
+🎨 Scanning COLORS...
+📊 COLORS:
   - Unique hex values: 82
   - Total usage instances: 1247
   - Redundancy factor: 15.2x
 
-âœ… Inventory saved: outputs/design-system/my-app/audit/pattern-inventory.json
-âœ… State saved: outputs/design-system/my-app/.state.yaml
+✅ Inventory saved: outputs/design-system/my-app/audit/pattern-inventory.json
+✅ State saved: outputs/design-system/my-app/.state.yaml
 ```
 
 ### Example 2: Vue Codebase Scan
@@ -239,4 +263,11 @@ Output shows Vue-specific patterns (v-btn, el-button, etc.)
 - Run this audit periodically to prevent pattern regression
 - Brad recommends: If redundancy factors are high, run *consolidate next
 - For cost analysis of this waste, run *calculate-roi after audit
+- v4.0: Also scan for animation/transition values as motion token candidates
+- v4.0: Check machine-readability score (Storybook, structured tokens, docs) per agentic-ds-principles.md
+- v4.0: Use *motion-audit for deep animation analysis, *agentic-audit for full agentic readiness
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+- `squads/design/checklists/ds-pattern-audit-checklist.md`
 

@@ -1,32 +1,28 @@
-﻿---
-task: ds-build-component
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Build Production-Ready Component
 
 > Task ID: atlas-build-component
-> Agent: Atlas (Design System Builder)
-> Version: 1.0.0
+> Agent: Brad (Design System Architect)
+> Version: 1.1.0
+> v4.0-compatible: true
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[ds-compose-molecule, ds-extend-pattern]` · workflow: `greenfield`
 
 ## Description
 
-Generate production-ready React TypeScript component from design tokens. Includes component file, styles (CSS Modules), tests, optional Storybook stories, and documentation. All styling uses tokens (zero hardcoded values).
+Generate production-ready React TypeScript component from design tokens. Includes component file, styles (CSS Modules), tests, optional Storybook stories, and documentation. All styling uses tokens (zero hardcoded values). **v4.0: Supports Fluent 2 patterns as component blueprint option. Generates Storybook stories with Chromatic-ready visual test states.**
+
+## Output Schema
+- **produces:** `outputs/design-system/{project}/components/{Component}/`
+- **format:** TypeScript source (TSX, CSS Module, tests, stories, docs)
+- **consumed_by:** ds-compose-molecule, ds-extend-pattern
 
 ## Prerequisites
 
 - Setup completed (*setup command run successfully)
 - Tokens loaded and accessible
 - React and TypeScript configured
+- Reference: Read data/fluent2-design-principles.md for Fluent 2 component patterns
+- Reference: Read data/ds-reference-architectures.md for cross-system component patterns
 
 ## Workflow
 
@@ -53,16 +49,16 @@ This task uses interactive elicitation to configure component.
 ### Steps
 
 1. **Validate Prerequisites**
-   - Check tokens are loaded
-   - Verify component doesn't already exist (or confirm overwrite)
-   - Validate component name (PascalCase)
-   - Validation: Ready to generate
+   - Run `test -f tokens.yaml` (or tokens.json) to confirm tokens file exists; abort with "Tokens not found — run *setup first" if missing
+   - Search for existing `{Component}.tsx` in the design-system directory; if found, prompt user to confirm overwrite
+   - Validate component name matches PascalCase regex `/^[A-Z][a-zA-Z]+$/`
+   - Check: tokens file exists AND component name is PascalCase (`/^[A-Z][a-zA-Z]+$/`) — abort if either fails
 
 2. **Load Token References**
    - Identify which tokens this component needs
    - Validate token availability
    - Generate token import statements
-   - Validation: All required tokens exist
+   - Check: grep each required token name in tokens file — list missing tokens if any
 
 3. **Generate Component File**
    - Create TypeScript React component
@@ -70,7 +66,7 @@ This task uses interactive elicitation to configure component.
    - Implement variants, sizes, states
    - Add accessibility attributes (ARIA)
    - Use semantic HTML elements
-   - Validation: Valid TypeScript, compiles without errors
+   - Check: `tsc --noEmit {component}.tsx` returns exit code 0 — fix type errors before proceeding
 
 4. **Generate Component Styles**
    - Create CSS Module file ({Component}.module.css)
@@ -78,7 +74,7 @@ This task uses interactive elicitation to configure component.
    - Implement all variants and states
    - Add responsive styles if needed
    - Zero hardcoded values (all from tokens)
-   - Validation: Valid CSS, tokens referenced correctly
+   - Check: zero hardcoded color/spacing values in CSS module — grep for `#[0-9a-f]` and `[0-9]+px` (excluding 0px)
 
 5. **Generate Unit Tests**
    - Create test file ({Component}.test.tsx)
@@ -87,21 +83,21 @@ This task uses interactive elicitation to configure component.
    - Test disabled state
    - Test onClick/events
    - Aim for >80% coverage
-   - Validation: Tests pass, good coverage
+   - Check: `npm test -- --coverage {Component}.test.tsx` exits 0 AND coverage >= 80% — fix failing tests before proceeding
 
 6. **Generate Storybook Stories (Optional)**
    - If Storybook enabled, create {Component}.stories.tsx
    - Story for each variant
    - Story for each size
    - Interactive controls for props
-   - Validation: Stories display correctly
+   - Check: stories file exports at least one named story AND `tsc --noEmit {Component}.stories.tsx` exits 0
 
 7. **Run Accessibility Checks**
-   - Validate ARIA attributes present
-   - Check color contrast (WCAG AA minimum)
-   - Ensure keyboard navigation works
-   - Add focus indicators
-   - Validation: Meets WCAG AA standards
+   - Confirm all interactive elements have `aria-label` or visible text by searching component source for button/a/input tags without labels
+   - Measure color contrast ratio for all foreground/background token pairs and confirm each >= 4.5:1 (use WCAG contrast formula)
+   - Tab through all interactive elements in render order and confirm focus moves logically without traps
+   - Add `:focus-visible` outline styles using `var(--color-focus)` token
+   - Check: all interactive elements have ARIA labels AND color contrast ratio >= 4.5:1 AND focus-visible styles present
 
 8. **Generate Component Documentation**
    - Create {Component}.md in docs/
@@ -109,19 +105,19 @@ This task uses interactive elicitation to configure component.
    - Show usage examples
    - List variants and sizes
    - Include accessibility notes
-   - Validation: Documentation complete
+   - Check: {Component}.md exists AND contains sections: Props, Usage Examples, Variants, Accessibility
 
 9. **Update Component Index**
    - Add to design-system/index.ts
    - Export component for easy import
    - Update barrel exports
-   - Validation: Component importable
+   - Check: `grep -q "{Component}" index.ts` — abort with "{Component} not found in index.ts exports"
 
 10. **Update State File**
     - Add component to patterns_built in .state.yaml
     - Record atomic level, variants, test coverage
     - Increment component count
-    - Validation: State tracking updated
+    - Check: .state.yaml contains component name in patterns_built array AND component_count incremented
 
 ## Output
 
@@ -227,6 +223,13 @@ export const Button: React.FC<ButtonProps> = ({
 }
 ```
 
+## Failure Handling
+
+- **Missing required tokens:** If grep fails to find token name in tokens file, abort with "Required token {name} not found. Available tokens: {list}. Run *setup or add missing tokens before building component."
+- **TypeScript compilation errors:** If `tsc --noEmit {component}.tsx` returns non-zero exit code, abort with "TypeScript errors in {Component}.tsx: {errors}. Fix type errors before proceeding."
+- **Hardcoded design values detected:** If CSS module contains hardcoded colors (#hex) or spacing values (e.g., 16px except 0px), abort with "{N} hardcoded values detected. Replace with tokens: {list}."
+- **Test coverage below threshold:** If `npm test --coverage` shows coverage <80%, abort with "Test coverage {actual}% below required 80%. Add tests for: {uncovered paths}."
+
 ## Success Criteria
 
 - [ ] Component compiles without TypeScript errors
@@ -238,6 +241,14 @@ export const Button: React.FC<ButtonProps> = ({
 - [ ] Unit tests pass with >80% coverage
 - [ ] Component documented with examples
 - [ ] Storybook stories work (if enabled)
+
+## Anti-Patterns
+
+- **"Div soup"** — Using `<div>` for everything instead of semantic HTML. A clickable element MUST be `<button>`, a navigation link MUST be `<a>`. Never add `role="button"` to a `<div>` when `<button>` exists
+- **"Hardcoded magic numbers"** — Writing `padding: 16px` instead of `padding: var(--spacing-4)`. Zero hardcoded values means ZERO — including border-radius, font-size, line-height, and box-shadow values
+- **"any-driven development"** — Using TypeScript `any` to make the compiler happy. Every prop must have a specific type. Use discriminated unions for variants: `type ButtonVariant = 'primary' | 'secondary' | 'destructive'`
+- **"Testing the framework, not the component"** — Writing tests like "renders without crashing" that test React, not your component. Test: variants render correct classes, disabled prevents onClick, keyboard events fire handlers
+- **"Accessibility as afterthought"** — Adding ARIA after the component is "done". Build accessible from step 1: semantic HTML first, then ARIA only where HTML semantics are insufficient
 
 ## Error Handling
 
@@ -264,42 +275,42 @@ export const Button: React.FC<ButtonProps> = ({
 
 Output:
 ```
-ðŸ—ï¸ Atlas: Building Button component...
+🏗️ Merovingian: Building Button component...
 
-ðŸ“‹ Configuration:
+📋 Configuration:
   - Type: Atom
   - Variants: primary, secondary, destructive
   - Sizes: sm, md, lg
   - Tests: Yes (>80% coverage)
   - Storybook: Yes
 
-âœ“ Generated Button.tsx (142 lines)
-âœ“ Generated Button.module.css (89 lines, 0 hardcoded values)
-âœ“ Generated Button.test.tsx (18 tests)
-âœ“ Generated Button.stories.tsx (6 stories)
-âœ“ Generated Button.md (documentation)
+✓ Generated Button.tsx (142 lines)
+✓ Generated Button.module.css (89 lines, 0 hardcoded values)
+✓ Generated Button.test.tsx (18 tests)
+✓ Generated Button.stories.tsx (6 stories)
+✓ Generated Button.md (documentation)
 
-ðŸ§ª Running tests...
-  âœ“ renders with default props
-  âœ“ renders all variants correctly
-  âœ“ renders all sizes correctly
-  âœ“ handles disabled state
-  âœ“ calls onClick handler
+🧪 Running tests...
+  ✓ renders with default props
+  ✓ renders all variants correctly
+  ✓ renders all sizes correctly
+  ✓ handles disabled state
+  ✓ calls onClick handler
   ... 13 more tests
   Coverage: 94.2%
 
-â™¿ Accessibility check:
-  âœ“ ARIA attributes present
-  âœ“ Color contrast: 4.8:1 (WCAG AA âœ“)
-  âœ“ Keyboard navigable
-  âœ“ Focus indicators visible
+♿ Accessibility check:
+  ✓ ARIA attributes present
+  ✓ Color contrast: 4.8:1 (WCAG AA ✓)
+  ✓ Keyboard navigable
+  ✓ Focus indicators visible
 
-âœ… Button component ready!
+✅ Button component ready!
 
 Import: import { Button } from '@/design-system';
 Usage: <Button variant="primary">Click me</Button>
 
-Atlas says: "Built right. Built once."
+Merovingian says: "Built right. Built once."
 ```
 
 ### Example 2: Build Input Component
@@ -326,5 +337,13 @@ Output includes additional features:
 - Storybook stories enable visual testing
 - Documentation auto-generated from types
 - Components follow Atomic Design principles
-- Atlas ensures quality at every step
+- Merovingian ensures quality at every step
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+- `squads/design/checklists/ds-pattern-audit-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

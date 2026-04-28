@@ -249,3 +249,35 @@ grep -rn "from '@/components/ui" {componente}/
 ---
 
 *Checklist v1.0 - Baseado em design-tokens-spec.yaml v1.0.0*
+
+---
+
+## Scoring
+
+### Point System
+Each checkbox item = 1 point.
+
+| Category | Items | Weight |
+|----------|-------|--------|
+| Pre-Validacao | 6 | 6pts |
+| Validacao de Cores | 15 | 15pts |
+| Validacao de Tipografia | 15 | 15pts |
+| Validacao de Espacamento | 10 | 10pts |
+| Validacao de Bordas e Radius | 12 | 12pts |
+| Validacao de Sombras | 5 | 5pts |
+| Validacao de Motion | 9 | 9pts |
+| Validacao de Contraste | 4 | 4pts |
+| Validacao de Componentes Especificos | 20 | 20pts |
+| Metricas de Sucesso | 5 | 5pts |
+| **Total** | **101** | **101pts** |
+
+### Pass/Fail Thresholds
+| Grade | Score | Action |
+|-------|-------|--------|
+| PASS | >= 80% (81+) | Proceed to next phase |
+| CONDITIONAL | 60-79% (61-80) | Fix critical items, re-check |
+| FAIL | < 60% (60-) | Major rework required |
+
+### Auto-Correction
+If items fail:
+- Run `*ds-extract-tokens` to identify hardcoded values. Use `*contrast-matrix` for color issues.

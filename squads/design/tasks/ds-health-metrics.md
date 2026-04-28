@@ -1,25 +1,18 @@
-﻿---
-task: ds-health-metrics
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Task: Design System Health Metrics
 
 > Command: `*ds-health [path]`
 > Purpose: Generate comprehensive health dashboard for the design system
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[bundle-audit, token-usage-analytics, dead-code-detection]` · workflow: `metrics`
+
+## Output Schema
+- **produces:** `outputs/design-system/{project}/metrics/health-report.json`
+- **format:** JSON data
+- **consumed_by:** bundle-audit, token-usage-analytics, dead-code-detection
 
 ## Overview
 
-This task analyzes the entire design system and generates a health report with:
+This task runs grep-based scans across the entire design system and generates a health report with:
 - Token coverage metrics
 - Component adoption rates
 - Bundle size analysis
@@ -35,7 +28,7 @@ This task analyzes the entire design system and generates a health report with:
 
 ### Step 1: Token Coverage Analysis
 
-Scan all components and calculate token usage vs hardcoded values.
+Run grep to count token-based styles vs hardcoded values in all component files.
 
 ```bash
 # Count total style declarations
@@ -164,41 +157,41 @@ Path: {path}
 ### Token Coverage
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|
-| Token Usage | 94.2% | >95% | âš ï¸ |
-| Hardcoded Colors | 12 | 0 | âŒ |
-| CSS Variables | 847 | - | âœ… |
+| Token Usage | 94.2% | >95% | ⚠️ |
+| Hardcoded Colors | 12 | 0 | ❌ |
+| CSS Variables | 847 | - | ✅ |
 
 ### Component Adoption
 | Metric | Value | Status |
 |--------|-------|--------|
 | Total Components | 45 | - |
 | Components in Use | 38 | 84% |
-| Unused Components | 7 | âš ï¸ |
+| Unused Components | 7 | ⚠️ |
 
 **Unused:** slider, menubar, navigation-menu, ...
 
 ### Bundle Analysis
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|
-| Unique CSS Classes | 234 | <500 | âœ… |
-| Est. CSS Size | 12KB | <50KB | âœ… |
+| Unique CSS Classes | 234 | <500 | ✅ |
+| Est. CSS Size | 12KB | <50KB | ✅ |
 | Largest Component | Card (8KB) | - | - |
 
 ### Code Quality
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|
-| Avg Lines/Component | 87 | <200 | âœ… |
-| Components >200 lines | 3 | 0 | âš ï¸ |
-| TypeScript Errors | 0 | 0 | âœ… |
+| Avg Lines/Component | 87 | <200 | ✅ |
+| Components >200 lines | 3 | 0 | ⚠️ |
+| TypeScript Errors | 0 | 0 | ✅ |
 
 **Over 200 lines:** FeedbackSection (373), ListGroupsView (289), ...
 
 ### Consistency
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|
-| Naming Compliance | 98% | 100% | âš ï¸ |
-| Import Consistency | 100% | 100% | âœ… |
-| Barrel Coverage | 95% | 100% | âš ï¸ |
+| Naming Compliance | 98% | 100% | ⚠️ |
+| Import Consistency | 100% | 100% | ✅ |
+| Barrel Coverage | 95% | 100% | ⚠️ |
 
 ## Recommendations
 
@@ -210,9 +203,9 @@ Path: {path}
 ## Trend (if previous report exists)
 | Metric | Previous | Current | Change |
 |--------|----------|---------|--------|
-| Health Score | 78 | 85 | +7 â†‘ |
-| Token Coverage | 91% | 94% | +3% â†‘ |
-| Components >200 | 8 | 3 | -5 â†“ |
+| Health Score | 78 | 85 | +7 ↑ |
+| Token Coverage | 91% | 94% | +3% ↑ |
+| Components >200 | 8 | 3 | -5 ↓ |
 ```
 
 ## Health Score Calculation
@@ -244,14 +237,21 @@ health_score:
 
 ```
 outputs/design-system/{project}/
-â”œâ”€â”€ health-report-{date}.md
-â”œâ”€â”€ health-history.json
-â””â”€â”€ metrics/
-    â”œâ”€â”€ token-coverage.json
-    â”œâ”€â”€ component-adoption.json
-    â”œâ”€â”€ bundle-analysis.json
-    â””â”€â”€ code-quality.json
+├── health-report-{date}.md
+├── health-history.json
+└── metrics/
+    ├── token-coverage.json
+    ├── component-adoption.json
+    ├── bundle-analysis.json
+    └── code-quality.json
 ```
+
+## Failure Handling
+
+- **Token spec file not found:** Skip token coverage step, calculate remaining metrics, note "token coverage: N/A — spec file missing" in report
+- **No component files in path:** Exit with error "No .tsx files found in {path}. Verify design system path."
+- **TypeScript compiler not available:** Skip tsc_errors metric, log "TypeScript check skipped — tsc not found" in report
+- **Grep returns zero matches for all token patterns:** Verify grep patterns match project's token format (CSS vars, Tailwind, styled-components). Adjust patterns and retry once
 
 ## Success Criteria
 
@@ -268,3 +268,11 @@ outputs/design-system/{project}/
 - `*token-usage` - Token usage analytics
 - `*dead-code` - Unused code detection
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+- `squads/design/checklists/ds-pattern-audit-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

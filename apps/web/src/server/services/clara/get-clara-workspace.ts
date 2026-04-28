@@ -76,35 +76,6 @@ const claraResponseTemplates: readonly LexiaResponseFixture[] = [
     ],
     cautionLabel: "Toda recomendacao juridica da IA deve ser conferida pelo advogado responsavel."
   },
-  {
-    id: "clara-legacy-lexia",
-    contextKey: "lexia",
-    title: "Workspace dedicado da LexIA",
-    mode: "producao_juridica",
-    prompt: "Clara, consolide analise, estrategia e proximas acoes do escritorio bancario.",
-    contextBasis: [
-      "tenant atual",
-      "objetos juridicos ativos",
-      "modos de atuacao",
-      "historico recente"
-    ],
-    mainConclusion:
-      "A LexIA continua apontando para a mesma camada operacional da Clara, preservando compatibilidade com rotas legadas.",
-    facts: [
-      "Os modulos do sistema ja fornecem contexto suficiente para respostas ancoradas.",
-      "A mesma base pode gerar resumo, tese sugerida, tarefa e atualizacao ao cliente."
-    ],
-    recommendations: [
-      "Acionar primeiro o modo mais aderente ao tipo de trabalho.",
-      "Transformar respostas importantes em objetos reaproveitaveis do escritorio."
-    ],
-    nextActions: [
-      "Escolher modo de atuacao",
-      "Comparar documentos",
-      "Gerar minuta assistida"
-    ],
-    cautionLabel: "Toda recomendacao juridica da IA deve ser conferida pelo advogado responsavel."
-  }
 ];
 
 export async function getClaraWorkspace(params?: {
@@ -193,9 +164,7 @@ export async function getClaraWorkspace(params?: {
           "Tarefas, prioridades, atualizacao ao cliente e proximos passos com contexto real do escritorio."
       }
     ],
-    featuredResponse:
-      claraResponseTemplates.find((fixture) => fixture.contextKey === "clara") ??
-      claraResponseTemplates.find((fixture) => fixture.contextKey === "lexia")!,
+    featuredResponse: claraResponseTemplates.find((fixture) => fixture.contextKey === "clara")!,
     structuredCore,
     recentThreads: [
       {
@@ -504,7 +473,6 @@ export async function getClaraWorkspace(params?: {
 export function getClaraFixtureByContextKey(contextKey: string) {
   return (
     claraResponseTemplates.find((fixture) => fixture.contextKey === contextKey) ??
-    claraResponseTemplates.find((fixture) => fixture.contextKey === "clara") ??
-    claraResponseTemplates.find((fixture) => fixture.contextKey === "lexia")!
+    claraResponseTemplates.find((fixture) => fixture.contextKey === "clara")!
   );
 }

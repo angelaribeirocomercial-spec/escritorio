@@ -170,7 +170,10 @@ const CASE_SELECT = `
   )
 `;
 
-export async function getCases(): Promise<BankingCaseWithClient[]> {
+export async function getCases(filters?: {
+  clientId?: string;
+  caseId?: string;
+}): Promise<BankingCaseWithClient[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
@@ -178,11 +181,20 @@ export async function getCases(): Promise<BankingCaseWithClient[]> {
   }
 
   const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("cases")
     .select(CASE_SELECT)
-    .eq("tenant_id", session.workspace.tenant.id)
-    .order("process_number", { ascending: true });
+    .eq("tenant_id", session.workspace.tenant.id);
+
+  if (filters?.clientId) {
+    query = query.eq("client_id", filters.clientId);
+  }
+
+  if (filters?.caseId) {
+    query = query.eq("id", filters.caseId);
+  }
+
+  const { data, error } = await query.order("process_number", { ascending: true });
 
   if (error) {
     throw new Error(`Failed to load cases for tenant ${session.workspace.tenant.id}.`);
@@ -194,23 +206,7 @@ export async function getCases(): Promise<BankingCaseWithClient[]> {
 }
 
 export async function getCaseById(caseId: string): Promise<BankingCaseWithClient | null> {
-  const session = await getWorkspaceSession();
+  const [bankingCase] = await getCases({ caseId });
 
-  if (!session) {
-    throw new Error("Workspace session is required to load case details.");
-  }
-
-  const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("cases")
-    .select(CASE_SELECT)
-    .eq("tenant_id", session.workspace.tenant.id)
-    .eq("id", caseId)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Failed to load case ${caseId} for tenant ${session.workspace.tenant.id}.`);
-  }
-
-  return data ? mapCaseRow(data as CaseRow) : null;
+  return bankingCase ?? null;
 }

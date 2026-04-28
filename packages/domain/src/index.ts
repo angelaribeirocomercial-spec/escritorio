@@ -69,6 +69,7 @@ export type BankingCaseRisk = "low" | "medium" | "high";
 export type BankingNiche = "revisional" | "fraude" | "busca-apreensao";
 export type BankingWorkflowStepState = "done" | "current" | "pending";
 export type BankingChecklistItemState = "received" | "missing";
+export type BankingWorkflowReadinessState = "ready" | "blocked";
 
 export const BANKING_NICHES: ReadonlyArray<{
   value: BankingNiche;
@@ -92,11 +93,21 @@ export interface BankingCaseWorkflowStepRecord {
   state: BankingWorkflowStepState;
 }
 
+export interface BankingCaseWorkflowReadinessRecord {
+  id: string;
+  label: string;
+  state: BankingWorkflowReadinessState;
+  detail: string;
+  blockers: readonly string[];
+}
+
 export interface BankingCaseWorkflowStateRecord {
   phaseLabel: string;
   nextStep: string;
   completionLabel: string;
   currentStepId: string;
+  blockers?: readonly string[];
+  readiness?: readonly BankingCaseWorkflowReadinessRecord[];
   steps: readonly BankingCaseWorkflowStepRecord[];
 }
 

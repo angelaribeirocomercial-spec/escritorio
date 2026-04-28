@@ -1,22 +1,11 @@
-﻿---
-task: bootstrap-shadcn-library
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Bootstrap Shadcn/Radix Component Library
 
 > Task ID: atlas-bootstrap-shadcn  
-> Agent: Atlas (Design System Builder)  
-> Version: 1.0.0
+> Agent: Merovingian (Design System Builder)  
+> Version: 1.1.0
+> v4.0-compatible: true
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `modernization`
 
 ## Description
 
@@ -26,7 +15,7 @@ Install and curate a Shadcn UI component library leveraging Tailwind v4, Radix p
 
 - Tailwind v4 configured with tokens (`@theme` + dark mode)
 - React/Next.js project with TypeScript
-- Node.js â‰¥ 18
+- Node.js ≥ 18
 - Storybook (optional but recommended)
 
 ## Workflow
@@ -83,17 +72,25 @@ Install and curate a Shadcn UI component library leveraging Tailwind v4, Radix p
 - [ ] Documentation/Storybook updated with usage examples
 - [ ] `.state.yaml` reports bootstrap timestamp and component list
 
-## Error Handling
+## Failure Handling
 
-- **CLI install failure**: Delete partial files, rerun `npx shadcn@latest init`
-- **Radix import mismatch**: Align versions with lockfile, reinstall packages
-- **Token mismatch**: Regenerate Tailwind classes or add missing semantic tokens
-- **Storybook build failure**: Update Storybook to latest (v8+) and re-run
+- **Shadcn CLI fails to initialize:** Verify Node.js >=18, clear npm cache, delete node_modules and package-lock.json, reinstall dependencies, retry init with --force flag if persistent
+- **Component token mapping breaks existing styles:** Create parallel tokenized versions with -v2 suffix, run visual regression tests, gradually migrate consumers, maintain backward compatibility aliases until full migration
+- **Radix primitive version conflicts with existing dependencies:** Audit dependency tree for conflicting peer dependencies, use npm overrides or resolutions to force compatible versions, document override rationale in package.json comments
+- **Storybook cannot import Shadcn components:** Check Storybook webpack/Vite config for TypeScript path alias resolution, add paths from tsconfig to Storybook config, verify @/ alias points to correct src directory
 
 ## Notes
 
 - Prefer named exports (`export { Button }`) for tree-shaking
 - Maintain parity between Shadcn variants and design token aliases
-- Document manual updates (Shadcn is copy/paste â€” no automatic updates)
+- Document manual updates (Shadcn is copy/paste — no automatic updates)
 - Schedule regular audits to pull upstream improvements intentionally
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+- `squads/design/checklists/ds-pattern-audit-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

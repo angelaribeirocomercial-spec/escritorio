@@ -1,28 +1,21 @@
-﻿---
-task: ds-rebuild-artifact
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Rebuild Artifact with Design Tokens
 
 > Task ID: ds-rebuild-artifact
 > Agent: design-system
 > Version: 1.0.0
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[ds-scan-artifact]` · enables: `[]` · workflow: `artifact-analysis`
 
 ## Description
 
 Rebuilds HTML artifact using design tokens to produce clean, token-based version with identical visual output. This is a pragmatic alternative to manual migration - takes messy HTML (inline styles, hardcoded values) and outputs clean HTML using tokens.css.
 
 **Goal**: Same design, better code, in minutes not hours.
+
+## Input Schema
+- **requires:** Output from `ds-scan-artifact`
+- **format:** JSON data
+- **location:** `outputs/design-system/{project}/artifacts/artifact-scan-{id}.json`
 
 ## Prerequisites
 
@@ -43,7 +36,7 @@ This task uses interactive elicitation to configure rebuild.
    - Show preview of current state (inline styles count, hardcoded values)
 
 2. **Confirm Rebuild Approach**
-   - Show what will be changed (inline â†’ classes, hardcoded â†’ var())
+   - Show what will be changed (inline → classes, hardcoded → var())
    - Ask if user wants component extraction (optional)
    - Confirm output location
 
@@ -58,20 +51,20 @@ This task uses interactive elicitation to configure rebuild.
    - Read artifact HTML (from file, scan ID, or direct paste)
    - Parse HTML structure
    - Identify current styling approach (inline, hardcoded, mixed)
-   - Validation: Valid HTML, parseable structure
+   - Check: HTML parses without errors AND contains at least one element — abort with "Invalid HTML: {parse error}"
 
 2. **Load Token System**
    - Read tokens.css from project directory
    - Parse available tokens (colors, spacing, typography, etc)
    - Build token lookup table
-   - Validation: tokens.css valid and complete
+   - Check: `test -f tokens.css` AND file parses as valid CSS AND token count > 0 — abort with "tokens.css invalid or missing: run *tokenize first"
 
 3. **Analyze Current Patterns**
    - Extract all color declarations (inline, hardcoded)
    - Extract all spacing values
    - Extract all typography styles
    - Map to nearest token matches
-   - Validation: All patterns have token equivalents
+   - Check: unmapped pattern count == 0 OR unmapped patterns documented — log "{mapped}/{total} patterns mapped to tokens, {unmapped} gaps identified"
 
 4. **Generate Clean HTML Structure**
    - Preserve semantic HTML structure
@@ -79,49 +72,49 @@ This task uses interactive elicitation to configure rebuild.
    - Apply semantic class names
    - Use token-based utility classes
    - Maintain visual hierarchy
-   - Validation: HTML structure preserved
+   - Check: rebuilt HTML element count matches original AND semantic tags preserved — abort with "HTML structure lost: {original_count} elements -> {rebuilt_count}"
 
 5. **Apply Token-Based Styling**
    - Replace inline colors with token classes (`.text-success`, `.bg-secondary`)
    - Replace hardcoded values with `var()` references
    - Replace spacing with token utilities
    - Replace typography with token classes
-   - Validation: Zero hardcoded values, 100% token usage
+   - Check: hardcoded color/spacing value count == 0 AND all style values use `var(--` or token classes — abort with "{N} hardcoded values remain"
 
 6. **Generate Companion CSS**
    - Create artifact-specific CSS file (if needed)
    - Use tokens.css as base
    - Add only custom styles not covered by tokens
    - Document any deviations
-   - Validation: Minimal custom CSS, extends tokens.css
+   - Check: custom CSS declarations count < 20 AND all reference tokens.css variables — log "Companion CSS: {N} custom rules extending tokens.css"
 
 7. **Visual Validation**
    - Compare visual output (automated if possible)
    - Check color accuracy (HSL distance < 5%)
    - Check spacing consistency
    - Check typography rendering
-   - Validation: Visual output matches original
+   - Check: color HSL distance < 5% for all mapped colors AND spacing values match within 2px — log "Visual validation: {pass_count}/{total} checks passed"
 
 8. **Generate Output Files**
    - Write rebuilt HTML to output directory
    - Copy/link tokens.css
    - Write companion CSS if needed
    - Generate comparison report
-   - Validation: All files created successfully
+   - Check: `test -f {name}-rebuilt.html` AND `test -f tokens.css` AND all file sizes > 0 — abort with "Output generation failed: {missing file}"
 
 9. **Create Rebuild Report**
    - Document changes made (inline removed, tokens applied)
    - Show before/after metrics
    - List any patterns that couldn't be tokenized
    - Include visual comparison screenshots/descriptions
-   - Validation: Complete rebuild documentation
+   - Check: `test -f rebuild-report-{id}.md` AND report contains before/after metrics + changes list — abort with "Rebuild report generation failed"
 
 10. **Update State File**
     - Add rebuild to agent history
     - Record artifact ID, output location
     - Update component metrics
     - Set phase flag if applicable
-    - Validation: State updated correctly
+    - Check: .state.yaml contains rebuild entry with artifact ID + output location — abort with "State update failed"
 
 ## Output
 
@@ -151,7 +144,7 @@ This task uses interactive elicitation to configure rebuild.
   <!-- Clean semantic HTML with token classes -->
   <div class="bg-secondary text-primary p-xl rounded-lg">
     <h1 class="text-hero font-bold">Example</h1>
-    <span class="text-success">âœ“</span>
+    <span class="text-success">✓</span>
   </div>
 </body>
 </html>
@@ -170,7 +163,7 @@ This task uses interactive elicitation to configure rebuild.
 
 ## Summary
 
-âœ… **Rebuild Complete**
+✅ **Rebuild Complete**
 - Visual output: 100% match
 - Code quality: Improved 85%
 - Token usage: 100%
@@ -188,16 +181,16 @@ This task uses interactive elicitation to configure rebuild.
 ## Changes Made
 
 ### Colors
-- `style="color: rgb(72, 187, 120)"` â†’ `class="text-success"`
-- `#262625` â†’ `var(--bg-secondary)`
+- `style="color: rgb(72, 187, 120)"` → `class="text-success"`
+- `#262625` → `var(--bg-secondary)`
 
 ### Spacing
-- `padding: 16px` â†’ `class="p-lg"`
-- `margin: 24px` â†’ `class="m-xl"`
+- `padding: 16px` → `class="p-lg"`
+- `margin: 24px` → `class="m-xl"`
 
 ### Typography
-- `font-size: 24px` â†’ `class="text-section"`
-- `font-weight: 600` â†’ `class="font-semibold"`
+- `font-size: 24px` → `class="text-section"`
+- `font-weight: 600` → `class="font-semibold"`
 
 ## Patterns Not Tokenized
 
@@ -205,10 +198,10 @@ None - 100% token coverage achieved.
 
 ## Visual Validation
 
-âœ… Colors match (HSL distance < 1%)
-âœ… Spacing preserved
-âœ… Typography identical
-âœ… Layout unchanged
+✅ Colors match (HSL distance < 1%)
+✅ Spacing preserved
+✅ Typography identical
+✅ Layout unchanged
 
 ## Next Steps
 
@@ -216,6 +209,13 @@ None - 100% token coverage achieved.
 - Archive old version
 - Update references
 ```
+
+## Failure Handling
+
+- **Token coverage below 70%:** If less than 70% of artifact patterns map to tokens, halt rebuild and suggest running *tokenize with additional pattern extraction before proceeding
+- **Critical structural changes detected:** If rebuilt HTML loses semantic tags or element hierarchy (parent-child relationships broken), abort with "Structure preservation failed — manual review required for {component}"
+- **Visual validation fails by >10%:** If color HSL distance exceeds 10% or spacing differs by >4px on 20%+ of comparisons, generate diff report and exit with "Visual fidelity threshold not met — review diff report before accepting rebuild"
+- **Circular token references detected:** If token mapping creates circular dependencies (token A → token B → token A), break the cycle by inlining one value and document as tech debt in rebuild report
 
 ## Success Criteria
 
@@ -252,27 +252,27 @@ None - 100% token coverage achieved.
 
 **Output:**
 ```
-ðŸ” Brad: Rebuilding artifact-005 (tabela-comparativa)...
+🔍 Brad: Rebuilding artifact-005 (tabela-comparativa)...
 
-ðŸ“Š Current State:
+📊 Current State:
   - 110 inline color declarations
   - 45 hardcoded spacing values
-  - 15 unique colors (all in token system âœ…)
+  - 15 unique colors (all in token system ✅)
 
-ðŸ”¨ Rebuilding...
-  âœ… HTML structure preserved
-  âœ… 110 inline styles â†’ token classes
-  âœ… 45 spacing values â†’ token utilities
-  âœ… Visual output validated (100% match)
+🔨 Rebuilding...
+  ✅ HTML structure preserved
+  ✅ 110 inline styles → token classes
+  ✅ 45 spacing values → token utilities
+  ✅ Visual output validated (100% match)
 
-ðŸ“ Output:
+📁 Output:
   - tabela-comparativa-rebuilt.html (1.8 KB, was 2.4 KB)
   - tokens.css (linked)
   - rebuild-report-005.md
 
-â±ï¸ Rebuild time: 8 minutes
+⏱️ Rebuild time: 8 minutes
 
-âœ… Ready to deploy! Old version backed up.
+✅ Ready to deploy! Old version backed up.
 ```
 
 ### Example 2: Rebuild from File Path
@@ -283,22 +283,22 @@ None - 100% token coverage achieved.
 
 **Output:**
 ```
-ðŸ” Brad: Rebuilding from file path...
+🔍 Brad: Rebuilding from file path...
 
-ðŸ“Š Current State:
-  - Already 95% token-based (artifact-001) âœ…
+📊 Current State:
+  - Already 95% token-based (artifact-001) ✅
   - Only typography needs tokenization
 
-ðŸ”¨ Adding typography tokens...
-  âœ… Font sizes â†’ token classes
-  âœ… Line heights â†’ token utilities
-  âœ… 100% token coverage achieved
+🔨 Adding typography tokens...
+  ✅ Font sizes → token classes
+  ✅ Line heights → token utilities
+  ✅ 100% token coverage achieved
 
-ðŸ“ Output:
+📁 Output:
   - guia-reducao-tokens-claude-rebuilt.html
   - rebuild-report-001.md
 
-âœ… Polish complete! Now 100% token-based.
+✅ Polish complete! Now 100% token-based.
 ```
 
 ### Example 3: Rebuild with Component Extraction
@@ -309,25 +309,25 @@ None - 100% token coverage achieved.
 
 **Output:**
 ```
-ðŸ” Brad: Rebuilding with component extraction...
+🔍 Brad: Rebuilding with component extraction...
 
-ðŸ§© Components Identified:
-  - StatusIcon (âœ“, â—, âœ•) - 45 instances
+🧩 Components Identified:
+  - StatusIcon (✓, ◐, ✕) - 45 instances
   - ComparisonCell - 30 instances
   - TableHeader - 5 instances
 
-ðŸ”¨ Extracting components...
-  âœ… StatusIcon.html (reusable component)
-  âœ… ComparisonCell.html (reusable component)
-  âœ… tabela-comparativa-rebuilt.html (uses components)
+🔨 Extracting components...
+  ✅ StatusIcon.html (reusable component)
+  ✅ ComparisonCell.html (reusable component)
+  ✅ tabela-comparativa-rebuilt.html (uses components)
 
-ðŸ“ Output:
+📁 Output:
   - tabela-comparativa-rebuilt.html
   - components/StatusIcon.html
   - components/ComparisonCell.html
   - rebuild-report-005.md
 
-âœ… Ready for component library integration!
+✅ Ready for component library integration!
 ```
 
 ## Notes
@@ -359,3 +359,11 @@ None - 100% token coverage achieved.
 
 *Brad's recommendation: "Rebuild is faster. Migration is safer at scale. Pick based on your context."*
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+- `squads/design/checklists/ds-pattern-audit-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

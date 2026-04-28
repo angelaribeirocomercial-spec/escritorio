@@ -1,17 +1,3 @@
-﻿---
-task: designops-maturity-assessment
-responsavel: @dave-malouf
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # designops-maturity-assessment
 
 > Assess organization's DesignOps maturity level using Dave Malouf's Three Lenses framework and 5-level maturity model.
@@ -361,3 +347,18 @@ output_structure: |
 
 Use `checklists/designops-maturity-checklist.md` for detailed criteria at each level.
 
+
+## Related Checklists
+
+- `squads/design/checklists/designops-maturity-checklist.md`
+- `squads/design/checklists/design-team-health-checklist.md`
+
+## Process Guards
+- **Execution Type:** `Hybrid`
+- **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `design-system`
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.
+
+## Success Criteria
+- [ ] Output artifact(s) generated and referenced.
+- [ ] Validation checks executed with evidence.
+- [ ] Next-step dependencies documented.

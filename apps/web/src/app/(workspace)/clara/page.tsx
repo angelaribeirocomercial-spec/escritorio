@@ -23,6 +23,10 @@ import {
   getClaraTaskArtifact,
   getClaraTextDraftArtifact
 } from "@/server/services/clara/get-clara-artifacts";
+import {
+  getClaraContextualAnalysis,
+  type ClaraContextualTaskType
+} from "@/server/services/clara/get-clara-contextual-analysis";
 import { getBankingRevisionalWorkspace } from "@/server/services/clara/get-banking-revisional-workspace";
 import { getClaraWorkspace } from "@/server/services/clara/get-clara-workspace";
 
@@ -103,6 +107,17 @@ function hasOptions(field: { type: string; options?: string[] }): field is { typ
   return Array.isArray(field.options);
 }
 
+function getContextualTaskType(tab: TabId): ClaraContextualTaskType {
+  switch (tab) {
+    case "checklist":
+      return "checklist-documental";
+    case "proximos-passos":
+      return "sugerir-proximos-passos";
+    default:
+      return "analisar-caso";
+  }
+}
+
 function getCustomFieldName(tab: TabId | "revisional", label: string) {
   if (tab === "revisional" && label === "Objetivo") return "objetivo";
   if (tab === "comparador" && label === "Comparar por") return "mode";
@@ -168,9 +183,35 @@ export default async function ClaraPage({
       ? "revisional"
       : null;
   const activeTab = isTabId(searchParams?.tab) ? searchParams.tab : "analise";
+
+  if (activeNiche && (!searchParams?.client || !searchParams?.case)) {
+    return (
+      <WorkspacePage
+        description="A Clara contextual minima agora exige cliente e caso resolvidos antes de executar qualquer analise."
+        eyebrow="Clara"
+        metrics={[
+          { label: "Contexto", value: "Obrigatorio" },
+          { label: "clientId", value: searchParams?.client ? "OK" : "Pendente" },
+          { label: "caseId", value: searchParams?.case ? "OK" : "Pendente" },
+          { label: "Modo", value: activeTab }
+        ]}
+        title="Contexto minimo obrigatorio"
+      >
+        <WorkspaceStatePanel
+          actionHref="/pessoas/clientes"
+          actionLabel="Abrir cockpit do cliente"
+          description="Abra a Clara a partir do cockpit do cliente ou de um caso real. Sem clientId e caseId resolvidos, a Clara nao executa analise, checklist nem proximos passos."
+          title="Clara protegida contra contexto incompleto"
+          tone="warning"
+        />
+      </WorkspacePage>
+    );
+  }
+
   let clara: Awaited<ReturnType<typeof getClaraWorkspace>>;
   let recentRecords: Awaited<ReturnType<typeof listClaraRecords>>;
   let revisionalWorkspace: Awaited<ReturnType<typeof getBankingRevisionalWorkspace>> | null;
+  let contextualAnalysis: Awaited<ReturnType<typeof getClaraContextualAnalysis>> | null;
 
   try {
     clara = await getClaraWorkspace({
@@ -183,6 +224,16 @@ export default async function ClaraPage({
       tab: activeTab,
       objective: searchParams?.objetivo
     });
+    contextualAnalysis =
+      activeNiche && searchParams?.client && searchParams?.case
+        ? await getClaraContextualAnalysis({
+            clientId: searchParams.client,
+            caseId: searchParams.case,
+            processId: searchParams?.process,
+            documentId: searchParams?.document,
+            taskType: getContextualTaskType(activeTab)
+          })
+        : null;
     recentRecords = await listClaraRecords(24);
     revisionalWorkspace =
       activeNiche === "revisional"
@@ -1508,6 +1559,95 @@ export default async function ClaraPage({
           A saida operacional fica abaixo como documento formal, revisao humana e impress�o.
         </p>
       </section>
+
+      {contextualAnalysis ? (
+        <section className="workspace-panel p-6">
+          <div className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
+                  Clara contextual minima
+                </p>
+                <p className="mt-2 text-sm font-semibold text-white">
+                  Execucao {contextualAnalysis.executionId}
+                </p>
+              </div>
+              <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-cyan-50">
+                {contextualAnalysis.taskType}
+              </span>
+            </div>
+            <p className="mt-3 text-sm leading-7 text-cyan-50">{contextualAnalysis.summary}</p>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  Context Snapshot
+                </p>
+                <ul className="mt-3 space-y-2 text-sm text-slate-200">
+                  <li>clientId: {contextualAnalysis.contextSnapshot.clientId}</li>
+                  <li>caseId: {contextualAnalysis.contextSnapshot.caseId}</li>
+                  <li>processId: {contextualAnalysis.contextSnapshot.processId}</li>
+                  <li>documentId: {contextualAnalysis.contextSnapshot.documentId}</li>
+                  <li>workflowStep: {contextualAnalysis.contextSnapshot.workflowStep}</li>
+                </ul>
+              </div>
+
+              <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  Source Trace
+                </p>
+                <ul className="mt-3 space-y-2 text-sm text-slate-200">
+                  <li>origem_interna: {contextualAnalysis.sourceTrace.origem_interna.length}</li>
+                  <li>origem_documental: {contextualAnalysis.sourceTrace.origem_documental.length}</li>
+                  <li>origem_api: {contextualAnalysis.sourceTrace.origem_api.length}</li>
+                  <li>inferencia_controlada: {contextualAnalysis.sourceTrace.inferencia_controlada.length}</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  Fatos confirmados
+                </p>
+                <ul className="mt-3 space-y-2 text-sm text-slate-200">
+                  {contextualAnalysis.caseAnalysis.confirmedFacts.slice(0, 4).map((fact) => (
+                    <li key={fact}>- {fact}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  Checklist documental
+                </p>
+                <ul className="mt-3 space-y-2 text-sm text-slate-200">
+                  {contextualAnalysis.caseAnalysis.documentsFound.slice(0, 3).map((document) => (
+                    <li key={document.id}>- {document.label}</li>
+                  ))}
+                  {contextualAnalysis.caseAnalysis.documentsMissing.slice(0, 3).map((document) => (
+                    <li key={document}>- Faltante: {document}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  Riscos e sugestoes
+                </p>
+                <ul className="mt-3 space-y-2 text-sm text-slate-200">
+                  {contextualAnalysis.caseAnalysis.risks.slice(0, 2).map((risk) => (
+                    <li key={risk}>- {risk}</li>
+                  ))}
+                  {contextualAnalysis.caseAnalysis.suggestions.slice(0, 2).map((suggestion) => (
+                    <li key={suggestion}>- {suggestion}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="workspace-panel p-6">
         <div className="flex flex-wrap gap-3">

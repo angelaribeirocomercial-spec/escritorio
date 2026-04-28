@@ -1,7 +1,7 @@
 # Atomic Design Principles
 
 **Source:** Brad Frost's Atomic Design methodology
-**Application:** Atlas component organization
+**Application:** Merovingian component organization
 
 ---
 
@@ -71,7 +71,7 @@
 - Product Detail Page
 - User Dashboard
 
-**Note:** Atlas focuses on atoms → organisms. Pages are application-specific.
+**Note:** Merovingian focuses on atoms → organisms. Pages are application-specific.
 
 ---
 
@@ -85,7 +85,7 @@
 
 ---
 
-## Atlas Implementation
+## Merovingian Implementation
 
 ```
 design-system/
@@ -103,6 +103,6 @@ design-system/
     └── DashboardLayout/
 ```
 
-**Atlas builds:** atoms first → molecules → organisms → templates
+**Merovingian builds:** atoms first → molecules → organisms → templates
 
 **Reference:** https://atomicdesign.bradfrost.com/

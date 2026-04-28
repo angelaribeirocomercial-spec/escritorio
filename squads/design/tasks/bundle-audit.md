@@ -1,21 +1,9 @@
-﻿---
-task: bundle-audit
-responsavel: @design-chief
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Task: Bundle Size Audit
 
 > Command: `*bundle-audit [path]`
 > Purpose: Analyze CSS/JS bundle size contribution per component
+> **Execution Type:** `Worker`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `metrics`
 
 ## Overview
 
@@ -81,7 +69,7 @@ find {path}/ -name "*.tsx" -exec wc -l {} \; \
 # Top 10 largest
 head -10 /tmp/component-sizes.txt
 
-# Estimate JS size (rough: 1 line â‰ˆ 50 bytes minified)
+# Estimate JS size (rough: 1 line ≈ 50 bytes minified)
 while read lines file; do
   kb=$(echo "scale=1; $lines * 50 / 1024" | bc)
   echo "$kb KB - $file"
@@ -151,10 +139,10 @@ Path: {path}
 ## Summary
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|
-| Unique CSS Classes | 234 | <500 | âœ… |
-| Est. CSS Size | 12KB | <50KB | âœ… |
-| Est. JS Size (min) | 45KB | <100KB | âœ… |
-| Est. Total (gzip) | 15KB | <30KB | âœ… |
+| Unique CSS Classes | 234 | <500 | ✅ |
+| Est. CSS Size | 12KB | <50KB | ✅ |
+| Est. JS Size (min) | 45KB | <100KB | ✅ |
+| Est. Total (gzip) | 15KB | <30KB | ✅ |
 
 ## CSS Analysis
 
@@ -186,8 +174,8 @@ Path: {path}
 ### Largest Components
 | Component | Lines | Est. Size | Status |
 |-----------|-------|-----------|--------|
-| FeedbackSection.tsx | 373 | 18KB | âš ï¸ Refactor |
-| ListGroupsView.tsx | 289 | 14KB | âš ï¸ Refactor |
+| FeedbackSection.tsx | 373 | 18KB | ⚠️ Refactor |
+| ListGroupsView.tsx | 289 | 14KB | ⚠️ Refactor |
 | ... | ... | ... | ... |
 
 ### Tree-shaking Opportunities
@@ -206,7 +194,7 @@ Path: {path}
 
 ## Recommendations
 
-1. **HIGH:** Refactor FeedbackSection (18KB â†’ target 5KB)
+1. **HIGH:** Refactor FeedbackSection (18KB → target 5KB)
 2. **MEDIUM:** Extract 12 duplicate flex patterns to molecule
 3. **LOW:** Remove 15 rarely-used CSS classes
 4. **INFO:** Enable dynamic imports for Dialog, Modal
@@ -219,6 +207,24 @@ Path: {path}
 | Remove unused classes | 12KB | 10KB | 17% |
 | **Total** | **162KB** | **90KB** | **44%** |
 ```
+
+## Failure Handling
+
+- **No .tsx files found in path:** Exit with error "No component files in {path}. Verify target path."
+- **Tailwind config not found:** Skip custom class analysis, note "Custom CSS analysis skipped — no tailwind.config found"
+- **Build output not available:** Use line-count estimation instead of actual bundle sizes. Note "Estimates based on source lines, not build output"
+- **Import analysis produces false positives:** Filter out type-only imports and re-exported barrel imports before reporting unused
+
+## Output
+
+- `outputs/design-system/{project}/metrics/bundle-audit-report.md`
+- `outputs/design-system/{project}/metrics/class-usage.txt`
+- `outputs/design-system/{project}/metrics/component-sizes.txt`
+
+## Related Checklists
+
+- `squads/design/checklists/ds-pattern-audit-checklist.md`
+- `squads/design/checklists/ds-component-quality-checklist.md`
 
 ## Success Criteria
 
@@ -234,3 +240,6 @@ Path: {path}
 - `*dead-code` - Unused code detection
 - `*refactor-plan` - Plan component refactoring
 
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

@@ -1,22 +1,11 @@
-﻿---
-task: ds-generate-documentation
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Generate Pattern Library Documentation
 
 > Task ID: atlas-generate-documentation
-> Agent: Atlas (Design System Builder)
-> Version: 1.0.0
+> Agent: Merovingian (Design System Builder)
+> Version: 1.1.0
+> v4.0-compatible: true
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `documentation`
 
 ## Description
 
@@ -49,6 +38,13 @@ Generate comprehensive pattern library documentation from built components. Crea
 - **accessibility.md**: Accessibility guidelines
 - **getting-started.md**: Setup and usage guide
 
+## Failure Handling
+
+- **No components found:** If scan finds zero component files in design-system directory, abort with "No components found. Run *build to create components before generating documentation."
+- **Component metadata extraction failed:** If TypeScript parser fails to extract prop types from component file, abort with "Cannot parse {ComponentName}.tsx: {error}. Ensure valid TypeScript and exported interfaces."
+- **Missing component documentation files:** If component exists but {ComponentName}.md does not exist or is empty, warn user "{N} components missing .md files. Generate basic docs or skip incomplete components?"
+- **Broken usage examples:** If code snippets in generated documentation contain syntax errors or reference non-existent props, abort with "{N} documentation examples have errors: {list}. Fix component APIs or example code before publishing docs."
+
 ## Success Criteria
 
 - [ ] All components documented
@@ -66,26 +62,26 @@ Generate comprehensive pattern library documentation from built components. Crea
 
 Output:
 ```
-ðŸ“š Atlas: Generating pattern library documentation...
+📚 Merovingian: Generating pattern library documentation...
 
 Scanning components:
-  âœ“ 8 atoms found
-  âœ“ 5 molecules found
-  âœ“ 2 organisms found
+  ✓ 8 atoms found
+  ✓ 5 molecules found
+  ✓ 2 organisms found
 
 Generating documentation:
-  âœ“ index.md (pattern library home)
-  âœ“ components/Button.md
-  âœ“ components/Input.md
-  âœ“ components/FormField.md
+  ✓ index.md (pattern library home)
+  ✓ components/Button.md
+  ✓ components/Input.md
+  ✓ components/FormField.md
   ...
-  âœ“ tokens.md (token reference)
-  âœ“ accessibility.md (WCAG guide)
-  âœ“ getting-started.md
+  ✓ tokens.md (token reference)
+  ✓ accessibility.md (WCAG guide)
+  ✓ getting-started.md
 
-âœ… Pattern library: design-system/docs/
+✅ Pattern library: design-system/docs/
 
-Atlas says: "Documentation is code. Keep it fresh."
+Merovingian says: "Documentation is code. Keep it fresh."
 ```
 
 ## Notes
@@ -95,3 +91,11 @@ Atlas says: "Documentation is code. Keep it fresh."
 - Includes live Storybook links (if enabled)
 - Searchable by component name, prop, or token
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+- `squads/design/checklists/ds-pattern-audit-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

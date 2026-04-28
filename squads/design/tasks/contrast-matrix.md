@@ -1,22 +1,10 @@
-﻿---
-task: contrast-matrix
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Task: contrast-matrix
 
 > **Command:** `*contrast-matrix {path}`
 > **Agent:** Brad Frost (Design System Architect)
 > **Purpose:** Generate complete color contrast matrix with WCAG 2.2 + APCA validation
+> **Execution Type:** `Worker`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `accessibility`
 
 ---
 
@@ -93,11 +81,11 @@ interface ContrastResult {
 
   // WCAG 2.2 Compliance
   wcag: {
-    AA_normal: boolean;     // â‰¥4.5:1 for <18px
-    AA_large: boolean;      // â‰¥3:1 for â‰¥18px/bold
-    AAA_normal: boolean;    // â‰¥7:1
-    AAA_large: boolean;     // â‰¥4.5:1
-    ui_components: boolean; // â‰¥3:1 (borders, icons)
+    AA_normal: boolean;     // ≥4.5:1 for <18px
+    AA_large: boolean;      // ≥3:1 for ≥18px/bold
+    AAA_normal: boolean;    // ≥7:1
+    AAA_large: boolean;     // ≥4.5:1
+    ui_components: boolean; // ≥3:1 (borders, icons)
   };
 
   // APCA (Lc values)
@@ -148,9 +136,9 @@ function getAPCAContrast(textColor: string, bgColor: string): number {
   // Returns Lc (Lightness contrast) value
   // Positive = light text on dark bg
   // Negative = dark text on light bg
-  // |Lc| â‰¥ 60 is generally readable
-  // |Lc| â‰¥ 75 is comfortable for body text
-  // |Lc| â‰¥ 90 is excellent
+  // |Lc| ≥ 60 is generally readable
+  // |Lc| ≥ 75 is comfortable for body text
+  // |Lc| ≥ 90 is excellent
 }
 ```
 
@@ -215,18 +203,18 @@ interface ContrastMatrix {
 
 | Foreground | Background | Ratio | AA | AAA | APCA Lc | Status |
 |------------|------------|-------|----|----|---------|--------|
-| #212121 | #FAFAFA | 16.1:1 | âœ“ | âœ“ | -92.4 | âœ… Pass |
-| #424242 | #FFFFFF | 10.5:1 | âœ“ | âœ“ | -85.2 | âœ… Pass |
-| #757575 | #FFFFFF | 4.6:1 | âœ“ | âœ— | -63.1 | âš ï¸ AA only |
-| #999999 | #FFFFFF | 2.8:1 | âœ— | âœ— | -48.7 | âŒ Fail |
-| #D4AF37 | #1A1A1A | 8.2:1 | âœ“ | âœ“ | +78.3 | âœ… Pass |
+| #212121 | #FAFAFA | 16.1:1 | ✓ | ✓ | -92.4 | ✅ Pass |
+| #424242 | #FFFFFF | 10.5:1 | ✓ | ✓ | -85.2 | ✅ Pass |
+| #757575 | #FFFFFF | 4.6:1 | ✓ | ✗ | -63.1 | ⚠️ AA only |
+| #999999 | #FFFFFF | 2.8:1 | ✗ | ✗ | -48.7 | ❌ Fail |
+| #D4AF37 | #1A1A1A | 8.2:1 | ✓ | ✓ | +78.3 | ✅ Pass |
 
 ## Failures Detail
 
-### âŒ #999999 on #FFFFFF (2.8:1)
+### ❌ #999999 on #FFFFFF (2.8:1)
 
 **Problem:** Fails WCAG AA (need 4.5:1)
-**APCA Lc:** -48.7 (need â‰¥60 for body text)
+**APCA Lc:** -48.7 (need ≥60 for body text)
 **Used in:**
 - `app/components/ui/Input.tsx:45` - placeholder text
 - `app/components/ui/Label.tsx:12` - disabled state
@@ -236,13 +224,13 @@ interface ContrastMatrix {
 2. Darken to #595959 for 7:1 (AAA compliant)
 3. Or change background to #F0F0F0 with #999999 = 3.3:1 (large text only)
 
-### âš ï¸ #757575 on #FFFFFF (4.6:1)
+### ⚠️ #757575 on #FFFFFF (4.6:1)
 
 **Problem:** Passes AA but fails AAA
 **Used in:**
 - `app/components/shared/Caption.tsx:8` - 12px caption text
 
-**Note:** For 12px text, APCA recommends Lc â‰¥ 75. Current Lc is -63.1.
+**Note:** For 12px text, APCA recommends Lc ≥ 75. Current Lc is -63.1.
 **Recommendation:** Darken to #616161 for Lc -72 or increase font size to 14px+.
 ```
 
@@ -298,15 +286,15 @@ This task validates against the reading guide principles:
 
 | Rule | Contrast Requirement | This Task |
 |------|---------------------|-----------|
-| Rule 8 | Minimum 4.5:1 (WCAG AA) | âœ“ Validates |
-| Rule 10 | Dark mode: avoid pure black/white | âœ“ Detects 21:1 |
-| Rule 13 | Links distinguishable â‰¥3:1 from text | âœ“ Validates link colors |
-| Accessibility | APCA for modern accuracy | âœ“ Includes APCA Lc |
+| Rule 8 | Minimum 4.5:1 (WCAG AA) | ✓ Validates |
+| Rule 10 | Dark mode: avoid pure black/white | ✓ Detects 21:1 |
+| Rule 13 | Links distinguishable ≥3:1 from text | ✓ Validates link colors |
+| Accessibility | APCA for modern accuracy | ✓ Includes APCA Lc |
 
 **Special Checks:**
 - Dark mode halation detection (contrast > 18:1 flagged)
-- Link vs text color contrast (â‰¥3:1 required)
-- Focus indicator contrast (â‰¥3:1 vs background)
+- Link vs text color contrast (≥3:1 required)
+- Focus indicator contrast (≥3:1 vs background)
 - Placeholder text contrast (often fails)
 
 ---
@@ -325,7 +313,7 @@ This task validates against the reading guide principles:
 
 # As part of full audit
 *a11y-audit ./app/components --scope color
-# â†’ Calls *contrast-matrix internally
+# → Calls *contrast-matrix internally
 ```
 
 ---
@@ -354,5 +342,32 @@ contrast_matrix:
 
 ---
 
+## Failure Handling
+
+- **Color extraction returns >1000 unique pairs:** Filter to high-frequency combinations (used >=5 times), group similar colors within ΔE <3, generate subset matrix with coverage threshold, provide full matrix as JSON export
+- **APCA calculation library unavailable or outdated:** Fallback to WCAG 2.2 ratios only, document APCA as recommended future enhancement, suggest apca-w3 npm package installation for next run
+- **Dynamic theme switching prevents color extraction:** Run matrix per theme separately, capture CSS variables per theme context, manually test theme switcher to extract computed values from DevTools, aggregate results by theme
+- **Contrast failures exceed remediation capacity (>100 failures):** Triage by component usage frequency and user-facing visibility, auto-generate fix suggestions for top 20 failures, provide batch color adjustment script for systematic fixes, schedule phased remediation
+
+## Success Criteria
+
+- [ ] All foreground/background color combinations extracted from codebase
+- [ ] WCAG 2.2 contrast ratios calculated for every combination
+- [ ] APCA Lc values calculated for every combination
+- [ ] Pass/fail indicators for AA, AAA, and APCA thresholds
+- [ ] Matrix output generated in requested format (table/html/json)
+- [ ] Failing combinations include remediation suggestions with closest passing color
+- [ ] Design token colors included when --include-tokens flag used
+
+---
+
 **Brad says:** "Contrast isn't subjective. Numbers don't lie. 4.5:1 or it fails."
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-accessibility-wcag-checklist.md`
+- `squads/design/checklists/ds-a11y-release-gate-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

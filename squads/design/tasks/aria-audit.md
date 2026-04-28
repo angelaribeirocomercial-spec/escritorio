@@ -1,22 +1,10 @@
-﻿---
-task: aria-audit
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Task: aria-audit
 
 > **Command:** `*aria-audit {path}`
 > **Agent:** Brad Frost (Design System Architect)
 > **Purpose:** Validate ARIA usage, roles, states, and properties
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `accessibility`
 
 ---
 
@@ -256,7 +244,7 @@ const redundantPatterns = [
 
 ## Critical Issues
 
-### 1. âŒ Missing accessible name
+### 1. ❌ Missing accessible name
 
 **File:** `app/components/ui/IconButton.tsx:23`
 **Element:** `<button aria-label={undefined}>`
@@ -278,7 +266,7 @@ const redundantPatterns = [
 
 ---
 
-### 2. âŒ aria-hidden with focusable children
+### 2. ❌ aria-hidden with focusable children
 
 **File:** `app/components/modals/Sidebar.tsx:45`
 **Element:** `<div aria-hidden="true">`
@@ -287,7 +275,7 @@ const redundantPatterns = [
 **Current:**
 ```tsx
 <div aria-hidden="true">
-  <button>Click me</button>  {/* âŒ Focusable but hidden */}
+  <button>Click me</button>  {/* ❌ Focusable but hidden */}
 </div>
 ```
 
@@ -301,7 +289,7 @@ const redundantPatterns = [
 
 ---
 
-### 3. âŒ Missing required aria-checked
+### 3. ❌ Missing required aria-checked
 
 **File:** `app/components/ui/Toggle.tsx:12`
 **Element:** `<div role="switch">`
@@ -327,7 +315,7 @@ const redundantPatterns = [
 
 ---
 
-### 4. âŒ Broken aria-labelledby reference
+### 4. ❌ Broken aria-labelledby reference
 
 **File:** `app/components/modals/ConfirmDialog.tsx:8`
 **Element:** `<div role="dialog" aria-labelledby="dialog-title">`
@@ -343,7 +331,7 @@ const redundantPatterns = [
 
 ---
 
-### 5. âŒ Dynamic content without live region
+### 5. ❌ Dynamic content without live region
 
 **File:** `app/components/ui/Toast.tsx:34`
 **Problem:** Toast messages not announced to screen readers
@@ -382,24 +370,24 @@ const redundantPatterns = [
 
 | Component | role=dialog | aria-modal | Labeled | Traps Focus |
 |-----------|-------------|------------|---------|-------------|
-| ConfirmDialog | âœ“ | âœ— | âœ— | âœ— |
-| AlertModal | âœ“ | âœ“ | âœ“ | âœ“ |
-| Drawer | âœ— | âœ— | âœ— | âœ— |
+| ConfirmDialog | ✓ | ✗ | ✗ | ✗ |
+| AlertModal | ✓ | ✓ | ✓ | ✓ |
+| Drawer | ✗ | ✗ | ✗ | ✗ |
 
 ### Tabs
 
 | Component | tablist | tabs | panels | Controls | Labeled |
 |-----------|---------|------|--------|----------|---------|
-| TabGroup | âœ“ | âœ“ | âœ“ | âœ— | âœ— |
-| Navigation | âœ— | âœ— | N/A | N/A | N/A |
+| TabGroup | ✓ | ✓ | ✓ | ✗ | ✗ |
+| Navigation | ✗ | ✗ | N/A | N/A | N/A |
 
 ### Forms
 
 | Component | Labeled | Required | Errors | Invalid |
 |-----------|---------|----------|--------|---------|
-| LoginForm | âœ“ | âœ“ | âœ— | âœ— |
-| SearchInput | âœ— | N/A | N/A | N/A |
-| ContactForm | âœ“ | âœ“ | âœ“ | âœ“ |
+| LoginForm | ✓ | ✓ | ✗ | ✗ |
+| SearchInput | ✗ | N/A | N/A | N/A |
+| ContactForm | ✓ | ✓ | ✓ | ✓ |
 
 ---
 
@@ -409,10 +397,10 @@ const redundantPatterns = [
 > Don't use ARIA if you can use native HTML.
 
 ```tsx
-// âŒ Bad
+// ❌ Bad
 <div role="button" tabIndex={0} onClick={fn}>Click</div>
 
-// âœ… Good
+// ✅ Good
 <button onClick={fn}>Click</button>
 ```
 
@@ -479,6 +467,13 @@ These elements MUST have accessible names:
 
 ---
 
+## Failure Handling
+
+- **ARIA attribute validation against outdated spec:** Use WAI-ARIA 1.2 as baseline. Flag attributes only in 1.3 draft as "warning" not "error"
+- **Broken aria-labelledby references due to dynamic IDs:** Skip dynamic ID patterns (e.g., `id={uniqueId}`), log as "dynamic reference — requires runtime validation"
+- **Live region detection misses framework-specific patterns:** Check for React portals, Vue teleport, and framework toast libraries in addition to raw aria-live attributes
+- **Strict mode (--strict) produces excessive warnings:** Cap warnings at 50 per category, summarize remainder as "and {N} more similar warnings"
+
 ## State Update
 
 ```yaml
@@ -506,5 +501,25 @@ aria_audit:
 
 ---
 
+## Success Criteria
+
+- [ ] All ARIA attributes validated against WAI-ARIA 1.2 spec
+- [ ] Zero invalid or deprecated ARIA attributes remain
+- [ ] All interactive roles have required aria-* properties
+- [ ] No redundant ARIA on native HTML elements (e.g., `role="button"` on `<button>`)
+- [ ] Live regions (`aria-live`) properly configured for dynamic content
+- [ ] Report generated with file:line references for every finding
+- [ ] Severity classification (error/warning/info) applied to each issue
+
+---
+
 **Brad says:** "First rule of ARIA: Don't use ARIA. Use semantic HTML. Second rule: If you use ARIA, use it correctly."
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-accessibility-wcag-checklist.md`
+- `squads/design/checklists/ds-a11y-release-gate-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

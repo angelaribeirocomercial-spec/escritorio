@@ -1,7 +1,7 @@
 markdownExploder: true
 project:
-  type: greenfield
-  installedAt: '2026-04-08T12:52:52.186Z'
+  type: brownfield
+  installedAt: '2026-04-20T17:47:42.811Z'
   version: 2.1.0
 user_profile: bob
 ide:
@@ -111,3 +111,32 @@ agentIdentity:
     performance:
       gitCheckCache: true
       gitCheckTTL: 300
+pro:
+  enabled: true
+  version: 0.1.0
+squads:
+  premium_templates: true
+  marketplace:
+    enabled: false
+memory:
+  persistent: false
+  backend: local
+  cross_session: false
+  analytics: false
+metrics:
+  dashboards: false
+  team_analytics: false
+  cost_tracking: false
+integrations:
+  gitlab:
+    enabled: false
+  bitbucket:
+    enabled: false
+  jira:
+    enabled: false
+  azure_devops:
+    enabled: false
+  clickup:
+    enabled: false
+  google_drive:
+    enabled: false

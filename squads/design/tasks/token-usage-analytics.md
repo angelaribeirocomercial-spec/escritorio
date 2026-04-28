@@ -1,21 +1,9 @@
-﻿---
-task: token-usage-analytics
-responsavel: @design-chief
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Task: Token Usage Analytics
 
 > Command: `*token-usage [path]`
 > Purpose: Analyze which design tokens are used, unused, and misused
+> **Execution Type:** `Worker`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `metrics`
 
 ## Overview
 
@@ -130,13 +118,13 @@ grep -rn --include="*.tsx" "success.*text-red\|error.*text-green" {path}/
 ## Colors
 | Token | Usage | Coverage | Status |
 |-------|-------|----------|--------|
-| studio-primary | 47 | 12% | âœ… High |
-| studio-bg | 89 | 23% | âœ… High |
-| studio-card-bg | 34 | 9% | âœ… Medium |
-| text-foreground | 156 | 40% | âœ… Very High |
-| text-muted | 67 | 17% | âœ… High |
-| studio-primary-light | 2 | <1% | âš ï¸ Low |
-| studio-accent | 0 | 0% | âŒ Unused |
+| studio-primary | 47 | 12% | ✅ High |
+| studio-bg | 89 | 23% | ✅ High |
+| studio-card-bg | 34 | 9% | ✅ Medium |
+| text-foreground | 156 | 40% | ✅ Very High |
+| text-muted | 67 | 17% | ✅ High |
+| studio-primary-light | 2 | <1% | ⚠️ Low |
+| studio-accent | 0 | 0% | ❌ Unused |
 
 ## Spacing
 | Scale | Usage | Most Common Context |
@@ -147,7 +135,7 @@ grep -rn --include="*.tsx" "success.*text-red\|error.*text-green" {path}/
 | gap-4 | 78 | Form fields |
 | p-1 | 12 | Tight badges |
 | p-12 | 3 | Hero sections |
-| p-20 | 0 | âŒ Unused |
+| p-20 | 0 | ❌ Unused |
 
 ## Typography
 | Token | Usage | Context |
@@ -157,7 +145,7 @@ grep -rn --include="*.tsx" "success.*text-red\|error.*text-green" {path}/
 | text-xs | 67 | Captions, badges |
 | text-5xl | 8 | Hero headings |
 | font-medium | 156 | Buttons, labels |
-| font-serif | 0 | âŒ Unused |
+| font-serif | 0 | ❌ Unused |
 ```
 
 ### Step 6: Generate Analytics Report
@@ -221,7 +209,7 @@ Path: {path}
 ## Recommendations
 
 1. **Remove** 9 unused tokens from spec
-2. **Consolidate** p-3 â†’ p-4 (23 occurrences)
+2. **Consolidate** p-3 → p-4 (23 occurrences)
 3. **Fix** 5 token misuse instances
 4. **Document** use cases for low-usage tokens
 5. **Consider** adding text-muted-dark (no dark variant)
@@ -238,10 +226,17 @@ Breakdown:
 
 ```
 outputs/design-system/{project}/
-â”œâ”€â”€ token-analytics-{date}.md
-â”œâ”€â”€ token-usage.json
-â””â”€â”€ token-heatmap.html (visual)
+├── token-analytics-{date}.md
+├── token-usage.json
+└── token-heatmap.html (visual)
 ```
+
+## Failure Handling
+
+- **Design tokens spec file not found:** Exit with error "Token spec required at squads/super-agentes/data/design-tokens-spec.yaml. Cannot analyze without token inventory."
+- **Zero token matches in codebase:** Verify token naming convention matches project (CSS vars vs Tailwind classes vs styled-components). Adjust grep patterns and retry
+- **Misuse detection produces false positives:** Filter results by context (className vs inline style vs variable name). Only report confirmed misuse patterns
+- **Token heatmap generation fails:** Fall back to text-only report with usage counts per token category
 
 ## Success Criteria
 
@@ -257,3 +252,11 @@ outputs/design-system/{project}/
 - `*validate-tokens` - Validate token usage in code
 - `*dead-code` - Full dead code detection
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+- `squads/design/checklists/ds-pattern-audit-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

@@ -69,3 +69,31 @@
 [ ] NO-GO - Blockers:_________________
 
 **Approved By:** ________ **Date:** ________
+
+---
+
+## Scoring
+
+### Point System
+Each checkbox item = 1 point.
+
+| Category | Items | Weight |
+|----------|-------|--------|
+| Foundation (Token Coverage) | 5 | 5pts |
+| Components (Component Mapping) | 5 | 5pts |
+| Migration Plan (Risk Assessment) | 5 | 5pts |
+| Team Readiness | 4 | 4pts |
+| Risk Mitigation | 5 | 5pts |
+| Metrics Tracking | 4 | 4pts |
+| **Total** | **28** | **28pts** |
+
+### Pass/Fail Thresholds
+| Grade | Score | Action |
+|-------|-------|--------|
+| PASS | >= 80% (23+) | Proceed to next phase |
+| CONDITIONAL | 60-79% (17-22) | Fix critical items, re-check |
+| FAIL | < 60% (16-) | Major rework required |
+
+### Auto-Correction
+If items fail:
+- Run `*ds-audit-codebase` to verify token coverage >=95%. Use `*ds-generate-migration-strategy` for gap analysis.

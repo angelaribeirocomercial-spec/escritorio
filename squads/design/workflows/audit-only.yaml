@@ -4,30 +4,14 @@
 workflow:
   id: "design-system-audit-only"
   name: "Design System Audit-Only"
-  description: "Audit-only workflow: scan codebase for UI chaos, generate visual shock report and ROI calculation for stakeholder presentation"
+  description: "Audit-only workflow: scan codebase for UI chaos, generate visual shock report and ROI calculation for stakeholder presentation. Mandatory governance protocol: squads/design/protocols/ai-first-governance.md"
   version: "2.0.0"
   type: "sequential"
-  sequence:
-    - agent: "brad-frost"
-      action: "Audit codebase and inventory UI patterns"
-      creates: "audit_inventory"
-    - agent: "brad-frost"
-      action: "Consolidate patterns and calculate reduction metrics"
-      requires: "audit_inventory"
-      creates: "consolidation_metrics"
-    - agent: "brad-frost"
-      action: "Generate shock report for stakeholders"
-      requires: "consolidation_metrics"
-      creates: "shock_report"
-    - agent: "brad-frost"
-      action: "Calculate ROI and summarize recommendations"
-      requires: "shock_report"
-      creates: "roi_summary"
 
 metadata:
   author: "Brad (Design System Architect)"
   created_date: "2025-10-27"
-  last_modified: "2025-10-27"
+  last_modified: "2026-02-16"
   tags:
     - design-system
     - audit
@@ -65,7 +49,7 @@ steps:
   - id: "step_1_audit"
     name: "Audit Codebase for Pattern Redundancy"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*audit"
     inputs:
       path: "{{codebase_path}}"
@@ -78,7 +62,7 @@ steps:
   - id: "step_2_consolidate"
     name: "Consolidate Patterns for Metrics"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*consolidate"
     inputs:
       inventory: "{{step_1_audit.inventory_report}}"
@@ -91,7 +75,7 @@ steps:
   - id: "step_3_shock_report"
     name: "Generate Visual Shock Report"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*shock-report"
     inputs:
       inventory: "{{step_1_audit.inventory_report}}"
@@ -106,7 +90,7 @@ steps:
   - id: "step_4_calculate_roi"
     name: "Calculate ROI and Cost Savings"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*calculate-roi"
     inputs:
       consolidation: "{{step_2_consolidate.consolidation_report}}"
@@ -123,7 +107,7 @@ steps:
   - id: "step_5_tokenize_preview"
     name: "Preview Token Recommendations (Optional)"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*tokenize"
     inputs:
       consolidation: "{{step_2_consolidate.consolidation_report}}"
@@ -194,3 +178,21 @@ global_error_handling:
 security:
   authorization_required: false
   audit_logging: true
+
+quality_gates:
+  internal_quality_chain:
+    required:
+      - "node squads/design/scripts/design-system/generate_components_metadata.cjs"
+      - "node squads/design/scripts/design-system/validate_components_metadata.cjs"
+      - "node squads/design/scripts/design-system/sync_design_manifest.cjs"
+      - "node squads/design/scripts/design-system/validate_design_manifest_drift.cjs"
+      - "node squads/design/scripts/design-system/validate_task_checklist_bindings.cjs"
+      - "node squads/design/scripts/design-system/validate_mcp_skeleton.cjs"
+    optional:
+      - "node squads/design/scripts/design-system/test_mcp_tools.cjs"
+    blocking: true
+    policy: "internal-first"
+    exception:
+      external_tool_allowed_with:
+        - "capability_gap_documented"
+        - "rationale_recorded"

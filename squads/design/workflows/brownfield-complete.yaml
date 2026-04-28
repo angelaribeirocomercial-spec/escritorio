@@ -4,34 +4,14 @@
 workflow:
   id: "design-system-brownfield-complete"
   name: "Design System Brownfield Complete"
-  description: "Complete workflow for brownfield projects: audit UI chaos, consolidate patterns, extract tokens, plan migration, then build production components"
+  description: "Complete workflow for brownfield projects: audit UI chaos, consolidate patterns, extract tokens, plan migration, then build production components. Mandatory governance protocol: squads/design/protocols/ai-first-governance.md"
   version: "2.0.0"
   type: "sequential"
-  sequence:
-    - agent: "brad-frost"
-      action: "Audit existing UI patterns in the codebase"
-      creates: "audit_inventory"
-    - agent: "brad-frost"
-      action: "Consolidate redundant patterns and define metrics"
-      requires: "audit_inventory"
-      creates: "consolidation_report"
-    - agent: "brad-frost"
-      action: "Extract design tokens and generate migration plan"
-      requires: "consolidation_report"
-      creates: "migration_plan"
-    - agent: "brad-frost"
-      action: "Build atomic and molecular components"
-      requires: "migration_plan"
-      creates: "component_library"
-    - agent: "brad-frost"
-      action: "Document the resulting design system"
-      requires: "component_library"
-      creates: "design_system_docs"
 
 metadata:
   author: "Brad (Design System Architect)"
   created_date: "2025-10-27"
-  last_modified: "2025-10-27"
+  last_modified: "2026-02-16"
   tags:
     - design-system
     - brownfield
@@ -57,7 +37,7 @@ steps:
   - id: "step_1_audit"
     name: "Audit Codebase for Pattern Redundancy"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*audit"
     inputs:
       path: "{{codebase_path}}"
@@ -70,7 +50,7 @@ steps:
   - id: "step_2_consolidate"
     name: "Consolidate Patterns Using Clustering"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*consolidate"
     inputs:
       inventory: "{{step_1_audit.inventory_report}}"
@@ -83,7 +63,7 @@ steps:
   - id: "step_3_tokenize"
     name: "Extract Design Tokens"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*tokenize"
     inputs:
       consolidation: "{{step_2_consolidate.consolidation_report}}"
@@ -98,7 +78,7 @@ steps:
   - id: "step_4_migrate"
     name: "Generate Migration Strategy"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*migrate"
     inputs:
       tokens: "{{step_3_tokenize.tokens_yaml}}"
@@ -111,7 +91,7 @@ steps:
   - id: "step_5_shock_report"
     name: "Generate Shock Report (Optional)"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*shock-report"
     inputs:
       inventory: "{{step_1_audit.inventory_report}}"
@@ -124,7 +104,7 @@ steps:
   - id: "step_6_calculate_roi"
     name: "Calculate ROI (Optional)"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*calculate-roi"
     inputs:
       consolidation: "{{step_2_consolidate.consolidation_report}}"
@@ -136,7 +116,7 @@ steps:
   - id: "step_7_build_atoms"
     name: "Build Atomic Components"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*build"
     inputs:
       tokens: "{{step_3_tokenize.tokens_yaml}}"
@@ -149,7 +129,7 @@ steps:
   - id: "step_8_compose_molecules"
     name: "Compose Molecule Components"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*compose"
     inputs:
       atoms: "{{step_7_build_atoms.components}}"
@@ -162,7 +142,7 @@ steps:
   - id: "step_9_document"
     name: "Generate Pattern Library Documentation"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*document"
     inputs:
       components: "outputs/design-system/{{project_name}}/components/"
@@ -173,11 +153,54 @@ steps:
     error_handling:
       strategy: "skip"
 
+  - id: "step_10_promote_to_workspace"
+    name: "Promote Outputs to Workspace Canonical Locations"
+    type: "agent"
+    agent: "brad-frost"
+    command: "*sync-registry"
+    description: "Move outputs from outputs/ to workspace canonical paths"
+    inputs:
+      tokens_source: "{{step_3_tokenize.tokens_yaml}}"
+      components_source: "outputs/design-system/{{project_name}}/components/"
+    outputs:
+      tokens_promoted: "workspace/system/tokens/"
+      registry_updated: "workspace/ui/registry.json"
+      metadata_updated: "workspace/domains/design-system/metadata/components.json"
+    promotion_map:
+      - from: "outputs/design-system/{{project_name}}/tokens/tokens.json"
+        to: "workspace/system/tokens/primitive.tokens.json"
+      - from: "outputs/design-system/{{project_name}}/tokens/tokens.yaml"
+        to: "squads/design/data/design-tokens-spec.yaml"
+      - from: "outputs/design-system/{{project_name}}/components/"
+        to: "workspace/ui/components/"
+    validation:
+      - "workspace/ui/registry.json updated with new components"
+      - "workspace/domains/design-system/metadata/components.json reflects changes"
+      - "squads/design/scripts/design-system/validate_components_metadata.cjs passes"
+    error_handling:
+      strategy: "fail"
+
+  - id: "step_11_critical_eye"
+    name: "Run Critical Eye Curation Cycle"
+    type: "workflow"
+    agent: "brad-frost"
+    workflow: "critical-eye"
+    description: "Evaluate all promoted patterns through the Critical Eye scoring engine. Scores variants (0-100), applies lifecycle transitions, generates proposals for canonical promotion. Non-blocking — brownfield completes even if curation is skipped."
+    inputs:
+      catalog: "workspace/ui/pattern-catalog.json"
+      scoring_rules: "squads/design/data/critical-eye-scoring-rules.yaml"
+      decisions_log: "workspace/ui/canonical-decisions.json"
+    outputs:
+      catalog_updated: "workspace/ui/pattern-catalog.json"
+      cycle_report: "outputs/design-system/critical-eye/cycle-{{cycle_number}}/report.md"
+    error_handling:
+      strategy: "skip"
+
 outputs:
   design_system_complete:
     type: "boolean"
     description: "Workflow completed successfully"
-    source: "step_9_document.success"
+    source: "step_10_promote_to_workspace.success"
 
   tokens_location:
     type: "string"
@@ -214,3 +237,21 @@ global_error_handling:
 security:
   authorization_required: false
   audit_logging: true
+
+quality_gates:
+  internal_quality_chain:
+    required:
+      - "node squads/design/scripts/design-system/generate_components_metadata.cjs"
+      - "node squads/design/scripts/design-system/validate_components_metadata.cjs"
+      - "node squads/design/scripts/design-system/sync_design_manifest.cjs"
+      - "node squads/design/scripts/design-system/validate_design_manifest_drift.cjs"
+      - "node squads/design/scripts/design-system/validate_task_checklist_bindings.cjs"
+      - "node squads/design/scripts/design-system/validate_mcp_skeleton.cjs"
+    optional:
+      - "node squads/design/scripts/design-system/test_mcp_tools.cjs"
+    blocking: true
+    policy: "internal-first"
+    exception:
+      external_tool_allowed_with:
+        - "capability_gap_documented"
+        - "rationale_recorded"

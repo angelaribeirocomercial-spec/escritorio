@@ -1,24 +1,27 @@
-﻿---
-task: execute-checklist
-responsavel: @joe-mcnally
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Checklist Validation Task
+
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `standalone`
 
 This task provides instructions for validating documentation against checklists. The agent MUST follow these instructions to ensure thorough and systematic validation of documents.
 
 ## Available Checklists
 
-If the user asks or does not specify a specific checklist, list the checklists available to the agent persona. If the task is being run not with a specific agent, tell the user to check the .aios-core/checklists folder to select the appropriate one to run.
+If the user asks or does not specify a specific checklist, list the checklists available in `squads/design/checklists/`.
+
+## Local Checklist Catalog (`squads/design/checklists/`)
+
+- `atomic-refactor-checklist.md`
+- `design-fidelity-checklist.md`
+- `design-handoff-checklist.md`
+- `design-team-health-checklist.md`
+- `designops-maturity-checklist.md`
+- `ds-a11y-release-gate-checklist.md`
+- `ds-accessibility-wcag-checklist.md`
+- `ds-component-quality-checklist.md`
+- `ds-migration-readiness-checklist.md`
+- `ds-pattern-audit-checklist.md`
+- `reading-accessibility-checklist.md`
 
 ## Instructions
 
@@ -27,10 +30,10 @@ If the user asks or does not specify a specific checklist, list the checklists a
    - If user or the task being run provides a checklist name:
      - Try fuzzy matching (e.g. "architecture checklist" -> "architect-checklist")
      - If multiple matches found, ask user to clarify
-     - Load the appropriate checklist from .aios-core/checklists/
+     - Load the appropriate checklist from `squads/design/checklists/`
    - If no checklist specified:
      - Ask the user which checklist they want to use
-     - Present the available options from the files in the checklists folder
+     - Present the available options from `squads/design/checklists/`
    - Confirm if they want to work through the checklist:
      - Section by section (interactive mode - very time consuming)
      - All at once (YOLO mode - recommended for checklists, there will be a summary of sections at the end to discuss)
@@ -66,9 +69,9 @@ If the user asks or does not specify a specific checklist, list the checklists a
    - Consider both explicit mentions and implicit coverage
    - Aside from this, follow all checklist llm instructions
    - Mark items as:
-     - âœ… PASS: Requirement clearly met
-     - âŒ FAIL: Requirement not met or insufficient coverage
-     - âš ï¸ PARTIAL: Some aspects covered but needs improvement
+     - ✅ PASS: Requirement clearly met
+     - ❌ FAIL: Requirement not met or insufficient coverage
+     - ⚠️ PARTIAL: Some aspects covered but needs improvement
      - N/A: Not applicable to this case
 
 5. **Section Analysis**
@@ -106,3 +109,33 @@ The LLM will:
 - Present a final report with pass/fail rates and key findings
 - Offer to provide detailed analysis of any section, especially those with warnings or failures
 
+## Failure Handling
+
+- **Multiple checklists match user query:** Present disambiguation list with each checklist's primary purpose, ask user to select by number or refine query
+- **Required documentation artifacts missing or inaccessible:** Flag missing items, proceed with partial validation marking dependent checklist items as BLOCKED, document gaps in final report
+- **Checklist scoring results in ambiguous pass/fail boundary:** Calculate confidence intervals, highlight borderline items, recommend manual review for items within 10% of threshold
+- **User disagrees with automated verdict for specific items:** Document user override with justification, recalculate section scores excluding overridden items, append dissenting analysis to report
+
+## Success Criteria
+
+- [ ] Correct checklist identified and loaded (exact or fuzzy match)
+- [ ] All required documents/artifacts gathered before validation
+- [ ] Every checklist item evaluated with PASS/FAIL/N-A verdict
+- [ ] Non-applicable items include rationale for exclusion
+- [ ] Summary report generated with section-by-section breakdown
+- [ ] Scoring calculated per checklist's scoring system
+- [ ] Critical failures flagged for immediate attention
+
+## Output
+
+- Checklist execution report with section pass rates
+- List of failed/partial items with evidence
+- Remediation list prioritized by severity
+
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

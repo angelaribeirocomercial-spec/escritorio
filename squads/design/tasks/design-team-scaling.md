@@ -1,17 +1,3 @@
-﻿---
-task: design-team-scaling
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # design-team-scaling
 
 > Plan design team growth and structure using Dave Malouf's scaling framework and team topology principles.
@@ -405,3 +391,17 @@ Monitor these indicators that scaling is going wrong:
 
 Use `checklists/design-team-health-checklist.md` to monitor team health during scaling.
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+
+## Process Guards
+- **Execution Type:** `Hybrid`
+- **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `design-system`
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.
+
+## Success Criteria
+- [ ] Output artifact(s) generated and referenced.
+- [ ] Validation checks executed with evidence.
+- [ ] Next-step dependencies documented.

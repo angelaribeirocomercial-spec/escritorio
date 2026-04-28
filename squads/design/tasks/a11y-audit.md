@@ -1,24 +1,17 @@
-﻿---
-task: a11y-audit
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Task: a11y-audit
 
 > **Command:** `*a11y-audit {path}`
 > **Agent:** Brad Frost (Design System Architect)
 > **Purpose:** Comprehensive WCAG 2.2 accessibility audit with automated + manual checks
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[contrast-matrix, focus-order-audit, aria-audit]` · workflow: `accessibility`
 
 ---
+
+## Output Schema
+- **produces:** `outputs/design-system/{project}/accessibility/a11y-audit-report.json`
+- **format:** JSON data
+- **consumed_by:** contrast-matrix, focus-order-audit, aria-audit
 
 ## Overview
 
@@ -69,10 +62,10 @@ interface ContrastResult {
   foreground: string;
   background: string;
   ratio: number;
-  wcagAA_normal: boolean;   // â‰¥4.5:1
-  wcagAA_large: boolean;    // â‰¥3:1
-  wcagAAA_normal: boolean;  // â‰¥7:1
-  wcagAAA_large: boolean;   // â‰¥4.5:1
+  wcagAA_normal: boolean;   // ≥4.5:1
+  wcagAA_large: boolean;    // ≥3:1
+  wcagAAA_normal: boolean;  // ≥7:1
+  wcagAAA_large: boolean;   // ≥4.5:1
   apca_Lc: number;          // APCA Lightness contrast
   usage: string[];          // Where used
 }
@@ -82,7 +75,7 @@ interface ContrastResult {
 | Element Type | AA Minimum | AAA Target |
 |--------------|------------|------------|
 | Normal text (<18px) | 4.5:1 | 7:1 |
-| Large text (â‰¥18px or bold â‰¥14px) | 3:1 | 4.5:1 |
+| Large text (≥18px or bold ≥14px) | 3:1 | 4.5:1 |
 | UI components | 3:1 | 3:1 |
 | Graphical objects | 3:1 | 3:1 |
 | Focus indicators | 3:1 | 3:1 |
@@ -223,10 +216,10 @@ interface SemanticIssue {
 
 | Foreground | Background | Ratio | AA Normal | AA Large | Usage |
 |------------|------------|-------|-----------|----------|-------|
-| #1a1a1a | #ffffff | 16.1:1 | âœ“ | âœ“ | Body text |
-| #666666 | #ffffff | 5.7:1 | âœ“ | âœ“ | Secondary text |
-| #999999 | #ffffff | 2.8:1 | âœ— | âœ— | Placeholder |
-| #D4AF37 | #1a1a1a | 8.2:1 | âœ“ | âœ“ | Primary accent |
+| #1a1a1a | #ffffff | 16.1:1 | ✓ | ✓ | Body text |
+| #666666 | #ffffff | 5.7:1 | ✓ | ✓ | Secondary text |
+| #999999 | #ffffff | 2.8:1 | ✗ | ✗ | Placeholder |
+| #D4AF37 | #1a1a1a | 8.2:1 | ✓ | ✓ | Primary accent |
 ```
 
 ### 4. Fix Suggestions (Auto-Fixable)
@@ -285,21 +278,28 @@ WCAG 2.2 added these criteria (check all):
 
 # Color focus only
 *a11y-audit ./app/components --scope color
-# â†’ Use *contrast-matrix for detailed color analysis
+# → Use *contrast-matrix for detailed color analysis
 
 # Keyboard focus only
 *a11y-audit ./app/components --scope keyboard
-# â†’ Use *focus-order for detailed tab order
+# → Use *focus-order for detailed tab order
 
 # ARIA focus only
 *a11y-audit ./app/components --scope aria
-# â†’ Use *aria-audit for detailed ARIA validation
+# → Use *aria-audit for detailed ARIA validation
 
 # Auto-fix simple issues
 *a11y-audit ./app/components --fix
 ```
 
 ---
+
+## Failure Handling
+
+- **No interactive elements found in path:** Verify path contains UI components. If correct, report "Zero interactive elements — minimal a11y surface"
+- **Contrast calculation fails (color format not recognized):** Convert all color formats to hex before calculation. Skip unparseable dynamic colors, log as "contrast: unable to evaluate {N} dynamic colors"
+- **ARIA validation references missing spec data:** Use built-in WAI-ARIA 1.2 role requirements. If role not in spec, flag as "unknown role — verify against latest spec"
+- **Auto-fix (--fix) causes syntax errors:** Revert auto-fix changes, output fix suggestions as manual recommendations instead
 
 ## State Update
 
@@ -330,3 +330,11 @@ a11y_audit:
 
 **Brad says:** "Accessibility isn't a feature. It's a quality bar. Zero critical issues or it doesn't ship."
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-accessibility-wcag-checklist.md`
+- `squads/design/checklists/ds-a11y-release-gate-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

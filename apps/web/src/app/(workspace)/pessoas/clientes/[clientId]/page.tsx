@@ -11,26 +11,125 @@ import {
   listClaraRecords
 } from "@/server/services/clara/clara-record-store";
 import { getClaraClientArtifact } from "@/server/services/clara/get-clara-artifacts";
-import { getCases } from "@/server/services/cases/get-cases";
 import { getBankingCaseWorkflow } from "@/server/services/cases/get-banking-case-workflow";
+import { getCases } from "@/server/services/cases/get-cases";
 import { getClientById } from "@/server/services/clients/get-clients";
 import { getDocumentsByCaseId } from "@/server/services/documents/get-documents";
+import { getTasks } from "@/server/services/tasks/get-tasks";
+
+const CASE_STATUS_PRIORITY = {
+  active: 0,
+  "awaiting-action": 1,
+  draft: 2,
+  closed: 3
+} as const;
+
+function workflowStatusLabel(status: "created" | "reviewed" | "completed") {
+  switch (status) {
+    case "reviewed":
+      return "Revisado";
+    case "completed":
+      return "Concluido";
+    default:
+      return "Criado";
+  }
+}
+
+function serviceStatusLabel(status: string) {
+  switch (status) {
+    case "active":
+      return "Caso em andamento";
+    case "triage":
+      return "Triagem";
+    default:
+      return status;
+  }
+}
+
+function legalRiskLabel(risk: "low" | "medium" | "high") {
+  switch (risk) {
+    case "low":
+      return "Baixo";
+    case "high":
+      return "Alto";
+    default:
+      return "Medio";
+  }
+}
+
+function getClientCaseOrderIndex(
+  linkedCases: ReadonlyArray<{ id: string }>,
+  caseId: string
+) {
+  const linkedCaseIndex = linkedCases.findIndex((caseSummary) => caseSummary.id === caseId);
+
+  return linkedCaseIndex === -1 ? Number.POSITIVE_INFINITY : linkedCaseIndex;
+}
+
+function resolveCanonicalActiveCase(
+  clientCases: Awaited<ReturnType<typeof getCases>>,
+  linkedCases: ReadonlyArray<{ id: string }>,
+  requestedCaseId?: string
+) {
+  if (requestedCaseId) {
+    const requestedCase = clientCases.find((caseItem) => caseItem.id === requestedCaseId);
+
+    if (requestedCase) {
+      return requestedCase;
+    }
+  }
+
+  return (
+    [...clientCases].sort((left, right) => {
+      const statusPriorityDiff =
+        CASE_STATUS_PRIORITY[left.status] - CASE_STATUS_PRIORITY[right.status];
+
+      if (statusPriorityDiff !== 0) {
+        return statusPriorityDiff;
+      }
+
+      const leftCaseOrder = getClientCaseOrderIndex(linkedCases, left.id);
+      const rightCaseOrder = getClientCaseOrderIndex(linkedCases, right.id);
+
+      if (leftCaseOrder !== rightCaseOrder) {
+        return leftCaseOrder - rightCaseOrder;
+      }
+
+      const processNumberDiff = left.processNumber.localeCompare(right.processNumber);
+
+      if (processNumberDiff !== 0) {
+        return processNumberDiff;
+      }
+
+      return left.id.localeCompare(right.id);
+    })[0] ?? null
+  );
+}
+
+function readClaraRecordContext(targetPath: string) {
+  const url = new URL(targetPath, "http://localhost");
+
+  return {
+    clientId: url.searchParams.get("client"),
+    caseId: url.searchParams.get("case")
+  };
+}
 
 export default async function ClientDetailPage({
   params,
   searchParams
 }: {
   params: { clientId: string };
-    searchParams?: {
-      clara?: string;
-      record?: string;
-      action?: string;
-      case?: string;
-      onboarding?: string;
-      workflow?: string;
-      uploaded?: string;
-    };
-  }) {
+  searchParams?: {
+    clara?: string;
+    record?: string;
+    action?: string;
+    case?: string;
+    onboarding?: string;
+    workflow?: string;
+    uploaded?: string;
+  };
+}) {
   let client = null;
 
   try {
@@ -38,15 +137,15 @@ export default async function ClientDetailPage({
   } catch {
     return (
       <WorkspacePage
-        description="Nao foi possivel abrir o detalhe do cliente na base real."
-        eyebrow="Cliente"
+        description="Nao foi possivel abrir o cockpit do cliente na base real."
+        eyebrow="Clientes"
         metrics={[
           { label: "Estado", value: "Indisponivel" },
           { label: "Fonte", value: "Supabase" },
           { label: "Tenant", value: "Nao resolvido" },
           { label: "Acao", value: "Validar vertical" }
         ]}
-        title="Detalhe indisponivel"
+        title="Cockpit indisponivel"
       >
         <WorkspaceStatePanel
           actionHref="/pessoas/clientes"
@@ -63,80 +162,122 @@ export default async function ClientDetailPage({
     notFound();
   }
 
-  const claraRecord = await getClaraRecord(searchParams?.record);
-  const relatedClaraRecords = (await listClaraRecords(80)).filter((record) => {
-    if (record.kind !== "client") {
-      return false;
-    }
-
-    const payload = record.payload as Awaited<ReturnType<typeof getClaraClientArtifact>>;
-    return payload.clientLabel === client.fullName;
-  });
-  const claraArtifact =
-    claraRecord?.kind === "client"
-      ? (claraRecord.payload as Awaited<ReturnType<typeof getClaraClientArtifact>>)
-      : searchParams?.clara
-        ? await getClaraClientArtifact(params.clientId, searchParams.case, false)
-        : null;
-  const claraDisplay = claraArtifact
-    ? getClaraRecordDisplay(claraRecord, "Resumo de relacionamento carregado", claraArtifact.summary)
-    : null;
-  const clientCases = (await getCases()).filter((caseItem) => caseItem.clientId === params.clientId);
-  const activeCase =
-    (searchParams?.case ? clientCases.find((caseItem) => caseItem.id === searchParams.case) : null) ??
-    clientCases[0] ??
-    null;
-  const caseDocuments = activeCase ? await getDocumentsByCaseId(activeCase.id) : [];
+  const [clientCases, claraRecord, claraRecords] = await Promise.all([
+    getCases({ clientId: params.clientId }),
+    getClaraRecord(searchParams?.record),
+    listClaraRecords(80)
+  ]);
+  const activeCase = resolveCanonicalActiveCase(clientCases, client.linkedCases, searchParams?.case);
+  const [caseDocuments, activeCaseTasks] = activeCase
+    ? await Promise.all([
+        getDocumentsByCaseId(activeCase.id),
+        getTasks({ caseId: activeCase.id })
+      ])
+    : [[], []];
   const workflow = activeCase
     ? getBankingCaseWorkflow(activeCase, {
         documentLabels: caseDocuments.map((document) => document.documentType)
       })
     : null;
-  const nextStepLabel = activeCase
-    ? workflow?.nextStep ??
-      (activeCase.niche === "revisional"
-        ? "Anexar contrato e documentos para seguir na analise revisional."
-        : activeCase.niche === "fraude"
-          ? "Consolidar cronologia e documentos para fechar a triagem da fraude."
-          : "Reunir contrato e urgencia para seguir no fluxo de busca e apreensao.")
-    : "Abrir o primeiro caso bancario deste cliente.";
+  const nextTask =
+    activeCaseTasks.find((task) => task.status !== "done") ?? activeCaseTasks[0] ?? null;
+  const relatedClaraRecords = claraRecords.filter((record) => {
+    if (record.kind !== "client") {
+      return false;
+    }
 
+    const payload = record.payload as Awaited<ReturnType<typeof getClaraClientArtifact>>;
+    const recordContext = readClaraRecordContext(record.targetPath);
+    const matchesClient =
+      recordContext.clientId === client.id || payload.recordId === `CLI-${client.id.toUpperCase()}`;
+
+    if (!matchesClient) {
+      return false;
+    }
+
+    if (!activeCase) {
+      return true;
+    }
+
+    return !recordContext.caseId || recordContext.caseId === activeCase.id;
+  });
+  const claraArtifact =
+    claraRecord?.kind === "client"
+      ? (claraRecord.payload as Awaited<ReturnType<typeof getClaraClientArtifact>>)
+      : searchParams?.clara
+        ? await getClaraClientArtifact(params.clientId, activeCase?.id, false)
+        : null;
+  const claraDisplay = claraArtifact
+    ? getClaraRecordDisplay(claraRecord, "Resumo contextual da Clara carregado", claraArtifact.summary)
+    : null;
+
+  const nextStepLabel = activeCase
+    ? nextTask?.lexiaNextStep ?? workflow?.nextStep ?? activeCase.suggestedStrategy
+    : "Abrir o primeiro caso bancario deste cliente pela entrada de Novo atendimento bancario.";
+  const checklistItems = workflow?.requiredDocuments.map((label) => ({
+    label,
+    missing: workflow.missingDocuments.includes(label)
+  })) ?? [];
+  const receivedDocuments = caseDocuments.length;
+  const availableNow = [
+    "Cockpit do caso ativo",
+    "Checklist documental inicial",
+    "Workflow visivel do nicho",
+    "Retorno do onboarding e do upload documental"
+  ];
+  const comingNext = [
+    "Pecas e minutas com revisao humana",
+    "Processo judicial completo apos distribuicao",
+    "Andamentos e Diario Oficial correlacionados ao caso",
+    "Clara executora com historico operacional ampliado"
+  ];
   const metrics = [
     {
-      label: "Score de Viabilidade",
-      value: client.legalViabilityScore.toFixed(1).replace(".", ",")
+      label: "Caso Ativo",
+      value: activeCase ? "Resolvido" : "Pendente"
     },
-    { label: "Casos Vinculados", value: `${client.linkedCases.length}` },
-      { label: "Documentos", value: `${client.documentsSent}` },
-      { label: "Contrato", value: client.signedContract ? "Assinado" : "Pendente" }
-  ];
-
-  function workflowStatusLabel(status: "created" | "reviewed" | "completed") {
-    switch (status) {
-      case "reviewed":
-        return "Revisado";
-      case "completed":
-        return "Concluido";
-      default:
-        return "Criado";
+    {
+      label: "Nicho",
+      value: activeCase ? getBankingNicheLabel(activeCase.niche) : "Nao iniciado"
+    },
+    {
+      label: "Documentos",
+      value: workflow?.completionLabel ?? `${client.documentsSent} enviados`
+    },
+    {
+      label: "Proximo passo",
+      value: nextTask ? "Com tarefa aberta" : "A definir"
     }
-  }
+  ];
 
   return (
     <WorkspacePage
-      description="Visao individual do cliente com contexto comercial, bancario e juridico para triagem, conducao e proxima melhor acao do escritorio."
-      eyebrow="Cliente"
+      description="Cockpit inicial do cliente orientado pelo caso ativo, com contexto juridico, base documental e proximo passo operacional no mesmo lugar."
+      eyebrow="Clientes"
       metrics={metrics}
       title={client.fullName}
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <p className="text-sm text-slate-400">
-          {client.documentId} | {client.bankName} | Origem {client.leadSource}
-        </p>
+        <div>
+          <p className="text-sm text-slate-400">
+            {client.documentId} | {client.bankName} | Origem {client.leadSource}
+          </p>
+          <p className="mt-2 text-sm leading-7 text-slate-300">
+            O cliente agora abre direto no cockpit do caso, sem depender de leitura cadastral solta.
+          </p>
+        </div>
         <div className="flex flex-col gap-3 sm:flex-row">
+          {activeCase ? (
+            <Link
+              className="detail-link-button px-4 py-3 text-sm font-semibold"
+              href={`/documentos/enviar-arquivos?caseId=${activeCase.id}`}
+            >
+              Anexar documentos
+            </Link>
+          ) : null}
           <Link
             className="detail-link-button px-4 py-3 text-sm font-semibold"
-            href={`/clara?tab=proximos-passos&client=${params.clientId}#clara-workbench`}
+            href={`/clara?tab=proximos-passos&client=${params.clientId}${activeCase ? `&case=${activeCase.id}` : ""}#clara-workbench`}
           >
             Continuar na Clara
           </Link>
@@ -151,7 +292,7 @@ export default async function ClientDetailPage({
 
       {claraArtifact ? (
         <WorkspaceStatePanel
-          actionHref={`/clara?tab=proximos-passos&client=${params.clientId}#clara-history`}
+          actionHref={`/clara?tab=proximos-passos&client=${params.clientId}${activeCase ? `&case=${activeCase.id}` : ""}#clara-history`}
           actionLabel="Ver historico completo na Clara"
           description={`${claraDisplay?.title}: ${claraDisplay?.detail}`}
           footer={`Status ${claraArtifact.statusLabel} | Etapa ${claraArtifact.stageLabel} | Registro ${claraArtifact.recordId}`}
@@ -162,9 +303,9 @@ export default async function ClientDetailPage({
 
       {searchParams?.onboarding === "1" && activeCase ? (
         <WorkspaceStatePanel
-          actionHref={`/documentos/enviar-arquivos?caseId=${activeCase.id}`}
-          actionLabel="Anexar documentos complementares"
-          description="O cliente e o caso foram criados pela entrada unica com documentos essenciais, checklist inicial e tarefas minimas. Use esta rota apenas para complementar a base documental do caso."
+          actionHref={`/pessoas/clientes/${params.clientId}?case=${activeCase.id}`}
+          actionLabel="Abrir cockpit do caso"
+          description="O onboarding concluiu cliente, caso, documentos essenciais, checklist inicial e tarefas minimas. Este cockpit passa a ser a superficie padrao para continuar a operacao."
           title="Atendimento bancario iniciado com sucesso"
           tone="warning"
         />
@@ -173,8 +314,8 @@ export default async function ClientDetailPage({
       {searchParams?.uploaded === "1" && activeCase ? (
         <WorkspaceStatePanel
           actionHref={`/pessoas/clientes/${params.clientId}?case=${activeCase.id}`}
-          actionLabel="Continuar no cockpit do caso"
-          description="O documento foi vinculado ao caso ativo. Agora o cockpit mostra a base documental recebida e o que ainda falta para seguir o workflow."
+          actionLabel="Voltar ao cockpit"
+          description="O documento foi vinculado ao caso ativo e o retorno do fluxo documental permanece neste cockpit, com checklist e workflow atualizados."
           title="Documento enviado com sucesso"
           tone="warning"
         />
@@ -182,54 +323,113 @@ export default async function ClientDetailPage({
 
       {activeCase ? (
         <section className="detail-panel-accent p-6">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div>
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-3xl">
               <p className="text-sm font-semibold text-white">Cockpit inicial do caso</p>
-              <p className="mt-2 text-sm leading-7 text-slate-200">
-                O cliente agora concentra o caso ativo, o nicho escolhido e o proximo passo operacional do fluxo.
+              <h2 className="mt-2 text-2xl font-semibold text-white">{activeCase.title}</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-200">
+                Nicho {getBankingNicheLabel(activeCase.niche).toLowerCase()}, fase atual{" "}
+                {workflow?.phaseLabel ?? activeCase.stage.toLowerCase()} e proximo passo operacional
+                centralizados na area do cliente.
               </p>
             </div>
-            <Link
-              className="detail-link-button px-4 py-3 text-sm font-semibold"
-              href={`/documentos/enviar-arquivos?caseId=${activeCase.id}`}
-            >
-              Anexar documentos
-            </Link>
-          </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Caso ativo: <span className="font-semibold text-white">{activeCase.title}</span>
-            </div>
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Nicho: <span className="font-semibold text-white">{getBankingNicheLabel(activeCase.niche)}</span>
-            </div>
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Fase atual: <span className="font-semibold text-white">{workflow?.phaseLabel ?? activeCase.stage}</span>
-            </div>
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Base documental:{" "}
-              <span className="font-semibold text-white">{workflow?.completionLabel ?? `${caseDocuments.length} documento(s)`}</span>
+            <div className="grid gap-3 sm:grid-cols-2 xl:w-[25rem]">
+              <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                Fase atual:{" "}
+                <span className="font-semibold text-white">{workflow?.phaseLabel ?? activeCase.stage}</span>
+              </div>
+              <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                Status do caso: <span className="font-semibold text-white">{activeCase.status}</span>
+              </div>
+              <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                Risco juridico: <span className="font-semibold text-white">{legalRiskLabel(activeCase.legalRisk)}</span>
+              </div>
+              <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                Base documental:{" "}
+                <span className="font-semibold text-white">{workflow?.completionLabel ?? `${receivedDocuments} arquivo(s)`}</span>
+              </div>
             </div>
           </div>
 
-          <div className="detail-subpanel mt-4 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-              Proximo passo sugerido
-            </p>
-            <p className="mt-3 text-sm leading-7 text-slate-200">{nextStepLabel}</p>
+          <div className="mt-5 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+            <div className="detail-subpanel p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Resumo do caso
+              </p>
+              <p className="mt-3 text-sm leading-7 text-slate-200">{activeCase.mainThesis}</p>
+              <p className="mt-3 text-sm leading-7 text-slate-300">{activeCase.suggestedStrategy}</p>
+            </div>
+
+            <div className="detail-subpanel p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Proximo passo recomendado
+              </p>
+              <p className="mt-3 text-sm leading-7 text-slate-200">{nextStepLabel}</p>
+              {nextTask ? (
+                <div className="detail-soft-row mt-4 px-4 py-4 text-sm text-slate-300">
+                  Tarefa aberta: <span className="font-semibold text-white">{nextTask.title}</span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <WorkspaceStatePanel
+          actionHref="/novo-atendimento-bancario"
+          actionLabel="Abrir novo atendimento bancario"
+          description="Ainda nao existe caso ativo para este cliente. O cockpit passa a fazer sentido depois que o onboarding cria cliente, caso, nicho e documentos iniciais."
+          title="Cliente sem caso ativo"
+          tone="warning"
+        />
+      )}
+
+      {clientCases.length > 1 ? (
+        <section className="detail-panel p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-white">Casos deste cliente</p>
+              <p className="mt-2 text-sm leading-7 text-slate-300">
+                O cockpit usa um caso ativo por vez. Troque de contexto sem sair da area do cliente.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 lg:grid-cols-2">
+            {clientCases.map((caseItem) => {
+              const isActive = activeCase?.id === caseItem.id;
+
+              return (
+                <Link
+                  key={caseItem.id}
+                  className={`detail-soft-row block px-4 py-4 text-sm transition ${
+                    isActive ? "border-cyan-300/20 bg-cyan-300/10" : "hover:bg-white/[0.07]"
+                  }`}
+                  href={`/pessoas/clientes/${params.clientId}?case=${caseItem.id}`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-semibold text-white">{caseItem.title}</p>
+                    <span className="text-xs uppercase tracking-[0.16em] text-slate-400">
+                      {isActive ? "Ativo" : caseItem.status}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-slate-300">{getBankingNicheLabel(caseItem.niche)}</p>
+                  <p className="mt-2 text-slate-400">{caseItem.stage}</p>
+                </Link>
+              );
+            })}
           </div>
         </section>
       ) : null}
 
       {activeCase && workflow ? (
-        <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
           <article className="detail-panel p-6">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-semibold text-white">Workflow do nicho</p>
+                <p className="text-sm font-semibold text-white">Workflow do caso</p>
                 <p className="mt-2 text-sm leading-7 text-slate-300">
-                  Primeira trilha visivel do caso {getBankingNicheLabel(activeCase.niche).toLowerCase()} dentro do cockpit do cliente.
+                  O nicho selecionado ja aparece como trilha operacional dentro do cockpit, sem criar uma tela paralela de workflow.
                 </p>
               </div>
               <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-100">
@@ -249,11 +449,20 @@ export default async function ClientDetailPage({
                         : "border-white/10 bg-white/[0.03] text-slate-300"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full border border-current/20 text-xs font-semibold">
-                      {index + 1}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full border border-current/20 text-xs font-semibold">
+                        {index + 1}
+                      </span>
+                      <p className="font-semibold">{step.title}</p>
+                    </div>
+                    <span className="text-[11px] uppercase tracking-[0.16em] opacity-80">
+                      {step.state === "done"
+                        ? "Concluida"
+                        : step.state === "current"
+                          ? "Atual"
+                          : "Pendente"}
                     </span>
-                    <p className="font-semibold">{step.title}</p>
                   </div>
                   <p className="mt-3 leading-6">{step.detail}</p>
                 </div>
@@ -262,41 +471,55 @@ export default async function ClientDetailPage({
           </article>
 
           <article className="detail-panel p-6">
-            <p className="text-sm font-semibold text-white">Base documental do caso</p>
+            <p className="text-sm font-semibold text-white">Checklist documental</p>
             <p className="mt-2 text-sm leading-7 text-slate-300">
-              O cockpit agora mostra o que ja entrou no caso e o que ainda falta para seguir o fluxo sem depender de leitura solta em outras telas.
+              O cockpit mostra o que ja entrou no caso e o que ainda bloqueia a proxima etapa juridica.
             </p>
 
             <div className="detail-subpanel mt-5 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Documentos-base esperados
+                Base documental do caso
               </p>
-              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-200">
-                {workflow.requiredDocuments.map((item) => {
-                  const isMissing = workflow.missingDocuments.includes(item);
-
-                  return (
-                    <li key={item} className="flex items-start gap-3">
-                      <span
-                        className={`mt-1 h-2.5 w-2.5 rounded-full ${
-                          isMissing ? "bg-amber-300" : "bg-emerald-300"
-                        }`}
-                      />
-                      <span>{item}</span>
-                    </li>
-                  );
-                })}
+              <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-200">
+                {checklistItems.map((item) => (
+                  <li key={item.label} className="flex items-start gap-3">
+                    <span
+                      className={`mt-1 h-2.5 w-2.5 rounded-full ${item.missing ? "bg-amber-300" : "bg-emerald-300"}`}
+                    />
+                    <span>{item.label}</span>
+                  </li>
+                ))}
               </ul>
             </div>
 
-            <div className="mt-4 grid gap-3">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                Recebidos no caso: <span className="font-semibold text-white">{caseDocuments.length}</span>
+                Recebidos: <span className="font-semibold text-white">{receivedDocuments}</span>
               </div>
               <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                Pendencias documentais:{" "}
+                Pendentes:{" "}
                 <span className="font-semibold text-white">{workflow.missingDocuments.length}</span>
               </div>
+            </div>
+
+            <div className="detail-subpanel mt-4 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Bloqueios atuais do workflow
+              </p>
+              {workflow.blockers.length ? (
+                <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-200">
+                  {workflow.blockers.map((blocker) => (
+                    <li key={blocker} className="flex items-start gap-3">
+                      <span className="mt-1 h-2.5 w-2.5 rounded-full bg-amber-300" />
+                      <span>{blocker}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm leading-6 text-emerald-100">
+                  Nenhum bloqueio documental imediato. O caso pode seguir para a proxima leitura juridica.
+                </p>
+              )}
             </div>
 
             {caseDocuments.length ? (
@@ -311,16 +534,113 @@ export default async function ClientDetailPage({
               </div>
             ) : (
               <div className="detail-soft-row mt-4 px-4 py-4 text-sm text-slate-400">
-                Nenhum documento vinculado ao caso ativo ainda.
+                Nenhum documento foi vinculado ao caso ativo ainda.
               </div>
             )}
           </article>
         </section>
       ) : null}
 
+      {activeCase && workflow?.readiness.length ? (
+        <section className="detail-panel p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-white">Prontidao juridica inicial</p>
+              <p className="mt-2 text-sm leading-7 text-slate-300">
+                Esta leitura prepara a proxima fase da Clara e deixa explicito quando o caso ja pode abrir leitura contratual, parecer tecnico e minuta sem suposicoes.
+              </p>
+            </div>
+            <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-300">
+              Contrato estrutural para Clara
+            </span>
+          </div>
+
+          <div className="mt-5 grid gap-3 lg:grid-cols-3">
+            {workflow.readiness.map((item) => (
+              <div
+                key={item.id}
+                className={`rounded-[4px] border px-4 py-4 text-sm ${
+                  item.state === "ready"
+                    ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-50"
+                    : "border-amber-300/20 bg-amber-300/10 text-amber-50"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold">{item.label}</p>
+                  <span className="text-[11px] uppercase tracking-[0.16em]">
+                    {item.state === "ready" ? "Apta" : "Bloqueada"}
+                  </span>
+                </div>
+                <p className="mt-3 leading-6">{item.detail}</p>
+                {item.blockers.length ? (
+                  <ul className="mt-3 space-y-2 text-xs leading-5 opacity-90">
+                    {item.blockers.map((blocker) => (
+                      <li key={blocker}>- {blocker}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+        <article className="detail-panel p-6">
+          <p className="text-sm font-semibold text-white">Documentos, workflow e Clara no mesmo contexto</p>
+          <div className="mt-5 grid gap-3">
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Documentos: <span className="font-semibold text-white">Disponivel agora</span>
+              <p className="mt-2 text-slate-400">
+                Upload e checklist retornam ao cockpit do cliente e atualizam o caso ativo.
+              </p>
+            </div>
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Workflow: <span className="font-semibold text-white">Disponivel agora</span>
+              <p className="mt-2 text-slate-400">
+                Fase atual e proximo passo ficam visiveis no proprio cliente.
+              </p>
+            </div>
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Clara contextual: <span className="font-semibold text-white">Preparada nesta fase</span>
+              <p className="mt-2 text-slate-400">
+                A Clara ja recebe contexto do cliente/caso e o historico fica acessivel sem prometer automacao ainda nao entregue.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <article className="detail-panel p-6">
+          <p className="text-sm font-semibold text-white">Fases seguintes do cockpit</p>
+          <p className="mt-2 text-sm leading-7 text-slate-300">
+            Estas areas ficam explicitas desde agora, mas sem criar a impressao de que ja estao completas.
+          </p>
+          <div className="mt-5 grid gap-3">
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Pecas
+              <p className="mt-2 text-slate-400">
+                Entram quando o pipeline juridico de minutas e revisao humana for instalado.
+              </p>
+            </div>
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Processo
+              <p className="mt-2 text-slate-400">
+                Ganha detalhamento completo depois da distribuicao e do vinculo processual real.
+              </p>
+            </div>
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Andamentos e Diario Oficial
+              <p className="mt-2 text-slate-400">
+                Passam a aparecer aqui quando houver correlacao processual automatizada por caso.
+              </p>
+            </div>
+          </div>
+        </article>
+      </section>
+
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <article className="detail-panel p-6">
-          <p className="text-sm font-semibold text-white">Visao geral</p>
+          <p className="text-sm font-semibold text-white">Contexto operacional do cliente</p>
           <dl className="mt-5 space-y-4 text-sm">
             <div>
               <dt className="text-slate-500">Contato</dt>
@@ -337,8 +657,8 @@ export default async function ClientDetailPage({
               <dd className="mt-1 text-slate-200">{client.address}</dd>
             </div>
             <div>
-              <dt className="text-slate-500">Honorarios</dt>
-              <dd className="mt-1 text-slate-200">{client.feesLabel}</dd>
+              <dt className="text-slate-500">Status do atendimento</dt>
+              <dd className="mt-1 text-slate-200">{serviceStatusLabel(client.serviceStatus)}</dd>
             </div>
             <div>
               <dt className="text-slate-500">Notas internas</dt>
@@ -348,24 +668,33 @@ export default async function ClientDetailPage({
         </article>
 
         <article className="detail-panel-accent p-6">
-          <p className="text-sm font-semibold text-white">Contexto da Clara</p>
+          <p className="text-sm font-semibold text-white">Clara contextual</p>
           <div className="detail-subpanel mt-5 p-5">
             <p className="text-sm leading-7 text-slate-200">{client.iaContext}</p>
           </div>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Banco envolvido: <span className="font-semibold text-white">{client.bankName}</span>
+              Registros da Clara: <span className="font-semibold text-white">{relatedClaraRecords.length}</span>
             </div>
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Status do atendimento:{" "}
-              <span className="font-semibold text-white">{client.serviceStatus}</span>
+              Insights do caso: <span className="font-semibold text-white">{activeCase?.lexiaInsights.length ?? 0}</span>
             </div>
           </div>
+
+          {activeCase?.lexiaInsights.length ? (
+            <div className="mt-4 grid gap-3">
+              {activeCase.lexiaInsights.slice(0, 3).map((insight) => (
+                <div key={insight} className="detail-soft-row px-4 py-4 text-sm leading-6 text-slate-200">
+                  {insight}
+                </div>
+              ))}
+            </div>
+          ) : null}
         </article>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
-        <article className="detail-panel p-6 lg:col-span-3">
+        <article className="detail-panel p-6 lg:col-span-2">
           <p className="text-sm font-semibold text-white">Historico da Clara neste cliente</p>
           <div className="mt-5 grid gap-3">
             {relatedClaraRecords.length ? (
@@ -380,7 +709,7 @@ export default async function ClientDetailPage({
                   <Link
                     key={record.id}
                     className="detail-soft-row block px-4 py-4 text-sm text-slate-300"
-                    href={`/pessoas/clientes/${params.clientId}?record=${record.id}`}
+                    href={`/pessoas/clientes/${params.clientId}?record=${record.id}${activeCase ? `&case=${activeCase.id}` : ""}`}
                   >
                     <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
                       <span className="rounded-full border border-white/10 px-2 py-1 text-slate-300">
@@ -401,25 +730,21 @@ export default async function ClientDetailPage({
           </div>
         </article>
 
-        <article className="detail-panel p-6 lg:col-span-2">
-          <p className="text-sm font-semibold text-white">Casos vinculados</p>
-          <div className="mt-5 grid gap-3">
-            {client.linkedCases.map((caseItem) => (
-              <div key={caseItem.id} className="detail-soft-row px-4 py-4 text-sm">
-                <p className="font-semibold text-white">{caseItem.title}</p>
-                <p className="mt-1 text-slate-400">{caseItem.status}</p>
-                <p className="mt-2 text-slate-300">{caseItem.thesis}</p>
-              </div>
-            ))}
-          </div>
-        </article>
-
         <article className="detail-panel p-6">
-          <p className="text-sm font-semibold text-white">Documentos vinculados</p>
+          <p className="text-sm font-semibold text-white">Disponivel agora</p>
           <ul className="mt-5 space-y-3">
-            {client.linkedDocuments.map((document) => (
-              <li key={document} className="detail-soft-row px-4 py-3 text-sm text-slate-300">
-                {document}
+            {availableNow.map((item) => (
+              <li key={item} className="detail-soft-row px-4 py-3 text-sm text-slate-300">
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <p className="mt-6 text-sm font-semibold text-white">Depende de proximas fases</p>
+          <ul className="mt-4 space-y-3">
+            {comingNext.map((item) => (
+              <li key={item} className="detail-soft-row px-4 py-3 text-sm text-slate-300">
+                {item}
               </li>
             ))}
           </ul>
@@ -444,20 +769,20 @@ export default async function ClientDetailPage({
       </section>
 
       <ClaraContextActions
-        actionHref={`/clara?tab=proximos-passos&client=${params.clientId}#clara-workbench`}
+        actionHref={`/clara?tab=proximos-passos&client=${params.clientId}${activeCase ? `&case=${activeCase.id}` : ""}#clara-workbench`}
         basis={[
-          client.serviceStatus,
+          serviceStatusLabel(client.serviceStatus),
           client.bankName,
-          `${client.documentsSent} documentos`,
-          `${client.linkedCases.length} caso(s) vinculado(s)`
+          workflow?.completionLabel ?? `${client.documentsSent} documentos`,
+          activeCase ? getBankingNicheLabel(activeCase.niche) : "Sem caso ativo"
         ]}
-        cautionLabel="A triagem e as orientacoes da Clara devem ser confirmadas pelo advogado responsavel."
-        conclusion="O melhor uso da IA neste cliente e fechar pendencias documentais, reforcar a leitura de viabilidade e transformar isso em proxima acao objetiva do escritorio."
+        cautionLabel="As orientacoes da Clara seguem dependentes de revisao humana e nao substituem validacao juridica."
+        conclusion="O melhor uso da Clara neste ponto e fechar pendencias do caso ativo, reforcar a leitura do nicho e transformar isso em proxima acao objetiva do escritorio."
         eyebrow="Fluxo Clara"
         nextActions={[
-          "Listar documentos faltantes",
-          "Montar atualizacao ao cliente",
-          "Gerar checklist de onboarding juridico"
+          "Listar documentos faltantes do caso ativo",
+          "Consolidar o proximo passo do workflow",
+          "Preparar contexto para a fase juridica seguinte"
         ]}
         title="Continuar este cliente dentro da Clara"
       />

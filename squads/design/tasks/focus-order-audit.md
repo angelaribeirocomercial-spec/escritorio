@@ -1,22 +1,10 @@
-﻿---
-task: focus-order-audit
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Task: focus-order-audit
 
 > **Command:** `*focus-order {path}`
 > **Agent:** Brad Frost (Design System Architect)
 > **Purpose:** Validate keyboard navigation, tab order, and focus management
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `accessibility`
 
 ---
 
@@ -242,7 +230,7 @@ interface ModalFocusAudit {
 
 ## Critical Issues
 
-### 1. âŒ Click-only interactive element
+### 1. ❌ Click-only interactive element
 
 **File:** `app/components/ui/Card.tsx:45`
 **Element:** `<div onClick={handleClick}>`
@@ -279,7 +267,7 @@ interface ModalFocusAudit {
 
 ---
 
-### 2. âŒ Focus indicator removed without replacement
+### 2. ❌ Focus indicator removed without replacement
 
 **File:** `app/components/ui/Button.tsx:23`
 **Element:** `button`
@@ -302,7 +290,7 @@ button:focus-visible {
 
 ---
 
-### 3. âŒ Positive tabIndex (anti-pattern)
+### 3. ❌ Positive tabIndex (anti-pattern)
 
 **File:** `app/components/forms/SearchInput.tsx:12`
 **Element:** `<input tabIndex={1}>`
@@ -312,7 +300,7 @@ button:focus-visible {
 
 ---
 
-### 4. âŒ Modal without focus trap
+### 4. ❌ Modal without focus trap
 
 **File:** `app/components/modals/ConfirmDialog.tsx:8`
 **Element:** `Dialog`
@@ -331,27 +319,27 @@ button:focus-visible {
 ## Tab Order Map
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚ 1. [Skip to content]                 â”‚
-â”‚ 2. [Logo] â†’ 3. [Nav: Home]           â”‚
-â”‚ 4. [Nav: Products] â†’ 5. [Nav: About] â”‚
-â”‚ 6. [Search input]                    â”‚
-â”‚ 7. [Main content starts]             â”‚
-â”‚ ...                                  â”‚
-â”‚ âš ï¸ 15. [Card div] - NOT FOCUSABLE   â”‚
-â”‚ 16. [Footer link 1]                  â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌──────────────────────────────────────┐
+│ 1. [Skip to content]                 │
+│ 2. [Logo] → 3. [Nav: Home]           │
+│ 4. [Nav: Products] → 5. [Nav: About] │
+│ 6. [Search input]                    │
+│ 7. [Main content starts]             │
+│ ...                                  │
+│ ⚠️ 15. [Card div] - NOT FOCUSABLE   │
+│ 16. [Footer link 1]                  │
+└──────────────────────────────────────┘
 ```
 
 ## Focus Indicator Inventory
 
 | Component | Focus Style | Contrast | Status |
 |-----------|-------------|----------|--------|
-| Button | ring-2 ring-primary | 4.2:1 | âœ… Pass |
-| Input | ring-2 ring-blue-500 | 3.8:1 | âœ… Pass |
-| Link | underline + color | 3.1:1 | âœ… Pass |
-| Card | outline: none | N/A | âŒ Fail |
-| Tab | border-bottom | 2.1:1 | âš ï¸ Low |
+| Button | ring-2 ring-primary | 4.2:1 | ✅ Pass |
+| Input | ring-2 ring-blue-500 | 3.8:1 | ✅ Pass |
+| Link | underline + color | 3.1:1 | ✅ Pass |
+| Card | outline: none | N/A | ❌ Fail |
+| Tab | border-bottom | 2.1:1 | ⚠️ Low |
 
 ## Recommendations
 
@@ -405,6 +393,13 @@ button:focus-visible {
 
 ---
 
+## Failure Handling
+
+- **No interactive elements discovered:** Verify scan includes all file types (.tsx, .jsx, .vue, .html). If truly zero, report "No interactive elements found"
+- **Focus indicator detection misses Tailwind ring-* classes:** Expand scan patterns to include ring-*, outline-*, focus:*, focus-visible:* Tailwind utilities
+- **Tab order mapping fails for dynamic content:** Document dynamic sections as "tab order varies at runtime — requires manual testing" in report
+- **Auto-fix introduces breaking changes:** Generate fix suggestions as code comments instead of applying directly. Always preserve original code
+
 ## State Update
 
 ```yaml
@@ -431,5 +426,25 @@ focus_order_audit:
 
 ---
 
+## Success Criteria
+
+- [ ] All interactive elements discovered (native + custom with click/key handlers)
+- [ ] Tab order validated as logical and follows visual layout
+- [ ] Focus indicators verified visible with sufficient contrast (3:1 minimum)
+- [ ] Zero keyboard traps detected (or all documented with workarounds)
+- [ ] Custom interactive elements have keyboard equivalents for mouse events
+- [ ] Modal/dialog focus management validated (trap + restore)
+- [ ] Report generated with file:line references for every finding
+
+---
+
 **Brad says:** "If you can't Tab to it, keyboard users can't use it. Zero click-only elements."
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-accessibility-wcag-checklist.md`
+- `squads/design/checklists/ds-a11y-release-gate-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

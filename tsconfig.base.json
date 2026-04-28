@@ -17,7 +17,6 @@
     "paths": {
       "@/*": ["apps/web/src/*"],
       "@lexia/domain": ["packages/domain/src/index.ts"],
-      "@lexia/mocks": ["packages/mocks/src/index.ts"],
       "@lexia/config": ["packages/config/src/index.ts"],
       "@lexia/ui": ["packages/ui/src/index.ts"]
     }

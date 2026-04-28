@@ -1,26 +1,27 @@
-﻿---
-task: ds-generate-migration-strategy
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Generate Phased Migration Strategy
 
 > Task ID: brad-generate-migration-strategy
 > Agent: Brad (Design System Architect)
-> Version: 1.0.0
+> Version: 1.1.0
+> v4.0-compatible: true
+> **Execution Type:** `Hybrid`
+> **Human Checkpoint:** Review and approve the 4-phase migration plan and rollback procedures before proceeding to ROI calculation
+> **Dependencies:** depends_on: `[ds-extract-tokens]` · enables: `[ds-calculate-roi]` · workflow: `brownfield-audit`
+> **On Fail:** If tokens.yaml missing → re-run `*tokenize`. If migration plan has unresolved component mappings → review token coverage and add missing tokens manually. If human reviewer rejects plan → revise phases based on feedback and re-submit for approval. Do NOT proceed to ROI with unapproved migration plan.
 
 ## Description
 
 Create realistic 4-phase migration plan to gradually adopt design system without blocking sprints. Prioritizes high-impact patterns first, includes rollback procedures, tracks progress.
+
+## Input Schema
+- **requires:** Output from `ds-extract-tokens`
+- **format:** YAML data (tokens.yaml with all design tokens)
+- **location:** `outputs/design-system/{project}/tokens/tokens.yaml`
+
+## Output Schema
+- **produces:** `outputs/design-system/{project}/migration/migration-strategy.md`
+- **format:** Markdown report
+- **consumed_by:** ds-calculate-roi
 
 ## Prerequisites
 
@@ -57,21 +58,21 @@ This task uses interactive elicitation to customize migration strategy.
    - Read .state.yaml for consolidation metrics
    - Load token locations
    - Identify pattern counts and reduction percentages
-   - Validation: Tokenization phase completed
+   - Check: .state.yaml contains `phase: "tokenize_complete"` AND token file paths resolve — abort with "Tokenization not completed: run *tokenize first"
 
 2. **Analyze Pattern Impact**
    - Calculate usage frequency for each pattern type
    - Identify highest-impact patterns (most instances)
    - Estimate migration effort per pattern
    - Prioritize by impact/effort ratio
-   - Validation: Priority list created
+   - Check: priority list count > 0 AND each entry has usage frequency + effort estimate — log "{N} patterns prioritized by impact/effort ratio"
 
 3. **Design Phase 1: Foundation**
    - Goal: Deploy token system with zero visual changes
    - Tasks: Add token files, configure build, update CSS to use tokens
    - Risk: Low (no component changes)
    - Duration: 1 sprint
-   - Validation: Phase plan defined
+   - Check: phase-1 has goal, task list, risk level, and duration — abort with "Phase 1 incomplete: missing {field}"
 
 4. **Design Phase 2: High-Impact Patterns**
    - Goal: Replace most-used components for immediate ROI
@@ -80,7 +81,7 @@ This task uses interactive elicitation to customize migration strategy.
    - Estimate effort and ROI
    - Risk: Medium
    - Duration: 2-3 sprints
-   - Validation: High-impact patterns identified
+   - Check: top 3 patterns selected with instance counts and effort estimates — log "Phase 2 targets: {pattern1} ({N1} instances), {pattern2} ({N2}), {pattern3} ({N3})"
 
 5. **Design Phase 3: Long-Tail Cleanup**
    - Goal: Consolidate remaining patterns
@@ -89,7 +90,7 @@ This task uses interactive elicitation to customize migration strategy.
    - Estimate effort
    - Risk: Low (proven system exists)
    - Duration: 2-4 sprints
-   - Validation: Cleanup plan created
+   - Check: remaining components listed with complexity groupings and effort estimates — log "{N} remaining patterns grouped into {G} complexity tiers"
 
 6. **Design Phase 4: Enforcement**
    - Goal: Prevent regression
@@ -98,39 +99,39 @@ This task uses interactive elicitation to customize migration strategy.
    - Monitor adoption metrics
    - Risk: Low
    - Duration: 1 sprint
-   - Validation: Enforcement strategy defined
+   - Check: enforcement plan includes CI/CD validation step, deprecation list, and monitoring metrics — abort with "Enforcement phase incomplete: missing {field}"
 
 7. **Create Component Mapping**
-   - Generate old component â†’ new component mapping
+   - Generate old component → new component mapping
    - Document prop changes
    - Create migration snippets (find/replace patterns)
-   - Validation: Complete mapping for all components
+   - Check: mapping entries count == total component count AND each has old-to-new + prop changes — abort with "Incomplete mapping: {N} components missing"
 
 8. **Define Rollback Procedures**
    - Document rollback steps for each phase
    - Identify rollback trigger conditions
    - Ensure backups exist
-   - Validation: Rollback plan documented
+   - Check: each phase has rollback steps, trigger conditions, and backup references — abort with "Rollback plan incomplete for phase {N}"
 
 9. **Generate Migration Documentation**
    - Create migration-strategy.md (executive summary)
    - Create phase-specific guides (phase-1.md, phase-2.md, etc)
    - Generate component mapping file
    - Include code examples
-   - Validation: Complete migration docs created
+   - Check: `test -f migration-strategy.md` AND phase guide files exist for all 4 phases AND file sizes > 0 — abort with "Migration docs generation failed: missing {file}"
 
 10. **Calculate ROI Timeline**
     - Estimate when ROI breakeven occurs
     - Project cumulative savings by phase
     - Show investment vs savings curve
-    - Validation: ROI projection created
+    - Check: ROI projection includes breakeven month and cumulative savings per phase — abort with "ROI projection generation failed"
 
 11. **Update State File**
     - Add migration section to .state.yaml
     - Record phase count, timeline, priorities
     - Update phase to "migration_strategy_complete"
     - Set ready_for_atlas flag
-    - Validation: State updated for Atlas handoff
+    - Check: .state.yaml contains `phase: "migration_strategy_complete"` AND `ready_for_atlas: true` — abort with "State update failed: {missing field}"
 
 ## Output
 
@@ -139,7 +140,7 @@ This task uses interactive elicitation to customize migration strategy.
 - **phase-2-high-impact.md**: Detailed Phase 2 tasks
 - **phase-3-long-tail.md**: Detailed Phase 3 tasks
 - **phase-4-enforcement.md**: Detailed Phase 4 tasks
-- **component-mapping.json**: Old â†’ new component map
+- **component-mapping.json**: Old → new component map
 - **migration-progress.yaml**: Progress tracking template
 - **.state.yaml**: Updated with migration plan
 
@@ -174,9 +175,9 @@ This task uses interactive elicitation to customize migration strategy.
 **Goal**: Replace most-used components for immediate ROI
 
 **Priorities**:
-1. Button (327 instances â†’ 3 variants) - 93% reduction
-2. Input (189 instances â†’ 5 variants) - 87% reduction
-3. Card (145 instances â†’ 2 variants) - 85% reduction
+1. Button (327 instances → 3 variants) - 93% reduction
+2. Input (189 instances → 5 variants) - 87% reduction
+3. Card (145 instances → 2 variants) - 85% reduction
 
 **Success Criteria**: Top 3 patterns migrated, measurable velocity improvement
 
@@ -187,9 +188,9 @@ This task uses interactive elicitation to customize migration strategy.
 **Goal**: Consolidate remaining patterns
 
 **Tasks**:
-- [ ] Forms (23 variations â†’ 5)
-- [ ] Modals (12 variations â†’ 2)
-- [ ] Navigation (8 variations â†’ 3)
+- [ ] Forms (23 variations → 5)
+- [ ] Modals (12 variations → 2)
+- [ ] Navigation (8 variations → 3)
 
 **Success Criteria**: >85% overall pattern consolidation achieved
 
@@ -206,6 +207,13 @@ This task uses interactive elicitation to customize migration strategy.
 **Success Criteria**: System enforced, adoption sustained
 ```
 
+## Failure Handling
+
+- **No token data available:** BLOCK — re-run *tokenize first. Migration without tokens produces unusable strategy
+- **Risk assessment HIGH for >50% of components:** Recommend phased migration starting with lowest-risk components. Add Phase 0 (pilot)
+- **Estimated migration >6 months:** Split into quarterly milestones with independent go/no-go gates per milestone
+- **Conflicting frameworks detected:** Document each framework's migration path separately before creating unified strategy
+
 ## Success Criteria
 
 - [ ] 4 distinct phases defined with clear goals
@@ -215,6 +223,19 @@ This task uses interactive elicitation to customize migration strategy.
 - [ ] Timeline is realistic for team size/velocity
 - [ ] Component mapping covers all patterns
 - [ ] ROI breakeven projected accurately
+
+## Quality Gate
+
+> **GATE: Migration Strategy Review** — Human approval required before any migration begins
+
+| Metric | Threshold | Action if FAIL |
+|--------|-----------|----------------|
+| Token data available | All tokens generated | BLOCK — return to *tokenize. Never plan migration without tokens |
+| Risk assessment | No CRITICAL risks unmitigated | Add mitigation plan for each CRITICAL risk before proceeding |
+| Estimated duration | Approved by stakeholder | If > 6 months, split into quarterly milestones with independent go/no-go |
+| Rollback plan | Defined for each phase | Add rollback steps — migration without rollback is not production-ready |
+
+**Rework rule:** If > 50% of components are HIGH risk, add Phase 0 (pilot) with 2-3 lowest-risk components to validate approach before full migration.
 
 ## Error Handling
 
@@ -240,14 +261,14 @@ This task uses interactive elicitation to customize migration strategy.
 
 Output:
 ```
-ðŸ” Brad: Generating phased migration strategy...
+🔍 Brad: Generating phased migration strategy...
 
-ðŸ“Š Pattern Analysis:
+📊 Pattern Analysis:
   - Buttons: 327 instances (highest priority)
   - Inputs: 189 instances
   - Colors: 1247 usages
 
-ðŸ—“ï¸ MIGRATION PLAN (4 phases, 6-8 sprints):
+🗓️ MIGRATION PLAN (4 phases, 6-8 sprints):
 
 Phase 1: Foundation (1 sprint)
   Deploy tokens, no visual changes
@@ -266,13 +287,13 @@ Phase 4: Enforcement (1 sprint)
   CI/CD validation, prevent regression
   Risk: LOW
 
-ðŸ’° ROI Projection:
+💰 ROI Projection:
   Investment: ~$12,000
   Breakeven: Week 6 (Phase 2 complete)
   Year 1 Savings: $374,400
 
-âœ… Migration docs saved: outputs/design-system/my-app/migration/
-âœ… Ready for Atlas to build components
+✅ Migration docs saved: outputs/design-system/my-app/migration/
+✅ Ready for Merovingian to build components
 ```
 
 ### Example 2: Component Mapping
@@ -298,10 +319,13 @@ Phase 4: Enforcement (1 sprint)
 ## Notes
 
 - Phase 1 must complete before Phase 2 (foundation required)
-- High-impact patterns = most instances Ã— easiest to migrate
+- High-impact patterns = most instances × easiest to migrate
 - Rollback gets harder as system grows - do it early if needed
 - CI/CD enforcement prevents regression (Phase 4 critical)
 - Timeline assumes team works on migration alongside features
 - Brad says: "Phased rollout = safe rollout. No big-bang rewrites."
-- After this, hand off to Atlas: *agent atlas for component building
+- After this, hand off to Merovingian: *agent atlas for component building
+## Related Checklists
+
+- `squads/design/checklists/ds-migration-readiness-checklist.md`
 

@@ -1,21 +1,9 @@
-﻿---
-task: audit-reading-experience
-responsavel: @design-chief
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Task: Audit Reading Experience
 
 > Command: `*reading-audit [path]`
 > Purpose: Audit reading components against high-retention best practices
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `standalone`
 
 ## Overview
 
@@ -54,9 +42,9 @@ cat /tmp/font-sizes.txt | grep -E "1[0-5]px|[0-9]px"
 ```
 
 **Expected:**
-- Body text: â‰¥16px (ideal 18-21px)
-- Captions: â‰¥11px
-- Labels: â‰¥13px
+- Body text: ≥16px (ideal 18-21px)
+- Captions: ≥11px
+- Labels: ≥13px
 
 **Line Height Check:**
 ```bash
@@ -69,7 +57,7 @@ cat /tmp/line-heights.txt | grep -E "1\.[0-4]|: 1[^.]"
 ```
 
 **Expected:**
-- Body text: â‰¥1.5 (ideal 1.6)
+- Body text: ≥1.5 (ideal 1.6)
 - Headings: 1.25-1.375
 
 **Line Length Check:**
@@ -121,8 +109,8 @@ grep -rn --include="*.tsx" \
 ```
 
 **Expected:**
-- â‰¥2 themes available (light/dark minimum)
-- SÃ©pia ideal for long reading
+- ≥2 themes available (light/dark minimum)
+- Sépia ideal for long reading
 
 **Reduced Motion:**
 ```bash
@@ -217,34 +205,34 @@ Path: {path}
 ### Font Sizes
 | Location | Current | Expected | Status |
 |----------|---------|----------|--------|
-| Body text | 14px | â‰¥16px | âŒ |
-| Captions | 11px | â‰¥11px | âœ… |
+| Body text | 14px | ≥16px | ❌ |
+| Captions | 11px | ≥11px | ✅ |
 
 ### Line Heights
 | Location | Current | Expected | Status |
 |----------|---------|----------|--------|
-| Body text | 1.4 | â‰¥1.5 | âŒ |
-| Headings | 1.25 | 1.25-1.375 | âœ… |
+| Body text | 1.4 | ≥1.5 | ❌ |
+| Headings | 1.25 | 1.25-1.375 | ✅ |
 
 ### Line Length
 | Container | Current | Expected | Status |
 |-----------|---------|----------|--------|
-| Article | 100% | 65ch | âŒ |
+| Article | 100% | 65ch | ❌ |
 
 ## Color & Contrast ({score}/25)
 
 ### Theme Support
 | Theme | Available | Status |
 |-------|-----------|--------|
-| Light | âœ… | âœ… |
-| Dark | âŒ | âŒ Missing |
-| SÃ©pia | âŒ | âš ï¸ Recommended |
+| Light | ✅ | ✅ |
+| Dark | ❌ | ❌ Missing |
+| Sépia | ❌ | ⚠️ Recommended |
 
 ### Contrast Issues
 | Element | Foreground | Background | Ratio | Required | Status |
 |---------|------------|------------|-------|----------|--------|
-| Body text | #757575 | #FFFFFF | 4.6:1 | 4.5:1 | âœ… |
-| Muted text | #9E9E9E | #FFFFFF | 2.8:1 | 4.5:1 | âŒ |
+| Body text | #757575 | #FFFFFF | 4.6:1 | 4.5:1 | ✅ |
+| Muted text | #9E9E9E | #FFFFFF | 2.8:1 | 4.5:1 | ❌ |
 
 ### Pure White/Black Usage
 | File | Line | Issue | Fix |
@@ -257,27 +245,27 @@ Path: {path}
 ### Features
 | Feature | Implemented | Status |
 |---------|-------------|--------|
-| Reduced motion | âŒ | âŒ Add |
-| Skip links | âŒ | âŒ Add |
-| Keyboard nav | âœ… | âœ… |
-| Focus visible | âœ… | âœ… |
-| Zoom 200% | âŒ | âŒ Test |
+| Reduced motion | ❌ | ❌ Add |
+| Skip links | ❌ | ❌ Add |
+| Keyboard nav | ✅ | ✅ |
+| Focus visible | ✅ | ✅ |
+| Zoom 200% | ❌ | ❌ Test |
 
 ### Link Distinguishability
 | Location | Method | Status |
 |----------|--------|--------|
-| Article body | Color only | âŒ Add underline |
-| Navigation | Color + weight | âœ… |
+| Article body | Color only | ❌ Add underline |
+| Navigation | Color + weight | ✅ |
 
 ## Reading UX ({score}/20)
 
 ### Features
 | Feature | Implemented | Impact |
 |---------|-------------|--------|
-| Progress bar | âŒ | +15-25% completion |
-| Reading time | âŒ | +10% starts |
-| Save position | âŒ | +retention |
-| Highlights | âŒ | +20% return |
+| Progress bar | ❌ | +15-25% completion |
+| Reading time | ❌ | +10% starts |
+| Save position | ❌ | +retention |
+| Highlights | ❌ | +20% return |
 
 ## Recommendations
 
@@ -292,7 +280,7 @@ Path: {path}
 6. Replace pure white/black in dark mode
 
 ### Medium Priority
-7. Add sÃ©pia theme option
+7. Add sépia theme option
 8. Implement position saving
 9. Add reduced motion support
 
@@ -307,15 +295,15 @@ Path: {path}
 | Font size | 14px | 21px | 18px | 18px |
 | Line height | 1.4 | 1.58 | 1.5 | 1.6 |
 | Max width | 100% | 680px | 600px | 65ch |
-| Progress bar | âŒ | âœ… | âŒ | âœ… |
-| Dark mode | âŒ | âœ… | âœ… | âœ… |
+| Progress bar | ❌ | ✅ | ❌ | ✅ |
+| Dark mode | ❌ | ✅ | ✅ | ✅ |
 
 ## Estimated Impact
 
 | Change | Expected Impact |
 |--------|-----------------|
-| Font 14â†’18px | +5-10% reading speed |
-| Line height 1.4â†’1.6 | +10% completion |
+| Font 14→18px | +5-10% reading speed |
+| Line height 1.4→1.6 | +10% completion |
 | Progress bar | +15-25% completion |
 | Dark mode proper | Avoid -14% comprehension |
 | Shorter paragraphs | +30% engagement |
@@ -325,10 +313,17 @@ Path: {path}
 
 ```
 outputs/design-system/{project}/
-â”œâ”€â”€ reading-audit-{date}.md
-â”œâ”€â”€ reading-metrics.json
-â””â”€â”€ reading-recommendations.md
+├── reading-audit-{date}.md
+├── reading-metrics.json
+└── reading-recommendations.md
 ```
+
+## Failure Handling
+
+- **Reading components not identifiable:** Expand search patterns to include generic container names (ContentArea, TextBlock, Article), manually inspect top-level page components, request user to specify reading-focused routes
+- **Typography values computed dynamically:** Extract CSS variables and Tailwind config, trace token references, run browser DevTools inspection to capture computed values, document dynamic calculation logic
+- **Contrast ratios fail across all themes:** Generate color palette overhaul proposal with WCAG-compliant alternatives maintaining brand proximity, calculate perceptual difference (ΔE), prioritize high-traffic components for immediate fixes
+- **Progress/reading-time features missing across entire codebase:** Provide implementation templates (React hooks, vanilla JS), estimate implementation effort per component type, include analytics integration for measuring completion rate impact
 
 ## Success Criteria
 
@@ -346,3 +341,10 @@ outputs/design-system/{project}/
 - `*contrast-check` - Detailed contrast analysis
 - `*reading-tokens` - Generate reading-specific tokens
 
+
+## Related Checklists
+
+- `squads/design/checklists/reading-accessibility-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

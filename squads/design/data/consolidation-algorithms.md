@@ -136,7 +136,33 @@ Output: xs=4, sm=8, md=16, lg=24, xl=32, 2xl=48, 3xl=64
 
 ---
 
+---
+
+## Critical Eye Integration
+
+**Post-consolidation curation via Critical Eye:**
+
+After consolidation reduces pattern variants (e.g., 47 buttons → 3 variants), the Critical Eye workflow evaluates which consolidated variant becomes the **canonical** choice across multiple brands/sources.
+
+**Flow:**
+```
+Consolidation (reduce redundancy) → Critical Eye (select canonical)
+```
+
+**Key difference:**
+- **Consolidation** = within a single source, reduce duplicates
+- **Critical Eye** = across all sources, select the best variant per category
+
+**Scoring reference:** `squads/design/data/critical-eye-scoring-rules.yaml`
+**Pattern catalog:** `workspace/ui/pattern-catalog.json`
+**Lifecycle:** CANDIDATE → EXPERIMENTAL → STABLE → CANONICAL
+
+---
+
 ## References
 
 - HSL color space: https://en.wikipedia.org/wiki/HSL_and_HSV
 - Brad Frost patterns: https://bradfrost.com/blog/
+- Nathan Curtis / EightShapes Usage Breadth Scale
+- GOV.UK Design System Contribution Criteria
+- USWDS Component Lifecycle

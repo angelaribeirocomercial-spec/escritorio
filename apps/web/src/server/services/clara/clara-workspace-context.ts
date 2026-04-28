@@ -11,6 +11,7 @@ type WorkspaceContextParams = {
   caseId?: string;
   processId?: string;
   documentId?: string;
+  strict?: boolean;
 };
 
 export type ClaraWorkspaceClient = Awaited<ReturnType<typeof getClients>>[number];
@@ -45,6 +46,13 @@ export async function resolveClaraWorkspaceContext(
     requestedProcess ? allCases.find((item) => item.id === requestedProcess.caseId) ?? null : null;
   const documentCase =
     requestedDocument ? allCases.find((item) => item.id === requestedDocument.caseId) ?? null : null;
+  const requestedClient =
+    params?.clientId ? await getClientById(params.clientId) : null;
+
+  if (params?.strict && (!params.clientId || !requestedClient)) {
+    throw new Error("Clara exige clientId valido para montar contexto contextual minimo.");
+  }
+
   const bankingCase =
     requestedCase ??
     processCase ??
@@ -53,6 +61,14 @@ export async function resolveClaraWorkspaceContext(
 
   if (!bankingCase) {
     throw new Error("No case is available to build Clara workspace context.");
+  }
+
+  if (params?.strict && (!params.caseId || bankingCase.id !== params.caseId)) {
+    throw new Error("Clara exige caseId valido e coerente com o contexto selecionado.");
+  }
+
+  if (params?.strict && requestedClient && requestedClient.id !== bankingCase.clientId) {
+    throw new Error("Clara exige clientId e caseId do mesmo contexto real do escritorio.");
   }
 
   const caseDocuments = allDocuments.filter((document) => document.caseId === bankingCase.id);
@@ -64,12 +80,8 @@ export async function resolveClaraWorkspaceContext(
     throw new Error(`No documents linked to case ${bankingCase.id} are available to build Clara workspace context.`);
   }
 
-  const requestedClient =
-    params?.clientId && params.clientId === bankingCase.clientId
-      ? await getClientById(params.clientId)
-      : null;
   const client =
-    requestedClient ??
+    (requestedClient?.id === bankingCase.clientId ? requestedClient : null) ??
     selectedDocument.client ??
     requestedProcess?.client ??
     allClients.find((item) => item.id === bankingCase.clientId) ??

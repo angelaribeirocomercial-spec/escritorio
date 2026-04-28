@@ -7,7 +7,10 @@ import { BANKING_NICHES, BankingNiche, getBankingNicheLabel } from "@lexia/domai
 
 import { requireWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { buildPersistedBankingCaseLifecycle } from "@/server/services/cases/get-banking-case-workflow";
+import {
+  buildBankingCaseOperationalTaskState,
+  buildPersistedBankingCaseLifecycle
+} from "@/server/services/cases/get-banking-case-workflow";
 import {
   TENANT_DOCUMENT_BUCKET,
   uploadTenantDocument
@@ -202,21 +205,11 @@ function buildClientContext(bankName: string, niche: BankingNiche, objective: st
   return `Cliente em onboarding do nicho ${nicheLabel} com banco ${bankName}.${objectiveLine}`;
 }
 
-function buildInitialChecklist(
-  niche: BankingNiche,
-  uploadedDocumentLabels: readonly string[]
-) {
-  return getRequiredDocumentSlots(niche).map((slot) => ({
-    id: `item-${randomUUID()}`,
-    label: slot.label,
-    done: uploadedDocumentLabels.includes(slot.label)
-  }));
-}
-
 function buildInitialTasks(params: {
   clientId: string;
   caseId: string;
   niche: BankingNiche;
+  stage: string;
   caseTitle: string;
   objective: string;
   assigneeLabel: string;
@@ -227,8 +220,11 @@ function buildInitialTasks(params: {
   firstDueDate.setDate(firstDueDate.getDate() + 1);
   const secondDueDate = new Date(dueDateBase);
   secondDueDate.setDate(secondDueDate.getDate() + 2);
-  const checklist = buildInitialChecklist(params.niche, params.uploadedDocumentLabels);
-  const missingChecklist = checklist.filter((item) => !item.done);
+  const checklistTaskState = buildBankingCaseOperationalTaskState({
+    niche: params.niche,
+    stage: params.stage,
+    documentLabels: params.uploadedDocumentLabels
+  });
 
   return [
     {
@@ -240,22 +236,16 @@ function buildInitialTasks(params: {
       assignee_label: params.assigneeLabel,
       due_date: firstDueDate.toISOString().slice(0, 10),
       priority: "urgent",
-      status: "todo",
-      notes:
-        missingChecklist.length > 0
-          ? `Pendencias prioritarias: ${missingChecklist.map((item) => item.label).join(", ")}.`
-          : "Checklist documental minimo fechado no onboarding.",
-      checklist,
+      status: checklistTaskState.status,
+      notes: checklistTaskState.notes,
+      checklist: checklistTaskState.checklist,
       suggested_by_claim_type:
         params.niche === "fraude"
           ? "fraude_bancaria"
           : params.niche === "busca-apreensao"
             ? "busca_apreensao"
             : "acao_revisional",
-      lexia_next_step:
-        missingChecklist.length > 0
-          ? `Cobrar ${missingChecklist[0]?.label.toLowerCase()} antes de aprofundar a estrategia.`
-          : "Base documental minima pronta para a proxima leitura do caso."
+      lexia_next_step: checklistTaskState.nextStep
     },
     {
       id: `task-${randomUUID()}`,
@@ -456,6 +446,7 @@ export async function createBankingIntakeAction(formData: FormData) {
       clientId,
       caseId,
       niche,
+      stage: caseStage,
       caseTitle,
       objective,
       assigneeLabel: session.email ?? "Equipe do escritorio",

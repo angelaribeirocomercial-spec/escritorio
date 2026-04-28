@@ -1,32 +1,34 @@
-﻿---
-task: ds-extract-tokens
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Extract Design Tokens from Consolidated Patterns
 
 > Task ID: brad-extract-tokens
 > Agent: Brad (Design System Architect)
-> Version: 1.0.0
+> Version: 1.1.0
+> v4.0-compatible: true
+> **Execution Type:** `Worker`
+> **Dependencies:** depends_on: `[ds-consolidate-patterns]` · enables: `[ds-generate-migration-strategy, export-design-tokens-dtcg]` · workflow: `brownfield-audit`
+> **On Fail:** If token schema validation fails → check YAML syntax and W3C DTCG format compliance. If consolidation files missing → re-run `*consolidate`. If token coverage <80% → review consolidation output for missed patterns, add manual overrides. Do NOT proceed to migration with invalid tokens.
 
 ## Description
 
-Generate design token system from consolidated patterns. Exports to multiple formats (YAML, JSON, CSS custom properties, Tailwind config, SCSS variables) with semantic naming conventions.
+Generate design token system from consolidated patterns. Exports to multiple formats (YAML, JSON, CSS custom properties, Tailwind config, SCSS variables) with semantic naming conventions. **v4.0: Outputs W3C DTCG v1.0 format by default ($value, $type, $description).**
+
+## Input Schema
+- **requires:** Output from `ds-consolidate-patterns`
+- **format:** Text data (color-clusters.txt, spacing-consolidation.txt, button-consolidation.txt)
+- **location:** `outputs/design-system/{project}/consolidation/`
+
+## Output Schema
+- **produces:** `outputs/design-system/{project}/tokens/tokens.yaml`
+- **format:** YAML data (with JSON, CSS, Tailwind, SCSS exports)
+- **consumed_by:** ds-generate-migration-strategy, export-design-tokens-dtcg
 
 ## Prerequisites
 
 - Consolidation completed (*consolidate command run successfully)
 - .state.yaml contains consolidation data
 - Consolidated pattern files exist (color-clusters.txt, spacing-consolidation.txt, etc)
+- Reference: Read data/w3c-dtcg-spec-reference.md for DTCG v1.0 token format
+- Reference: Read data/motion-tokens-guide.md for motion token extraction (duration, easing)
 
 ## Workflow
 
@@ -40,9 +42,11 @@ This task uses interactive elicitation to configure token generation.
    - Ask for naming preferences (kebab-case default)
 
 2. **Select Export Formats**
-   - Ask which formats to export (JSON, CSS, Tailwind, SCSS, all)
+   - Ask which formats to export (DTCG JSON, CSS, Tailwind, SCSS, all)
+   - **Default: W3C DTCG v1.0 JSON** ($value, $type, $description)
    - Confirm output directory
    - Check for existing token files (overwrite warning)
+   - Ask about motion tokens (duration, easing) — extract from animations if present
 
 3. **Validate Token Coverage**
    - Show coverage percentage (tokens cover X% of original usage)
@@ -54,21 +58,21 @@ This task uses interactive elicitation to configure token generation.
 1. **Load Consolidation Data**
    - Read .state.yaml consolidation section
    - Load consolidated pattern files
-   - Validate consolidation phase completed
-   - Validation: Consolidation data exists and complete
+   - Confirm .state.yaml contains `phase: "consolidation_complete"` string; abort if missing
+   - Check: .state.yaml contains `phase: "consolidation_complete"` AND consolidated pattern files exist — abort with "Consolidation not completed: run *consolidate first"
 
 2. **Extract Color Tokens**
    - Read color-clusters.txt
    - Generate semantic names (primary, primary-dark, error, success, etc)
    - Detect relationships (hover states, light/dark variants)
    - Create color token structure
-   - Validation: All consolidated colors have token names
+   - Check: unnamed color count == 0 AND each token has semantic name — log "{N} color tokens created from {clusters} clusters"
 
 3. **Extract Spacing Tokens**
    - Read spacing-consolidation.txt
    - Map spacing values to semantic scale (xs, sm, md, lg, xl, 2xl, 3xl)
    - Generate both padding and margin tokens
-   - Validation: Complete spacing scale created
+   - Check: spacing scale has xs through xl values AND uses consistent base unit — log "Spacing scale: {N} tokens, base unit: {unit}"
 
 4. **Extract Typography Tokens**
    - Read typography-consolidation.txt
@@ -76,55 +80,55 @@ This task uses interactive elicitation to configure token generation.
    - Create font-size tokens with semantic names
    - Create font-weight tokens
    - Create line-height tokens (calculated from sizes)
-   - Validation: Complete typography system
+   - Check: typography tokens include families + sizes + weights + line-heights — abort with "Typography incomplete: missing {category}"
 
 5. **Extract Button Tokens**
    - Read button-consolidation.txt
    - Generate button variant tokens (primary, secondary, destructive)
    - Generate button size tokens (sm, md, lg)
    - Map colors and spacing to button tokens
-   - Validation: Button tokens reference color/spacing tokens
+   - Check: button tokens use color + spacing token references (not hardcoded values) — abort with "Button tokens contain {N} hardcoded values"
 
 6. **Generate tokens.yaml (Source of Truth)**
    - Create structured YAML with all token categories
    - Include metadata (version, generated timestamp, Brad signature)
    - Add comments explaining token usage
-   - Validation: Valid YAML syntax
+   - Check: `test -f tokens.yaml` AND YAML parses without errors — abort with "tokens.yaml generation failed: {parse error}"
 
 7. **Export to JSON**
    - Convert tokens.yaml to tokens.json
    - Flat structure for JavaScript imports
-   - Validation: Valid JSON, importable by JS/TS
+   - Check: `test -f tokens.json` AND JSON parses without errors — abort with "tokens.json generation failed: {parse error}"
 
 8. **Export to CSS Custom Properties**
    - Generate tokens.css with :root {} block
    - Convert token names to --token-name format
    - Add CSS comments for organization
-   - Validation: Valid CSS, testable in browser
+   - Check: `test -f tokens.css` AND contains :root block with var declarations — abort with "tokens.css generation failed"
 
 9. **Export to Tailwind Config**
    - Generate tokens.tailwind.js
    - Map tokens to Tailwind theme.extend structure
    - Preserve Tailwind conventions
-   - Validation: Valid Tailwind config format
+   - Check: `test -f tokens.tailwind.js` AND file exports theme.extend object — abort with "Tailwind config generation failed"
 
 10. **Export to SCSS Variables**
     - Generate tokens.scss
     - Convert to $token-name format
     - Add SCSS comments
-    - Validation: Valid SCSS syntax
+    - Check: `test -f tokens.scss` AND file contains $variable declarations — abort with "SCSS generation failed"
 
 11. **Validate Token Coverage**
-    - Calculate how many original patterns are covered
+    - Count original patterns from consolidation output and count tokens that map to them; compute coverage = mapped/total * 100
     - Target: >95% coverage
-    - Report any gaps
-    - Validation: Coverage meets threshold
+    - List each uncovered pattern by name with its source file
+    - Check: token coverage >= 95% of original patterns — if below, list uncovered patterns and log "Coverage: {pct}% ({covered}/{total})"
 
 12. **Update State File**
     - Add tokens section to .state.yaml
     - Record token counts, locations, exports
     - Update phase to "tokenize_complete"
-    - Validation: State updated, ready for Atlas or migration
+    - Check: .state.yaml contains `phase: "tokenize_complete"` AND token counts + file locations recorded — abort with "State update failed: {missing field}"
 
 ## Output
 
@@ -195,6 +199,13 @@ shadow:
   lg: "0 10px 15px -3px rgb(0 0 0 / 0.1)"
 ```
 
+## Failure Handling
+
+- **Token coverage <95%:** Identify uncovered patterns. Add manual token definitions for edge cases. Re-calculate coverage
+- **Naming conflicts:** Use prefix strategy (e.g., `--color-primary-legacy` vs `--color-primary`). Document conflicts in migration notes
+- **Invalid token values:** Validate against CSS spec. Convert non-standard values (e.g., named colors → hex → OKLCH)
+- **Consolidation data missing:** Re-run *consolidate before proceeding. Do not generate partial token sets
+
 ## Success Criteria
 
 - [ ] All consolidated patterns converted to tokens
@@ -204,6 +215,19 @@ shadow:
 - [ ] Token coverage >95% of original patterns
 - [ ] Valid syntax in all export formats
 - [ ] State file updated with token locations
+
+## Quality Gate
+
+> **GATE: Token Completeness Review** — Verify token coverage before migration planning
+
+| Metric | Threshold | Action if FAIL |
+|--------|-----------|----------------|
+| Token coverage | >= 95% of consolidated patterns | Add manual token definitions for uncovered patterns, re-calculate |
+| Naming conflicts | 0 | Resolve with prefix strategy (`--legacy-` prefix), re-validate |
+| W3C DTCG compliance | 100% of generated tokens | Fix non-compliant token structures, re-export |
+| Token file valid | Parseable JSON/YAML | Fix syntax errors, validate with JSON Schema |
+
+**Rework rule:** If coverage stuck below 90% after adding manual tokens, review consolidation output — some patterns may have been incorrectly merged.
 
 ## Error Handling
 
@@ -229,25 +253,25 @@ shadow:
 
 Output:
 ```
-ðŸ” Brad: Extracting tokens from consolidated patterns...
+🔍 Brad: Extracting tokens from consolidated patterns...
 
-ðŸŽ¨ Color tokens: 12 created
-ðŸ“ Spacing tokens: 7 created
-ðŸ“ Typography tokens: 10 created
-ðŸ”˜ Button variant tokens: 3 created
+🎨 Color tokens: 12 created
+📏 Spacing tokens: 7 created
+📝 Typography tokens: 10 created
+🔘 Button variant tokens: 3 created
 
-ðŸ“Š Token Coverage: 96.3% of original patterns
+📊 Token Coverage: 96.3% of original patterns
 
-âœ… Exported to 5 formats:
+✅ Exported to 5 formats:
   - tokens.yaml (source of truth)
   - tokens.json (JavaScript)
   - tokens.css (CSS custom properties)
   - tokens.tailwind.js (Tailwind config)
   - tokens.scss (SCSS variables)
 
-âœ… State updated: outputs/design-system/my-app/.state.yaml
+✅ State updated: outputs/design-system/my-app/.state.yaml
 
-Ready for Atlas to build components or generate migration strategy.
+Ready for Merovingian to build components or generate migration strategy.
 ```
 
 ### Example 2: CSS Output Preview
@@ -280,5 +304,9 @@ Ready for Atlas to build components or generate migration strategy.
 - Coverage <95% means some patterns weren't consolidated
 - Export formats stay in sync - update tokens.yaml and regenerate all
 - Brad recommends: Run *migrate next to create migration strategy
-- For component generation, hand off to Atlas: *agent atlas
+- For component generation, hand off to Merovingian: *agent atlas
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+- `squads/design/checklists/ds-pattern-audit-checklist.md`
 

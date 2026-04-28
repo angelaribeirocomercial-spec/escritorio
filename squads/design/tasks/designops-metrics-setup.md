@@ -1,17 +1,3 @@
-﻿---
-task: designops-metrics-setup
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # designops-metrics-setup
 
 > Establish DesignOps KPIs and measurement systems using Dave Malouf's three-layer Metrics Stack framework.
@@ -457,7 +443,23 @@ dashboard_template: |
 - `design-process-optimization.md` - Measure process improvements
 - `design-team-scaling.md` - Track scaling success
 
+## Related Checklists
+
+- `squads/design/checklists/designops-maturity-checklist.md`
+- `squads/design/checklists/design-team-health-checklist.md`
+- `squads/design/checklists/design-handoff-checklist.md`
+
 ## Notes
 
 > "The purpose of metrics is not to have dashboards. The purpose is to make better decisions. If your metrics aren't driving decisions, you're measuring the wrong things."
 
+
+## Process Guards
+- **Execution Type:** `Hybrid`
+- **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `design-system`
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.
+
+## Success Criteria
+- [ ] Output artifact(s) generated and referenced.
+- [ ] Validation checks executed with evidence.
+- [ ] Next-step dependencies documented.

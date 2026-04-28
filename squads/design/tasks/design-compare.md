@@ -1,23 +1,12 @@
-﻿---
-task: design-compare
-responsavel: @design-chief
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Design Compare Task
 
 > Task ID: design-compare
 > Agent: design-system
-> Version: 1.0.0
+> Version: 1.1.0
+> v4.0-compatible: true
 > Command: `*design-compare {reference} {implementation}`
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `standalone`
 
 ## Description
 
@@ -174,9 +163,9 @@ Parse the component(s) to extract actual values:
 
 // Resolve from tokens.yaml
 {
-  background: "var(--color-bg-primary)" â†’ "#1a1a2e",
-  padding: "var(--spacing-card)" â†’ "24px",
-  borderRadius: "var(--radius-card)" â†’ "12px"
+  background: "var(--color-bg-primary)" → "#1a1a2e",
+  padding: "var(--spacing-card)" → "24px",
+  borderRadius: "var(--radius-card)" → "12px"
 }
 ```
 
@@ -190,7 +179,7 @@ comparison_thresholds:
 
   spacing:
     method: "absolute"
-    tolerance: 4px  # Â±4px = match
+    tolerance: 4px  # ±4px = match
 
   typography:
     size_tolerance: 2px
@@ -305,23 +294,23 @@ Output template:
 
 ### Priority 1: High Impact (affects multiple elements)
 
-1. **Card padding:** `p-5` â†’ `p-6`
+1. **Card padding:** `p-5` → `p-6`
    - Files: Dashboard.tsx:24, Card.tsx:12
    - Impact: 8 instances
 
-2. **Body text size:** `text-sm` â†’ `text-base`
+2. **Body text size:** `text-sm` → `text-base`
    - Files: Dashboard.tsx:45, 67, 89
    - Impact: 12 instances
 
 ### Priority 2: Medium Impact
 
-3. **Heading weight:** `font-semibold` â†’ `font-bold`
+3. **Heading weight:** `font-semibold` → `font-bold`
    - Files: Dashboard.tsx:18
    - Impact: 3 instances
 
 ### Priority 3: Low Impact (single instance)
 
-4. **Text color:** `#888` â†’ `#A0A0A0`
+4. **Text color:** `#888` → `#A0A0A0`
    - Files: Dashboard.tsx:78
    - Impact: 1 instance
 
@@ -352,6 +341,15 @@ spacing:
 4. [ ] Re-run `*design-compare` to validate
 5. [ ] Update tokens.yaml with recommendations
 ```
+
+---
+
+## Failure Handling
+
+- **Design reference unreadable:** If image analysis fails to extract tokens (corrupted file, unsupported format), abort with "Cannot analyze design reference: {error}. Ensure file is PNG/JPG/SVG and visually clear."
+- **Code extraction yields zero tokens:** If parsing implementation returns no design values (empty component, commented code), abort with "No design tokens found in implementation at {path}. Verify component exists and has styling."
+- **Token mismatch rate >70%:** If fidelity score <30%, warn user "Design and code are significantly different ({score}%). Consider re-implementing from design reference rather than incremental fixes."
+- **No actionable fixes generated:** If comparison completes but produces no fix recommendations despite low fidelity, abort with "Comparison inconclusive: design and code use incompatible styling approaches (e.g., inline styles vs tokens)."
 
 ---
 
@@ -401,9 +399,16 @@ spacing:
 
 ```
 outputs/design-system/{project}/fidelity/
-â”œâ”€â”€ {timestamp}-{name}-report.md     # Full report
-â”œâ”€â”€ {timestamp}-{name}-design.yaml   # Extracted design tokens
-â”œâ”€â”€ {timestamp}-{name}-code.yaml     # Extracted code tokens
-â””â”€â”€ {timestamp}-{name}-diff.yaml     # Comparison data
+├── {timestamp}-{name}-report.md     # Full report
+├── {timestamp}-{name}-design.yaml   # Extracted design tokens
+├── {timestamp}-{name}-code.yaml     # Extracted code tokens
+└── {timestamp}-{name}-diff.yaml     # Comparison data
 ```
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

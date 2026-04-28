@@ -22,6 +22,7 @@ type StructuredCoreParams = {
   documentId?: string;
   niche?: string;
   tab?: string;
+  strict?: boolean;
 };
 
 type StructuredDocumentRequirement = {

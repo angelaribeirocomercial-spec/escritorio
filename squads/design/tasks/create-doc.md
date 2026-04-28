@@ -1,20 +1,9 @@
-﻿---
-task: create-doc
-responsavel: @design-chief
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Create Document from Template (YAML Driven)
 
-## âš ï¸ CRITICAL EXECUTION NOTICE âš ï¸
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `standalone`
+
+## ⚠️ CRITICAL EXECUTION NOTICE ⚠️
 
 **THIS IS AN EXECUTABLE WORKFLOW - NOT REFERENCE MATERIAL**
 
@@ -58,7 +47,7 @@ If a YAML Template has not been provided, list all templates from .aios-core/tem
    - Check agent permissions (owner/editors) - note if section is restricted to specific agents
    - Draft content using section instruction
    - Present content + detailed rationale
-   - **IF elicit: true** â†’ MANDATORY 1-9 options format
+   - **IF elicit: true** → MANDATORY 1-9 options format
    - Save to file if possible
 4. **Continue until complete**
 
@@ -101,16 +90,46 @@ User can type `#yolo` to toggle to YOLO mode (process all sections at once).
 
 ## CRITICAL REMINDERS
 
-**âŒ NEVER:**
+**❌ NEVER:**
 
 - Ask yes/no questions for elicitation
 - Use any format other than 1-9 numbered options
 - Create new elicitation methods
 
-**âœ… ALWAYS:**
+**✅ ALWAYS:**
 
 - Use exact 1-9 format when elicit: true
 - Select options 2-9 from data/elicitation-methods only
 - Provide detailed rationale explaining decisions
 - End with "Select 1-9 or just type your question/feedback:"
 
+## Failure Handling
+
+- **YAML template parse error:** Display parse error with line number, validate YAML syntax using online validator, suggest common fixes (indentation, missing colons), request corrected template before proceeding
+- **Elicitation method from data/elicitation-methods not found:** List all available methods with IDs, ask user to select from valid options, log missing method reference for template maintenance, fallback to generic open-ended questions
+- **Agent permission check fails (current agent not in editors list):** Display section with read-only warning, offer to route section to authorized agent via Task tool, skip section with logged reason, continue to next section
+- **User provides contradictory feedback across multiple elicitation rounds:** Summarize conflicting requirements with timestamps, present consolidated view highlighting contradictions, request explicit prioritization or clarification, update previous sections if needed
+
+## Success Criteria
+
+- [ ] YAML template parsed without errors
+- [ ] All required sections processed sequentially
+- [ ] Elicitation points (elicit: true) presented with 1-9 numbered options
+- [ ] User confirmation obtained before proceeding past each elicitation point
+- [ ] Output document saved to specified file path
+- [ ] Agent permissions respected (owner/editors fields honored)
+- [ ] No sections skipped without valid skip condition
+
+## Output
+
+- Document rendered from selected template at the user-specified path
+- Section-by-section rationale log captured in the generated artifact
+- Elicitation decisions and overrides recorded in-line
+
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

@@ -2,16 +2,21 @@ import {
   BankingCaseChecklistItemRecord,
   BankingCaseChecklistStateRecord,
   BankingCaseRecord,
+  BankingCaseWorkflowReadinessRecord,
   BankingCaseWorkflowStateRecord,
   BankingCaseWorkflowStepRecord,
   BankingChecklistItemState,
   BankingNiche,
-  BankingWorkflowStepState
+  BankingWorkflowStepState,
+  TaskChecklistItem,
+  TaskStatus
 } from "@lexia/domain";
 
 export type BankingCaseWorkflow = BankingCaseWorkflowStateRecord & {
   requiredDocuments: readonly string[];
   missingDocuments: readonly string[];
+  blockers: readonly string[];
+  readiness: readonly BankingCaseWorkflowReadinessRecord[];
 };
 
 const WORKFLOW_BLUEPRINTS: Record<
@@ -141,6 +146,124 @@ function detectCurrentStepIndex(
   return missingDocuments.length > 0 ? 1 : 2;
 }
 
+function hasRequiredDocument(
+  documentLabels: readonly string[],
+  requiredLabel: string
+) {
+  return documentLabels.some((documentLabel) =>
+    documentMatchesRequirement(documentLabel, requiredLabel)
+  );
+}
+
+function stageReached(
+  stage: string,
+  candidate: "analise" | "memoria" | "estrategia" | "inicial" | "revisao" | "distribuicao"
+) {
+  const normalizedStage = normalizeLabel(stage);
+
+  switch (candidate) {
+    case "distribuicao":
+      return normalizedStage.includes("distribu");
+    case "revisao":
+      return normalizedStage.includes("revisao") || normalizedStage.includes("distribu");
+    case "inicial":
+      return normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu");
+    case "estrategia":
+      return normalizedStage.includes("estrateg") || normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu");
+    case "memoria":
+      return normalizedStage.includes("memoria") || normalizedStage.includes("estrateg") || normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu");
+    case "analise":
+      return normalizedStage.includes("analise") || normalizedStage.includes("memoria") || normalizedStage.includes("estrateg") || normalizedStage.includes("inicial") || normalizedStage.includes("peticao") || normalizedStage.includes("revisao") || normalizedStage.includes("distribu");
+    default:
+      return false;
+  }
+}
+
+function buildWorkflowBlockers(
+  niche: BankingNiche,
+  stage: string,
+  checklistState: BankingCaseChecklistStateRecord
+) {
+  const blockers = [...checklistState.missingDocuments];
+
+  if (niche === "revisional" && !stageReached(stage, "estrategia")) {
+    blockers.push("Parecer tecnico e estrategia juridica ainda nao consolidados.");
+  }
+
+  return blockers;
+}
+
+function buildWorkflowReadiness(
+  niche: BankingNiche,
+  stage: string,
+  documentLabels: readonly string[],
+  checklistState: BankingCaseChecklistStateRecord
+): BankingCaseWorkflowReadinessRecord[] {
+  if (niche !== "revisional") {
+    return [
+      {
+        id: `${niche}-initial-readiness`,
+        label: "Leitura juridica inicial",
+        state: checklistState.missingDocuments.length === 0 ? "ready" : "blocked",
+        detail:
+          checklistState.missingDocuments.length === 0
+            ? "Base documental suficiente para aprofundar a leitura do caso."
+            : "Ainda faltam documentos-base para aprofundar a leitura juridica.",
+        blockers: checklistState.missingDocuments
+      }
+    ];
+  }
+
+  const hasContract = hasRequiredDocument(documentLabels, "Contrato bancario ou CCB");
+  const hasPersonalDocument = hasRequiredDocument(documentLabels, "Documento pessoal do cliente");
+  const hasAddressProof = hasRequiredDocument(documentLabels, "Comprovante de residencia");
+  const contractAnalysisBlockers = [
+    !hasContract ? "Contrato bancario ou CCB" : null,
+    !hasPersonalDocument ? "Documento pessoal do cliente" : null,
+    !hasAddressProof ? "Comprovante de residencia" : null
+  ].filter((value): value is string => Boolean(value));
+  const technicalOpinionBlockers = [...checklistState.missingDocuments];
+  const petitionDraftBlockers = [
+    ...checklistState.missingDocuments,
+    ...(stageReached(stage, "estrategia")
+      ? []
+      : ["Parecer tecnico e estrategia juridica ainda nao avancaram ate a fase de estrategia."])
+  ];
+
+  return [
+    {
+      id: "contract-analysis",
+      label: "Leitura automatica do contrato",
+      state: contractAnalysisBlockers.length === 0 ? "ready" : "blocked",
+      detail:
+        contractAnalysisBlockers.length === 0
+          ? "Contrato e identificacao minima estao prontos para leitura automatica."
+          : "Ainda falta base minima para iniciar a leitura automatica do contrato.",
+      blockers: contractAnalysisBlockers
+    },
+    {
+      id: "technical-opinion",
+      label: "Parecer tecnico inicial",
+      state: technicalOpinionBlockers.length === 0 ? "ready" : "blocked",
+      detail:
+        technicalOpinionBlockers.length === 0
+          ? "A base documental revisional esta completa para consolidar o parecer tecnico."
+          : "O parecer tecnico segue bloqueado por lacunas documentais do caso.",
+      blockers: technicalOpinionBlockers
+    },
+    {
+      id: "petition-draft",
+      label: "Minuta da peticao inicial",
+      state: petitionDraftBlockers.length === 0 ? "ready" : "blocked",
+      detail:
+        petitionDraftBlockers.length === 0
+          ? "O caso ja tem base documental e etapa juridica suficientes para preparar a minuta inicial."
+          : "A minuta ainda nao deve ser aberta porque faltam documentos ou a estrategia juridica nao foi consolidada.",
+      blockers: petitionDraftBlockers
+    }
+  ];
+}
+
 export function buildBankingCaseChecklistState(
   niche: BankingNiche,
   documentLabels: readonly string[]
@@ -175,7 +298,8 @@ export function buildBankingCaseChecklistState(
 export function buildBankingCaseWorkflowState(
   niche: BankingNiche,
   stage: string,
-  checklistState: BankingCaseChecklistStateRecord
+  checklistState: BankingCaseChecklistStateRecord,
+  documentLabels: readonly string[]
 ): BankingCaseWorkflowStateRecord {
   const blueprint = WORKFLOW_BLUEPRINTS[niche];
   const currentStepIndex = Math.max(
@@ -197,16 +321,26 @@ export function buildBankingCaseWorkflowState(
   });
 
   const currentStep = steps[currentStepIndex] ?? steps[0];
+  const readiness = buildWorkflowReadiness(niche, stage, documentLabels, checklistState);
+  const blockers = buildWorkflowBlockers(niche, stage, checklistState);
   const nextStep =
     checklistState.missingDocuments.length > 0
       ? `Reunir ${checklistState.missingDocuments[0].toLowerCase()} para destravar o fluxo do caso.`
-      : currentStep.detail;
+      : readiness.find((item) => item.state === "ready" && item.id === "petition-draft")
+        ? "Preparar a minuta da peticao inicial dentro do contexto deste caso."
+        : readiness.find((item) => item.state === "ready" && item.id === "technical-opinion")
+          ? "Consolidar o parecer tecnico inicial com base na documentacao recebida."
+          : readiness.find((item) => item.state === "ready" && item.id === "contract-analysis")
+            ? "Caso apto para leitura automatica do contrato e abertura do parecer tecnico inicial."
+            : blockers[0] ?? currentStep.detail;
 
   return {
     phaseLabel: currentStep.title,
     nextStep,
     completionLabel: checklistState.completionLabel,
     currentStepId: currentStep.id,
+    blockers,
+    readiness,
     steps
   };
 }
@@ -217,11 +351,46 @@ export function buildPersistedBankingCaseLifecycle(params: {
   documentLabels: readonly string[];
 }) {
   const checklistState = buildBankingCaseChecklistState(params.niche, params.documentLabels);
-  const workflowState = buildBankingCaseWorkflowState(params.niche, params.stage, checklistState);
+  const workflowState = buildBankingCaseWorkflowState(
+    params.niche,
+    params.stage,
+    checklistState,
+    params.documentLabels
+  );
 
   return {
     checklistState,
     workflowState
+  };
+}
+
+export function buildBankingCaseOperationalTaskState(params: {
+  niche: BankingNiche;
+  stage: string;
+  documentLabels: readonly string[];
+}) {
+  const { checklistState, workflowState } = buildPersistedBankingCaseLifecycle(params);
+  const checklist: TaskChecklistItem[] = checklistState.items.map((item) => ({
+    id: item.id,
+    label: item.label,
+    done: item.state === "received"
+  }));
+  const missingDocuments = checklistState.missingDocuments;
+  const status: TaskStatus = missingDocuments.length > 0 ? "todo" : "done";
+  const notes =
+    missingDocuments.length > 0
+      ? `Pendencias prioritarias: ${missingDocuments.join(", ")}.`
+      : "Checklist documental inicial consolidado e pronto para liberar a leitura juridica.";
+  const nextStep =
+    missingDocuments.length > 0
+      ? `Cobrar ${missingDocuments[0]?.toLowerCase()} antes de aprofundar a estrategia.`
+      : workflowState.nextStep;
+
+  return {
+    checklist,
+    notes,
+    nextStep,
+    status
   };
 }
 
@@ -247,6 +416,8 @@ export function getBankingCaseWorkflow(
   return {
     ...workflowState,
     requiredDocuments: checklistState.requiredDocuments,
-    missingDocuments: checklistState.missingDocuments
+    missingDocuments: checklistState.missingDocuments,
+    blockers: workflowState.blockers ?? [],
+    readiness: workflowState.readiness ?? []
   };
 }

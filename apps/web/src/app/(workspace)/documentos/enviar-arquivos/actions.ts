@@ -5,7 +5,10 @@ import { revalidatePath } from "next/cache";
 
 import { requireWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { buildPersistedBankingCaseLifecycle } from "@/server/services/cases/get-banking-case-workflow";
+import {
+  buildBankingCaseOperationalTaskState,
+  buildPersistedBankingCaseLifecycle
+} from "@/server/services/cases/get-banking-case-workflow";
 import { getCaseById } from "@/server/services/cases/get-cases";
 import { getDocumentsByCaseId } from "@/server/services/documents/get-documents";
 import {
@@ -79,6 +82,11 @@ export async function uploadDocumentAction(formData: FormData) {
     stage: bankingCase.stage,
     documentLabels: [...existingDocuments.map((document) => document.documentType), documentType]
   });
+  const checklistTaskState = buildBankingCaseOperationalTaskState({
+    niche: bankingCase.niche,
+    stage: bankingCase.stage,
+    documentLabels: [...existingDocuments.map((document) => document.documentType), documentType]
+  });
 
   const { error: updateCaseError } = await supabase
     .from("cases")
@@ -92,6 +100,22 @@ export async function uploadDocumentAction(formData: FormData) {
 
   if (updateCaseError) {
     throw new Error(`Failed to update case document links: ${updateCaseError.message}`);
+  }
+
+  const { error: updateTaskError } = await supabase
+    .from("tasks")
+    .update({
+      checklist: checklistTaskState.checklist,
+      notes: checklistTaskState.notes,
+      lexia_next_step: checklistTaskState.nextStep,
+      status: checklistTaskState.status
+    })
+    .eq("tenant_id", session.workspace.tenant.id)
+    .eq("case_id", bankingCase.id)
+    .eq("title", "Fechar checklist documental inicial");
+
+  if (updateTaskError) {
+    throw new Error(`Failed to update case workflow task: ${updateTaskError.message}`);
   }
 
   const { error: updateClientError } = await supabase
@@ -109,5 +133,6 @@ export async function uploadDocumentAction(formData: FormData) {
 
   revalidatePath("/documentos/meus-arquivos");
   revalidatePath(`/pessoas/clientes/${bankingCase.clientId}`);
+  revalidatePath("/tarefas");
   redirect(`/pessoas/clientes/${bankingCase.clientId}?case=${bankingCase.id}&uploaded=1`);
 }

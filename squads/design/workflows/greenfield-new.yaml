@@ -4,30 +4,14 @@
 workflow:
   id: "design-system-greenfield-new"
   name: "Design System Greenfield New"
-  description: "Greenfield workflow: start fresh with token-based design system, build production components from scratch"
+  description: "Greenfield workflow: start fresh with token-based design system, build production components from scratch. Mandatory governance protocol: squads/design/protocols/ai-first-governance.md"
   version: "2.0.0"
   type: "sequential"
-  sequence:
-    - agent: "brad-frost"
-      action: "Initialize design system structure and starter tokens"
-      creates: "design_system_foundation"
-    - agent: "brad-frost"
-      action: "Build atomic components from tokens"
-      requires: "design_system_foundation"
-      creates: "atoms_library"
-    - agent: "brad-frost"
-      action: "Compose molecules and optional organisms"
-      requires: "atoms_library"
-      creates: "component_system"
-    - agent: "brad-frost"
-      action: "Generate documentation and handoff assets"
-      requires: "component_system"
-      creates: "documentation_bundle"
 
 metadata:
   author: "Brad (Design System Architect)"
   created_date: "2025-10-27"
-  last_modified: "2025-10-27"
+  last_modified: "2026-02-16"
   tags:
     - design-system
     - greenfield
@@ -57,7 +41,7 @@ steps:
   - id: "step_1_setup"
     name: "Initialize Design System Structure"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*setup"
     inputs:
       project_name: "{{project_name}}"
@@ -73,7 +57,7 @@ steps:
   - id: "step_2_build_atoms"
     name: "Build Atomic Components"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*build"
     inputs:
       tokens: "{{step_1_setup.tokens_yaml}}"
@@ -86,7 +70,7 @@ steps:
   - id: "step_3_compose_molecules"
     name: "Compose Molecule Components"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*compose"
     inputs:
       atoms: "{{step_2_build_atoms.atoms}}"
@@ -99,7 +83,7 @@ steps:
   - id: "step_4_compose_organisms"
     name: "Compose Organism Components (Optional)"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*compose"
     inputs:
       atoms: "{{step_2_build_atoms.atoms}}"
@@ -113,7 +97,7 @@ steps:
   - id: "step_5_document"
     name: "Generate Pattern Library Documentation"
     type: "agent"
-    agent: "design-system"
+    agent: "brad-frost"
     command: "*document"
     inputs:
       components: "outputs/design-system/{{project_name}}/components/"
@@ -125,11 +109,38 @@ steps:
     error_handling:
       strategy: "skip"
 
+  - id: "step_6_promote_to_workspace"
+    name: "Promote Outputs to Workspace Canonical Locations"
+    type: "agent"
+    agent: "brad-frost"
+    command: "*sync-registry"
+    description: "Move outputs from outputs/ to workspace canonical paths"
+    inputs:
+      tokens_source: "{{step_1_setup.tokens_yaml}}"
+      components_source: "outputs/design-system/{{project_name}}/components/"
+    outputs:
+      tokens_promoted: "workspace/system/tokens/"
+      registry_updated: "workspace/ui/registry.json"
+      metadata_updated: "workspace/domains/design-system/metadata/components.json"
+    promotion_map:
+      - from: "outputs/design-system/{{project_name}}/tokens/tokens.json"
+        to: "workspace/system/tokens/primitive.tokens.json"
+      - from: "outputs/design-system/{{project_name}}/tokens/tokens.yaml"
+        to: "squads/design/data/design-tokens-spec.yaml"
+      - from: "outputs/design-system/{{project_name}}/components/"
+        to: "workspace/ui/components/"
+    validation:
+      - "workspace/ui/registry.json updated with new components"
+      - "workspace/domains/design-system/metadata/components.json reflects changes"
+      - "squads/design/scripts/design-system/validate_components_metadata.cjs passes"
+    error_handling:
+      strategy: "fail"
+
 outputs:
   design_system_complete:
     type: "boolean"
     description: "Workflow completed successfully"
-    source: "step_5_document.success"
+    source: "step_6_promote_to_workspace.success"
 
   tokens_location:
     type: "string"
@@ -161,3 +172,21 @@ global_error_handling:
 security:
   authorization_required: false
   audit_logging: true
+
+quality_gates:
+  internal_quality_chain:
+    required:
+      - "node squads/design/scripts/design-system/generate_components_metadata.cjs"
+      - "node squads/design/scripts/design-system/validate_components_metadata.cjs"
+      - "node squads/design/scripts/design-system/sync_design_manifest.cjs"
+      - "node squads/design/scripts/design-system/validate_design_manifest_drift.cjs"
+      - "node squads/design/scripts/design-system/validate_task_checklist_bindings.cjs"
+      - "node squads/design/scripts/design-system/validate_mcp_skeleton.cjs"
+    optional:
+      - "node squads/design/scripts/design-system/test_mcp_tools.cjs"
+    blocking: true
+    policy: "internal-first"
+    exception:
+      external_tool_allowed_with:
+        - "capability_gap_documented"
+        - "rationale_recorded"

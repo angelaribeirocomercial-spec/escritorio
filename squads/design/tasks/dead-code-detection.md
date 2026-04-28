@@ -1,21 +1,9 @@
-﻿---
-task: dead-code-detection
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Task: Dead Code Detection
 
 > Command: `*dead-code [path]`
 > Purpose: Find unused tokens, components, exports, and styles
+> **Execution Type:** `Worker`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `metrics`
 
 ## Overview
 
@@ -298,10 +286,17 @@ npm test
 
 ```
 outputs/design-system/{project}/
-â”œâ”€â”€ dead-code-report-{date}.md
-â”œâ”€â”€ dead-code.json
-â””â”€â”€ cleanup-script.sh (generated, review before running)
+├── dead-code-report-{date}.md
+├── dead-code.json
+└── cleanup-script.sh (generated, review before running)
 ```
+
+## Failure Handling
+
+- **No component exports found:** Verify file extensions (.tsx, .ts, .jsx). Check for default exports vs named exports pattern
+- **Dynamic imports produce false positives:** Cross-reference with Next.js dynamic(), React.lazy(), and import() patterns before marking as unused
+- **Orphan file detection flags entry points:** Exclude known entry points (pages/, app/, index files) from orphan detection
+- **Token spec not available for cross-reference:** Skip unused token detection, note "Token dead code analysis skipped — no spec file"
 
 ## Success Criteria
 
@@ -325,3 +320,10 @@ outputs/design-system/{project}/
 - `*token-usage` - Token usage analytics
 - `*bundle-audit` - Bundle size analysis
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

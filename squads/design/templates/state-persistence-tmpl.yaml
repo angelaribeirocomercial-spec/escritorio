@@ -1,7 +1,7 @@
 # .state.yaml
 # Design System State Tracking
 # Brad writes audit/consolidation/tokenization data
-# Atlas reads and writes component building data
+# Merovingian reads and writes component building data
 # Enables seamless handoff between agents
 
 version: "1.0"
@@ -139,7 +139,7 @@ system_state:
     completion_percentage: {{migration_completion}}
     estimated_completion: "{{migration_completion_date}}"
 
-  # Phase 6: Atlas Setup
+  # Phase 6: Merovingian Setup
   atlas_setup:
     completed_at: "{{atlas_setup_timestamp}}"
     starting_point: "{{starting_point}}"  # brownfield | greenfield
@@ -150,7 +150,7 @@ system_state:
       storybook_enabled: {{storybook_enabled}}
     tokens_loaded: {{tokens_loaded_success}}
 
-  # Phase 7: Component Building (Atlas)
+  # Phase 7: Component Building (Merovingian)
   patterns_built:
     atoms:
       total: {{atoms_total}}
@@ -165,13 +165,13 @@ system_state:
       total: {{templates_total}}
       components: {{templates_list}}
 
-  # Documentation (Atlas)
+  # Documentation (Merovingian)
   documentation:
     generated_at: "{{docs_timestamp}}"
     components_documented: {{docs_components}}
     pattern_library_location: "{{docs_location}}"
 
-  # Integration (Atlas)
+  # Integration (Merovingian)
   integrations:
     mmos:
       status: {{mmos_integration_status}}

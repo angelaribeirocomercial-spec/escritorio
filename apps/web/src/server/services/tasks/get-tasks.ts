@@ -246,7 +246,10 @@ const TASK_SELECT = `
   )
 `;
 
-export async function getTasks(): Promise<TaskWithContext[]> {
+export async function getTasks(filters?: {
+  clientId?: string;
+  caseId?: string;
+}): Promise<TaskWithContext[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
@@ -254,11 +257,20 @@ export async function getTasks(): Promise<TaskWithContext[]> {
   }
 
   const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("tasks")
     .select(TASK_SELECT)
-    .eq("tenant_id", session.workspace.tenant.id)
-    .order("due_date", { ascending: true });
+    .eq("tenant_id", session.workspace.tenant.id);
+
+  if (filters?.clientId) {
+    query = query.eq("client_id", filters.clientId);
+  }
+
+  if (filters?.caseId) {
+    query = query.eq("case_id", filters.caseId);
+  }
+
+  const { data, error } = await query.order("due_date", { ascending: true });
 
   if (error) {
     throw new Error(`Failed to load tasks for tenant ${session.workspace.tenant.id}.`);

@@ -1,22 +1,10 @@
-﻿---
-task: ds-integrate-squad
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # Integrate with Squad
 
 > Task ID: atlas-integrate-squad
-> Agent: Atlas (Design System Builder)
+> Agent: Merovingian (Design System Builder)
 > Version: 1.0.0
+> **Execution Type:** `Agent`
+> **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `integration`
 
 ## Description
 
@@ -47,6 +35,13 @@ Connect design system with MMOS, CreatorOS, or InnerLens expansion packs. Genera
 - Token variations
 - Integration documentation
 - Example usage
+
+## Failure Handling
+
+- **Target pack not found in expected location:** If MMOS/CreatorOS/InnerLens directory does not exist at standard paths, prompt user for custom pack location or exit with "Pack not found — verify pack is installed and provide path"
+- **Pack-specific token variations conflict with base tokens:** If personality/theme tokens (e.g., MMOS formal mode) override base system tokens causing visual inconsistency, namespace the pack tokens (e.g., mmos-formal-*) and document in integration guide
+- **Pack imports fail due to missing dependencies:** If pack requires DS components not yet built (e.g., CreatorOS needs VideoPlayer but DS has no media components), generate placeholder component stubs and note "Stubs created for: {list} — implement full components before production"
+- **Integration test suite fails in pack context:** If DS components render incorrectly or error when imported by pack (e.g., missing context provider, broken prop types), isolate failing components, document integration requirements, and suggest pack-specific wrapper pattern
 
 ## Success Criteria
 
@@ -122,6 +117,14 @@ Connect design system with MMOS, CreatorOS, or InnerLens expansion packs. Genera
 - Each pack has unique requirements
 - Token variations maintain consistency
 - Pack-specific components extend base system
-- Integration is bidirectional (pack â†” design system)
+- Integration is bidirectional (pack ↔ design system)
 - Document in pack's README
 
+
+## Related Checklists
+
+- `squads/design/checklists/ds-component-quality-checklist.md`
+- `squads/design/checklists/ds-pattern-audit-checklist.md`
+
+## Process Guards
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.

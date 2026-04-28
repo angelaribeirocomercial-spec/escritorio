@@ -1,17 +1,3 @@
-﻿---
-task: design-process-optimization
-responsavel: @brad-frost
-responsavel_type: agent
-atomic_layer: task
-Entrada: |
-  - Consulte os parametros, entradas e pre-requisitos descritos nesta task.
-Saida: |
-  - Produza os artefatos, validacoes e resultados esperados descritos nesta task.
-Checklist:
-  - [ ] Revisar objetivo e pre-requisitos da task
-  - [ ] Executar o fluxo principal conforme a documentacao
-  - [ ] Registrar os artefatos e validacoes esperadas
----
 # design-process-optimization
 
 > Streamline design workflows and reduce friction using Dave Malouf's DesignOps Pillars framework, focusing on Workflow Operations.
@@ -246,7 +232,7 @@ solution_template: |
 step: 5
 name: "Implement Improvements"
 approach: |
-  Pilot â†’ Iterate â†’ Roll Out
+  Pilot → Iterate → Roll Out
 
   Never roll out process changes organization-wide without piloting.
 
@@ -399,7 +385,23 @@ tracking_template: |
 - `design-tooling-audit.md` - Tool-related friction
 - `designops-metrics-setup.md` - Track improvements
 
+## Related Checklists
+
+- `squads/design/checklists/design-handoff-checklist.md`
+- `squads/design/checklists/design-team-health-checklist.md`
+- `squads/design/checklists/designops-maturity-checklist.md`
+
 ## Notes
 
 > The goal is not to have the most sophisticated process. The goal is to have the simplest process that enables quality design work at scale.
 
+
+## Process Guards
+- **Execution Type:** `Hybrid`
+- **Dependencies:** depends_on: `[]` · enables: `[]` · workflow: `design-system`
+- **On Fail:** Stop execution, capture evidence, and return remediation steps before proceeding.
+
+## Success Criteria
+- [ ] Output artifact(s) generated and referenced.
+- [ ] Validation checks executed with evidence.
+- [ ] Next-step dependencies documented.

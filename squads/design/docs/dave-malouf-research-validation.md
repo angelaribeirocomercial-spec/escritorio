@@ -206,7 +206,7 @@ This appears to be a synthesis of multiple DesignOps frameworks rather than a sp
 
 **What research found:**
 
-The O'Reilly book description mentions "frameworks including the DesignOps Canvas and Projects, Process, People" but I could not find detailed documentation of a specific PPP framework from Malouf. The NN/g framework uses "People, Processes, and Craft."
+The O'Reilly book description mentions "frameworks including the DesignOps Canvas and Projects, Process, People" but I could not find detailed documentation of a specific PPP framework from Malouf. The NN/g framework uses "People, Processes, and Morpheus."
 
 **Recommendation:** This needs verification or removal from the agent if claimed as a major framework.
 
