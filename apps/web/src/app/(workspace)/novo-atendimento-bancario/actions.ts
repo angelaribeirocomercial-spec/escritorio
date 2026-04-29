@@ -286,8 +286,12 @@ function buildInitialTasks(params: {
 export async function createBankingIntakeAction(formData: FormData) {
   const session = await requireWorkspaceSession();
 
-  if (!["owner", "admin"].includes(session.role)) {
-    throw new Error("Only owners and admins can open a new banking intake.");
+  if (!["owner", "admin", "lawyer", "assistant"].includes(session.role)) {
+    redirect(
+      buildValidationRedirect(
+        "Seu perfil atual nao tem permissao para iniciar um novo atendimento bancario."
+      )
+    );
   }
 
   const fullName = readText(formData, "fullName");
