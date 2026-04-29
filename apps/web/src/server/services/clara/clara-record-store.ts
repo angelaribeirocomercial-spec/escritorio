@@ -78,28 +78,52 @@ const DATA_DIR = path.join(process.cwd(), ".data");
 const STORE_PATH = path.join(DATA_DIR, "clara-records.json");
 
 async function ensureStore() {
-  await mkdir(DATA_DIR, { recursive: true });
-
   try {
-    await readFile(STORE_PATH, "utf8");
+    await mkdir(DATA_DIR, { recursive: true });
+
+    try {
+      await readFile(STORE_PATH, "utf8");
+    } catch {
+      await writeFile(STORE_PATH, JSON.stringify({ records: [] }, null, 2), "utf8");
+    }
+
+    return true;
   } catch {
-    await writeFile(STORE_PATH, JSON.stringify({ records: [] }, null, 2), "utf8");
+    return false;
   }
 }
 
 async function readStore(): Promise<{ records: ClaraRecord[] }> {
-  await ensureStore();
-  const raw = await readFile(STORE_PATH, "utf8");
-  const store = JSON.parse(raw) as { records: ClaraRecord[] };
+  const storeReady = await ensureStore();
 
-  return {
-    records: store.records.map(normalizeRecord)
-  };
+  if (!storeReady) {
+    return { records: [] };
+  }
+
+  try {
+    const raw = await readFile(STORE_PATH, "utf8");
+    const store = JSON.parse(raw) as { records: ClaraRecord[] };
+
+    return {
+      records: store.records.map(normalizeRecord)
+    };
+  } catch {
+    return { records: [] };
+  }
 }
 
 async function writeStore(store: { records: ClaraRecord[] }) {
-  await ensureStore();
-  await writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+  const storeReady = await ensureStore();
+
+  if (!storeReady) {
+    return;
+  }
+
+  try {
+    await writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+  } catch {
+    // Ignore non-persistent environments such as serverless preview/runtime.
+  }
 }
 
 function buildRecordId(kind: ClaraRecordKind) {
