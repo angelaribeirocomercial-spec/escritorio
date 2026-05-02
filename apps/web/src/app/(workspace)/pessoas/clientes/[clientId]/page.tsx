@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getBankingNicheLabel } from "@lexia/domain";
 import { WorkspaceStatePanel } from "@lexia/ui";
 
+import { ClientCockpitFrame } from "@/components/layout/client-cockpit-frame";
 import { ClaraContextActions } from "@/components/layout/clara-context-actions";
 import { WorkspacePage } from "@/components/layout/workspace-page";
 import {
@@ -264,6 +265,31 @@ export default async function ClientDetailPage({
     }
   ];
 
+  const cockpitFrameActiveCase = activeCase
+    ? {
+        id: activeCase.id,
+        title: activeCase.title,
+        nicheLabel: getBankingNicheLabel(activeCase.niche),
+        status: activeCase.status,
+        stage: workflow?.phaseLabel ?? activeCase.stage,
+        legalRiskLabel: legalRiskLabel(activeCase.legalRisk),
+        mainThesis: activeCase.mainThesis,
+        suggestedStrategy: activeCase.suggestedStrategy
+      }
+    : null;
+
+  const cockpitFrameWorkflow = workflow
+    ? {
+        phaseLabel: workflow.phaseLabel,
+        completionLabel: workflow.completionLabel,
+        requiredDocuments: workflow.requiredDocuments,
+        missingDocuments: workflow.missingDocuments,
+        blockers: workflow.blockers,
+        steps: workflow.steps,
+        readiness: workflow.readiness
+      }
+    : null;
+
   return (
     <WorkspacePage
       description="Cockpit inicial do cliente orientado pelo caso ativo, com contexto juridico, base documental e proximo passo operacional no mesmo lugar."
@@ -271,7 +297,41 @@ export default async function ClientDetailPage({
       metrics={metrics}
       title={client.fullName}
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <ClientCockpitFrame
+        actionLinks={{
+          attachDocuments: activeCase ? `/documentos/enviar-arquivos?caseId=${activeCase.id}` : undefined,
+          continueClara: `/clara?tab=proximos-passos&client=${params.clientId}${activeCase ? `&case=${activeCase.id}` : ""}#clara-workbench`,
+          backToClients: "/pessoas/clientes",
+          openEditor: activeCase
+            ? `/editor-de-texto/meus-textos?draft=1&case=${activeCase.id}&client=${params.clientId}&piece=peticao-inicial`
+            : "/editor-de-texto/meus-textos",
+          hubClara: "/clara",
+          prepareContext: `/clara?tab=proximos-passos&client=${params.clientId}${activeCase ? `&case=${activeCase.id}` : ""}#clara-workbench`
+        }}
+        activeCase={cockpitFrameActiveCase}
+        caseDocuments={caseDocuments}
+        client={{
+          id: client.id,
+          fullName: client.fullName,
+          documentId: client.documentId,
+          bankName: client.bankName,
+          leadSource: client.leadSource,
+          serviceStatusLabel: serviceStatusLabel(client.serviceStatus),
+          address: client.address,
+          notes: client.notes,
+          email: client.email,
+          phone: client.phone,
+          whatsapp: client.whatsapp
+        }}
+        nextStepLabel={nextStepLabel}
+        nextTaskTitle={nextTask?.title ?? null}
+        normalizedCaseInsights={normalizedCaseInsights}
+        normalizedClientIaContext={normalizedClientIaContext}
+        normalizedTimeline={normalizedTimeline}
+        relatedClaraRecordsCount={relatedClaraRecords.length}
+        workflow={cockpitFrameWorkflow}
+      >
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm text-slate-400">
             {client.documentId} | {client.bankName} | Origem {client.leadSource}
@@ -800,6 +860,7 @@ export default async function ClientDetailPage({
         ]}
         title="Continuar este cliente dentro da Clara"
       />
+      </ClientCockpitFrame>
     </WorkspacePage>
   );
 }
