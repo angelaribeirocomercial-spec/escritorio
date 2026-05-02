@@ -402,7 +402,12 @@ export async function getClaraWorkspace(params?: {
             {
               label: "Nicho de atuacao",
               type: "custom",
-              options: BANKING_NICHES.map((entry) => entry.label)
+              options: [
+                "Revisional de contratos",
+                "Fraude bancaria",
+                "Fraude bancaria > Cartao consignado / RMC",
+                "Busca e apreensao"
+              ]
             },
             { label: "Tribunal", type: "custom", options: ["TJSP", "TJRJ", "TJMG", "STJ", "STF"] }
           ],

@@ -1,5 +1,3 @@
-import { BANKING_NICHES } from "@lexia/domain";
-
 import { createBankingIntakeAction } from "@/app/(workspace)/novo-atendimento-bancario/actions";
 import { WorkspacePage } from "@/components/layout/workspace-page";
 import {
@@ -212,11 +210,16 @@ function NovoAtendimentoBancarioPageContent({
                 name="niche"
                 required
               >
-                {BANKING_NICHES.map((niche) => (
-                  <option key={niche.value} value={niche.value}>
-                    {niche.label}
-                  </option>
-                ))}
+                <optgroup label="Revisional">
+                  <option value="revisional">Revisional de contratos</option>
+                </optgroup>
+                <optgroup label="Fraude bancaria">
+                  <option value="fraude">Fraude bancaria</option>
+                  <option value="cartao-consignado">Cartao consignado / RMC</option>
+                </optgroup>
+                <optgroup label="Busca e apreensao">
+                  <option value="busca-apreensao">Busca e apreensao</option>
+                </optgroup>
               </select>
             </div>
 

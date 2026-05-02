@@ -51,24 +51,18 @@ const nicheItems = [
     id: "fraude",
     label: "Fraude bancaria",
     description:
-      "Descontos indevidos, contratacao nao autorizada, contestacao e resposta humana guiada."
+      "Descontos indevidos, contratacao nao autorizada, cartao consignado / RMC, contestacao e resposta humana guiada."
   },
   {
     id: "busca-apreensao",
     label: "Busca e apreensao",
     description:
       "Preservacao do veiculo, mora controvertida, defesa urgente e resposta formal alinhada."
-  },
-  {
-    id: "cartao-consignado",
-    label: "Cartao consignado / RMC",
-    description:
-      "Contrato do cartao, extratos, descontos e estrategia de resposta para consignado e RMC."
   }
 ] as const;
 
 type TabId = (typeof tabItems)[number]["id"];
-type NicheId = (typeof nicheItems)[number]["id"];
+type NicheId = (typeof nicheItems)[number]["id"] | "cartao-consignado";
 type ClaraSearchEntry = {
   kind: string;
   label: string;
@@ -106,7 +100,7 @@ function isTabId(value: string | undefined): value is TabId {
 }
 
 function isNicheId(value: string | undefined): value is NicheId {
-  return nicheItems.some((item) => item.id === value);
+  return nicheItems.some((item) => item.id === value) || value === "cartao-consignado";
 }
 
 function hasOptions(field: { type: string; options?: string[] }): field is { type: string; options: string[] } {
