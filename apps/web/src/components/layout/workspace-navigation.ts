@@ -53,7 +53,13 @@ export const navSections: NavSection[] = [
         shortLabel: "CRM",
         icon: "people",
         description: "Entrada, relacionamento e passagem para cliente/caso.",
-        children: [{ href: "/pessoas/clientes", label: "Clientes" }]
+        children: [
+          { href: "/pessoas/clientes", label: "Clientes" },
+          { href: "/crm/pipeline", label: "Pipeline" },
+          { href: "/crm/contratos", label: "Contratos" },
+          { href: "/crm/conversas", label: "Conversas" },
+          { href: "/crm/conversao", label: "Conversao" }
+        ]
       },
       {
         href: "/processos",

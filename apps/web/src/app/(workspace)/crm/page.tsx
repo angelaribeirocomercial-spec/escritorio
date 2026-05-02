@@ -58,17 +58,35 @@ export default async function CrmPage() {
         </div>
 
         <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-100/80">Proximos blocos</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-100/80">Blocos do CRM</p>
           <p className="mt-3 text-sm leading-6 text-slate-300">
-            Leads, pipeline, follow-ups, contratos e conversas entram depois desta consolidacao inicial. Por enquanto o
-            CRM organiza a carteira viva e mostra o proximo passo de conversao.
+            Leads, pipeline, follow-ups, contratos, conversas e conversao agora aparecem como blocos reais do CRM.
+            O foco da home continua sendo a carteira viva e o proximo passo de conversao.
           </p>
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-3">
             <Link
               className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
               href="/crm/pipeline"
             >
               Abrir pipeline e follow-ups
+            </Link>
+            <Link
+              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+              href="/crm/contratos"
+            >
+              Abrir contratos
+            </Link>
+            <Link
+              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+              href="/crm/conversas"
+            >
+              Abrir conversas
+            </Link>
+            <Link
+              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+              href="/crm/conversao"
+            >
+              Abrir conversao
             </Link>
           </div>
         </div>
