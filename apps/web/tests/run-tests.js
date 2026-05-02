@@ -524,6 +524,11 @@ assert.match(
   /Leads e conversao do escritorio/,
   "Expected CRM page to present the CRM real leads heading."
 );
+assert.match(
+  crmPageSource,
+  /Abrir pipeline e follow-ups/,
+  "Expected CRM page to link to the pipeline follow-up view."
+);
 
 const crmLeadsServiceSource = fs.readFileSync(
   path.join(__dirname, "..", "src/server/services/crm/get-crm-leads.ts"),
@@ -538,6 +543,41 @@ assert.match(
   crmLeadsServiceSource,
   /getCases\(\)/,
   "Expected CRM leads service to derive pipeline data from real cases."
+);
+
+const crmPipelinePageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/crm/pipeline/page.tsx"),
+  "utf8"
+);
+assert.match(
+  crmPipelinePageSource,
+  /getCrmPipeline\(\)/,
+  "Expected CRM pipeline page to read real pipeline data."
+);
+assert.match(
+  crmPipelinePageSource,
+  /Follow-ups ativos/,
+  "Expected CRM pipeline page to render follow-up records."
+);
+
+const crmPipelineServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/crm/get-crm-pipeline.ts"),
+  "utf8"
+);
+assert.match(
+  crmPipelineServiceSource,
+  /getClients\(\)/,
+  "Expected CRM pipeline service to derive data from real clients."
+);
+assert.match(
+  crmPipelineServiceSource,
+  /getCases\(\)/,
+  "Expected CRM pipeline service to derive data from real cases."
+);
+assert.match(
+  crmPipelineServiceSource,
+  /followUps/,
+  "Expected CRM pipeline service to expose follow-up records."
 );
 
 const clientServiceSource = fs.readFileSync(

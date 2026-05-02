@@ -63,6 +63,14 @@ export default async function CrmPage() {
             Leads, pipeline, follow-ups, contratos e conversas entram depois desta consolidacao inicial. Por enquanto o
             CRM organiza a carteira viva e mostra o proximo passo de conversao.
           </p>
+          <div className="mt-4">
+            <Link
+              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+              href="/crm/pipeline"
+            >
+              Abrir pipeline e follow-ups
+            </Link>
+          </div>
         </div>
       </section>
 
