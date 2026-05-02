@@ -333,6 +333,90 @@ html[data-theme="light"] .tasks-page .text-amber-100 {
   color: rgba(71, 85, 105, 0.94) !important;
 }
 
+html[data-theme="light"] .sign-in-page {
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%) !important;
+}
+
+html[data-theme="light"] .sign-in-hero-shell,
+html[data-theme="light"] .sign-in-security-shell,
+html[data-theme="light"] .sign-in-security-card {
+  background: #ffffff !important;
+  border-color: rgba(203, 213, 225, 0.95) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .sign-in-hero-shell,
+html[data-theme="light"] .sign-in-security-shell,
+html[data-theme="light"] .sign-in-security-card {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .sign-in-hero-shell .text-white,
+html[data-theme="light"] .sign-in-hero-shell .text-slate-100,
+html[data-theme="light"] .sign-in-security-shell .text-white,
+html[data-theme="light"] .sign-in-security-shell .text-slate-100,
+html[data-theme="light"] .sign-in-security-card .text-white,
+html[data-theme="light"] .sign-in-security-card .text-slate-100 {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .sign-in-hero-shell .text-slate-200,
+html[data-theme="light"] .sign-in-hero-shell .text-slate-300,
+html[data-theme="light"] .sign-in-hero-shell .text-slate-400,
+html[data-theme="light"] .sign-in-security-shell .text-slate-200,
+html[data-theme="light"] .sign-in-security-shell .text-slate-300,
+html[data-theme="light"] .sign-in-security-shell .text-slate-400,
+html[data-theme="light"] .sign-in-security-card .text-slate-200,
+html[data-theme="light"] .sign-in-security-card .text-slate-300,
+html[data-theme="light"] .sign-in-security-card .text-slate-400,
+html[data-theme="light"] .sign-in-helper {
+  color: rgba(71, 85, 105, 0.96) !important;
+}
+
+html[data-theme="light"] .sign-in-brand {
+  color: rgb(30 41 59) !important;
+}
+
+html[data-theme="light"] .sign-in-eyebrow {
+  color: rgb(51 65 85) !important;
+}
+
+html[data-theme="light"] .sign-in-label {
+  color: rgb(30 41 59) !important;
+}
+
+html[data-theme="light"] .sign-in-input {
+  background: #ffffff !important;
+  color: rgb(15 23 42) !important;
+  border-color: rgba(148, 163, 184, 0.5) !important;
+}
+
+html[data-theme="light"] .sign-in-input::placeholder {
+  color: rgba(100, 116, 139, 0.92) !important;
+}
+
+html[data-theme="light"] .sign-in-demo-button {
+  background: #ffffff !important;
+  color: rgb(30 41 59) !important;
+  border-color: rgba(189, 199, 211, 1) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .sign-in-demo-button:hover {
+  background: #f8fafc !important;
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .sign-in-warning-box {
+  background: rgba(255, 247, 205, 0.95) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: rgb(120 53 15) !important;
+}
+
+html[data-theme="light"] .sign-in-warning-box code {
+  color: rgb(120 53 15) !important;
+}
+
 * {
   box-sizing: border-box;
 }
