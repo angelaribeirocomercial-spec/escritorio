@@ -68,6 +68,8 @@ assert.equal(true, true);
   "src/app/api/clara/minutas/[recordId]/exportacao/route.ts",
   "src/app/api/clara/revisar-minuta/route.ts",
   "src/app/api/clara/fontes/route.ts",
+  "src/app/api/crm/chatbot-intake/route.ts",
+  "src/app/api/processos/[numero]/datajud/route.ts",
   "src/app/(workspace)/site/page.tsx",
   "src/app/(workspace)/site/[subpage]/page.tsx",
   "src/app/(workspace)/editor-de-texto/page.tsx",
@@ -102,6 +104,8 @@ assert.equal(true, true);
   "src/server/services/crm/get-crm-conversations.ts",
   "src/server/services/crm/get-crm-conversion.ts",
   "src/server/services/clara/get-clara-integrations.ts",
+  "src/server/services/crm/chatbot-intake.ts",
+  "src/server/services/datajud/get-datajud-process.ts",
   "src/server/services/clients/get-clients.ts",
   "src/server/services/cases/get-cases.ts",
   "src/server/services/documents/get-documents.ts",
@@ -589,6 +593,61 @@ assert.match(
   crmPipelineServiceSource,
   /followUps/,
   "Expected CRM pipeline service to expose follow-up records."
+);
+
+const crmChatbotIntakeSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/crm/chatbot-intake.ts"),
+  "utf8"
+);
+assert.match(
+  crmChatbotIntakeSource,
+  /crmChatbotIntakeSchema/,
+  "Expected chatbot intake contract to validate the CRM payload."
+);
+assert.match(
+  crmChatbotIntakeSource,
+  /normalizeCrmChatbotIntake/,
+  "Expected chatbot intake contract to normalize the lead payload."
+);
+
+const datajudServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/datajud/get-datajud-process.ts"),
+  "utf8"
+);
+assert.match(
+  datajudServiceSource,
+  /DATAJUD_API_KEY/,
+  "Expected DataJud service to read an API key from the environment when configured."
+);
+assert.match(
+  datajudServiceSource,
+  /api-publica\.datajud\.cnj\.jus\.br/,
+  "Expected DataJud service to target the official CNJ public API base URL."
+);
+assert.match(
+  datajudServiceSource,
+  /numeroProcesso/,
+  "Expected DataJud service to query by the normalized process number."
+);
+
+const datajudRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/processos/[numero]/datajud/route.ts"),
+  "utf8"
+);
+assert.match(
+  datajudRouteSource,
+  /getDataJudProcessConsultation/,
+  "Expected the DataJud route to use the server-side consultation service."
+);
+
+const processDetailSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/[processId]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  processDetailSource,
+  /Consultar DataJud/,
+  "Expected the process cockpit to expose the DataJud consultation link."
 );
 
 const clientServiceSource = fs.readFileSync(

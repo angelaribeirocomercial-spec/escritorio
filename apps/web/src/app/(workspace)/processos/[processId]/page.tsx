@@ -180,6 +180,12 @@ export default async function ProcessDetailPage({
           >
             Voltar para processos
           </Link>
+          <Link
+            className="detail-link-button px-4 py-3 text-sm font-semibold"
+            href={`/api/processos/${encodeURIComponent(processItem.processNumber)}/datajud`}
+          >
+            Consultar DataJud
+          </Link>
         </div>
       </div>
 
