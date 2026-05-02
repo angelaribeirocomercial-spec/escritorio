@@ -10,7 +10,7 @@ export function WorkspaceHeaderNarrative() {
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-[22px] border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-slate-300 lg:flex-row lg:items-center lg:justify-between">
+    <div className="workspace-header-narrative flex flex-col gap-2 rounded-[22px] border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-slate-300 lg:flex-row lg:items-center lg:justify-between">
       <div className="min-w-0">
         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
           Narrativa do produto

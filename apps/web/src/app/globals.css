@@ -167,6 +167,52 @@ html[data-theme="light"] .workspace-session-summary-card .text-slate-400 {
   color: rgba(239, 246, 255, 0.92) !important;
 }
 
+html[data-theme="light"] .workspace-state-panel {
+  background: #ffffff !important;
+  border-color: rgba(210, 220, 232, 0.95) !important;
+  box-shadow: none !important;
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .workspace-state-panel .text-white,
+html[data-theme="light"] .workspace-state-panel .text-slate-100,
+html[data-theme="light"] .workspace-state-panel .text-slate-200 {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .workspace-state-panel .text-slate-300,
+html[data-theme="light"] .workspace-state-panel .text-slate-400 {
+  color: rgba(71, 85, 105, 0.94) !important;
+}
+
+html[data-theme="light"] .workspace-state-panel .text-amber-100,
+html[data-theme="light"] .workspace-state-panel .text-rose-100 {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .workspace-header-narrative {
+  background: #ffffff !important;
+  border-color: rgba(210, 220, 232, 0.95) !important;
+  color: rgb(15 23 42) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .workspace-header-narrative .text-white,
+html[data-theme="light"] .workspace-header-narrative .text-slate-100,
+html[data-theme="light"] .workspace-header-narrative .text-slate-200 {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .workspace-header-narrative .text-slate-300,
+html[data-theme="light"] .workspace-header-narrative .text-slate-400,
+html[data-theme="light"] .workspace-header-narrative .text-slate-500 {
+  color: rgba(71, 85, 105, 0.94) !important;
+}
+
+html[data-theme="light"] .workspace-header-narrative .text-cyan-200 {
+  color: rgb(8 145 178) !important;
+}
+
 html[data-theme="light"] .reference-list-shell,
 html[data-theme="light"] .reference-dashboard-panel,
 html[data-theme="light"] .reference-dashboard-card,
@@ -774,12 +820,12 @@ h4,
 }
 
 html[data-theme="light"] .mj-model-title {
-  color: #b8bec7 !important;
+  color: rgb(30 41 59) !important;
 }
 
 html[data-theme="light"] .mj-model-subtitle,
 html[data-theme="light"] .mj-model-empty {
-  color: #c0c6cd !important;
+  color: rgba(71, 85, 105, 0.94) !important;
 }
 
 html[data-theme="light"] .mj-model-panel,
@@ -797,11 +843,44 @@ html[data-theme="light"] .mj-model-soft-panel {
 html[data-theme="light"] .mj-model-input {
   background: #ffffff !important;
   border-color: #e5e7eb !important;
-  color: #6b7280 !important;
+  color: rgb(15 23 42) !important;
 }
 
 html[data-theme="light"] .mj-model-gridline {
   border-color: #eceff3 !important;
+}
+
+html[data-theme="light"] .mj-model-page .text-white,
+html[data-theme="light"] .mj-model-panel .text-white,
+html[data-theme="light"] .mj-model-soft-panel .text-white,
+html[data-theme="light"] .mj-model-toolbar .text-white {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .mj-model-page .text-slate-100,
+html[data-theme="light"] .mj-model-page .text-slate-200,
+html[data-theme="light"] .mj-model-panel .text-slate-100,
+html[data-theme="light"] .mj-model-panel .text-slate-200,
+html[data-theme="light"] .mj-model-soft-panel .text-slate-100,
+html[data-theme="light"] .mj-model-soft-panel .text-slate-200,
+html[data-theme="light"] .mj-model-toolbar .text-slate-100,
+html[data-theme="light"] .mj-model-toolbar .text-slate-200 {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .mj-model-page .text-slate-300,
+html[data-theme="light"] .mj-model-page .text-slate-400,
+html[data-theme="light"] .mj-model-page .text-slate-500,
+html[data-theme="light"] .mj-model-panel .text-slate-300,
+html[data-theme="light"] .mj-model-panel .text-slate-400,
+html[data-theme="light"] .mj-model-panel .text-slate-500,
+html[data-theme="light"] .mj-model-soft-panel .text-slate-300,
+html[data-theme="light"] .mj-model-soft-panel .text-slate-400,
+html[data-theme="light"] .mj-model-soft-panel .text-slate-500,
+html[data-theme="light"] .mj-model-toolbar .text-slate-300,
+html[data-theme="light"] .mj-model-toolbar .text-slate-400,
+html[data-theme="light"] .mj-model-toolbar .text-slate-500 {
+  color: rgba(71, 85, 105, 0.94) !important;
 }
 
 html[data-theme="light"] .detail-link-button {
