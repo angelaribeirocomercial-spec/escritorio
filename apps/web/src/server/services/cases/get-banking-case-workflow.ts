@@ -89,6 +89,20 @@ const WORKFLOW_BLUEPRINTS: Record<
       "Extrato do beneficio ou extrato bancario",
       "Contrato bancario ou CCB"
     ]
+  },
+  "beneficio-descontos": {
+    steps: [
+      { id: "cadastro", title: "Cadastro concluido", detail: "Cliente, banco e contexto inicial registrados." },
+      { id: "documentos", title: "Base de beneficio", detail: "Extrato, comunicações e base de desconto reunidos." },
+      { id: "analise", title: "Analise do desconto", detail: "Leitura do extrato do beneficio e da cobranca controvertida." },
+      { id: "estrategia", title: "Estrategia juridica", detail: "Definicao da peca e da tese de desconto previdenciario." },
+      { id: "distribuicao", title: "Distribuicao e acompanhamento", detail: "Protocolo e monitoramento processual do caso." }
+    ],
+    requiredDocuments: [
+      "Documento pessoal do cliente",
+      "Extrato do beneficio ou extrato bancario",
+      "Comunicacoes com o banco"
+    ]
   }
 };
 

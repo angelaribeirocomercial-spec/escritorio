@@ -66,7 +66,7 @@ export interface ClientRecord {
 
 export type BankingCaseStatus = "draft" | "active" | "awaiting-action" | "closed";
 export type BankingCaseRisk = "low" | "medium" | "high";
-export type BankingNiche = "revisional" | "fraude" | "busca-apreensao" | "cartao-consignado";
+export type BankingNiche = "revisional" | "fraude" | "busca-apreensao" | "cartao-consignado" | "beneficio-descontos";
 export type BankingWorkflowStepState = "done" | "current" | "pending";
 export type BankingChecklistItemState = "received" | "missing";
 export type BankingWorkflowReadinessState = "ready" | "blocked";
@@ -78,7 +78,8 @@ export const BANKING_NICHES: ReadonlyArray<{
   { value: "revisional", label: "Revisional de contratos" },
   { value: "fraude", label: "Fraude bancaria" },
   { value: "busca-apreensao", label: "Busca e apreensao" },
-  { value: "cartao-consignado", label: "Cartao consignado / RMC" }
+  { value: "cartao-consignado", label: "Cartao consignado / RMC" },
+  { value: "beneficio-descontos", label: "Descontos indevidos em beneficio previdenciario" }
 ] as const;
 
 export function getBankingNicheLabel(niche: BankingNiche): string {

@@ -111,7 +111,8 @@ const REQUIRED_DOCUMENT_SLOT_KEYS: Record<BankingNiche, readonly string[]> = {
   revisional: ["personal-document", "address-proof", "contract"],
   fraude: ["personal-document", "benefit-statement", "bank-communication"],
   "busca-apreensao": ["personal-document", "contract", "vehicle-document", "default-notice"],
-  "cartao-consignado": ["personal-document", "benefit-statement", "contract"]
+  "cartao-consignado": ["personal-document", "benefit-statement", "contract"],
+  "beneficio-descontos": ["personal-document", "benefit-statement", "bank-communication"]
 };
 
 function getDocumentSlot(slotKey: string) {
@@ -138,6 +139,8 @@ function buildCaseTitle(niche: BankingNiche, bankName: string) {
       return `Busca e apreensao vinculada a ${bankName}`;
     case "cartao-consignado":
       return `Cartao consignado / RMC contra ${bankName}`;
+    case "beneficio-descontos":
+      return `Descontos indevidos em beneficio previdenciario contra ${bankName}`;
     default:
       return `Revisional de contrato com ${bankName}`;
   }
@@ -151,6 +154,8 @@ function buildClaimType(niche: BankingNiche) {
       return "busca_apreensao";
     case "cartao-consignado":
       return "cartao_consignado_rmc";
+    case "beneficio-descontos":
+      return "descontos_beneficio_previdenciario";
     default:
       return "acao_revisional";
   }
@@ -164,6 +169,8 @@ function buildStage(niche: BankingNiche) {
       return "Triagem de busca e apreensao";
     case "cartao-consignado":
       return "Triagem de cartao consignado / RMC";
+    case "beneficio-descontos":
+      return "Triagem de descontos indevidos em beneficio previdenciario";
     default:
       return "Analise contratual inicial";
   }
@@ -181,6 +188,8 @@ function buildMainThesis(niche: BankingNiche, objective: string) {
       return "Mora controvertida e preservacao do veiculo";
     case "cartao-consignado":
       return "Desconto controvertido em cartao consignado / RMC";
+    case "beneficio-descontos":
+      return "Desconto indevido em beneficio previdenciario";
     default:
       return "Juros abusivos e revisao contratual";
   }
@@ -197,6 +206,10 @@ function buildSuggestedStrategy(niche: BankingNiche, objective: string) {
 
   if (niche === "cartao-consignado") {
     return "Consolidar contrato, extrato e desconto para estruturar a tese de cartao consignado / RMC.";
+  }
+
+  if (niche === "beneficio-descontos") {
+    return "Consolidar beneficio, extrato e comunicacoes para estruturar a tese de descontos indevidos.";
   }
 
   return objective
@@ -254,7 +267,7 @@ function buildInitialTasks(params: {
       notes: checklistTaskState.notes,
       checklist: checklistTaskState.checklist,
       suggested_by_claim_type:
-        params.niche === "fraude"
+        params.niche === "fraude" || params.niche === "cartao-consignado" || params.niche === "beneficio-descontos"
           ? "fraude_bancaria"
           : params.niche === "busca-apreensao"
             ? "busca_apreensao"
@@ -287,7 +300,7 @@ function buildInitialTasks(params: {
         }
       ],
       suggested_by_claim_type:
-        params.niche === "fraude"
+        params.niche === "fraude" || params.niche === "cartao-consignado" || params.niche === "beneficio-descontos"
           ? "fraude_bancaria"
           : params.niche === "busca-apreensao"
             ? "busca_apreensao"

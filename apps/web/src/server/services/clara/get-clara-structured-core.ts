@@ -133,10 +133,47 @@ function classifyScenario(params: ResolvedStructuredCore) {
   }
 
   if (
+    normalizedClaim.includes("cartao") ||
+    normalizedClaim.includes("rmc") ||
+    normalizedTitle.includes("cartao consignado") ||
+    normalizedTitle.includes("rmc") ||
+    selectedDocumentText.includes("cartao consignado") ||
+    selectedDocumentText.includes("rmc")
+  ) {
+    return {
+      nicheId: "cartao-consignado",
+      nicheLabel: getBankingNicheLabel("cartao-consignado"),
+      scenarioLabel: "Cartao consignado / RMC",
+      confidenceLabel: "Alta",
+      decisionLabel: "Peticao inicial ou resposta com foco em RMC e desconto controvertido",
+      rationale:
+        "A classificacao se apoia no claimType, na narrativa documental e no recorte tipico de cartao consignado / RMC."
+    };
+  }
+
+  if (
+    normalizedClaim.includes("beneficio") ||
+    normalizedClaim.includes("desconto indevido") ||
+    normalizedTitle.includes("beneficio") ||
+    normalizedTitle.includes("desconto indevido") ||
+    selectedDocumentText.includes("beneficio") ||
+    selectedDocumentText.includes("desconto indevido")
+  ) {
+    return {
+      nicheId: "beneficio-descontos",
+      nicheLabel: getBankingNicheLabel("beneficio-descontos"),
+      scenarioLabel: "Descontos indevidos em beneficio previdenciario",
+      confidenceLabel: "Alta",
+      decisionLabel: "Peticao inicial ou resposta com foco em desconto previdenciario indevido",
+      rationale:
+        "A classificacao se apoia no claimType, na narrativa do beneficio e na tese central de desconto indevido em renda previdenciaria."
+    };
+  }
+
+  if (
     normalizedClaim.includes("fraude") ||
     normalizedTitle.includes("fraude") ||
-    selectedDocumentText.includes("fraude") ||
-    selectedDocumentText.includes("consignado")
+    selectedDocumentText.includes("fraude")
   ) {
     return {
       nicheId: BANKING_NICHES[1].value,
@@ -145,7 +182,7 @@ function classifyScenario(params: ResolvedStructuredCore) {
       confidenceLabel: "Alta",
       decisionLabel: "Peticao inicial ou resposta com foco em desconto indevido",
       rationale:
-        "A classificacao se apoia no claimType, nos documentos de consignado e na tese central de desconto indevido e falha de contratacao."
+        "A classificacao se apoia no claimType, na narrativa documental e na tese central de contratacao nao autorizada."
     };
   }
 
@@ -165,25 +202,6 @@ function classifyScenario(params: ResolvedStructuredCore) {
       decisionLabel: "Peticao inicial revisional com memoria de calculo",
       rationale:
         "A classificacao se apoia na estrutura revisional do caso, no tipo documental e na tese principal de juros abusivos ou capitalizacao."
-    };
-  }
-
-  if (
-    normalizedClaim.includes("cartao") ||
-    normalizedClaim.includes("rmc") ||
-    normalizedTitle.includes("cartao consignado") ||
-    normalizedTitle.includes("rmc") ||
-    selectedDocumentText.includes("cartao consignado") ||
-    selectedDocumentText.includes("rmc")
-  ) {
-    return {
-      nicheId: "cartao-consignado",
-      nicheLabel: getBankingNicheLabel("cartao-consignado"),
-      scenarioLabel: "Cartao consignado / RMC",
-      confidenceLabel: "Alta",
-      decisionLabel: "Peticao inicial ou resposta com foco em RMC e desconto controvertido",
-      rationale:
-        "A classificacao se apoia no claimType, na narrativa documental e no recorte tipico de cartao consignado / RMC."
     };
   }
 
@@ -223,6 +241,15 @@ function requiredDocumentsForNiche(nicheId: string): StructuredDocumentRequireme
       { label: "Extrato do beneficio ou extrato bancario", tokens: ["extrato", "beneficio", "consignado"], importance: "essential" },
       { label: "Contrato do cartao consignado ou RMC", tokens: ["cartao", "rmc", "consignado"], importance: "essential" },
       { label: "Protocolo ou reclamacao administrativa", tokens: ["protocolo", "reclamacao", "atendimento"], importance: "supporting" }
+    ];
+  }
+
+  if (nicheId === "beneficio-descontos") {
+    return [
+      { label: "Documento de identificacao e CPF", tokens: ["rg", "cpf", "identidade"], importance: "essential" },
+      { label: "Extrato do beneficio", tokens: ["extrato", "beneficio", "inss"], importance: "essential" },
+      { label: "Comunicacoes com o banco ou INSS", tokens: ["banco", "inss", "protocolo", "atendimento"], importance: "essential" },
+      { label: "Demonstrativo do desconto", tokens: ["desconto", "indevido", "descontos"], importance: "supporting" }
     ];
   }
 

@@ -406,6 +406,7 @@ export async function getClaraWorkspace(params?: {
                 "Revisional de contratos",
                 "Fraude bancaria",
                 "Fraude bancaria > Cartao consignado / RMC",
+                "Fraude bancaria > Descontos indevidos em beneficio previdenciario",
                 "Busca e apreensao"
               ]
             },

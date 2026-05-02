@@ -51,7 +51,7 @@ const nicheItems = [
     id: "fraude",
     label: "Fraude bancaria",
     description:
-      "Descontos indevidos, contratacao nao autorizada, cartao consignado / RMC, contestacao e resposta humana guiada."
+      "Descontos indevidos, contratacao nao autorizada, cartao consignado / RMC, beneficio previdenciario e resposta humana guiada."
   },
   {
     id: "busca-apreensao",
@@ -62,7 +62,7 @@ const nicheItems = [
 ] as const;
 
 type TabId = (typeof tabItems)[number]["id"];
-type NicheId = (typeof nicheItems)[number]["id"] | "cartao-consignado";
+type NicheId = (typeof nicheItems)[number]["id"] | "cartao-consignado" | "beneficio-descontos";
 type ClaraSearchEntry = {
   kind: string;
   label: string;
@@ -100,7 +100,7 @@ function isTabId(value: string | undefined): value is TabId {
 }
 
 function isNicheId(value: string | undefined): value is NicheId {
-  return nicheItems.some((item) => item.id === value) || value === "cartao-consignado";
+  return nicheItems.some((item) => item.id === value) || value === "cartao-consignado" || value === "beneficio-descontos";
 }
 
 function hasOptions(field: { type: string; options?: string[] }): field is { type: string; options: string[] } {
@@ -531,21 +531,26 @@ export default async function ClaraPage({
 
   const nicheConfig = activeNiche
     ? {
-      revisional: {
-        title: "Revisional de contratos",
-        summary:
-          revisionalWorkspace?.analysis.executiveSummary ??
-          "Leitura contratual, abusividades, memoria de calculo e minuta assistida em um unico fluxo."
-      },
-      "cartao-consignado": {
-        title: "Cartao consignado / RMC",
-        summary:
-          "Leitura do contrato, extrato e desconto para localizar cobranças controvertidas, validar prova e abrir a resposta operacional."
-      },
-      fraude: {
-        title: "Fraude bancaria",
-        summary:
-          "Descontos indevidos, contratacao nao autorizada, contestacao e resposta humana guiada dentro do fluxo bancario."
+        revisional: {
+          title: "Revisional de contratos",
+          summary:
+            revisionalWorkspace?.analysis.executiveSummary ??
+            "Leitura contratual, abusividades, memoria de calculo e minuta assistida em um unico fluxo."
+        },
+        "cartao-consignado": {
+          title: "Cartao consignado / RMC",
+          summary:
+            "Leitura do contrato, extrato e desconto para localizar cobrancas controvertidas, validar prova e abrir a resposta operacional."
+        },
+        "beneficio-descontos": {
+          title: "Descontos indevidos em beneficio previdenciario",
+          summary:
+            "Leitura do extrato do beneficio, das comunicacoes e do desconto controvertido para montar a resposta operacional com prova minima."
+        },
+        fraude: {
+          title: "Fraude bancaria",
+          summary:
+            "Descontos indevidos, contratacao nao autorizada, cartao consignado / RMC, beneficio previdenciario e resposta humana guiada dentro do fluxo bancario."
         },
         "busca-apreensao": {
           title: "Busca e apreensao",
@@ -556,75 +561,88 @@ export default async function ClaraPage({
     : null;
   const nicheFlow = activeNiche
     ? {
-      revisional: {
-        steps: [
-          {
-            title: "Analise",
-            detail:
-                "Confirma contrato, parcelas, CET, encargos e viabilidade inicial da revisional."
+        revisional: {
+          steps: [
+            {
+              title: "Analise",
+              detail: "Confirma contrato, parcelas, CET, encargos e viabilidade inicial da revisional."
             },
             {
               title: "Intimacao",
-              detail:
-                "Extrai prazo, ato exigido e necessidade de resposta humana antes do protocolo."
+              detail: "Extrai prazo, ato exigido e necessidade de resposta humana antes do protocolo."
             },
             {
               title: "Pecas",
-              detail:
-                "Estrutura a minuta assistida com fatos, fundamentos, memoria de calculo e pedidos."
+              detail: "Estrutura a minuta assistida com fatos, fundamentos, memoria de calculo e pedidos."
             },
             {
               title: "Jurisprudencia",
-              detail:
-                "Prioriza STJ e separa STF apenas quando houver recorte constitucional real."
+              detail: "Prioriza STJ e separa STF apenas quando houver recorte constitucional real."
             },
             {
               title: "Saida operacional",
+              detail: "Abre minuta, pacote revisional e editor formal para salvar, revisar e imprimir."
+            }
+          ]
+        },
+        "cartao-consignado": {
+          steps: [
+            {
+              title: "Analise",
+              detail: "Confirma contrato, extratos, descontos e o desenho do consignado antes de abrir a resposta."
+            },
+            {
+              title: "Intimacao",
+              detail: "Extrai prazo e providencia urgente quando houver cobranca ativa ou resposta administrativa a fazer."
+            },
+            {
+              title: "Pecas",
+              detail: "Estrutura a minuta assistida com fatos, prova do desconto e tese de RMC ou cartao consignado."
+            },
+            {
+              title: "Jurisprudencia",
+              detail: "Prioriza STJ e separa STF apenas quando houver debate constitucional real."
+            },
+            {
+              title: "Saida operacional",
+              detail: "Abre minuta assistida e editor formal para salvar, revisar, aprovar e seguir para uso."
+            }
+          ]
+        },
+        "beneficio-descontos": {
+          steps: [
+            {
+              title: "Analise",
+              detail: "Confirma beneficio, extratos, comunicacoes e o recorte do desconto previdenciario antes da resposta."
+            },
+            {
+              title: "Intimacao",
+              detail: "Extrai prazo e providencia urgente quando houver resposta administrativa ou judicial a fazer."
+            },
+            {
+              title: "Pecas",
+              detail: "Estrutura a minuta assistida com fatos, prova do desconto e tese de desconto previdenciario indevido."
+            },
+            {
+              title: "Jurisprudencia",
+              detail: "Prioriza STJ e separa STF apenas quando houver debate constitucional real."
+            },
+            {
+              title: "Saida operacional",
+              detail: "Abre minuta assistida e editor formal para salvar, revisar, aprovar e seguir para uso."
+            }
+          ]
+        },
+        fraude: {
+          steps: [
+            {
+              title: "Analise",
               detail:
-                "Abre minuta, pacote revisional e editor formal para salvar, revisar e imprimir."
-          }
-        ]
-      },
-      "cartao-consignado": {
-        steps: [
-          {
-            title: "Analise",
-            detail:
-              "Confirma contrato, extratos, descontos e o desenho do consignado antes de abrir a resposta."
-          },
-          {
-            title: "Intimacao",
-            detail:
-              "Extrai prazo e providencia urgente quando houver cobranca ativa ou resposta administrativa a fazer."
-          },
-          {
-            title: "Pecas",
-            detail:
-              "Estrutura a minuta assistida com fatos, prova do desconto e tese de RMC ou cartao consignado."
-          },
-          {
-            title: "Jurisprudencia",
-            detail:
-              "Prioriza STJ e separa STF apenas quando houver debate constitucional real."
-          },
-          {
-            title: "Saida operacional",
-            detail:
-              "Abre minuta assistida e editor formal para salvar, revisar, aprovar e seguir para uso."
-          }
-        ]
-      },
-      fraude: {
-        steps: [
-          {
-            title: "Analise",
-            detail:
                 "Leitura do cliente, do processo e do documento para localizar fraude, desconto indevido ou contratacao nao autorizada."
             },
             {
               title: "Intimacao",
-              detail:
-                "Identifica prazo e providencia urgente quando houver resposta administrativa ou judicial a ser feita."
+              detail: "Identifica prazo e providencia urgente quando houver resposta administrativa ou judicial a ser feita."
             },
             {
               title: "Pecas",
@@ -633,13 +651,11 @@ export default async function ClaraPage({
             },
             {
               title: "Jurisprudencia",
-              detail:
-                "Busca precedentes do STJ em fraude bancaria e usa STF apenas se existir debate constitucional real."
+              detail: "Busca precedentes do STJ em fraude bancaria e usa STF apenas se existir debate constitucional real."
             },
             {
               title: "Saida operacional",
-              detail:
-                "Abre minuta assistida e editor formal para revisar, salvar, aprovar e seguir para uso."
+              detail: "Abre minuta assistida e editor formal para revisar, salvar, aprovar e seguir para uso."
             }
           ]
         },
@@ -647,28 +663,23 @@ export default async function ClaraPage({
           steps: [
             {
               title: "Analise",
-              detail:
-                "Identifica risco de apreensao, mora controvertida, contrato do veiculo e preservacao possivel."
+              detail: "Identifica risco de apreensao, mora controvertida, contrato do veiculo e preservacao possivel."
             },
             {
               title: "Intimacao",
-              detail:
-                "Extrai o prazo e a medida exigida para resposta ou defesa urgente."
+              detail: "Extrai o prazo e a medida exigida para resposta ou defesa urgente."
             },
             {
               title: "Pecas",
-              detail:
-                "Prepara a peticao de defesa com urgencia, prova da posse e narrativa para preservacao do bem."
+              detail: "Prepara a peticao de defesa com urgencia, prova da posse e narrativa para preservacao do bem."
             },
             {
               title: "Jurisprudencia",
-              detail:
-                "Prioriza STJ em busca e apreensao e deixa STF apenas como excecao constitucional."
+              detail: "Prioriza STJ em busca e apreensao e deixa STF apenas como excecao constitucional."
             },
             {
               title: "Saida operacional",
-              detail:
-                "Abre a minuta assistida e o editor formal para salvar, revisar, aprovar e imprimir."
+              detail: "Abre a minuta assistida e o editor formal para salvar, revisar, aprovar e imprimir."
             }
           ]
         }
@@ -786,6 +797,43 @@ export default async function ClaraPage({
           }
         ]
       },
+      "beneficio-descontos": {
+        title: "Motor de descontos indevidos em beneficio previdenciario",
+        summary:
+          "A Clara cruza beneficio, extrato e comunicacoes para decidir viabilidade, tese e minuta inicial no recorte previdenciario.",
+        cards: [
+          {
+            label: "Leitura central",
+            value: "Beneficio, extrato e desconto controvertido"
+          },
+          {
+            label: "Tese pratica",
+            value: "Desconto previdenciario indevido com prova documental"
+          },
+          {
+            label: "Prova essencial",
+            value: "Extratos, beneficio e comunicacoes com o banco ou INSS"
+          },
+          {
+            label: "Saida formal",
+            value: "Resposta assistida, inicial ou revisao humana"
+          }
+        ],
+        links: [
+          {
+            label: "Abrir resposta assistida",
+            href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=peticao-inicial&objetivo=descontos-beneficio-previdenciario`
+          },
+          {
+            label: "Abrir processo",
+            href: `/processos/${selectedProcess.id}?clara=1&action=descontos-beneficio-previdenciario&client=${selectedClient.id}&document=${selectedDocument.id}`
+          },
+          {
+            label: "Abrir documento base",
+            href: `/documentos/${selectedDocument.id}`
+          }
+        ]
+      },
       fraude: {
         title: "Motor de defesa por fraude bancaria",
         summary:
@@ -869,6 +917,15 @@ export default async function ClaraPage({
           title: "Fluxo de cartao consignado",
           steps: [
             "Triagem do contrato, do extrato e do desconto controvertido.",
+            "Leitura do ato ou da reclamacao que exige resposta urgente.",
+            "Preparacao da minuta assistida para revisao humana.",
+            "Fechamento da tese com prova minima e jurisprudencia util."
+          ]
+        },
+        "beneficio-descontos": {
+          title: "Fluxo de descontos indevidos em beneficio previdenciario",
+          steps: [
+            "Triagem do beneficio, do extrato e do desconto controvertido.",
             "Leitura do ato ou da reclamacao que exige resposta urgente.",
             "Preparacao da minuta assistida para revisao humana.",
             "Fechamento da tese com prova minima e jurisprudencia util."

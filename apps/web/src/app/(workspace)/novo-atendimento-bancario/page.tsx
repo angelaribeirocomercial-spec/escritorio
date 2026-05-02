@@ -216,6 +216,7 @@ function NovoAtendimentoBancarioPageContent({
                 <optgroup label="Fraude bancaria">
                   <option value="fraude">Fraude bancaria</option>
                   <option value="cartao-consignado">Cartao consignado / RMC</option>
+                  <option value="beneficio-descontos">Descontos indevidos em beneficio previdenciario</option>
                 </optgroup>
                 <optgroup label="Busca e apreensao">
                   <option value="busca-apreensao">Busca e apreensao</option>
