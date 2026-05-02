@@ -34,6 +34,29 @@ export default async function ConfiguracoesIntegracoesPage() {
       ]}
       title="Integracoes da Clara"
     >
+      {integrations.some((item) => item.sourceId === "bcb") ? (
+        <section className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-100/80">
+            Banco Central
+          </p>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
+            O boundary do Banco Central cobre tarifas, series economicas e PTAX. A consulta publica pode
+            ser acompanhada pelos endpoints internos abaixo.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+            <Link className="detail-link-button px-3 py-2" href="/api/bcb/tarifas?instituicao=Banco%20do%20Brasil">
+              Tarifas
+            </Link>
+            <Link className="detail-link-button px-3 py-2" href="/api/bcb/sgs?serie=433">
+              SGS
+            </Link>
+            <Link className="detail-link-button px-3 py-2" href="/api/bcb/ptax?moeda=USD">
+              PTAX
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       <section className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-100/80">Boundary tecnico</p>
         <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">

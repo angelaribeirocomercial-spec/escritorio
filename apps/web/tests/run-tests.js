@@ -70,6 +70,9 @@ assert.equal(true, true);
   "src/app/api/clara/fontes/route.ts",
   "src/app/api/crm/chatbot-intake/route.ts",
   "src/app/api/processos/[numero]/datajud/route.ts",
+  "src/app/api/bcb/tarifas/route.ts",
+  "src/app/api/bcb/sgs/route.ts",
+  "src/app/api/bcb/ptax/route.ts",
   "src/app/(workspace)/site/page.tsx",
   "src/app/(workspace)/site/[subpage]/page.tsx",
   "src/app/(workspace)/editor-de-texto/page.tsx",
@@ -106,6 +109,7 @@ assert.equal(true, true);
   "src/server/services/clara/get-clara-integrations.ts",
   "src/server/services/crm/chatbot-intake.ts",
   "src/server/services/datajud/get-datajud-process.ts",
+  "src/server/services/bcb/get-bcb-consultation.ts",
   "src/server/services/clients/get-clients.ts",
   "src/server/services/cases/get-cases.ts",
   "src/server/services/documents/get-documents.ts",
@@ -408,6 +412,26 @@ assert.match(
   claraApiSource,
   /taskType: "parecer-tecnico"/,
   "Expected Clara API helper to stamp the technical opinion task type."
+);
+
+const bcbSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/bcb/get-bcb-consultation.ts"),
+  "utf8"
+);
+assert.match(
+  bcbSource,
+  /api\.bcb\.gov\.br\/dados\/serie\/bcdata\.sgs/,
+  "Expected BCB SGS consultation to use the official public base URL."
+);
+assert.match(
+  bcbSource,
+  /olinda\.bcb\.gov\.br\/olinda\/servico\/PTAX\/versao\/v1\/odata/,
+  "Expected BCB PTAX consultation to use the official public OData base URL."
+);
+assert.match(
+  bcbSource,
+  /dadosabertos\.bcb\.gov\.br\/dataset\/tarifas-bancarias-por-segmento-e-por-instituicao/,
+  "Expected BCB tariffs consultation to point to the official open-data portal."
 );
 
 const claraInternalRouteSource = fs.readFileSync(
