@@ -130,7 +130,8 @@ export const navSections: NavSection[] = [
         label: "Configuracoes",
         shortLabel: "Config",
         icon: "agenda",
-        description: "Parametros, integracoes e governanca do workspace."
+        description: "Parametros, integracoes e governanca do workspace.",
+        children: [{ href: "/configuracoes/integracoes", label: "Integracoes" }]
       }
     ]
   },

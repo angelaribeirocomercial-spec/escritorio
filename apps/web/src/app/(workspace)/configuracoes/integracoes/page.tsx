@@ -1,0 +1,73 @@
+import Link from "next/link";
+
+import { WorkspaceStatePanel } from "@lexia/ui";
+
+import { WorkspacePage } from "@/components/layout/workspace-page";
+import { getClaraIntegrations, type ClaraIntegrationItem } from "@/server/services/clara/get-clara-integrations";
+
+export default async function ConfiguracoesIntegracoesPage() {
+  let integrations: ClaraIntegrationItem[] = [];
+
+  try {
+    integrations = await getClaraIntegrations();
+  } catch {
+    return (
+      <WorkspaceStatePanel
+        actionHref="/configuracoes"
+        actionLabel="Voltar"
+        description="Nao foi possivel carregar o estado das integracoes da Clara."
+        title="Integracoes indisponiveis"
+        tone="danger"
+      />
+    );
+  }
+
+  return (
+    <WorkspacePage
+      description="Estado operacional dos adapters oficiais e publicos preparados para a Clara."
+      eyebrow="Configuracoes"
+      metrics={[
+        { label: "Fontes", value: String(integrations.length) },
+        { label: "Consultadas", value: String(integrations.filter((item: any) => item.consulted).length) },
+        { label: "Preparadas", value: String(integrations.filter((item: any) => item.status === "not_consulted").length) },
+        { label: "Foco atual", value: "Integracoes oficiais" }
+      ]}
+      title="Integracoes da Clara"
+    >
+      <section className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-100/80">Boundary tecnico</p>
+        <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
+          As integracoes oficiais ficam abaixo da Clara, com trilha de auditoria e status explicito por fonte. A UI
+          apenas observa os contratos server-side.
+        </p>
+        <div className="mt-4">
+          <Link
+            className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+            href="/api/clara/fontes"
+          >
+            Ver JSON das fontes
+          </Link>
+        </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        {integrations.map((item) => (
+          <article key={item.sourceId} className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-lg font-semibold text-white">{item.sourceLabel}</p>
+                <p className="mt-1 text-sm text-slate-400">{item.scope}</p>
+              </div>
+              <span className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-200">
+                {item.status}
+              </span>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-slate-300">{item.summary}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{item.queryHint}</p>
+            {item.failureReason ? <p className="mt-2 text-sm text-rose-200">{item.failureReason}</p> : null}
+          </article>
+        ))}
+      </section>
+    </WorkspacePage>
+  );
+}
