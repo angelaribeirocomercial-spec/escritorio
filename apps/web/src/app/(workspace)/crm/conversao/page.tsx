@@ -34,6 +34,34 @@ export default async function CrmConversionPage() {
       ]}
       title="Conversao do escritorio"
     >
+      <section className="workspace-state-panel workspace-panel rounded-[6px] border p-5">
+        <p className="text-sm font-semibold text-white">Intake do chatbot</p>
+        <p className="mt-2 text-sm leading-6 text-slate-300">
+          O CRM ja aceita o contrato de handoff do chatbot externo por `POST /api/crm/chatbot-intake`.
+          Esse endpoint normaliza o lead captado, marca a origem e devolve o proximo passo para a fila de conversao.
+        </p>
+        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Campos minimos</p>
+            <p className="mt-2 leading-6">
+              canal, nome do lead, origem, banco, telefone, resumo e consentimento.
+            </p>
+          </div>
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status de saida</p>
+            <p className="mt-2 leading-6">
+              lead captado, origem preservada, pipeline calculado e proximos passos definidos.
+            </p>
+          </div>
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Proximo uso</p>
+            <p className="mt-2 leading-6">
+              classificar, definir follow-up e abrir o novo atendimento bancario quando houver autorizacao.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-100/80">Fluxo de conversao</p>
         <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
