@@ -110,7 +110,8 @@ const DOCUMENT_SLOTS: readonly IntakeDocumentSlot[] = [
 const REQUIRED_DOCUMENT_SLOT_KEYS: Record<BankingNiche, readonly string[]> = {
   revisional: ["personal-document", "address-proof", "contract"],
   fraude: ["personal-document", "benefit-statement", "bank-communication"],
-  "busca-apreensao": ["personal-document", "contract", "vehicle-document", "default-notice"]
+  "busca-apreensao": ["personal-document", "contract", "vehicle-document", "default-notice"],
+  "cartao-consignado": ["personal-document", "benefit-statement", "contract"]
 };
 
 function getDocumentSlot(slotKey: string) {
@@ -135,6 +136,8 @@ function buildCaseTitle(niche: BankingNiche, bankName: string) {
       return `Fraude bancaria contra ${bankName}`;
     case "busca-apreensao":
       return `Busca e apreensao vinculada a ${bankName}`;
+    case "cartao-consignado":
+      return `Cartao consignado / RMC contra ${bankName}`;
     default:
       return `Revisional de contrato com ${bankName}`;
   }
@@ -146,6 +149,8 @@ function buildClaimType(niche: BankingNiche) {
       return "fraude_bancaria";
     case "busca-apreensao":
       return "busca_apreensao";
+    case "cartao-consignado":
+      return "cartao_consignado_rmc";
     default:
       return "acao_revisional";
   }
@@ -157,6 +162,8 @@ function buildStage(niche: BankingNiche) {
       return "Triagem de fraude";
     case "busca-apreensao":
       return "Triagem de busca e apreensao";
+    case "cartao-consignado":
+      return "Triagem de cartao consignado / RMC";
     default:
       return "Analise contratual inicial";
   }
@@ -172,6 +179,8 @@ function buildMainThesis(niche: BankingNiche, objective: string) {
       return "Falha de seguranca e contratacao nao autorizada";
     case "busca-apreensao":
       return "Mora controvertida e preservacao do veiculo";
+    case "cartao-consignado":
+      return "Desconto controvertido em cartao consignado / RMC";
     default:
       return "Juros abusivos e revisao contratual";
   }
@@ -184,6 +193,10 @@ function buildSuggestedStrategy(niche: BankingNiche, objective: string) {
 
   if (niche === "busca-apreensao") {
     return "Consolidar contrato, mora e urgencia para estruturar a defesa e a protecao do veiculo.";
+  }
+
+  if (niche === "cartao-consignado") {
+    return "Consolidar contrato, extrato e desconto para estruturar a tese de cartao consignado / RMC.";
   }
 
   return objective

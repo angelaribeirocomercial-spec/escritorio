@@ -58,6 +58,12 @@ const nicheItems = [
     label: "Busca e apreensao",
     description:
       "Preservacao do veiculo, mora controvertida, defesa urgente e resposta formal alinhada."
+  },
+  {
+    id: "cartao-consignado",
+    label: "Cartao consignado / RMC",
+    description:
+      "Contrato do cartao, extratos, descontos e estrategia de resposta para consignado e RMC."
   }
 ] as const;
 
@@ -531,16 +537,21 @@ export default async function ClaraPage({
 
   const nicheConfig = activeNiche
     ? {
-        revisional: {
-          title: "Revisional de contratos",
-          summary:
-            revisionalWorkspace?.analysis.executiveSummary ??
-            "Leitura contratual, abusividades, memoria de calculo e minuta assistida em um unico fluxo."
-        },
-        fraude: {
-          title: "Fraude bancaria",
-          summary:
-            "Descontos indevidos, contratacao nao autorizada, contestacao e resposta humana guiada dentro do fluxo bancario."
+      revisional: {
+        title: "Revisional de contratos",
+        summary:
+          revisionalWorkspace?.analysis.executiveSummary ??
+          "Leitura contratual, abusividades, memoria de calculo e minuta assistida em um unico fluxo."
+      },
+      "cartao-consignado": {
+        title: "Cartao consignado / RMC",
+        summary:
+          "Leitura do contrato, extrato e desconto para localizar cobranças controvertidas, validar prova e abrir a resposta operacional."
+      },
+      fraude: {
+        title: "Fraude bancaria",
+        summary:
+          "Descontos indevidos, contratacao nao autorizada, contestacao e resposta humana guiada dentro do fluxo bancario."
         },
         "busca-apreensao": {
           title: "Busca e apreensao",
@@ -551,11 +562,11 @@ export default async function ClaraPage({
     : null;
   const nicheFlow = activeNiche
     ? {
-        revisional: {
-          steps: [
-            {
-              title: "Analise",
-              detail:
+      revisional: {
+        steps: [
+          {
+            title: "Analise",
+            detail:
                 "Confirma contrato, parcelas, CET, encargos e viabilidade inicial da revisional."
             },
             {
@@ -577,14 +588,43 @@ export default async function ClaraPage({
               title: "Saida operacional",
               detail:
                 "Abre minuta, pacote revisional e editor formal para salvar, revisar e imprimir."
-            }
-          ]
-        },
-        fraude: {
-          steps: [
-            {
-              title: "Analise",
-              detail:
+          }
+        ]
+      },
+      "cartao-consignado": {
+        steps: [
+          {
+            title: "Analise",
+            detail:
+              "Confirma contrato, extratos, descontos e o desenho do consignado antes de abrir a resposta."
+          },
+          {
+            title: "Intimacao",
+            detail:
+              "Extrai prazo e providencia urgente quando houver cobranca ativa ou resposta administrativa a fazer."
+          },
+          {
+            title: "Pecas",
+            detail:
+              "Estrutura a minuta assistida com fatos, prova do desconto e tese de RMC ou cartao consignado."
+          },
+          {
+            title: "Jurisprudencia",
+            detail:
+              "Prioriza STJ e separa STF apenas quando houver debate constitucional real."
+          },
+          {
+            title: "Saida operacional",
+            detail:
+              "Abre minuta assistida e editor formal para salvar, revisar, aprovar e seguir para uso."
+          }
+        ]
+      },
+      fraude: {
+        steps: [
+          {
+            title: "Analise",
+            detail:
                 "Leitura do cliente, do processo e do documento para localizar fraude, desconto indevido ou contratacao nao autorizada."
             },
             {
@@ -714,11 +754,48 @@ export default async function ClaraPage({
   }
   const nicheOperational = activeNiche
     ? {
-        revisional: null,
-        fraude: {
-          title: "Motor de defesa por fraude bancaria",
-          summary:
-            "A Clara le o caso como defesa por consignado nao autorizado, desconto indevido ou contratacao nao reconhecida, com saida formal pronta para revisao humana.",
+      revisional: null,
+      "cartao-consignado": {
+        title: "Motor de cartao consignado / RMC",
+        summary:
+          "A Clara cruza contrato, extrato e desconto do cartao consignado para decidir viabilidade, tese e minuta inicial.",
+        cards: [
+          {
+            label: "Leitura central",
+            value: "Contrato, extrato e desconto controvertido"
+          },
+          {
+            label: "Tese pratica",
+            value: "RMC ou cartao consignado com desconto indevido"
+          },
+          {
+            label: "Prova essencial",
+            value: "Extratos, contrato e reclamacao administrativa"
+          },
+          {
+            label: "Saida formal",
+            value: "Resposta assistida, inicial ou revisao humana"
+          }
+        ],
+        links: [
+          {
+            label: "Abrir resposta assistida",
+            href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=peticao-inicial&objetivo=cartao-consignado-rmc`
+          },
+          {
+            label: "Abrir processo",
+            href: `/processos/${selectedProcess.id}?clara=1&action=cartao-consignado-rmc&client=${selectedClient.id}&document=${selectedDocument.id}`
+          },
+          {
+            label: "Abrir documento base",
+            href: `/documentos/${selectedDocument.id}`
+          }
+        ]
+      },
+      fraude: {
+        title: "Motor de defesa por fraude bancaria",
+        summary:
+          "A Clara le o caso como defesa por consignado nao autorizado, desconto indevido ou contratacao nao reconhecida, com saida formal pronta para revisao humana.",
           cards: [
             {
               label: "Leitura central",
@@ -794,6 +871,15 @@ export default async function ClaraPage({
   const nicheExecutionBlocks = activeNiche
     ? {
         revisional: null,
+        "cartao-consignado": {
+          title: "Fluxo de cartao consignado",
+          steps: [
+            "Triagem do contrato, do extrato e do desconto controvertido.",
+            "Leitura do ato ou da reclamacao que exige resposta urgente.",
+            "Preparacao da minuta assistida para revisao humana.",
+            "Fechamento da tese com prova minima e jurisprudencia util."
+          ]
+        },
         fraude: {
           title: "Fluxo de fraude bancaria",
           steps: [

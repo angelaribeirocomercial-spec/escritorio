@@ -168,6 +168,25 @@ function classifyScenario(params: ResolvedStructuredCore) {
     };
   }
 
+  if (
+    normalizedClaim.includes("cartao") ||
+    normalizedClaim.includes("rmc") ||
+    normalizedTitle.includes("cartao consignado") ||
+    normalizedTitle.includes("rmc") ||
+    selectedDocumentText.includes("cartao consignado") ||
+    selectedDocumentText.includes("rmc")
+  ) {
+    return {
+      nicheId: "cartao-consignado",
+      nicheLabel: getBankingNicheLabel("cartao-consignado"),
+      scenarioLabel: "Cartao consignado / RMC",
+      confidenceLabel: "Alta",
+      decisionLabel: "Peticao inicial ou resposta com foco em RMC e desconto controvertido",
+      rationale:
+        "A classificacao se apoia no claimType, na narrativa documental e no recorte tipico de cartao consignado / RMC."
+    };
+  }
+
   return {
     nicheId: params.bankingCase.niche,
     nicheLabel: getBankingNicheLabel(params.bankingCase.niche),
@@ -195,6 +214,15 @@ function requiredDocumentsForNiche(nicheId: string): StructuredDocumentRequireme
       { label: "Comprovantes de pagamento", tokens: ["pagamento", "boleto", "parcela"], importance: "essential" },
       { label: "Notificacao ou medida de busca e apreensao", tokens: ["notificacao", "intimacao", "busca", "apreensao"], importance: "essential" },
       { label: "Documento do veiculo e prova de posse", tokens: ["veiculo", "posse", "crlv"], importance: "supporting" }
+    ];
+  }
+
+  if (nicheId === "cartao-consignado") {
+    return [
+      { label: "Documento de identificacao e CPF", tokens: ["rg", "cpf", "identidade"], importance: "essential" },
+      { label: "Extrato do beneficio ou extrato bancario", tokens: ["extrato", "beneficio", "consignado"], importance: "essential" },
+      { label: "Contrato do cartao consignado ou RMC", tokens: ["cartao", "rmc", "consignado"], importance: "essential" },
+      { label: "Protocolo ou reclamacao administrativa", tokens: ["protocolo", "reclamacao", "atendimento"], importance: "supporting" }
     ];
   }
 
