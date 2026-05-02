@@ -6,7 +6,8 @@ import { getClaraStructuredCore } from "@/server/services/clara/get-clara-struct
 export type ClaraContextualTaskType =
   | "analisar-caso"
   | "checklist-documental"
-  | "sugerir-proximos-passos";
+  | "sugerir-proximos-passos"
+  | "parecer-tecnico";
 
 type ClaraExecutionLog = {
   executionId: string;
@@ -66,6 +67,23 @@ async function appendExecutionLog(log: ClaraExecutionLog) {
     await writeFile(EXECUTION_STORE_PATH, JSON.stringify(store, null, 2), "utf8");
   } catch {
     // Ignore non-persistent runtimes and keep the response flow alive.
+  }
+}
+
+export async function listClaraExecutionLogs(limit = 12) {
+  const storeReady = await ensureExecutionStore();
+
+  if (!storeReady) {
+    return [];
+  }
+
+  try {
+    const raw = await readFile(EXECUTION_STORE_PATH, "utf8");
+    const store = JSON.parse(raw) as { executions: ClaraExecutionLog[] };
+
+    return store.executions.slice(0, limit);
+  } catch {
+    return [];
   }
 }
 

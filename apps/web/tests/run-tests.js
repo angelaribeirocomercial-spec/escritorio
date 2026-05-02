@@ -11,6 +11,7 @@ assert.equal(true, true);
   "src/app/(workspace)/layout.tsx",
   "src/app/(workspace)/dashboard/page.tsx",
   "src/app/(workspace)/crm/page.tsx",
+  "src/app/(workspace)/crm/page.tsx",
   "src/app/(workspace)/pessoas/page.tsx",
   "src/app/(workspace)/pessoas/clientes/page.tsx",
   "src/app/(workspace)/pessoas/adversos/page.tsx",
@@ -46,6 +47,22 @@ assert.equal(true, true);
   "src/app/(workspace)/documentos/[documentId]/page.tsx",
   "src/app/(workspace)/documentos/enviar-arquivos/page.tsx",
   "src/app/(workspace)/documentos/relatorios/page.tsx",
+  "src/app/api/clientes/[id]/route.ts",
+  "src/app/api/casos/[id]/route.ts",
+  "src/app/api/casos/[id]/documentos/route.ts",
+  "src/app/api/casos/[id]/checklist/route.ts",
+  "src/app/api/casos/[id]/modelos/route.ts",
+  "src/app/api/clara/analisar-caso/route.ts",
+  "src/app/api/clara/checklist-documental/route.ts",
+  "src/app/api/clara/parecer-tecnico/route.ts",
+  "src/app/api/clara/sugerir-proximo-passo/route.ts",
+  "src/app/api/clara/resumir-andamentos/route.ts",
+  "src/app/api/clara/gerar-peca/route.ts",
+  "src/app/api/clara/historico/route.ts",
+  "src/app/api/clara/minutas/route.ts",
+  "src/app/api/clara/minutas/[recordId]/route.ts",
+  "src/app/api/clara/minutas/[recordId]/exportacao/route.ts",
+  "src/app/api/clara/revisar-minuta/route.ts",
   "src/app/(workspace)/site/page.tsx",
   "src/app/(workspace)/site/[subpage]/page.tsx",
   "src/app/(workspace)/editor-de-texto/page.tsx",
@@ -57,8 +74,10 @@ assert.equal(true, true);
   "src/app/(workspace)/configuracoes/page.tsx",
   "src/components/layout/workspace-navigation.ts",
   "src/components/layout/workspace-shell.tsx",
+  "src/components/layout/clara-minuta-actions.tsx",
   "src/components/layout/lexia-context-actions.tsx",
   "src/components/layout/session-actions.tsx",
+  "src/lib/branding/normalize-visible-copy.ts",
   "src/lib/auth/session.ts",
   "src/lib/supabase/client.ts",
   "src/lib/supabase/server.ts",
@@ -71,6 +90,7 @@ assert.equal(true, true);
   "src/server/services/official-diary/get-official-diary.ts",
   "src/server/services/procedural-updates/get-procedural-updates.ts",
   "src/server/services/agenda/get-agenda-workspace.ts",
+  "src/server/services/crm/get-crm-leads.ts",
   "src/server/services/clients/get-clients.ts",
   "src/server/services/cases/get-cases.ts",
   "src/server/services/documents/get-documents.ts",
@@ -115,6 +135,11 @@ const workspaceContextSource = fs.readFileSync(
 );
 assert.match(
   workspaceContextSource,
+  /getSupabaseAdminClient\(\)/,
+  "Expected workspace context resolution to use the privileged Supabase admin client."
+);
+assert.match(
+  workspaceContextSource,
   /No active workspace membership found/,
   "Expected workspace context resolution to fail explicitly when membership is missing."
 );
@@ -132,6 +157,151 @@ assert.match(
   sessionSource,
   /Configure%20NEXT_PUBLIC_SUPABASE_URL%20e%20NEXT_PUBLIC_SUPABASE_ANON_KEY/,
   "Expected protected routes to redirect with explicit Supabase configuration guidance."
+);
+
+const demoAccessSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/lib/auth/demo-access.ts"),
+  "utf8"
+);
+assert.match(
+  demoAccessSource,
+  /import type \{ WorkspaceSession \}/,
+  "Expected demo access to import the workspace session as a type-only dependency."
+);
+assert.match(
+  demoAccessSource,
+  /DEMO_TENANT_ID = "11111111-1111-1111-1111-111111111111"/,
+  "Expected demo access to use the seeded demo tenant UUID."
+);
+assert.match(
+  demoAccessSource,
+  /DEMO_EMAIL = "owner@lexia-demo\.local"/,
+  "Expected demo access to use the seeded Supabase demo account."
+);
+assert.match(
+  demoAccessSource,
+  /DEMO_VISIBLE_TENANT_NAME = "Clara Bancaria Demo"/,
+  "Expected demo access to expose Clara as the visible tenant branding for the workspace."
+);
+assert.match(
+  demoAccessSource,
+  /DEMO_VISIBLE_EMAIL = "workspace\.demo@clara\.local"/,
+  "Expected demo access to expose a Clara-aligned visible email label for the demo workspace."
+);
+
+const visibleCopySource = fs.readFileSync(
+  path.join(__dirname, "..", "src/lib/branding/normalize-visible-copy.ts"),
+  "utf8"
+);
+assert.match(
+  visibleCopySource,
+  /LexIA/,
+  "Expected visible copy normalization to detect legacy LexIA branding."
+);
+assert.match(
+  visibleCopySource,
+  /replace\(LEGACY_AGENT_BRAND_PATTERN, "Clara"\)/,
+  "Expected visible copy normalization to rewrite legacy agent branding to Clara."
+);
+
+const clientCockpitSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/pessoas/clientes/[clientId]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  clientCockpitSource,
+  /normalizeVisibleCopyList/,
+  "Expected the client cockpit to normalize visible legacy copy from seeded data."
+);
+
+const demoSignInRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/auth/demo-sign-in/route.ts"),
+  "utf8"
+);
+assert.match(
+  demoSignInRouteSource,
+  /isSupabaseConfigured\(\)/,
+  "Expected demo sign-in route to detect when Supabase is available."
+);
+assert.match(
+  demoSignInRouteSource,
+  /signInWithPassword/,
+  "Expected demo sign-in route to create a real Supabase session when configuration is present."
+);
+assert.match(
+  demoSignInRouteSource,
+  /new URL\("\/crm", request\.url\)/,
+  "Expected demo sign-in route to redirect to CRM instead of dashboard."
+);
+assert.match(
+  sessionSource,
+  /auth\.getUser\(\)/,
+  "Expected workspace session resolution to authenticate the Supabase user via getUser()."
+);
+assert.match(
+  sessionSource,
+  /displayEmail/,
+  "Expected workspace session resolution to carry a display email for UI-safe branding."
+);
+
+const signInRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/auth/sign-in/route.ts"),
+  "utf8"
+);
+assert.match(
+  signInRouteSource,
+  /new URL\("\/crm", request\.url\)/,
+  "Expected the email/password sign-in route to redirect to CRM instead of dashboard."
+);
+
+const signInPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(auth)/sign-in/page.tsx"),
+  "utf8"
+);
+assert.match(
+  signInPageSource,
+  /redirect\("\/crm"\)/,
+  "Expected the sign-in page to send existing sessions to CRM."
+);
+
+const workspaceHeaderNarrativeSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/components/layout/workspace-header-narrative.tsx"),
+  "utf8"
+);
+assert.match(
+  workspaceHeaderNarrativeSource,
+  /pathname\.startsWith\("\/crm"\)/,
+  "Expected the workspace header narrative to follow CRM as the primary visible entry."
+);
+
+const claraSideCopilotSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/components/layout/clara-side-copilot.tsx"),
+  "utf8"
+);
+assert.match(
+  claraSideCopilotSource,
+  /if \(pathname\.startsWith\("\/dashboard"\)\) return "crm";/,
+  "Expected the Clara side copilot to treat dashboard as CRM compatibility, not as primary context."
+);
+
+const supabaseServerSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/lib/supabase/server.ts"),
+  "utf8"
+);
+assert.match(
+  supabaseServerSource,
+  /Server Components cannot mutate cookies directly during render\./,
+  "Expected Supabase server client to tolerate cookie writes during Server Component rendering."
+);
+
+const supabaseAdminSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/lib/supabase/admin.ts"),
+  "utf8"
+);
+assert.match(
+  supabaseAdminSource,
+  /SUPABASE_SERVICE_ROLE_KEY/,
+  "Expected Supabase admin client to require the service role key."
 );
 
 const dashboardServiceSource = fs.readFileSync(
@@ -180,8 +350,8 @@ const dashboardPageSource = fs.readFileSync(
 );
 assert.match(
   dashboardPageSource,
-  /Dashboard indisponivel no momento/,
-  "Expected dashboard page to render a controlled error state."
+  /Painel executivo indisponivel no momento/,
+  "Expected the dashboard route to render a neutral compatibility label."
 );
 
 assert.equal(
@@ -190,9 +360,194 @@ assert.equal(
   "Expected loading state for the dashboard route."
 );
 
+const claraApiSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/clara/clara-api.ts"),
+  "utf8"
+);
+assert.match(
+  claraApiSource,
+  /getClaraAnalysisApiPayload/,
+  "Expected Clara API helper to expose analysis payload builders."
+);
+assert.match(
+  claraApiSource,
+  /getClaraCaseChecklistApiPayload/,
+  "Expected Clara API helper to expose checklist payload builders."
+);
+assert.match(
+  claraApiSource,
+  /getClaraProcessSummaryApiPayload/,
+  "Expected Clara API helper to expose process summary payload builders."
+);
+assert.match(
+  claraApiSource,
+  /getClaraPieceDraftApiPayload/,
+  "Expected Clara API helper to expose piece draft payload builders."
+);
+assert.match(
+  claraApiSource,
+  /getClaraTechnicalOpinionApiPayload/,
+  "Expected Clara API helper to expose technical opinion payload builders."
+);
+assert.match(
+  claraApiSource,
+  /taskType: "parecer-tecnico"/,
+  "Expected Clara API helper to stamp the technical opinion task type."
+);
+
+const claraInternalRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/analisar-caso/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraInternalRouteSource,
+  /taskType: "analisar-caso"/,
+  "Expected Clara analysis route to default to the analyze-case task type."
+);
+assert.match(
+  claraInternalRouteSource,
+  /NextResponse\.json\(\{ ok: true, data \}\)/,
+  "Expected Clara analysis route to respond with structured JSON."
+);
+
+const claraChecklistRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/checklist-documental/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraChecklistRouteSource,
+  /getClaraCaseChecklistApiPayload/,
+  "Expected Clara checklist route to use the checklist payload builder."
+);
+
+const claraOpinionRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/parecer-tecnico/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraOpinionRouteSource,
+  /getClaraTechnicalOpinionApiPayload/,
+  "Expected Clara technical opinion route to use the technical opinion payload builder."
+);
+
+const claraHistoryRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/historico/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraHistoryRouteSource,
+  /listClaraRecords/,
+  "Expected Clara history route to expose stored Clara records."
+);
+assert.match(
+  claraHistoryRouteSource,
+  /listClaraExecutionLogs/,
+  "Expected Clara history route to expose stored Clara execution logs."
+);
+
+const claraMinutasRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/minutas/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraMinutasRouteSource,
+  /listClaraRecords/,
+  "Expected Clara minutas route to expose stored text-draft records."
+);
+
+const claraMinutaRecordRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/minutas/[recordId]/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraMinutaRecordRouteSource,
+  /updateClaraRecordWorkflowStatus/,
+  "Expected Clara minuta record route to support workflow transitions."
+);
+assert.match(
+  claraMinutaRecordRouteSource,
+  /updateClaraRecordReviewNote/,
+  "Expected Clara minuta record route to support human review notes."
+);
+assert.match(
+  claraMinutaRecordRouteSource,
+  /updateClaraRecordContent/,
+  "Expected Clara minuta record route to support edited content."
+);
+
+const claraMinutaExportRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/minutas/[recordId]/exportacao/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraMinutaExportRouteSource,
+  /printable: true/,
+  "Expected Clara minuta export route to mark the export as printable."
+);
+assert.match(
+  claraMinutaExportRouteSource,
+  /available: true/,
+  "Expected Clara minuta export route to expose available export formats."
+);
+
+const claraMinutaActionsSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/components/layout/clara-minuta-actions.tsx"),
+  "utf8"
+);
+assert.match(
+  claraMinutaActionsSource,
+  /window\.print\(\)/,
+  "Expected Clara minuta actions to expose a print action."
+);
+assert.match(
+  claraMinutaActionsSource,
+  /Abrir DOCX/,
+  "Expected Clara minuta actions to expose DOCX distribution."
+);
+assert.match(
+  claraMinutaActionsSource,
+  /Abrir PDF/,
+  "Expected Clara minuta actions to expose PDF distribution."
+);
+
+const crmPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/crm/page.tsx"),
+  "utf8"
+);
+assert.match(
+  crmPageSource,
+  /getCrmLeads\(\)/,
+  "Expected CRM page to read real lead records."
+);
+assert.match(
+  crmPageSource,
+  /Leads e conversao do escritorio/,
+  "Expected CRM page to present the CRM real leads heading."
+);
+
+const crmLeadsServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/crm/get-crm-leads.ts"),
+  "utf8"
+);
+assert.match(
+  crmLeadsServiceSource,
+  /getClients\(\)/,
+  "Expected CRM leads service to derive leads from real clients."
+);
+assert.match(
+  crmLeadsServiceSource,
+  /getCases\(\)/,
+  "Expected CRM leads service to derive pipeline data from real cases."
+);
+
 const clientServiceSource = fs.readFileSync(
   path.join(__dirname, "..", "src/server/services/clients/get-clients.ts"),
   "utf8"
+);
+assert.match(
+  clientServiceSource,
+  /getSupabaseAdminClient\(\)/,
+  "Expected client reads to use the privileged Supabase admin client after workspace session resolution."
 );
 assert.match(
   clientServiceSource,
@@ -608,6 +963,21 @@ assert.match(
   "Expected Clara text draft artifact to expose the real banking case process number."
 );
 
+const claraPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/clara/page.tsx"),
+  "utf8"
+);
+assert.match(
+  claraPageSource,
+  /renderClaraContextualAnalysis\(contextualAnalysis\)/,
+  "Expected Clara contextual analysis to render in both the controlled and full workspace states."
+);
+assert.match(
+  claraPageSource,
+  /id="clara-contextual-minima"/,
+  "Expected Clara contextual analysis to expose a stable workspace anchor."
+);
+
 const textEditorSource = fs.readFileSync(
   path.join(__dirname, "..", "src/app/(workspace)/editor-de-texto/[subpage]/page.tsx"),
   "utf8"
@@ -631,6 +1001,16 @@ assert.match(
   textEditorSource,
   /listClaraRecords\(80\)/,
   "Expected text editor to list persisted Clara text draft records."
+);
+assert.match(
+  textEditorSource,
+  /updateClaraWorkflowStatusAction/,
+  "Expected text editor to expose workflow approval controls."
+);
+assert.match(
+  textEditorSource,
+  /updateClaraReviewNoteAction/,
+  "Expected text editor to expose human review note controls."
 );
 assert.doesNotMatch(
   textEditorSource,
@@ -1039,9 +1419,34 @@ assert.match(
   "Expected document upload action to require an authenticated workspace session."
 );
 
+const bankingIntakeActionSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/novo-atendimento-bancario/actions.ts"),
+  "utf8"
+);
+assert.match(
+  bankingIntakeActionSource,
+  /getSupabaseAdminClient\(\)/,
+  "Expected banking intake action to persist onboarding writes through the privileged Supabase admin client."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /isSupabaseConfigured\(\)/,
+  "Expected banking intake action to guard real onboarding writes behind explicit Supabase configuration."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /demonstracao atual nao possui Supabase configurado/,
+  "Expected banking intake action to fail with a controlled onboarding message when Supabase is unavailable."
+);
+
 const tenantDocumentUploadHelperSource = fs.readFileSync(
   path.join(__dirname, "..", "src/server/services/documents/upload-tenant-document.ts"),
   "utf8"
+);
+assert.match(
+  tenantDocumentUploadHelperSource,
+  /supabaseClient\?: SupabaseClient/,
+  "Expected shared tenant document helper to accept an injected Supabase client for privileged write flows."
 );
 assert.match(
   tenantDocumentUploadHelperSource,
@@ -1125,6 +1530,11 @@ const taskServiceSource = fs.readFileSync(
 );
 assert.match(
   taskServiceSource,
+  /getSupabaseAdminClient\(\)/,
+  "Expected task reads to use the privileged Supabase admin client after workspace session resolution."
+);
+assert.match(
+  taskServiceSource,
   /\.from\("tasks"\)/,
   "Expected tasks service to read from the real tasks table."
 );
@@ -1164,6 +1574,11 @@ assert.match(
 const agendaServiceSource = fs.readFileSync(
   path.join(__dirname, "..", "src/server/services/agenda/get-agenda-workspace.ts"),
   "utf8"
+);
+assert.match(
+  agendaServiceSource,
+  /getSupabaseAdminClient\(\)/,
+  "Expected agenda reads to use the privileged Supabase admin client after workspace session resolution."
 );
 assert.match(
   agendaServiceSource,

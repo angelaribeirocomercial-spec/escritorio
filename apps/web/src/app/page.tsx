@@ -65,7 +65,7 @@ const workflowSteps = [
     step: "03",
     title: "Operacao anda com menos atrito",
     detail:
-      "Dashboard, tarefas, GED e casos passam a funcionar como um sistema unico."
+      "CRM, tarefas, GED e casos passam a funcionar como um sistema unico."
   }
 ];
 
@@ -86,7 +86,7 @@ const testimonials = [
     name: "Julia Ramalho",
     role: "Head de litigio",
     quote:
-      "Dashboard, tarefas e analise contratual finalmente parecem partes do mesmo software."
+      "CRM, tarefas e analise contratual finalmente parecem partes do mesmo software."
   }
 ];
 
@@ -104,7 +104,7 @@ const faqs = [
   {
     question: "Ja existe demonstracao funcional?",
     answer:
-      "Sim. O produto ja demonstra dashboard, clientes, casos, documentos, tarefas, analise contratual e workspace dedicado da Clara."
+      "Sim. O produto ja demonstra CRM, clientes, casos, documentos, tarefas, analise contratual e workspace dedicado da Clara."
   }
 ];
 
@@ -133,12 +133,14 @@ export default function HomePage() {
               >
                 Ver Clara
               </Link>
-              <Link
-                className="rounded-2xl bg-[linear-gradient(90deg,#f5b942,#ffd273)] px-4 py-3 text-sm font-semibold text-slate-950 shadow-soft"
-                href="/dashboard"
-              >
-                Entrar na demonstracao
-              </Link>
+              <form action="/api/auth/demo-sign-in" method="post">
+                <button
+                  className="rounded-2xl bg-[linear-gradient(90deg,#f5b942,#ffd273)] px-4 py-3 text-sm font-semibold text-slate-950 shadow-soft"
+                  type="submit"
+                >
+                  Entrar na demonstracao
+                </button>
+              </form>
             </div>
           </div>
 
@@ -160,7 +162,7 @@ export default function HomePage() {
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   className="rounded-2xl bg-[linear-gradient(90deg,#f5b942,#ffd273)] px-6 py-4 text-sm font-semibold text-slate-950 shadow-soft"
-                  href="/dashboard"
+                  href="/sign-in"
                 >
                   Explorar produto
                 </Link>
@@ -244,7 +246,7 @@ export default function HomePage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <article className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-soft">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
-                    Dashboard executivo
+                    Painel executivo
                   </p>
                   <p className="mt-3 font-display text-3xl font-semibold text-white">R$ 215 mil</p>
                   <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -436,12 +438,14 @@ export default function HomePage() {
             O produto foi redesenhado para parecer uma plataforma juridica de alto valor comercial e operar como uma base real de demonstracao e evolucao.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              className="rounded-2xl bg-[linear-gradient(90deg,#f5b942,#ffd273)] px-6 py-4 text-sm font-semibold text-slate-950 shadow-soft"
-              href="/dashboard"
-            >
-              Entrar na demonstracao
-            </Link>
+            <form action="/api/auth/demo-sign-in" method="post">
+              <button
+                className="rounded-2xl bg-[linear-gradient(90deg,#f5b942,#ffd273)] px-6 py-4 text-sm font-semibold text-slate-950 shadow-soft"
+                type="submit"
+              >
+                Entrar na demonstracao
+              </button>
+            </form>
             <Link
               className="rounded-2xl border border-white/15 bg-white/5 px-6 py-4 text-sm font-semibold text-slate-100"
               href="/clara"

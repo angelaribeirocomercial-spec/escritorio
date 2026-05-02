@@ -1,7 +1,7 @@
 import { ClientLinkedCaseSummary, ClientRecord } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type ClientRow = {
   id: string;
@@ -56,7 +56,7 @@ export async function getClients(): Promise<ClientRecord[]> {
     throw new Error("Workspace session is required to load clients.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("clients")
     .select(
@@ -99,7 +99,7 @@ export async function getClientById(clientId: string): Promise<ClientRecord | nu
     throw new Error("Workspace session is required to load client details.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("clients")
     .select(

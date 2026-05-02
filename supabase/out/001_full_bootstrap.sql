@@ -590,6 +590,11 @@ with check (
   )
 );
 
+-- >>> supabase/migrations/0014_case_workflow_checklist_state.sql
+alter table public.cases
+  add column if not exists workflow_state jsonb not null default '{}'::jsonb,
+  add column if not exists checklist_state jsonb not null default '{}'::jsonb;
+
 -- ===== POLICIES =====
 
 -- >>> supabase/policies/0001_identity_tenancy_rls.sql
@@ -1486,7 +1491,9 @@ insert into public.cases (
   linked_documents,
   linked_tasks,
   linked_deadlines,
-  lexia_insights
+  lexia_insights,
+  workflow_state,
+  checklist_state
 )
 values
   (
@@ -1510,7 +1517,9 @@ values
     '["Contrato bancario","Planilha de parcelas","Extratos","Comprovante de renda"]'::jsonb,
     '["Revisar memoria de calculo","Validar clausula de seguro embutido","Preparar peticao inicial"]'::jsonb,
     '["Coletar documentos complementares ate 14/04/2026","Aprovar estrategia interna ate 16/04/2026"]'::jsonb,
-    '["Boa aderencia a tese revisional com foco em venda casada.","Ha espaco para pedido cumulativo de repeticao de indebito.","Cliente tem documentacao suficiente para primeira peca."]'::jsonb
+    '["Boa aderencia a tese revisional com foco em venda casada.","Ha espaco para pedido cumulativo de repeticao de indebito.","Cliente tem documentacao suficiente para primeira peca."]'::jsonb,
+    '{}'::jsonb,
+    '{}'::jsonb
   ),
   (
     'case-205',
@@ -1533,7 +1542,9 @@ values
     '["Comprovantes PIX","Atendimento bancario","Capturas de tela"]'::jsonb,
     '["Cobrar boletim de ocorrencia","Solicitar comprovante bancario detalhado","Montar cronologia do golpe"]'::jsonb,
     '["Revisar pendencias documentais em 11/04/2026"]'::jsonb,
-    '["Sem boletim de ocorrencia, a narrativa probatoria fica fragil.","A tese principal permanece viavel se a cronologia for bem consolidada."]'::jsonb
+    '["Sem boletim de ocorrencia, a narrativa probatoria fica fragil.","A tese principal permanece viavel se a cronologia for bem consolidada."]'::jsonb,
+    '{}'::jsonb,
+    '{}'::jsonb
   ),
   (
     'case-311',
@@ -1556,7 +1567,9 @@ values
     '["CCB","Extratos da conta","Email de cobranca","Comprovantes bancarios","Contrato social"]'::jsonb,
     '["Finalizar fatos resumidos","Conferir planilha de encargos","Revisar fundamentos da inicial"]'::jsonb,
     '["Submeter minuta para revisao em 15/04/2026","Validar anexos ate 17/04/2026"]'::jsonb,
-    '["Caso com boa combinacao entre tese economica e prova documental.","Recomendavel destacar capitalizacao mensal e CET total no resumo executivo."]'::jsonb
+    '["Caso com boa combinacao entre tese economica e prova documental.","Recomendavel destacar capitalizacao mensal e CET total no resumo executivo."]'::jsonb,
+    '{}'::jsonb,
+    '{}'::jsonb
   ),
   (
     'case-312',
@@ -1579,7 +1592,9 @@ values
     '["Email de cobranca","Comprovantes bancarios","Notificacao de negativacao"]'::jsonb,
     '["Validar prova da negativacao","Fechar pedido de tutela","Revisar danos morais"]'::jsonb,
     '["Consolidar anexos ate 13/04/2026"]'::jsonb,
-    '["Caso apto para narrativa objetiva com pedido urgente.","Documentacao completa melhora o potencial de tutela."]'::jsonb
+    '["Caso apto para narrativa objetiva com pedido urgente.","Documentacao completa melhora o potencial de tutela."]'::jsonb,
+    '{}'::jsonb,
+    '{}'::jsonb
   )
 on conflict (id) do update
 set
@@ -1602,6 +1617,8 @@ set
   linked_tasks = excluded.linked_tasks,
   linked_deadlines = excluded.linked_deadlines,
   lexia_insights = excluded.lexia_insights,
+  workflow_state = excluded.workflow_state,
+  checklist_state = excluded.checklist_state,
   updated_at = timezone('utc', now());
 
 -- >>> supabase/seeds/0005_documents_vertical_seed.sql

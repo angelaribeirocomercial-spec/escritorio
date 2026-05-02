@@ -7,6 +7,11 @@ import {
   type ClaraRecord
 } from "@/server/services/clara/clara-record-store";
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
+import {
+  updateClaraReviewNoteAction,
+  updateClaraWorkflowStatusAction
+} from "@/app/(workspace)/clara/actions";
+import { ClaraMinutaActions } from "@/components/layout/clara-minuta-actions";
 
 type RevisionalDraftBlock = {
   title: string;
@@ -98,12 +103,16 @@ function buildRevisionalDraftBlocks(
 
 function ClaraDraftPanel({
   draftArtifact,
-  claraDisplay
+  claraDisplay,
+  claraRecord
 }: {
   draftArtifact: Awaited<ReturnType<typeof getClaraTextDraftArtifact>>;
   claraDisplay: ReturnType<typeof getClaraRecordDisplay> | null;
+  claraRecord: ClaraRecord | null;
 }) {
   const revisionalDraftBlocks = buildRevisionalDraftBlocks(draftArtifact);
+  const workflowStatusFormAction = updateClaraWorkflowStatusAction as unknown as string;
+  const reviewNoteFormAction = updateClaraReviewNoteAction as unknown as string;
 
   return (
     <section className="mj-model-panel px-4 py-4">
@@ -275,6 +284,47 @@ function ClaraDraftPanel({
         {claraDisplay?.reviewNote ? (
           <p className="mt-3 text-[13px] text-slate-400">Revisao humana: {claraDisplay.reviewNote}</p>
         ) : null}
+        {claraRecord ? (
+          <div className="mt-4 grid gap-4 rounded-[4px] border bg-black/10 px-4 py-4 mj-model-gridline lg:grid-cols-2">
+            <form action={workflowStatusFormAction as unknown as string} className="space-y-3">
+              <input type="hidden" name="recordId" value={claraRecord.id} />
+              <input type="hidden" name="returnPath" value="/editor-de-texto/meus-textos" />
+              <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+                Status documental
+              </p>
+              <select
+                className="mj-model-input w-full px-3 py-2"
+                defaultValue={claraRecord.workflowStatus}
+                name="workflowStatus"
+              >
+                <option value="created">created</option>
+                <option value="reviewed">reviewed</option>
+                <option value="completed">completed</option>
+              </select>
+              <button className="mj-model-button-green" type="submit">
+                Atualizar status
+              </button>
+            </form>
+
+            <form action={reviewNoteFormAction as unknown as string} className="space-y-3">
+              <input type="hidden" name="recordId" value={claraRecord.id} />
+              <input type="hidden" name="returnPath" value="/editor-de-texto/meus-textos" />
+              <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+                Observacao da revisao humana
+              </p>
+              <textarea
+                className="mj-model-input min-h-[7rem] w-full px-3 py-2"
+                defaultValue={claraRecord.reviewNote ?? ""}
+                name="reviewNote"
+                placeholder="Registrar pendencias, ajustes ou aprovacao final"
+              />
+              <button className="mj-model-button-gray" type="submit">
+                Salvar observacao
+              </button>
+            </form>
+          </div>
+        ) : null}
+        {claraRecord ? <ClaraMinutaActions recordId={claraRecord.id} /> : null}
       </div>
     </section>
   );
@@ -283,10 +333,12 @@ function ClaraDraftPanel({
 function MeusTextosInner({
   draftArtifact,
   claraDisplay,
+  claraRecord,
   textDraftRecords
 }: {
   draftArtifact: Awaited<ReturnType<typeof getClaraTextDraftArtifact>> | null;
   claraDisplay: ReturnType<typeof getClaraRecordDisplay> | null;
+  claraRecord: ClaraRecord | null;
   textDraftRecords: ClaraRecord[];
 }) {
   return (
@@ -339,7 +391,13 @@ function MeusTextosInner({
         </div>
       )}
 
-      {draftArtifact ? <ClaraDraftPanel claraDisplay={claraDisplay} draftArtifact={draftArtifact} /> : null}
+      {draftArtifact ? (
+        <ClaraDraftPanel
+          claraDisplay={claraDisplay}
+          claraRecord={claraRecord?.kind === "text-draft" ? claraRecord : null}
+          draftArtifact={draftArtifact}
+        />
+      ) : null}
     </div>
   );
 }
@@ -457,6 +515,7 @@ export default async function EditorSubpage({
     return (
       <MeusTextosInner
         claraDisplay={claraDisplay}
+        claraRecord={claraRecord?.kind === "text-draft" ? claraRecord : null}
         draftArtifact={draftArtifact}
         textDraftRecords={textDraftRecords}
       />

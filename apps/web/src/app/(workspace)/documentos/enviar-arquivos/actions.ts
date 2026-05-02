@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { requireWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   buildBankingCaseOperationalTaskState,
   buildPersistedBankingCaseLifecycle
@@ -58,8 +58,9 @@ export async function uploadDocumentAction(formData: FormData) {
     throw new Error("Selected case was not found for the active tenant.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const uploadedDocument = await uploadTenantDocument({
+    supabaseClient: supabase,
     tenantId: session.workspace.tenant.id,
     clientId: bankingCase.clientId,
     caseId: bankingCase.id,

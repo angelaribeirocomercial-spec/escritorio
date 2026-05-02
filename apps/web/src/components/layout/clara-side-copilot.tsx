@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const contextualFixtures = {
-  dashboard: {
+  crm: {
     eyebrow: "Contexto atual",
-    title: "Leitura executiva da carteira",
-    prompt: "Resuma os gargalos mais urgentes da operacao bancaria desta semana.",
+    title: "Leitura de entrada e relacionamento",
+    prompt: "Resuma os gargalos mais urgentes da jornada de CRM desta semana.",
     conclusion:
-      "A operacao concentra urgencia em tarefas ligadas a tutela, pendencias documentais e consolidacao de tese.",
-    actions: ["Ver tarefas urgentes", "Revisar clientes travados", "Gerar resumo da semana"]
+      "A entrada concentra urgencia em triagem, pendencias documentais e passagem para cliente e caso ativo.",
+    actions: ["Ver triagem pendente", "Revisar clientes travados", "Gerar resumo da semana"]
   },
   clientes: {
     eyebrow: "Contexto atual",
@@ -143,7 +143,8 @@ const contextualFixtures = {
 } as const;
 
 function getContextKey(pathname: string) {
-  if (pathname.startsWith("/dashboard")) return "dashboard";
+  if (pathname.startsWith("/dashboard")) return "crm";
+  if (pathname.startsWith("/crm")) return "crm";
   if (pathname.startsWith("/processos")) return "processos";
   if (pathname.startsWith("/pessoas")) return "pessoas";
   if (pathname.startsWith("/equipe")) return "equipe";

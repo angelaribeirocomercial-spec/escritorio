@@ -6,7 +6,7 @@ import {
 } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type TaskWithContext = TaskRecord & {
   client: ClientRecord;
@@ -256,7 +256,7 @@ export async function getTasks(filters?: {
     throw new Error("Workspace session is required to load tasks.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   let query = supabase
     .from("tasks")
     .select(TASK_SELECT)
@@ -288,7 +288,7 @@ export async function getTaskById(taskId: string): Promise<TaskWithContext | nul
     throw new Error("Workspace session is required to load task details.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("tasks")
     .select(TASK_SELECT)

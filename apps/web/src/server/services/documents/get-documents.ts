@@ -5,7 +5,7 @@ import {
 } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type DocumentWithContext = DocumentRecord & {
   client: ClientRecord;
@@ -249,7 +249,7 @@ export async function getDocuments(): Promise<DocumentWithContext[]> {
     throw new Error("Workspace session is required to load documents.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("documents")
     .select(DOCUMENT_SELECT)
@@ -274,7 +274,7 @@ export async function getDocumentById(
     throw new Error("Workspace session is required to load document details.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("documents")
     .select(DOCUMENT_SELECT)

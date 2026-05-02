@@ -40,7 +40,7 @@ export async function signInAction(
     };
   }
 
-  redirect("/dashboard");
+  redirect("/crm");
 }
 
 export async function signOutAction() {

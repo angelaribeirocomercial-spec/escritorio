@@ -172,6 +172,167 @@ function rankSearchEntries(query: string, entries: readonly ClaraSearchEntry[]) 
     .map(({ entry }) => entry);
 }
 
+function renderClaraContextualAnalysis(
+  contextualAnalysis: Awaited<ReturnType<typeof getClaraContextualAnalysis>> | null
+) {
+  if (!contextualAnalysis) {
+    return null;
+  }
+
+  return (
+    <section className="workspace-panel p-6" id="clara-contextual-minima">
+      <div className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
+              Clara contextual minima
+            </p>
+            <p className="mt-2 text-sm font-semibold text-white">
+              Execucao {contextualAnalysis.executionId}
+            </p>
+          </div>
+          <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-cyan-50">
+            {contextualAnalysis.taskType}
+          </span>
+        </div>
+        <p className="mt-3 text-sm leading-7 text-cyan-50">{contextualAnalysis.summary}</p>
+
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+              Context Snapshot
+            </p>
+            <ul className="mt-3 space-y-2 text-sm text-slate-200">
+              <li>clientId: {contextualAnalysis.contextSnapshot.clientId}</li>
+              <li>caseId: {contextualAnalysis.contextSnapshot.caseId}</li>
+              <li>processId: {contextualAnalysis.contextSnapshot.processId}</li>
+              <li>documentId: {contextualAnalysis.contextSnapshot.documentId}</li>
+              <li>workflowStep: {contextualAnalysis.contextSnapshot.workflowStep}</li>
+            </ul>
+          </div>
+
+          <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+              Source Trace
+            </p>
+            <ul className="mt-3 space-y-2 text-sm text-slate-200">
+              <li>origem_interna: {contextualAnalysis.sourceTrace.origem_interna.length}</li>
+              <li>origem_documental: {contextualAnalysis.sourceTrace.origem_documental.length}</li>
+              <li>origem_api: {contextualAnalysis.sourceTrace.origem_api.length}</li>
+              <li>inferencia_controlada: {contextualAnalysis.sourceTrace.inferencia_controlada.length}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+              Fatos confirmados
+            </p>
+            <ul className="mt-3 space-y-2 text-sm text-slate-200">
+              {contextualAnalysis.caseAnalysis.confirmedFacts.slice(0, 4).map((fact) => (
+                <li key={fact}>- {fact}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+              Checklist documental
+            </p>
+            <ul className="mt-3 space-y-2 text-sm text-slate-200">
+              {contextualAnalysis.caseAnalysis.documentsFound.slice(0, 3).map((document) => (
+                <li key={document.id}>- {document.label}</li>
+              ))}
+              {contextualAnalysis.caseAnalysis.documentsMissing.slice(0, 3).map((document) => (
+                <li key={document}>- Faltante: {document}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+              Riscos e sugestoes
+            </p>
+            <ul className="mt-3 space-y-2 text-sm text-slate-200">
+              {contextualAnalysis.caseAnalysis.risks.slice(0, 2).map((risk) => (
+                <li key={risk}>- {risk}</li>
+              ))}
+              {contextualAnalysis.caseAnalysis.suggestions.slice(0, 2).map((suggestion) => (
+                <li key={suggestion}>- {suggestion}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function buildFallbackClaraContextualAnalysis(params: {
+  clientId: string;
+  caseId: string;
+  processId?: string;
+  documentId?: string;
+  taskType: ClaraContextualTaskType;
+}) {
+  return {
+    executionId: `clara-exec-fallback-${Date.now()}`,
+    taskType: params.taskType,
+    contextSnapshot: {
+      clientId: params.clientId,
+      caseId: params.caseId,
+      processId: params.processId ?? null,
+      documentId: params.documentId ?? null,
+      niche: "contexto-controlado",
+      stage: "estado-controlado",
+      workflowStep: "resolucao-minima"
+    },
+    sourceTrace: {
+      origem_interna: [
+        `Cliente resolvido pela rota: ${params.clientId}`,
+        `Caso resolvido pela rota: ${params.caseId}`
+      ],
+      origem_documental: params.documentId ? [`Documento informado: ${params.documentId}`] : [],
+      origem_api: [],
+      inferencia_controlada: [
+        "Fallback controlado ativado porque a resolucao server-side nao conseguiu fechar o workspace completo.",
+        "A Clara continua observavel com contexto minimo resolvido pela rota."
+      ]
+    },
+    summary:
+      "Clara em estado controlado com cliente e caso resolvidos pela rota, aguardando a resolucao completa do workspace para aprofundar a analise.",
+    caseAnalysis: {
+      confirmedFacts: [
+        `clientId: ${params.clientId}`,
+        `caseId: ${params.caseId}`,
+        `taskType: ${params.taskType}`
+      ],
+      documentsFound: params.documentId
+        ? [
+            {
+              id: params.documentId,
+              label: "Documento informado na rota",
+              detail: `Documento vinculado via query string: ${params.documentId}`
+            }
+          ]
+        : [],
+      documentsMissing: [
+        "Documento base ainda nao vinculado",
+        "Processo ainda nao vinculado ao contexto minimo"
+      ],
+      risks: [
+        "Workspace completo indisponivel; seguir pelo cockpit do cliente ate a resolucao final.",
+        "A Clara opera em modo controlado ate o processo e o documento entrarem no caso."
+      ],
+      suggestions: [
+        "Voltar ao cockpit do cliente para completar o contexto.",
+        "Anexar documentos do caso antes de abrir a saida formal."
+      ]
+    }
+  };
+}
+
 export default async function ClaraPage({
   searchParams
 }: {
@@ -212,6 +373,24 @@ export default async function ClaraPage({
   let recentRecords: Awaited<ReturnType<typeof listClaraRecords>>;
   let revisionalWorkspace: Awaited<ReturnType<typeof getBankingRevisionalWorkspace>> | null;
   let contextualAnalysis: Awaited<ReturnType<typeof getClaraContextualAnalysis>> | null;
+  let hasResolvedProcess = false;
+  let hasResolvedDocument = false;
+  const contextualTaskType = getContextualTaskType(activeTab);
+
+  try {
+    contextualAnalysis =
+      activeNiche && searchParams?.client && searchParams?.case
+        ? await getClaraContextualAnalysis({
+            clientId: searchParams.client,
+            caseId: searchParams.case,
+            processId: searchParams?.process,
+            documentId: searchParams?.document,
+            taskType: contextualTaskType
+          })
+        : null;
+  } catch {
+    contextualAnalysis = null;
+  }
 
   try {
     clara = await getClaraWorkspace({
@@ -224,19 +403,11 @@ export default async function ClaraPage({
       tab: activeTab,
       objective: searchParams?.objetivo
     });
-    contextualAnalysis =
-      activeNiche && searchParams?.client && searchParams?.case
-        ? await getClaraContextualAnalysis({
-            clientId: searchParams.client,
-            caseId: searchParams.case,
-            processId: searchParams?.process,
-            documentId: searchParams?.document,
-            taskType: getContextualTaskType(activeTab)
-          })
-        : null;
     recentRecords = await listClaraRecords(24);
+    hasResolvedProcess = Boolean(clara.structuredCore.context.process);
+    hasResolvedDocument = Boolean(clara.structuredCore.context.selectedDocument);
     revisionalWorkspace =
-      activeNiche === "revisional"
+      activeNiche === "revisional" && hasResolvedProcess && hasResolvedDocument
         ? await getBankingRevisionalWorkspace({
             clientId: searchParams?.client,
             documentId: searchParams?.document,
@@ -250,6 +421,44 @@ export default async function ClaraPage({
           })
         : null;
   } catch {
+    const fallbackContextualAnalysis =
+      contextualAnalysis ??
+      (searchParams?.client && searchParams?.case
+        ? buildFallbackClaraContextualAnalysis({
+            clientId: searchParams.client,
+            caseId: searchParams.case,
+            processId: searchParams?.process,
+            documentId: searchParams?.document,
+            taskType: contextualTaskType
+          })
+        : null);
+
+    if (fallbackContextualAnalysis) {
+      return (
+        <WorkspacePage
+          description="A Clara contextual minima resolveu cliente e caso, mas o workspace completo nao abriu. O bloco contextual segue visivel para manter o fluxo rastreavel."
+          eyebrow="Clara"
+          metrics={[
+            { label: "Cliente", value: fallbackContextualAnalysis.contextSnapshot.clientId },
+            { label: "Caso", value: fallbackContextualAnalysis.contextSnapshot.caseId },
+            { label: "Processo", value: fallbackContextualAnalysis.contextSnapshot.processId ?? "Pendente" },
+            { label: "Documento", value: fallbackContextualAnalysis.contextSnapshot.documentId ?? "Pendente" }
+          ]}
+          title="Clara em estado controlado"
+        >
+          <WorkspaceStatePanel
+            actionHref={`/pessoas/clientes/${fallbackContextualAnalysis.contextSnapshot.clientId}?case=${fallbackContextualAnalysis.contextSnapshot.caseId}`}
+            actionLabel="Voltar ao cockpit do cliente"
+            description="A Clara contextual minima permaneceu observavel com cliente e caso resolvidos, mesmo sem o workspace completo abrir."
+            title="Contexto juridico minimo preservado"
+            tone="warning"
+          />
+
+          {renderClaraContextualAnalysis(fallbackContextualAnalysis)}
+        </WorkspacePage>
+      );
+    }
+
     return (
       <WorkspacePage
         description="A Clara nao conseguiu resolver contexto suficiente para abrir a sessao com seguranca."
@@ -273,8 +482,6 @@ export default async function ClaraPage({
     );
   }
   const activeWorkspace = clara.tabs[activeTab];
-  const hasResolvedProcess = Boolean(clara.structuredCore.context.process);
-  const hasResolvedDocument = Boolean(clara.structuredCore.context.selectedDocument);
 
   if (activeNiche && (!hasResolvedProcess || !hasResolvedDocument)) {
     return (
@@ -317,28 +524,7 @@ export default async function ClaraPage({
           />
         ) : null}
 
-        {contextualAnalysis ? (
-          <section className="clara-secondary-surface rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Resposta contextual minima
-            </p>
-            <p className="mt-3 text-sm leading-7 text-slate-200">{contextualAnalysis.summary}</p>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <div className="rounded-[4px] border border-white/10 bg-black/20 px-4 py-4 text-sm text-slate-300">
-                Fatos confirmados:{" "}
-                <span className="font-semibold text-white">
-                  {contextualAnalysis.caseAnalysis.confirmedFacts.length}
-                </span>
-              </div>
-              <div className="rounded-[4px] border border-white/10 bg-black/20 px-4 py-4 text-sm text-slate-300">
-                Lacunas documentais:{" "}
-                <span className="font-semibold text-white">
-                  {contextualAnalysis.caseAnalysis.documentsMissing.length}
-                </span>
-              </div>
-            </div>
-          </section>
-        ) : null}
+        {renderClaraContextualAnalysis(contextualAnalysis)}
       </WorkspacePage>
     );
   }
@@ -1630,94 +1816,7 @@ export default async function ClaraPage({
         </p>
       </section>
 
-      {contextualAnalysis ? (
-        <section className="workspace-panel p-6">
-          <div className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
-                  Clara contextual minima
-                </p>
-                <p className="mt-2 text-sm font-semibold text-white">
-                  Execucao {contextualAnalysis.executionId}
-                </p>
-              </div>
-              <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-cyan-50">
-                {contextualAnalysis.taskType}
-              </span>
-            </div>
-            <p className="mt-3 text-sm leading-7 text-cyan-50">{contextualAnalysis.summary}</p>
-
-            <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Context Snapshot
-                </p>
-                <ul className="mt-3 space-y-2 text-sm text-slate-200">
-                  <li>clientId: {contextualAnalysis.contextSnapshot.clientId}</li>
-                  <li>caseId: {contextualAnalysis.contextSnapshot.caseId}</li>
-                  <li>processId: {contextualAnalysis.contextSnapshot.processId}</li>
-                  <li>documentId: {contextualAnalysis.contextSnapshot.documentId}</li>
-                  <li>workflowStep: {contextualAnalysis.contextSnapshot.workflowStep}</li>
-                </ul>
-              </div>
-
-              <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Source Trace
-                </p>
-                <ul className="mt-3 space-y-2 text-sm text-slate-200">
-                  <li>origem_interna: {contextualAnalysis.sourceTrace.origem_interna.length}</li>
-                  <li>origem_documental: {contextualAnalysis.sourceTrace.origem_documental.length}</li>
-                  <li>origem_api: {contextualAnalysis.sourceTrace.origem_api.length}</li>
-                  <li>inferencia_controlada: {contextualAnalysis.sourceTrace.inferencia_controlada.length}</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-4 grid gap-3 lg:grid-cols-3">
-              <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Fatos confirmados
-                </p>
-                <ul className="mt-3 space-y-2 text-sm text-slate-200">
-                  {contextualAnalysis.caseAnalysis.confirmedFacts.slice(0, 4).map((fact) => (
-                    <li key={fact}>- {fact}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Checklist documental
-                </p>
-                <ul className="mt-3 space-y-2 text-sm text-slate-200">
-                  {contextualAnalysis.caseAnalysis.documentsFound.slice(0, 3).map((document) => (
-                    <li key={document.id}>- {document.label}</li>
-                  ))}
-                  {contextualAnalysis.caseAnalysis.documentsMissing.slice(0, 3).map((document) => (
-                    <li key={document}>- Faltante: {document}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="rounded-[4px] border border-white/10 bg-black/20 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Riscos e sugestoes
-                </p>
-                <ul className="mt-3 space-y-2 text-sm text-slate-200">
-                  {contextualAnalysis.caseAnalysis.risks.slice(0, 2).map((risk) => (
-                    <li key={risk}>- {risk}</li>
-                  ))}
-                  {contextualAnalysis.caseAnalysis.suggestions.slice(0, 2).map((suggestion) => (
-                    <li key={suggestion}>- {suggestion}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : null}
+      {renderClaraContextualAnalysis(contextualAnalysis)}
 
       <section className="workspace-panel p-6">
         <div className="flex flex-wrap gap-3">

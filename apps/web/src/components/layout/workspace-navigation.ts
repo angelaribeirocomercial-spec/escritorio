@@ -56,13 +56,6 @@ export const navSections: NavSection[] = [
         children: [{ href: "/pessoas/clientes", label: "Clientes" }]
       },
       {
-        href: "/pessoas/clientes",
-        label: "Clientes",
-        shortLabel: "Clientes",
-        icon: "people",
-        description: "Cockpit do relacionamento e entrada para o caso bancario."
-      },
-      {
         href: "/processos",
         label: "Processos",
         shortLabel: "Processos",

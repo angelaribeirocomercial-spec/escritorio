@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 export function WorkspaceHeaderNarrative() {
   const pathname = usePathname();
 
-  if (!pathname.startsWith("/dashboard")) {
+  if (!pathname.startsWith("/crm")) {
     return null;
   }
 

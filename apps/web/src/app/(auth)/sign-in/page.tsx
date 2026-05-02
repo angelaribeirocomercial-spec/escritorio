@@ -12,7 +12,7 @@ export default async function SignInPage({
   const session = await getWorkspaceSession();
 
   if (session) {
-    redirect("/dashboard");
+    redirect("/crm");
   }
 
   const configured = isSupabaseConfigured();

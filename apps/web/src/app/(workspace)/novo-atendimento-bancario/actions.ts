@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import { BANKING_NICHES, BankingNiche, getBankingNicheLabel } from "@lexia/domain";
 
 import { requireWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import {
   buildBankingCaseOperationalTaskState,
   buildPersistedBankingCaseLifecycle
@@ -327,6 +328,14 @@ export async function createBankingIntakeAction(formData: FormData) {
     );
   }
 
+  if (!isSupabaseConfigured()) {
+    redirect(
+      buildValidationRedirect(
+        "A demonstracao atual nao possui Supabase configurado para persistir cliente, caso e documentos. Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY para concluir o onboarding real."
+      )
+    );
+  }
+
   const clientId = `cl-${randomUUID()}`;
   const caseId = `case-${randomUUID()}`;
   const caseTitle = buildCaseTitle(niche, bankName);
@@ -346,7 +355,7 @@ export async function createBankingIntakeAction(formData: FormData) {
   const uploadedDocumentIds: string[] = [];
   const uploadedStoragePaths: string[] = [];
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
 
   const { error: clientError } = await supabase.from("clients").insert({
     id: clientId,
@@ -424,6 +433,7 @@ export async function createBankingIntakeAction(formData: FormData) {
       }
 
       const uploadedDocument = await uploadTenantDocument({
+        supabaseClient: supabase,
         tenantId: session.workspace.tenant.id,
         clientId,
         caseId,

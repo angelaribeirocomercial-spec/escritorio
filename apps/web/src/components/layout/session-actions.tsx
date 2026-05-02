@@ -15,7 +15,7 @@ export function SessionActions({ session }: SessionActionsProps) {
           {session.workspace.tenant.name}
         </p>
         <p className="mt-0.5 text-[11px] font-semibold text-white lg:text-xs">
-          {session.email ?? "Usuario autenticado"}
+          {session.displayEmail ?? session.email ?? "Usuario autenticado"}
         </p>
         <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
           {session.role}

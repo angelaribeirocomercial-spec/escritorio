@@ -8,7 +8,7 @@ import {
 } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getTasks, type TaskWithContext } from "@/server/services/tasks/get-tasks";
 
 export type AgendaEntryType = "task" | "commitment" | "deadline";
@@ -342,7 +342,7 @@ export async function getAgendaCommitments(): Promise<CommitmentWithContext[]> {
     throw new Error("Workspace session is required to load agenda commitments.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("agenda_commitments")
     .select(`
@@ -377,7 +377,7 @@ export async function getProceduralDeadlines(): Promise<DeadlineWithContext[]> {
     throw new Error("Workspace session is required to load procedural deadlines.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("procedural_deadlines")
     .select(`

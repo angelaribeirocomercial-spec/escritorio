@@ -6,6 +6,10 @@ import { WorkspaceStatePanel } from "@lexia/ui";
 import { ClaraContextActions } from "@/components/layout/clara-context-actions";
 import { WorkspacePage } from "@/components/layout/workspace-page";
 import {
+  normalizeVisibleCopy,
+  normalizeVisibleCopyList
+} from "@/lib/branding/normalize-visible-copy";
+import {
   getClaraRecord,
   getClaraRecordDisplay,
   listClaraRecords
@@ -210,10 +214,20 @@ export default async function ClientDetailPage({
   const claraDisplay = claraArtifact
     ? getClaraRecordDisplay(claraRecord, "Resumo contextual da Clara carregado", claraArtifact.summary)
     : null;
-
   const nextStepLabel = activeCase
-    ? nextTask?.lexiaNextStep ?? workflow?.nextStep ?? activeCase.suggestedStrategy
+    ? normalizeVisibleCopy(
+        nextTask?.lexiaNextStep ?? workflow?.nextStep ?? activeCase.suggestedStrategy
+      )
     : "Abrir o primeiro caso bancario deste cliente pela entrada de Novo atendimento bancario.";
+  const normalizedClaraSummary = claraDisplay
+    ? {
+        title: normalizeVisibleCopy(claraDisplay.title),
+        detail: normalizeVisibleCopy(claraDisplay.detail)
+      }
+    : null;
+  const normalizedClientIaContext = normalizeVisibleCopy(client.iaContext);
+  const normalizedTimeline = normalizeVisibleCopyList(client.timeline);
+  const normalizedCaseInsights = normalizeVisibleCopyList(activeCase?.lexiaInsights ?? []);
   const checklistItems = workflow?.requiredDocuments.map((label) => ({
     label,
     missing: workflow.missingDocuments.includes(label)
@@ -294,7 +308,7 @@ export default async function ClientDetailPage({
         <WorkspaceStatePanel
           actionHref={`/clara?tab=proximos-passos&client=${params.clientId}${activeCase ? `&case=${activeCase.id}` : ""}#clara-history`}
           actionLabel="Ver historico completo na Clara"
-          description={`${claraDisplay?.title}: ${claraDisplay?.detail}`}
+          description={`${normalizedClaraSummary?.title}: ${normalizedClaraSummary?.detail}`}
           footer={`Status ${claraArtifact.statusLabel} | Etapa ${claraArtifact.stageLabel} | Registro ${claraArtifact.recordId}`}
           title="Resumo ativo da Clara para este cliente"
           tone="warning"
@@ -670,20 +684,20 @@ export default async function ClientDetailPage({
         <article className="detail-panel-accent p-6">
           <p className="text-sm font-semibold text-white">Clara contextual</p>
           <div className="detail-subpanel mt-5 p-5">
-            <p className="text-sm leading-7 text-slate-200">{client.iaContext}</p>
+            <p className="text-sm leading-7 text-slate-200">{normalizedClientIaContext}</p>
           </div>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
               Registros da Clara: <span className="font-semibold text-white">{relatedClaraRecords.length}</span>
             </div>
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Insights do caso: <span className="font-semibold text-white">{activeCase?.lexiaInsights.length ?? 0}</span>
+              Insights do caso: <span className="font-semibold text-white">{normalizedCaseInsights.length}</span>
             </div>
           </div>
 
-          {activeCase?.lexiaInsights.length ? (
+          {normalizedCaseInsights.length ? (
             <div className="mt-4 grid gap-3">
-              {activeCase.lexiaInsights.slice(0, 3).map((insight) => (
+              {normalizedCaseInsights.slice(0, 3).map((insight) => (
                 <div key={insight} className="detail-soft-row px-4 py-4 text-sm leading-6 text-slate-200">
                   {insight}
                 </div>
@@ -754,7 +768,7 @@ export default async function ClientDetailPage({
       <section className="detail-panel p-6">
         <p className="text-sm font-semibold text-white">Timeline de atendimento</p>
         <ol className="mt-5 space-y-3">
-          {client.timeline.map((entry, index) => (
+          {normalizedTimeline.map((entry, index) => (
             <li
               key={entry}
               className="detail-soft-row flex gap-4 px-4 py-4 text-sm text-slate-300"

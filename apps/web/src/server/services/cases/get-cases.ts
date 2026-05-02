@@ -1,7 +1,7 @@
 import { BankingCaseRecord, ClientRecord } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type BankingCaseWithClient = BankingCaseRecord & {
   client: ClientRecord;
@@ -180,7 +180,7 @@ export async function getCases(filters?: {
     throw new Error("Workspace session is required to load cases.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   let query = supabase
     .from("cases")
     .select(CASE_SELECT)

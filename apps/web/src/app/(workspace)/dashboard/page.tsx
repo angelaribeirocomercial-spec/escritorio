@@ -61,8 +61,8 @@ export default async function DashboardPage() {
     return (
       <div className="mj-model-page space-y-4">
         <WorkspaceStatePanel
-          description="Nao foi possivel consolidar o dashboard operacional com a base real. Valide a configuracao do Supabase e as migracoes das verticais ativas do tenant."
-          title="Dashboard indisponivel no momento"
+          description="Nao foi possivel consolidar o painel operacional com a base real. Valide a configuracao do Supabase e as migracoes das verticais ativas do tenant."
+          title="Painel executivo indisponivel no momento"
           tone="danger"
         />
       </div>

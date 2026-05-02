@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -25,6 +26,7 @@ export type TenantDocumentUploadInput = {
   summary: string;
   tags?: readonly string[];
   actions?: readonly string[];
+  supabaseClient?: SupabaseClient;
 };
 
 export type TenantDocumentUploadResult = {
@@ -68,7 +70,7 @@ export async function uploadTenantDocument(
     throw new Error("O arquivo selecionado excede o limite de 30 MB.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = input.supabaseClient ?? getSupabaseServerClient();
   const documentId = `doc-${randomUUID()}`;
   const storedFileName = slugifyFileName(input.file.name);
   const storagePath = `${input.tenantId}/${input.clientId}/${input.caseId}/${documentId}/${storedFileName}`;
