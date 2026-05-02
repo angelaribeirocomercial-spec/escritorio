@@ -812,7 +812,7 @@ html[data-theme="light"] .detail-link-button {
 }
 
 html[data-theme="light"] .workspace-kicker {
-  color: rgb(180 112 12) !important;
+  color: rgb(51 65 85) !important;
 }
 
 html[data-theme="light"] .detail-panel,
@@ -862,7 +862,13 @@ html[data-theme="light"] .detail-soft-row .text-slate-500 {
 html[data-theme="light"] .detail-panel .text-cyan-100,
 html[data-theme="light"] .detail-panel-accent .text-cyan-100,
 html[data-theme="light"] .detail-soft-row .text-cyan-100 {
-  color: rgb(8 145 178) !important;
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .detail-panel .text-cyan-50,
+html[data-theme="light"] .detail-panel-accent .text-cyan-50,
+html[data-theme="light"] .detail-soft-row .text-cyan-50 {
+  color: rgb(15 23 42) !important;
 }
 
 html[data-theme="light"] .detail-panel .border-white\/10,
