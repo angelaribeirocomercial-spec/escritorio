@@ -1977,18 +1977,18 @@ export default async function ClaraPage({
         </div>
       </section>
 
-      <section className="workspace-panel scroll-mt-96 p-6" id="clara-workbench">
+      <section className="workspace-panel scroll-mt-96 p-5" id="clara-workbench">
         <div className="flex flex-col gap-2">
           <p className="workspace-kicker">Bancada de trabalho</p>
           <p className="text-sm leading-6 text-slate-300">
-            Ajuste aqui o contexto antes da execucao. O cliente escolhido filtra os processos; o restante abre em mais contexto.
+            Ajuste o contexto antes da execucao. O cliente filtra os processos; o restante abre com mais contexto sob demanda.
           </p>
         </div>
 
-        <div className="mt-4 rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
+        <div className="mt-4 rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
           <form method="get">
             <input name="tab" type="hidden" value={activeTab} />
-            <div className="grid gap-4">
+            <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
               <div>
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                   Cliente
@@ -2051,7 +2051,7 @@ export default async function ClaraPage({
             </div>
 
             {extraWorkflowFields.length > 0 ? (
-              <details className="mt-4 rounded-[4px] border border-white/10 bg-black/10 px-4 py-4">
+              <details className="mt-4 rounded-[4px] border border-white/10 bg-black/10 px-4 py-3">
                 <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
                   Mais contexto
                 </summary>
@@ -2102,18 +2102,21 @@ export default async function ClaraPage({
             ) : null}
 
             {quickActionLinks.length > 0 ? (
-              <div className="mt-5 rounded-[4px] border border-white/10 bg-black/10 p-4">
+              <div className="mt-4 rounded-[4px] border border-white/10 bg-black/10 p-4">
                 <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                   Acoes rapidas
                 </p>
-                <div className="mt-3 flex flex-wrap gap-3">
-                  {quickActionLinks.map((link) => (
+                <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                  {quickActionLinks.map((link, index) => (
                     <Link
                       key={`${link.label}-${link.href}`}
-                      className="clara-secondary-button rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/[0.08]"
+                      className="clara-secondary-button flex items-center gap-3 rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/[0.08]"
                       href={link.href}
                     >
-                      {link.label}
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-xs font-semibold text-slate-100">
+                        {index + 1}
+                      </span>
+                      <span className="min-w-0">{link.label}</span>
                     </Link>
                   ))}
                 </div>
@@ -2125,18 +2128,23 @@ export default async function ClaraPage({
       </section>
 
       {activeNiche && nicheOperational ? (
-        <section className="workspace-panel p-6">
+        <section className="workspace-panel p-5">
           <div className="flex flex-col gap-2">
             <p className="workspace-kicker">Motor do nicho</p>
             <p className="text-sm leading-6 text-slate-300">{nicheOperational.summary}</p>
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {nicheOperational.cards.map((card) => (
-              <div key={card.label} className="workspace-soft-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  {card.label}
-                </p>
-                <p className="mt-2 text-sm font-semibold text-white">{card.value}</p>
+          <div className="mt-4 space-y-3">
+            {nicheOperational.cards.map((card, index) => (
+              <div key={card.label} className="workspace-soft-card flex items-start gap-3 p-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-xs font-semibold text-slate-100">
+                  {index + 1}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    {card.label}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-white">{card.value}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -2144,20 +2152,25 @@ export default async function ClaraPage({
       ) : null}
 
       {activeNiche && nicheExecutionBlocks ? (
-        <section className="workspace-panel p-6">
+        <section className="workspace-panel p-5">
           <div className="flex flex-col gap-2">
             <p className="workspace-kicker">{nicheExecutionBlocks.title}</p>
             <p className="text-sm leading-6 text-slate-300">
               A Clara usa esta trilha para manter o trabalho dentro do nicho escolhido antes de abrir a saida formal.
             </p>
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="mt-4 space-y-3">
             {nicheExecutionBlocks.steps.map((step, index) => (
-              <div key={step} className="workspace-soft-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Passo {index + 1}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-slate-200">{step}</p>
+              <div key={step} className="workspace-soft-card flex items-start gap-3 p-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-xs font-semibold text-slate-100">
+                  {index + 1}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Passo {index + 1}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-200">{step}</p>
+                </div>
               </div>
             ))}
           </div>
