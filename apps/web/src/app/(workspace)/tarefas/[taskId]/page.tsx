@@ -79,27 +79,30 @@ export default async function TaskDetailPage({
 
   return (
     <WorkspacePage
-      description="Workspace operacional da tarefa com checklist, caso vinculado e proxima melhor acao sugerida pela Clara."
+      description="Workspace operacional da tarefa com checklist, caso vinculado e a proxima melhor acao sugerida pela Clara."
       eyebrow="Tarefa"
       metrics={metrics}
       title={task.title}
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <p className="text-sm text-slate-400">
-          {task.client.fullName} | {task.bankingCase.title} | {task.assigneeLabel}
-        </p>
-        <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href="/agenda/tarefas">
+      <div className="flex flex-col gap-4 rounded-[4px] border border-white/10 bg-white/[0.03] p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-100/80">Tarefa em foco</p>
+          <p className="mt-2 text-sm text-slate-300">
+            {task.client.fullName} | {task.bankingCase.title} | {task.assigneeLabel}
+          </p>
+        </div>
+        <Link className="detail-link-button px-4 py-2.5 text-sm font-semibold" href="/agenda/tarefas">
           Voltar para tarefas
         </Link>
       </div>
 
       <section className="grid gap-4 xl:grid-cols-[1fr_0.92fr]">
-        <article className="detail-panel p-6">
+        <article className="detail-panel p-5">
           <p className="text-sm font-semibold text-white">Resumo operacional</p>
-          <div className="mt-5 space-y-4 text-sm leading-7 text-slate-300">
+          <div className="mt-4 space-y-4 text-sm leading-6 text-slate-300">
             <p>{task.description}</p>
             <p>{task.notes}</p>
-            <div className="detail-subpanel p-5">
+            <div className="detail-subpanel p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                 Checklist de origem
               </p>
@@ -108,18 +111,20 @@ export default async function TaskDetailPage({
           </div>
         </article>
 
-        <article className="detail-panel p-6">
+        <article className="detail-panel p-5">
           <p className="text-sm font-semibold text-white">Checklist detalhado</p>
-          <div className="mt-5 space-y-3">
-            {task.checklist.map((item) => (
-              <div key={item.id} className="detail-soft-row flex items-start gap-3 px-4 py-4">
+          <div className="mt-4 space-y-3">
+            {task.checklist.map((item, index) => (
+              <div key={item.id} className="detail-soft-row flex items-start gap-3 px-4 py-3">
                 <div
                   className={`mt-0.5 h-5 w-5 rounded-full border ${
                     item.done ? "border-cyan-400 bg-cyan-400" : "border-white/20 bg-transparent"
                   }`}
                 />
                 <div>
-                  <p className="text-sm font-medium text-white">{item.label}</p>
+                  <p className="text-sm font-medium text-white">
+                    {index + 1}. {item.label}
+                  </p>
                   <p className="mt-1 text-xs text-slate-500">{item.done ? "Concluido" : "Pendente"}</p>
                 </div>
               </div>
@@ -129,31 +134,31 @@ export default async function TaskDetailPage({
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-        <article className="detail-panel p-6">
+        <article className="detail-panel p-5">
           <p className="text-sm font-semibold text-white">Contexto vinculado</p>
-          <dl className="mt-5 space-y-4 text-sm">
-            <div>
-              <dt className="text-slate-500">Cliente</dt>
-              <dd className="mt-1 text-slate-200">{task.client.fullName}</dd>
+          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="detail-subpanel p-4">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Cliente</dt>
+              <dd className="mt-2 text-sm text-slate-200">{task.client.fullName}</dd>
             </div>
-            <div>
-              <dt className="text-slate-500">Caso</dt>
-              <dd className="mt-1 text-slate-200">{task.bankingCase.title}</dd>
+            <div className="detail-subpanel p-4">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Caso</dt>
+              <dd className="mt-2 text-sm text-slate-200">{task.bankingCase.title}</dd>
             </div>
-            <div>
-              <dt className="text-slate-500">Banco reu</dt>
-              <dd className="mt-1 text-slate-200">{task.bankingCase.bankName}</dd>
+            <div className="detail-subpanel p-4">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Banco reu</dt>
+              <dd className="mt-2 text-sm text-slate-200">{task.bankingCase.bankName}</dd>
             </div>
-            <div>
-              <dt className="text-slate-500">Tese principal</dt>
-              <dd className="mt-1 text-slate-200">{task.bankingCase.mainThesis}</dd>
+            <div className="detail-subpanel p-4">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tese principal</dt>
+              <dd className="mt-2 text-sm text-slate-200">{task.bankingCase.mainThesis}</dd>
             </div>
           </dl>
         </article>
 
-        <article className="detail-panel-accent p-6">
+        <article className="detail-panel-accent p-5">
           <p className="text-sm font-semibold text-white">Orientacao Clara</p>
-          <div className="detail-subpanel mt-5 p-6 text-slate-100 shadow-soft">
+          <div className="detail-subpanel mt-4 p-5 text-slate-100 shadow-soft">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-200/80">
               Modo operacional
             </p>
