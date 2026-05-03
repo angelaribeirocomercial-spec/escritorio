@@ -239,77 +239,90 @@ async function getLeadsFromSupabase(): Promise<CrmLeadRecord[] | null> {
     return null;
   }
 
-  const { data, error } = await supabase
-    .from("crm_leads")
-    .select(
-      `
-        id,
-        tenant_id,
-        client_id,
-        case_id,
-        full_name,
-        bank_name,
-        source_channel,
-        pipeline_stage,
-        stage_label,
-        risk_label,
-        next_action,
-        summary,
-        status,
-        created_at,
-        updated_at,
-        client:clients (
+  let data;
+  let error;
+
+  try {
+    ({ data, error } = await supabase
+      .from("crm_leads")
+      .select(
+        `
           id,
-          full_name,
-          document_id,
-          email,
-          phone,
-          whatsapp,
-          address,
-          lead_source,
-          bank_name,
-          service_status,
-          signed_contract,
-          legal_viability_score,
-          fees_label,
-          documents_sent,
-          notes,
-          ia_context,
-          linked_cases,
-          linked_documents,
-          timeline
-        ),
-        banking_case:cases (
-          id,
+          tenant_id,
           client_id,
-          title,
+          case_id,
+          full_name,
           bank_name,
-          process_number,
-          contract_number,
-          claim_type,
-          stage,
+          source_channel,
+          pipeline_stage,
+          stage_label,
+          risk_label,
+          next_action,
+          summary,
           status,
-          amount_in_dispute,
-          estimated_value,
-          main_thesis,
-          legal_risk,
-          suggested_strategy,
-          owner_label,
-          niche,
-          linked_documents,
-          linked_tasks,
-          linked_deadlines,
-          lexia_insights,
-          workflow_state,
-          checklist_state
-        )
-      `
-    )
-    .eq("tenant_id", session.workspace.tenant.id)
-    .order("updated_at", { ascending: false });
+          created_at,
+          updated_at,
+          client:clients (
+            id,
+            full_name,
+            document_id,
+            email,
+            phone,
+            whatsapp,
+            address,
+            lead_source,
+            bank_name,
+            service_status,
+            signed_contract,
+            legal_viability_score,
+            fees_label,
+            documents_sent,
+            notes,
+            ia_context,
+            linked_cases,
+            linked_documents,
+            timeline
+          ),
+          banking_case:cases (
+            id,
+            client_id,
+            title,
+            bank_name,
+            process_number,
+            contract_number,
+            claim_type,
+            stage,
+            status,
+            amount_in_dispute,
+            estimated_value,
+            main_thesis,
+            legal_risk,
+            suggested_strategy,
+            owner_label,
+            niche,
+            linked_documents,
+            linked_tasks,
+            linked_deadlines,
+            lexia_insights,
+            workflow_state,
+            checklist_state
+          )
+        `
+      )
+      .eq("tenant_id", session.workspace.tenant.id)
+      .order("updated_at", { ascending: false }));
+  } catch (queryError) {
+    console.warn(
+      queryError instanceof Error
+        ? `Failed to query CRM leads for tenant ${session.workspace.tenant.id}: ${queryError.message}`
+        : `Failed to query CRM leads for tenant ${session.workspace.tenant.id}.`
+    );
+    return null;
+  }
 
   if (error) {
-    throw new Error(`Failed to load CRM leads for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load CRM leads for tenant ${session.workspace.tenant.id}: ${error.message}`);
+    return null;
   }
 
   if (!data || data.length === 0) {
@@ -329,11 +342,20 @@ export async function getCrmLeads(): Promise<CrmLeadRecord[]> {
     return storedLeads;
   }
 
-  const [clients, cases] = await Promise.all([getClients(), getCases()]);
+  try {
+    const [clients, cases] = await Promise.all([getClients(), getCases()]);
 
-  return clients.map((client) => {
-    const clientCases = cases.filter((bankingCase) => bankingCase.clientId === client.id);
+    return clients.map((client) => {
+      const clientCases = cases.filter((bankingCase) => bankingCase.clientId === client.id);
 
-    return mapDerivedLead(client, clientCases.length);
-  });
+      return mapDerivedLead(client, clientCases.length);
+    });
+  } catch (error) {
+    console.warn(
+      error instanceof Error
+        ? `Failed to derive CRM leads from workspace data: ${error.message}`
+        : "Failed to derive CRM leads from workspace data."
+    );
+    return [];
+  }
 }

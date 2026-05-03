@@ -245,7 +245,8 @@ function getPriorityOrder(priority: "high" | "medium" | "low") {
 }
 
 function derivePipelineFromLeads() {
-  return Promise.all([getClients(), getCases()]).then(([clients, cases]) => {
+  return Promise.all([getClients(), getCases()])
+    .then(([clients, cases]) => {
     const stagesMap = new Map<string, CrmPipelineStage>();
     const followUps: CrmFollowUpRecord[] = [];
 
@@ -292,7 +293,25 @@ function derivePipelineFromLeads() {
         followUps: followUps.length
       }
     };
-  });
+    })
+    .catch((error) => {
+      console.warn(
+        error instanceof Error
+          ? `Failed to derive CRM pipeline from workspace data: ${error.message}`
+          : "Failed to derive CRM pipeline from workspace data."
+      );
+
+      return {
+        stages: [],
+        followUps: [],
+        totals: {
+          clients: 0,
+          cases: 0,
+          stages: 0,
+          followUps: 0
+        }
+      };
+    });
 }
 
 async function loadPipelineFromSupabase() {
