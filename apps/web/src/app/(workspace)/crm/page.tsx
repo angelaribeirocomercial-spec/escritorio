@@ -37,7 +37,7 @@ export default async function CrmPage() {
 
   return (
     <WorkspacePage
-      description="O CRM agora organiza a carteira real de leads, o status de conversao e o proximo passo comercial antes do caso entrar de vez no cockpit juridico."
+      description="O CRM organiza a carteira real de leads, o status de conversao e o proximo passo comercial antes do caso entrar no cockpit juridico."
       eyebrow="CRM"
       metrics={[
         { label: "Leads ativos", value: String(activeLeads.length) },
@@ -47,43 +47,38 @@ export default async function CrmPage() {
       ]}
       title="Leads e conversao do escritorio"
     >
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-100/80">Direcao do CRM</p>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-            O CRM agora deixa de ser apenas uma pagina neutra e passa a refletir a conversao real da carteira. A base
-            vem dos clientes e dos casos ja cadastrados no workspace, preparando a entrada futura para pipeline,
-            follow-ups, contratos e conversas.
+      <section className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
+        <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-100/80">Direcao do CRM</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+            A home do CRM mostra a carteira viva, a conversao real e o proximo passo comercial. O detalhe segue nos
+            blocos de pipeline, follow-ups, contratos, conversas e conversao.
           </p>
         </div>
 
-        <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-100/80">Blocos do CRM</p>
-          <p className="mt-3 text-sm leading-6 text-slate-300">
-            Leads, pipeline, follow-ups, contratos, conversas e conversao agora aparecem como blocos reais do CRM.
-            O foco da home continua sendo a carteira viva e o proximo passo de conversao.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3">
+        <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-100/80">Acesso rapido</p>
+          <div className="mt-3 flex flex-wrap gap-2">
             <Link
-              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-300/30 hover:bg-emerald-300/10"
               href="/crm/pipeline"
             >
               Abrir pipeline e follow-ups
             </Link>
             <Link
-              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-300/30 hover:bg-emerald-300/10"
               href="/crm/contratos"
             >
               Abrir contratos
             </Link>
             <Link
-              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-300/30 hover:bg-emerald-300/10"
               href="/crm/conversas"
             >
               Abrir conversas
             </Link>
             <Link
-              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-300/30 hover:bg-emerald-300/10"
               href="/crm/conversao"
             >
               Abrir conversao
@@ -96,11 +91,11 @@ export default async function CrmPage() {
         {leads.map((lead) => (
           <article
             key={lead.id}
-            className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-5"
+            className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4"
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-lg font-semibold text-white">{lead.client.fullName}</p>
+                <p className="text-base font-semibold text-white">{lead.client.fullName}</p>
                 <p className="mt-1 text-sm text-slate-400">{lead.client.bankName}</p>
               </div>
               <span className="rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-100">
@@ -108,7 +103,7 @@ export default async function CrmPage() {
               </span>
             </div>
 
-            <div className="mt-4 grid gap-3 text-sm text-slate-300 md:grid-cols-2">
+            <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-2">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</p>
                 <p className="mt-2">{lead.stageLabel}</p>
@@ -127,18 +122,18 @@ export default async function CrmPage() {
               </div>
             </div>
 
-            <p className="mt-4 text-sm leading-6 text-slate-300">{lead.nextAction}</p>
+            <p className="mt-3 text-sm leading-6 text-slate-300">{lead.nextAction}</p>
 
-            <div className="mt-4 flex flex-wrap gap-3">
+            <div className="mt-3 flex flex-wrap gap-2">
               <Link
-                className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+                className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-300/30 hover:bg-emerald-300/10"
                 href={`/pessoas/clientes/${lead.client.id}`}
               >
                 Abrir cliente
               </Link>
               {lead.client.linkedCases[0]?.id ? (
                 <Link
-                  className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+                  className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-300/30 hover:bg-emerald-300/10"
                   href={`/casos/${lead.client.linkedCases[0].id}`}
                 >
                   Abrir caso
