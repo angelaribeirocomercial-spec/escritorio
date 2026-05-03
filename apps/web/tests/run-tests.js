@@ -664,6 +664,56 @@ assert.match(
   "Expected the DataJud route to use the server-side consultation service."
 );
 
+const jurisprudenceStjRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/jurisprudencia/stj/route.ts"),
+  "utf8"
+);
+assert.match(
+  jurisprudenceStjRouteSource,
+  /getJurisprudenceConsultation\("stj"/,
+  "Expected the STJ route to use the jurisprudence consultation service."
+);
+
+const jurisprudenceStfRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/jurisprudencia/stf/route.ts"),
+  "utf8"
+);
+assert.match(
+  jurisprudenceStfRouteSource,
+  /getJurisprudenceConsultation\("stf"/,
+  "Expected the STF route to use the jurisprudence consultation service."
+);
+
+const consumidorReclamacoesRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/consumidor/reclamacoes/route.ts"),
+  "utf8"
+);
+assert.match(
+  consumidorReclamacoesRouteSource,
+  /getConsumidorReclamacoesConsultation/,
+  "Expected the Consumidor.gov route to use the reclamacoes consultation service."
+);
+
+const jurisprudenceServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/jurisprudence/get-jurisprudence-consultation.ts"),
+  "utf8"
+);
+assert.match(
+  jurisprudenceServiceSource,
+  /prepared_stub/,
+  "Expected jurisprudence consultation to expose a controlled stub contract."
+);
+
+const consumidorServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/consumidor/get-consumidor-reclamacoes.ts"),
+  "utf8"
+);
+assert.match(
+  consumidorServiceSource,
+  /prepared_stub/,
+  "Expected Consumidor.gov consultation to expose a controlled stub contract."
+);
+
 const processDetailSource = fs.readFileSync(
   path.join(__dirname, "..", "src/app/(workspace)/processos/[processId]/page.tsx"),
   "utf8"
