@@ -1941,9 +1941,9 @@ export default async function ClaraPage({
         {globalSearchQuery ? (
           <section className="workspace-panel p-6">
             <div className="flex flex-col gap-2">
-              <p className="workspace-kicker">Busca global</p>
+              <p className="workspace-kicker">Resposta da Clara</p>
               <p className="text-sm leading-6 text-slate-300">
-                Resultados para <span className="font-semibold text-white">{globalSearchQuery}</span>.
+                Estou cruzando o pedido <span className="font-semibold text-white">{globalSearchQuery}</span> com o contexto local do workspace.
               </p>
             </div>
             {globalSearchMatches.length > 0 ? (
@@ -1969,7 +1969,7 @@ export default async function ClaraPage({
               </div>
             ) : (
               <div className="mt-4 rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm leading-6 text-slate-300">
-                Nenhum resultado direto foi encontrado. Tente outro termo ou continue pela Clara para localizar o registro.
+                Nenhuma correspondência direta foi encontrada. A Clara pode seguir com a entrada unica do caso ou você pode refinar a pergunta.
               </div>
             )}
           </section>
