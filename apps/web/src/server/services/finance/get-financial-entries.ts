@@ -57,7 +57,7 @@ export async function getFinancialEntries(kind?: FinancialEntryKind): Promise<Fi
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load financial entries.");
+    return [];
   }
 
   const supabase = getSupabaseServerClient();
@@ -74,7 +74,10 @@ export async function getFinancialEntries(kind?: FinancialEntryKind): Promise<Fi
   const { data, error } = await query;
 
   if (error) {
-    throw new Error(`Failed to load financial entries for tenant ${session.workspace.tenant.id}.`);
+    console.warn(
+      `Failed to load financial entries for tenant ${session.workspace.tenant.id}.`
+    );
+    return [];
   }
 
   return (data ?? []).map((row) => mapFinancialEntryRow(row as FinancialEntryRow));

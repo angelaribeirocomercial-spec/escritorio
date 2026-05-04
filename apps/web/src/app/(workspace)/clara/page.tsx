@@ -722,6 +722,31 @@ export default async function ClaraPage({
         selectedClientFromParam ??
         clara.selectors.clients[0]
       : selectedClientFromParam ?? clara.selectors.clients[0];
+
+  if (!selectedClient) {
+    return (
+      <WorkspacePage
+        description="A Clara precisa de pelo menos um cliente real para abrir a bancada de trabalho sem inventar contexto."
+        eyebrow="Clara"
+        metrics={[
+          { label: "Clientes", value: `${clara.selectors.clients.length}` },
+          { label: "Casos", value: `${clara.selectors.cases.length}` },
+          { label: "Processos", value: `${clara.selectors.processes.length}` },
+          { label: "Documentos", value: `${clara.selectors.documents.length}` }
+        ]}
+        title="Workspace da Clara ainda sem cliente selecionavel"
+      >
+        <WorkspaceStatePanel
+          actionHref="/novo-atendimento-bancario"
+          actionLabel="Abrir novo atendimento"
+          description="Nao ha clientes carregados para alimentar os seletores da Clara. Continue pelo atendimento bancario ou cadastre o primeiro cliente do tenant antes de tentar novamente."
+          title="Nenhum cliente disponivel para a Clara"
+          tone="warning"
+        />
+      </WorkspacePage>
+    );
+  }
+
   const processOptions = clara.selectors.processes.filter((processItem) => processItem.clientId === selectedClient.id);
   let selectedProcess =
     selectedProcessFromParam && selectedProcessFromParam.clientId === selectedClient.id
@@ -2057,15 +2082,26 @@ export default async function ClaraPage({
                           defaultValue={(searchParams as Record<string, string | undefined> | undefined)?.[name]}
                           name={name}
                         >
-                          {(
-                            field.type === "process"
-                              ? processOptions
-                              : getOptions(field.type)
-                          ).map((option) => (
-                            <option key={option.id} value={option.id}>
-                              {option.label}
-                            </option>
-                          ))}
+                          {(() => {
+                            const options =
+                              field.type === "process"
+                                ? processOptions
+                                : getOptions(field.type);
+
+                            if (!options.length) {
+                              return (
+                                <option disabled value="">
+                                  Nenhuma opcao disponivel
+                                </option>
+                              );
+                            }
+
+                            return options.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.label}
+                              </option>
+                            ));
+                          })()}
                         </select>
                       )}
                     </div>
@@ -2102,23 +2138,34 @@ export default async function ClaraPage({
                             ))}
                           </select>
                         ) : (
-                          <select
-                            className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                            defaultValue={(searchParams as Record<string, string | undefined> | undefined)?.[name]}
-                            name={name}
-                          >
-                            {(
+                        <select
+                          className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                          defaultValue={(searchParams as Record<string, string | undefined> | undefined)?.[name]}
+                          name={name}
+                        >
+                          {(() => {
+                            const options =
                               field.type === "process"
                                 ? processOptions
-                                : getOptions(field.type)
-                            ).map((option) => (
+                                : getOptions(field.type);
+
+                            if (!options.length) {
+                              return (
+                                <option disabled value="">
+                                  Nenhuma opcao disponivel
+                                </option>
+                              );
+                            }
+
+                            return options.map((option) => (
                               <option key={option.id} value={option.id}>
                                 {option.label}
                               </option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
+                            ));
+                          })()}
+                        </select>
+                      )}
+                    </div>
                     );
                   })}
                 </div>

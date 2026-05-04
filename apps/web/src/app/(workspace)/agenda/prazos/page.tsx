@@ -15,6 +15,25 @@ function severityLabel(severity: string) {
   }
 }
 
+type ResponsibleOption = {
+  label: string;
+  value: string;
+  disabled?: boolean;
+};
+
+function buildResponsibleOptions(
+  items: Awaited<ReturnType<typeof getProceduralDeadlines>>
+): ResponsibleOption[] {
+  const responsibles = [...new Set(items.map((item) => item.responsibleLabel).filter(Boolean))];
+
+  return responsibles.length > 0
+    ? [
+        { label: "Todos os advogados", value: "" },
+        ...responsibles.map((responsible) => ({ label: responsible, value: responsible }))
+      ]
+    : [{ label: "Nenhum advogado disponivel", value: "", disabled: true }];
+}
+
 export default async function AgendaPrazosPage({
   searchParams
 }: {
@@ -48,6 +67,7 @@ export default async function AgendaPrazosPage({
   const claraDisplay = claraArtifact
     ? getClaraRecordDisplay(claraRecord, "Prazo preparado pela Clara", claraArtifact.summary)
     : null;
+  const responsibleOptions = buildResponsibleOptions(deadlines);
 
   return (
     <div className="mj-model-page space-y-4">
@@ -98,8 +118,16 @@ export default async function AgendaPrazosPage({
             <label className="mb-2 block text-[13px]" style={{ color: "transparent" }}>
               Advogados
             </label>
-            <select className="mj-model-input w-full px-3 outline-none">
-              <option>Selecionar...</option>
+            <select
+              className="mj-model-input w-full px-3 outline-none"
+              defaultValue=""
+              disabled={responsibleOptions.length === 1 && responsibleOptions[0].disabled === true}
+            >
+              {responsibleOptions.map((option) => (
+                <option key={option.label} value={option.value} disabled={option.disabled}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex items-end">

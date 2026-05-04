@@ -339,7 +339,7 @@ export async function getAgendaCommitments(): Promise<CommitmentWithContext[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load agenda commitments.");
+    return [];
   }
 
   const supabase = getSupabaseAdminClient();
@@ -362,9 +362,10 @@ export async function getAgendaCommitments(): Promise<CommitmentWithContext[]> {
     .order("scheduled_for", { ascending: true });
 
   if (error) {
-    throw new Error(
+    console.warn(
       `Failed to load agenda commitments for tenant ${session.workspace.tenant.id}.`
     );
+    return [];
   }
 
   return (data ?? []).map((row) => mapCommitmentRow(row as CommitmentRow));
@@ -374,7 +375,7 @@ export async function getProceduralDeadlines(): Promise<DeadlineWithContext[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load procedural deadlines.");
+    return [];
   }
 
   const supabase = getSupabaseAdminClient();
@@ -397,9 +398,10 @@ export async function getProceduralDeadlines(): Promise<DeadlineWithContext[]> {
     .order("due_date", { ascending: true });
 
   if (error) {
-    throw new Error(
+    console.warn(
       `Failed to load procedural deadlines for tenant ${session.workspace.tenant.id}.`
     );
+    return [];
   }
 
   return (data ?? [])

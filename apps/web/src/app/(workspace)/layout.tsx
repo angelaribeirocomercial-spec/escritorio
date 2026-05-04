@@ -12,7 +12,7 @@ export default async function WorkspaceLayout({
   children
 }: WorkspaceLayoutProps) {
   const session = await requireWorkspaceSession();
-  const searchEntries = await getWorkspaceShellSearchEntries();
+  const searchEntries = await getWorkspaceShellSearchEntries().catch(() => []);
 
   return <WorkspaceShell searchEntries={searchEntries} session={session}>{children}</WorkspaceShell>;
 }

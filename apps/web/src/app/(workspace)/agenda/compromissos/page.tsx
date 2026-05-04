@@ -20,6 +20,25 @@ function categoryLabel(category: string) {
   }
 }
 
+type ResponsibleOption = {
+  label: string;
+  value: string;
+  disabled?: boolean;
+};
+
+function buildResponsibleOptions(
+  items: Awaited<ReturnType<typeof getAgendaCommitments>>
+): ResponsibleOption[] {
+  const responsibles = [...new Set(items.map((item) => item.responsibleLabel).filter(Boolean))];
+
+  return responsibles.length > 0
+    ? [
+        { label: "Todos os advogados", value: "" },
+        ...responsibles.map((responsible) => ({ label: responsible, value: responsible }))
+      ]
+    : [{ label: "Nenhum advogado disponivel", value: "", disabled: true }];
+}
+
 export default async function AgendaCompromissosPage({
   searchParams
 }: {
@@ -76,6 +95,7 @@ export default async function AgendaCompromissosPage({
   const claraDisplay = claraArtifact
     ? getClaraRecordDisplay(claraRecord, "Compromisso preparado pela Clara", claraArtifact.message)
     : null;
+  const responsibleOptions = buildResponsibleOptions(commitments);
 
   return (
     <div className="mj-model-page space-y-4">
@@ -99,8 +119,16 @@ export default async function AgendaCompromissosPage({
 
       <section className="mj-model-panel px-4 py-4">
         <label className="mb-2 block text-[13px] font-semibold text-slate-300">Advogados</label>
-        <select className="mj-model-input w-full px-3 outline-none">
-          <option>Selecionar...</option>
+        <select
+          className="mj-model-input w-full px-3 outline-none"
+          defaultValue=""
+          disabled={responsibleOptions.length === 1 && responsibleOptions[0].disabled === true}
+        >
+          {responsibleOptions.map((option) => (
+            <option key={option.label} value={option.value} disabled={option.disabled}>
+              {option.label}
+            </option>
+          ))}
         </select>
       </section>
 

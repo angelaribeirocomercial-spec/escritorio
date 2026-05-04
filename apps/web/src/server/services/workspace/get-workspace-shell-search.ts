@@ -22,11 +22,27 @@ function compactText(value: string, maxLength: number) {
 }
 
 export async function getWorkspaceShellSearchEntries(): Promise<WorkspaceSearchEntry[]> {
-  const [clients, processes, documents] = await Promise.all([
+  const [clientsResult, processesResult, documentsResult] = await Promise.allSettled([
     getClients(),
     getProcesses(),
     getDocuments()
   ]);
+
+  if (clientsResult.status === "rejected") {
+    console.warn("Failed to load workspace shell clients.", clientsResult.reason);
+  }
+
+  if (processesResult.status === "rejected") {
+    console.warn("Failed to load workspace shell processes.", processesResult.reason);
+  }
+
+  if (documentsResult.status === "rejected") {
+    console.warn("Failed to load workspace shell documents.", documentsResult.reason);
+  }
+
+  const clients = clientsResult.status === "fulfilled" ? clientsResult.value : [];
+  const processes = processesResult.status === "fulfilled" ? processesResult.value : [];
+  const documents = documentsResult.status === "fulfilled" ? documentsResult.value : [];
 
   const entries: WorkspaceSearchEntry[] = [];
 

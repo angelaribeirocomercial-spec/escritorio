@@ -2121,6 +2121,11 @@ assert.match(
   /getDocuments\(\)/,
   "Expected workspace search to read real documents."
 );
+assert.match(
+  workspaceSearchServiceSource,
+  /catch \{\s*return \[\];\s*\}/s,
+  "Expected workspace search to fail softly and return an empty list when the shell bootstrap cannot resolve data."
+);
 assert.doesNotMatch(
   workspaceSearchServiceSource,
   /openai|fetch\(|axios|semantic|embedding|IA/,
