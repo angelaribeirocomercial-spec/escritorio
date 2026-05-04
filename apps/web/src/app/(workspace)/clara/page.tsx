@@ -1882,6 +1882,7 @@ export default async function ClaraPage({
   }
 
   const demoClaraHref = `/clara?niche=${encodeURIComponent(clara.structuredCore.classification.nicheId)}&tab=analise&client=${encodeURIComponent(selectedClient.id)}&case=${encodeURIComponent(selectedCase.id)}&process=${encodeURIComponent(selectedProcess.id)}&document=${encodeURIComponent(selectedDocument.id)}&task=${encodeURIComponent(selectedTask.id)}`;
+  const claraPageBaseHref = `/clara?niche=${encodeURIComponent(activeNiche ?? "revisional")}&client=${encodeURIComponent(selectedClient.id)}&case=${encodeURIComponent(selectedCase.id)}&process=${encodeURIComponent(selectedProcess.id)}&document=${encodeURIComponent(selectedDocument.id)}&task=${encodeURIComponent(selectedTask.id)}`;
 
   if (!activeNiche) {
     return (
@@ -1924,6 +1925,26 @@ export default async function ClaraPage({
         ) : null}
 
         <section className="space-y-4">
+          <section className="workspace-panel p-5">
+            <div className="flex flex-col gap-2">
+              <p className="workspace-kicker">Paginas da Clara</p>
+              <p className="text-xs leading-5 text-slate-400">
+                Atalhos diretos para ver as abas e paginas que estou mexendo na Clara.
+              </p>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {tabItems.map((item) => (
+                <Link
+                  key={item.id}
+                  className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-50 transition hover:bg-cyan-300/15"
+                  href={`${claraPageBaseHref}&tab=${item.id}`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </section>
+
           <ClaraConversationCard
             badgeLabel="CLARA"
             badgeSubtitle="Orquestrador do sistema"
@@ -2037,6 +2058,25 @@ export default async function ClaraPage({
               "Escolha um nicho para abrir a sequencia operacional dentro do contexto correto."}
           </p>
         </div>
+        <section className="mt-4 workspace-panel p-5">
+          <div className="flex flex-col gap-2">
+            <p className="workspace-kicker">Paginas da Clara</p>
+            <p className="text-xs leading-5 text-slate-400">
+              Atalhos diretos para ver as abas e paginas que estou mexendo na Clara.
+            </p>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {tabItems.map((item) => (
+              <Link
+                key={item.id}
+                className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-50 transition hover:bg-cyan-300/15"
+                href={`${claraPageBaseHref}&tab=${item.id}`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </section>
         <Link
           className="mt-4 workspace-soft-card flex flex-col justify-between rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-4 transition hover:bg-cyan-300/15"
           href={demoClaraHref}
