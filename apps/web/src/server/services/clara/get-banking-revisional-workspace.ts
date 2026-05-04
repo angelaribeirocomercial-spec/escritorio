@@ -457,11 +457,28 @@ export async function getBankingRevisionalWorkspace(params?: {
     (params?.documentId ? await getDocumentById(params.documentId) : null) ??
     contractDocuments.find((document) => document.id === params?.documentId) ??
     contractDocuments[0];
-  const analysis = await getContractAnalysisByDocumentId(selectedDocument.id);
-
-  if (!analysis) {
-    throw new Error("No contract analysis is available to build the Clara revisional workspace.");
-  }
+  const analysis = (await getContractAnalysisByDocumentId(selectedDocument.id)) ?? {
+    id: `virtual-analysis-${selectedDocument.id}`,
+    documentId: selectedDocument.id,
+    rateLabel: "Taxa contratual sem consolidacao automatica",
+    cetLabel: "CET sem leitura estruturada disponivel",
+    capitalizationLabel: "Capitalizacao a confirmar",
+    feesLabel: "Tarifas e encargos a confirmar",
+    bundledInsuranceLabel: "Seguro embutido nao confirmado",
+    permanenceCommissionLabel: "Comissao de permanencia a confirmar",
+    penaltyLabel: "Multa a confirmar",
+    sensitiveClauses: [],
+    abusivenessSignals: [],
+    suggestedThesis: "Revisao contratual com base na documentacao minima disponivel",
+    proceduralRisk: "medium" as const,
+    suggestedRequests: [
+      "confirmar contrato base e quadro-resumo",
+      "localizar demonstrativos de parcela e saldo",
+      "validar pontos de abusividade com revisao humana"
+    ],
+    executiveSummary:
+      "A analise contratual nao foi carregada do tenant, mas o workspace segue com base minima controlada para nao bloquear a Clara."
+  };
 
   const documentCase = await getCaseById(selectedDocument.caseId);
   const bankingCase =
