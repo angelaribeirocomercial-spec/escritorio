@@ -1881,6 +1881,8 @@ export default async function ClaraPage({
     }
   }
 
+  const demoClaraHref = `/clara?niche=${encodeURIComponent(clara.structuredCore.classification.nicheId)}&tab=analise&client=${encodeURIComponent(selectedClient.id)}&case=${encodeURIComponent(selectedCase.id)}&process=${encodeURIComponent(selectedProcess.id)}&document=${encodeURIComponent(selectedDocument.id)}&task=${encodeURIComponent(selectedTask.id)}`;
+
   if (!activeNiche) {
     return (
       <div className="space-y-6">
@@ -1931,6 +1933,32 @@ export default async function ClaraPage({
             statusLabel="Entrada"
             statusLine="A Clara deve abrir o fluxo correto do caso, nao espalhar atalhos soltos."
           />
+        </section>
+
+        <section className="workspace-panel p-5">
+          <div className="flex flex-col gap-2">
+            <p className="workspace-kicker">Cliente modelo</p>
+            <p className="text-xs leading-5 text-slate-400">
+              Abra a Clara já com um cliente, caso, processo, documento e tarefa selecionados para ver o fluxo real.
+            </p>
+          </div>
+          <Link
+            className="mt-4 workspace-soft-card flex flex-col justify-between rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-4 transition hover:bg-cyan-300/15"
+            href={demoClaraHref}
+          >
+            <div>
+              <p className="text-base font-semibold text-white">{selectedClient.label}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-200">
+                {selectedCase.label} · {selectedProcess.label}
+              </p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-cyan-100">
+                {selectedDocument.label} · {selectedTask.label}
+              </p>
+            </div>
+            <span className="mt-4 inline-flex w-fit rounded-[4px] border border-cyan-300/30 bg-cyan-300/15 px-3 py-1 text-[11px] font-semibold text-cyan-50">
+              Abrir cliente modelo
+            </span>
+          </Link>
         </section>
 
           <section className="workspace-panel p-5">
