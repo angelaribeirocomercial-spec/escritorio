@@ -1987,6 +1987,32 @@ export default async function ClaraPage({
 
           <section className="workspace-panel p-5">
             <div className="flex flex-col gap-2">
+              <p className="workspace-kicker">Pergunte à Clara</p>
+              <p className="text-xs leading-5 text-slate-400">
+                Digite a duvida, consulta ou tarefa que a Clara deve resolver com o contexto do caso e das fontes do sistema.
+              </p>
+            </div>
+            <form className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
+              <textarea
+                className="reference-search-input min-h-[7rem] w-full px-3 py-3 text-sm outline-none"
+                defaultValue={globalSearchQuery}
+                name="q"
+                placeholder="Ex.: Quero revisar a tese do caso e listar documentos faltantes."
+              />
+              <button
+                className="clara-secondary-button h-fit rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-sm font-semibold text-emerald-50 transition hover:bg-emerald-300/15 md:self-end"
+                type="submit"
+              >
+                Enviar para Clara
+              </button>
+            </form>
+            <p className="mt-3 text-[11px] leading-5 text-slate-500">
+              A resposta vem ancorada no caso e nas fontes já disponíveis no sistema.
+            </p>
+          </section>
+
+          <section className="workspace-panel p-5">
+            <div className="flex flex-col gap-2">
               <p className="workspace-kicker">Entrada unica do caso</p>
               <p className="text-xs leading-5 text-slate-400">
                 Inicie um novo atendimento bancario por um unico ponto de entrada. O fluxo do caso nasce aqui e depois segue para a Clara com contexto real.
