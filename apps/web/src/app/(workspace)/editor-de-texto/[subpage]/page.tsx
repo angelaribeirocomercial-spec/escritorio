@@ -6,6 +6,11 @@ import {
   listClaraRecords,
   type ClaraRecord
 } from "@/server/services/clara/clara-record-store";
+import {
+  getClaraMinuta,
+  listClaraMinutas,
+  type ClaraTextDraftRecord
+} from "@/server/services/clara/clara-minutas-store";
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
 import {
   updateClaraReviewNoteAction,
@@ -339,7 +344,7 @@ function MeusTextosInner({
   draftArtifact: Awaited<ReturnType<typeof getClaraTextDraftArtifact>> | null;
   claraDisplay: ReturnType<typeof getClaraRecordDisplay> | null;
   claraRecord: ClaraRecord | null;
-  textDraftRecords: ClaraRecord[];
+  textDraftRecords: ClaraTextDraftRecord[];
 }) {
   return (
     <div className="mj-model-page space-y-4">
@@ -402,7 +407,7 @@ function MeusTextosInner({
   );
 }
 
-function ModelosPage({ textDraftRecords }: { textDraftRecords: ClaraRecord[] }) {
+function ModelosPage({ textDraftRecords }: { textDraftRecords: ClaraTextDraftRecord[] }) {
   const modelRows = textDraftRecords.map((record) => {
     const payload = record.payload as TextDraftPayload;
 
@@ -489,8 +494,13 @@ export default async function EditorSubpage({
     contractedInstallment?: string;
   };
 }) {
-  const textDraftRecords = (await listClaraRecords(80)).filter((record) => record.kind === "text-draft");
-  const claraRecord = await getClaraRecord(searchParams?.record);
+  const persistedTextDraftRecords = await listClaraMinutas(80);
+  const legacyTextDraftRecords = (await listClaraRecords(80)).filter((record) => record.kind === "text-draft");
+  const textDraftRecords =
+    persistedTextDraftRecords.length > 0
+      ? persistedTextDraftRecords
+      : (legacyTextDraftRecords as ClaraTextDraftRecord[]);
+  const claraRecord = (await getClaraMinuta(searchParams?.record ?? "")) ?? (await getClaraRecord(searchParams?.record));
   const draftArtifact =
     claraRecord?.kind === "text-draft"
       ? (claraRecord.payload as Awaited<ReturnType<typeof getClaraTextDraftArtifact>>)
