@@ -2037,6 +2037,23 @@ export default async function ClaraPage({
               "Escolha um nicho para abrir a sequencia operacional dentro do contexto correto."}
           </p>
         </div>
+        <Link
+          className="mt-4 workspace-soft-card flex flex-col justify-between rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-4 transition hover:bg-cyan-300/15"
+          href={demoClaraHref}
+        >
+          <div>
+            <p className="text-base font-semibold text-white">Cliente modelo</p>
+            <p className="mt-2 text-xs leading-5 text-slate-200">
+              {selectedClient.label} · {selectedCase.label}
+            </p>
+            <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-cyan-100">
+              {selectedProcess.label} · {selectedDocument.label} · {selectedTask.label}
+            </p>
+          </div>
+          <span className="mt-4 inline-flex w-fit rounded-[4px] border border-cyan-300/30 bg-cyan-300/15 px-3 py-1 text-[11px] font-semibold text-cyan-50">
+            Abrir cliente modelo
+          </span>
+        </Link>
         {nicheFlow ? (
           <div className="mt-4 grid gap-2 md:grid-cols-5">
             {nicheFlow.steps.map((step, index) => (
