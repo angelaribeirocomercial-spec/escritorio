@@ -5,16 +5,19 @@ import { ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 import { SessionActions } from "@/components/layout/session-actions";
+import { WorkspaceGlobalSearch } from "@/components/layout/workspace-global-search";
 import {
   navSections,
   type NavIconId,
   type NavItem
 } from "@/components/layout/workspace-navigation";
+import type { WorkspaceSearchEntry } from "@/components/layout/workspace-search-types";
 import { WorkspaceSession } from "@/lib/auth/session";
 
 type WorkspaceShellProps = {
   session: WorkspaceSession;
   children: ReactNode;
+  searchEntries: WorkspaceSearchEntry[];
 };
 
 const navigationItems = navSections.flatMap((section) => section.items);
@@ -291,7 +294,7 @@ function renderNavItem(
   );
 }
 
-export function WorkspaceShell({ children, session }: WorkspaceShellProps) {
+export function WorkspaceShell({ children, searchEntries, session }: WorkspaceShellProps) {
   const pathname = usePathname();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
@@ -418,15 +421,7 @@ export function WorkspaceShell({ children, session }: WorkspaceShellProps) {
               </div>
 
               <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
-                <button
-                  className="reference-header-search theme-header-muted inline-flex h-9 w-full items-center justify-between px-3 text-[13px] font-medium transition hover:bg-white/[0.08] hover:text-white sm:w-[23rem]"
-                  type="button"
-                >
-                  <span className="truncate">Buscar cliente, processo, documento ou tese</span>
-                  <span className="rounded-[4px] border border-white/10 bg-white/5 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em]">
-                    /
-                  </span>
-                </button>
+                <WorkspaceGlobalSearch entries={searchEntries} />
                 <SessionActions session={session} />
               </div>
             </div>

@@ -51,6 +51,8 @@ assert.equal(true, true);
   "src/app/(workspace)/documentos/[documentId]/page.tsx",
   "src/app/(workspace)/documentos/enviar-arquivos/page.tsx",
   "src/app/(workspace)/documentos/relatorios/page.tsx",
+  "src/components/layout/workspace-global-search.tsx",
+  "src/components/layout/workspace-search-types.ts",
   "src/app/api/clientes/[id]/route.ts",
   "src/app/api/casos/[id]/route.ts",
   "src/app/api/casos/[id]/documentos/route.ts",
@@ -113,6 +115,7 @@ assert.equal(true, true);
   "src/server/services/clients/get-clients.ts",
   "src/server/services/cases/get-cases.ts",
   "src/server/services/documents/get-documents.ts",
+  "src/server/services/workspace/get-workspace-shell-search.ts",
   "src/server/services/documents/get-document-file-url.ts",
   "src/server/services/tasks/get-tasks.ts"
 ].forEach((relativePath) => {
@@ -2088,10 +2091,40 @@ assert.match(
   /navSections\.filter\(\(section\) => section\.items\.length > 0\)\.map/,
   "Expected workspace shell to render grouped navigation sections."
 );
+assert.match(
+  workspaceShellSource,
+  /WorkspaceGlobalSearch/,
+  "Expected workspace shell to render the new local workspace search field."
+);
 assert.doesNotMatch(
   workspaceShellSource,
   /label: "Dashboard"|label: "Pessoas"|label: "Lexia"|label: "Site"/,
   "Expected workspace shell to stop hardcoding legacy labels in the visible navigation."
+);
+
+const workspaceSearchServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/workspace/get-workspace-shell-search.ts"),
+  "utf8"
+);
+assert.match(
+  workspaceSearchServiceSource,
+  /getClients\(\)/,
+  "Expected workspace search to read real clients."
+);
+assert.match(
+  workspaceSearchServiceSource,
+  /getProcesses\(\)/,
+  "Expected workspace search to read real processes."
+);
+assert.match(
+  workspaceSearchServiceSource,
+  /getDocuments\(\)/,
+  "Expected workspace search to read real documents."
+);
+assert.doesNotMatch(
+  workspaceSearchServiceSource,
+  /openai|fetch\(|axios|semantic|embedding|IA/,
+  "Expected workspace search to stay local and non-semantic."
 );
 
 const claraRevisionalSource = fs.readFileSync(
