@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { getAdversaries } from "@/server/services/adversaries/get-adversaries";
@@ -46,9 +47,13 @@ export default async function DiarioOficialPalavrasPage() {
           <p className="mj-model-title">Palavras-chave para recebimento de publicacoes</p>
           <p className="mj-model-subtitle">Exibindo {keywords.length} resultado(s)</p>
         </div>
-        <button className="mj-model-button-green" type="button">
+        <Link
+          className="mj-model-button-green inline-flex items-center justify-center"
+          href="/processos/importar-oab"
+          title="A captura formal ainda depende da integracao do Diario Oficial. Abrir fluxo relacionado."
+        >
           Adicionar
-        </button>
+        </Link>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[22rem_1fr]">

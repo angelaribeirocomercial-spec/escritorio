@@ -111,9 +111,9 @@ export default async function ProcessosPage({
           <p className="mj-model-subtitle">Exibindo {filteredProcesses.length} resultado(s)</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button className="mj-model-button-green" type="button">
-            Adicionar
-          </button>
+          <Link className="mj-model-button-green inline-flex items-center justify-center" href="/novo-atendimento-bancario">
+            Iniciar caso
+          </Link>
         </div>
       </div>
 
@@ -138,7 +138,13 @@ export default async function ProcessosPage({
       <div className="mj-model-toolbar px-4 py-4">
         <div className="text-right text-[13px] text-slate-400">
           Filtros simples /{" "}
-          <button className="font-medium text-slate-200 underline underline-offset-2" type="button">
+          <button
+            aria-disabled="true"
+            className="font-medium text-slate-200 underline underline-offset-2 opacity-70"
+            title="Filtros personalizados ainda nao estao liberados nesta lista."
+            type="button"
+            disabled
+          >
             Filtros personalizados
           </button>
         </div>
