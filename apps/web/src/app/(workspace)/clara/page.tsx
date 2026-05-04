@@ -456,17 +456,14 @@ export default async function ClaraPage({
           })
         : null;
   } catch {
-    const structuredCoreFallback =
-      searchParams?.client && searchParams?.case
-        ? await getClaraStructuredCore({
-            clientId: searchParams.client,
-            caseId: searchParams.case,
-            processId: searchParams?.process,
-            documentId: searchParams?.document,
-            niche: activeNiche ?? undefined,
-            tab: activeTab
-          }).catch(() => null)
-        : null;
+    const structuredCoreFallback = await getClaraStructuredCore({
+      clientId: searchParams?.client,
+      caseId: searchParams?.case,
+      processId: searchParams?.process,
+      documentId: searchParams?.document,
+      niche: activeNiche ?? undefined,
+      tab: activeTab
+    }).catch(() => null);
 
     if (structuredCoreFallback) {
       const fallbackStructuredAnalysis = buildStructuredCoreFallbackContextualAnalysis({
