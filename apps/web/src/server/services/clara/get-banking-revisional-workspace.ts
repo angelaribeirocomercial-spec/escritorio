@@ -487,10 +487,23 @@ export async function getBankingRevisionalWorkspace(params?: {
     (params?.processId ? await getProcessById(params.processId) : null) ??
     allProcesses.find((item) => item.caseId === bankingCase.id) ??
     allProcesses[0];
-
-  if (!process) {
-    throw new Error("No process is available to build the Clara revisional workspace.");
-  }
+  const resolvedProcess =
+    process ?? {
+      id: `virtual-process-${bankingCase.id}`,
+      caseId: bankingCase.id,
+      clientId: client.id,
+      processNumber: `PROCESSO PENDENTE DE VINCULO - ${bankingCase.id.toUpperCase()}`,
+      tribunal: "A definir",
+      courtDistrict: "Vinculo processual pendente",
+      courtName: "Processo ainda nao vinculado",
+      proceduralPhase: "Sem processo vinculado",
+      status: "awaiting-filing" as const,
+      responsibleLawyer: "A definir",
+      monitoringMode: "manual" as const,
+      latestTimeline: [],
+      client,
+      bankingCase
+    };
   const scenarioProfile = getScenarioProfile({
     bankName: bankingCase.bankName,
     caseTitle: bankingCase.title,
@@ -709,7 +722,7 @@ export async function getBankingRevisionalWorkspace(params?: {
   return {
     client,
     bankingCase,
-    process,
+    process: resolvedProcess,
     selectedDocument,
     analysis,
     productProfile,
