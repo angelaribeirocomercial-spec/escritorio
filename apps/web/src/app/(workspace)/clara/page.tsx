@@ -28,6 +28,7 @@ import {
   type ClaraContextualTaskType
 } from "@/server/services/clara/get-clara-contextual-analysis";
 import { getBankingRevisionalWorkspace } from "@/server/services/clara/get-banking-revisional-workspace";
+import { getClaraStructuredCore } from "@/server/services/clara/get-clara-structured-core";
 import { getClaraWorkspace } from "@/server/services/clara/get-clara-workspace";
 
 const tabItems = [
@@ -333,6 +334,40 @@ function buildFallbackClaraContextualAnalysis(params: {
   };
 }
 
+function buildStructuredCoreFallbackContextualAnalysis(params: {
+  structuredCore: Awaited<ReturnType<typeof getClaraStructuredCore>>;
+  taskType: ClaraContextualTaskType;
+}) {
+  const { structuredCore, taskType } = params;
+
+  return {
+    executionId: `clara-exec-fallback-${Date.now()}`,
+    taskType,
+    contextSnapshot: {
+      clientId: structuredCore.context.client.id,
+      caseId: structuredCore.context.bankingCase.id,
+      processId: structuredCore.context.process?.id ?? null,
+      documentId: structuredCore.context.selectedDocument?.id ?? null,
+      niche: structuredCore.classification.nicheLabel,
+      stage: structuredCore.context.bankingCase.stage,
+      workflowStep: structuredCore.context.bankingCase.workflowState.currentStepId
+    },
+    sourceTrace: structuredCore.classification.sourceTrail,
+    summary: structuredCore.summary,
+    caseAnalysis: {
+      confirmedFacts: structuredCore.confirmedFacts,
+      documentsFound: structuredCore.documentsFound,
+      documentsMissing: structuredCore.documentsMissing,
+      risks: structuredCore.risks,
+      suggestions: [
+        structuredCore.nextStep,
+        structuredCore.recommendation,
+        ...structuredCore.checklist.slice(0, 2)
+      ]
+    }
+  };
+}
+
 export default async function ClaraPage({
   searchParams
 }: {
@@ -421,6 +456,52 @@ export default async function ClaraPage({
           })
         : null;
   } catch {
+    const structuredCoreFallback =
+      searchParams?.client && searchParams?.case
+        ? await getClaraStructuredCore({
+            clientId: searchParams.client,
+            caseId: searchParams.case,
+            processId: searchParams?.process,
+            documentId: searchParams?.document,
+            niche: activeNiche ?? undefined,
+            tab: activeTab
+          }).catch(() => null)
+        : null;
+
+    if (structuredCoreFallback) {
+      const fallbackStructuredAnalysis = buildStructuredCoreFallbackContextualAnalysis({
+        structuredCore: structuredCoreFallback,
+        taskType: contextualTaskType
+      });
+
+      return (
+        <WorkspacePage
+          description="A Clara nao fechou o workspace completo, mas manteve cliente e caso resolvidos com seguranca."
+          eyebrow="Clara"
+          metrics={[
+            { label: "Cliente", value: structuredCoreFallback.context.client.fullName },
+            { label: "Caso", value: structuredCoreFallback.context.bankingCase.title },
+            { label: "Processo", value: structuredCoreFallback.context.process?.processNumber ?? "Pendente" },
+            {
+              label: "Documento",
+              value: structuredCoreFallback.context.selectedDocument?.fileName ?? "Pendente"
+            }
+          ]}
+          title="Clara em estado controlado"
+        >
+          <WorkspaceStatePanel
+            actionHref={`/pessoas/clientes/${structuredCoreFallback.context.client.id}?case=${structuredCoreFallback.context.bankingCase.id}`}
+            actionLabel="Voltar ao cockpit do cliente"
+            description="A Clara abriu com contexto juridico minimo preservado. O processo e o documento continuam pendentes no workspace, mas cliente e caso ja estao resolvidos."
+            title="Contexto juridico minimo preservado"
+            tone="warning"
+          />
+
+          {renderClaraContextualAnalysis(fallbackStructuredAnalysis)}
+        </WorkspacePage>
+      );
+    }
+
     const fallbackContextualAnalysis =
       contextualAnalysis ??
       (searchParams?.client && searchParams?.case
