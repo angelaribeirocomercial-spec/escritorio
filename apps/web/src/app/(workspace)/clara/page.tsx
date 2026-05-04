@@ -877,45 +877,9 @@ export default async function ClaraPage({
         ]}
         title="Contexto insuficiente para abrir a Clara"
       >
-        <section className="workspace-panel p-5">
-          <div className="flex flex-col gap-2">
-            <p className="workspace-kicker">Paginas da Clara</p>
-            <p className="text-xs leading-5 text-slate-400">
-              Mesmo com contexto incompleto, estes atalhos mostram o fluxo e as paginas que a Clara monta.
-            </p>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {tabItems.map((item) => (
-              <Link
-                key={item.id}
-                className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-50 transition hover:bg-cyan-300/15"
-                href={`/clara?niche=revisional&tab=${item.id}`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-          <Link
-            className="mt-4 workspace-soft-card flex flex-col justify-between rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-4 transition hover:bg-cyan-300/15"
-            href="/clara?niche=revisional&tab=analise&client=cl-001&case=case-205&process=process-001&document=doc-003&task=task-001"
-          >
-            <div>
-              <p className="text-base font-semibold text-white">Cliente modelo</p>
-              <p className="mt-2 text-xs leading-5 text-slate-200">
-                Mariana Torres Lima · Revisional de financiamento de veículo
-              </p>
-              <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-cyan-100">
-                Processo, documento e tarefa de exemplo
-              </p>
-            </div>
-            <span className="mt-4 inline-flex w-fit rounded-[4px] border border-cyan-300/30 bg-cyan-300/15 px-3 py-1 text-[11px] font-semibold text-cyan-50">
-              Abrir cliente modelo
-            </span>
-          </Link>
-        </section>
         <WorkspaceStatePanel
-          actionHref="/pessoas/clientes"
-          actionLabel="Abrir clientes"
+          actionHref="/novo-atendimento-bancario"
+          actionLabel="Abrir novo atendimento"
           description="A base atual ainda nao fornece todos os objetos minimos para a Clara operar com seguranca. Cadastre ou complete cliente, caso, processo, documento e tarefa antes de voltar."
           title="Workspace minimo ainda incompleto"
           tone="warning"
@@ -1969,7 +1933,6 @@ export default async function ClaraPage({
     }
   }
 
-  const demoClaraHref = `/clara?niche=${encodeURIComponent(clara.structuredCore.classification.nicheId)}&tab=analise&client=${encodeURIComponent(selectedClient.id)}&case=${encodeURIComponent(selectedCase.id)}&process=${encodeURIComponent(selectedProcess.id)}&document=${encodeURIComponent(selectedDocument.id)}&task=${encodeURIComponent(selectedTask.id)}`;
   const claraPageBaseHref = `/clara?niche=${encodeURIComponent(activeNiche ?? "revisional")}&client=${encodeURIComponent(selectedClient.id)}&case=${encodeURIComponent(selectedCase.id)}&process=${encodeURIComponent(selectedProcess.id)}&document=${encodeURIComponent(selectedDocument.id)}&task=${encodeURIComponent(selectedTask.id)}`;
 
   if (!activeNiche) {
@@ -2013,68 +1976,20 @@ export default async function ClaraPage({
         ) : null}
 
         <section className="space-y-4">
-          <section className="workspace-panel p-5">
-            <div className="flex flex-col gap-2">
-              <p className="workspace-kicker">Paginas da Clara</p>
-              <p className="text-xs leading-5 text-slate-400">
-                Atalhos diretos para ver as abas e paginas que estou mexendo na Clara.
-              </p>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {tabItems.map((item) => (
-                <Link
-                  key={item.id}
-                  className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-50 transition hover:bg-cyan-300/15"
-                  href={`${claraPageBaseHref}&tab=${item.id}`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </section>
-
           <ClaraConversationCard
             badgeLabel="CLARA"
-            badgeSubtitle="Orquestrador do sistema"
-            responseDetail="Converse com a Clara para localizar contexto, escolher o nicho bancario certo e seguir para a proxima acao real do caso."
-            interactive
-            searchIndex={searchIndex}
+            badgeSubtitle="Assistente especialista em direito bancario"
+            responseDetail="Converse com a Clara para tirar duvidas, localizar contexto do caso e seguir o fluxo bancario correto usando dados e APIs do sistema."
+            interactive={false}
             statusLabel="Entrada"
-            statusLine="A Clara deve abrir o fluxo correto do caso, nao espalhar atalhos soltos."
+            statusLine="A Clara responde como especialista e pede a entrada unica do caso quando precisar abrir um fluxo novo."
           />
-        </section>
-
-        <section className="workspace-panel p-5">
-          <div className="flex flex-col gap-2">
-            <p className="workspace-kicker">Cliente modelo</p>
-            <p className="text-xs leading-5 text-slate-400">
-              Abra a Clara já com um cliente, caso, processo, documento e tarefa selecionados para ver o fluxo real.
-            </p>
-          </div>
-          <Link
-            className="mt-4 workspace-soft-card flex flex-col justify-between rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-4 transition hover:bg-cyan-300/15"
-            href={demoClaraHref}
-          >
-            <div>
-              <p className="text-base font-semibold text-white">{selectedClient.label}</p>
-              <p className="mt-2 text-xs leading-5 text-slate-200">
-                {selectedCase.label} · {selectedProcess.label}
-              </p>
-              <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-cyan-100">
-                {selectedDocument.label} · {selectedTask.label}
-              </p>
-            </div>
-            <span className="mt-4 inline-flex w-fit rounded-[4px] border border-cyan-300/30 bg-cyan-300/15 px-3 py-1 text-[11px] font-semibold text-cyan-50">
-              Abrir cliente modelo
-            </span>
-          </Link>
-        </section>
 
           <section className="workspace-panel p-5">
             <div className="flex flex-col gap-2">
               <p className="workspace-kicker">Entrada unica do caso</p>
               <p className="text-xs leading-5 text-slate-400">
-                Inicie um novo atendimento bancario por um unico ponto de entrada. O onboarding completo sera consolidado nas proximas entregas em vez de espalhar o fluxo por varias telas.
+                Inicie um novo atendimento bancario por um unico ponto de entrada. O fluxo do caso nasce aqui e depois segue para a Clara com contexto real.
               </p>
             </div>
             <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
@@ -2098,38 +2013,13 @@ export default async function ClaraPage({
                   Direcao desta fase
                 </p>
                 <ul className="mt-3 space-y-2 text-xs leading-5 text-slate-400">
-                  <li>1. Escolher o nicho bancario correto</li>
-                  <li>2. Abrir o caso por uma unica entrada</li>
-                  <li>3. Levar o caso para o cockpit do cliente</li>
+                  <li>1. Abrir o caso por uma unica entrada</li>
+                  <li>2. Levar o contexto para a Clara especialista</li>
+                  <li>3. Seguir para o cockpit do cliente e do processo</li>
                 </ul>
               </div>
             </div>
           </section>
-
-          <section className="workspace-panel p-5">
-            <div className="flex flex-col gap-2">
-              <p className="workspace-kicker">Nichos</p>
-              <p className="text-xs leading-5 text-slate-400">
-                O hub so escolhe o nicho. A sequencia operacional fica dentro do fluxo de trabalho escolhido.
-              </p>
-            </div>
-            <div className="mt-4 grid gap-3 lg:grid-cols-3">
-              {nicheItems.map((item) => (
-                <Link
-                  key={item.id}
-                  className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.07]"
-                  href={`/clara?niche=${item.id}&tab=analise`}
-                >
-                  <div>
-                    <p className="text-base font-semibold text-white">{item.label}</p>
-                    <p className="mt-2 text-xs leading-5 text-slate-400">{item.description}</p>
-                  </div>
-                  <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[11px] font-semibold text-emerald-100">
-                    Abrir nicho
-                  </span>
-                </Link>
-              ))}
-            </div>
         </section>
 
       </div>
@@ -2148,9 +2038,9 @@ export default async function ClaraPage({
         </div>
         <section className="mt-4 workspace-panel p-5">
           <div className="flex flex-col gap-2">
-            <p className="workspace-kicker">Paginas da Clara</p>
+            <p className="workspace-kicker">Abas do caso</p>
             <p className="text-xs leading-5 text-slate-400">
-              Atalhos diretos para ver as abas e paginas que estou mexendo na Clara.
+              Estas ferramentas aparecem quando o caso ja esta resolvido e a Clara entra no fluxo operacional.
             </p>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -2165,23 +2055,6 @@ export default async function ClaraPage({
             ))}
           </div>
         </section>
-        <Link
-          className="mt-4 workspace-soft-card flex flex-col justify-between rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-4 transition hover:bg-cyan-300/15"
-          href={demoClaraHref}
-        >
-          <div>
-            <p className="text-base font-semibold text-white">Cliente modelo</p>
-            <p className="mt-2 text-xs leading-5 text-slate-200">
-              {selectedClient.label} · {selectedCase.label}
-            </p>
-            <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-cyan-100">
-              {selectedProcess.label} · {selectedDocument.label} · {selectedTask.label}
-            </p>
-          </div>
-          <span className="mt-4 inline-flex w-fit rounded-[4px] border border-cyan-300/30 bg-cyan-300/15 px-3 py-1 text-[11px] font-semibold text-cyan-50">
-            Abrir cliente modelo
-          </span>
-        </Link>
         {nicheFlow ? (
           <div className="mt-4 grid gap-2 md:grid-cols-5">
             {nicheFlow.steps.map((step, index) => (
