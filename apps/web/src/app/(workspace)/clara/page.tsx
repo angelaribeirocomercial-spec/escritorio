@@ -825,6 +825,42 @@ export default async function ClaraPage({
         ]}
         title="Contexto insuficiente para abrir a Clara"
       >
+        <section className="workspace-panel p-5">
+          <div className="flex flex-col gap-2">
+            <p className="workspace-kicker">Paginas da Clara</p>
+            <p className="text-xs leading-5 text-slate-400">
+              Mesmo com contexto incompleto, estes atalhos mostram o fluxo e as paginas que a Clara monta.
+            </p>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {tabItems.map((item) => (
+              <Link
+                key={item.id}
+                className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-50 transition hover:bg-cyan-300/15"
+                href={`/clara?niche=revisional&tab=${item.id}`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+          <Link
+            className="mt-4 workspace-soft-card flex flex-col justify-between rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-4 transition hover:bg-cyan-300/15"
+            href="/clara?niche=revisional&tab=analise&client=cl-001&case=case-205&process=process-001&document=doc-003&task=task-001"
+          >
+            <div>
+              <p className="text-base font-semibold text-white">Cliente modelo</p>
+              <p className="mt-2 text-xs leading-5 text-slate-200">
+                Mariana Torres Lima · Revisional de financiamento de veículo
+              </p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-cyan-100">
+                Processo, documento e tarefa de exemplo
+              </p>
+            </div>
+            <span className="mt-4 inline-flex w-fit rounded-[4px] border border-cyan-300/30 bg-cyan-300/15 px-3 py-1 text-[11px] font-semibold text-cyan-50">
+              Abrir cliente modelo
+            </span>
+          </Link>
+        </section>
         <WorkspaceStatePanel
           actionHref="/pessoas/clientes"
           actionLabel="Abrir clientes"
