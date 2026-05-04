@@ -5,6 +5,11 @@ import path from "node:path";
 import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
+  type ClaraTextDraftRecord,
+  syncClaraTextDraftRecord,
+  syncClaraTextDraftReviewNote
+} from "@/server/services/clara/clara-minutas-store";
+import {
   getClaraAgendaArtifact,
   getClaraCaseArtifact,
   getClaraClientArtifact,
@@ -848,6 +853,20 @@ export async function createClaraRecord(input: {
 
   await writePersistentRecord(record, context);
 
+  if (record.kind === "text-draft") {
+    try {
+      await syncClaraTextDraftRecord({
+        record: record as unknown as ClaraTextDraftRecord,
+        context,
+        createVersion: true
+      });
+    } catch (error) {
+      console.warn(
+        error instanceof Error ? error.message : "Falha ao sincronizar minuta da Clara no Supabase."
+      );
+    }
+  }
+
   return record;
 }
 
@@ -895,6 +914,20 @@ export async function updateClaraRecordWorkflowStatus(
 
   await writePersistentRecord(updatedRecord, entry.context);
 
+  if (updatedRecord.kind === "text-draft") {
+    try {
+      await syncClaraTextDraftRecord({
+        record: updatedRecord as unknown as ClaraTextDraftRecord,
+        context: entry.context,
+        createVersion: true
+      });
+    } catch (error) {
+      console.warn(
+        error instanceof Error ? error.message : "Falha ao sincronizar minuta da Clara no Supabase."
+      );
+    }
+  }
+
   return updatedRecord;
 }
 
@@ -924,6 +957,19 @@ export async function updateClaraRecordReviewNote(recordId: string, reviewNote: 
   });
 
   await writePersistentReviewNote(updatedRecord, entry.context);
+
+  if (updatedRecord.kind === "text-draft") {
+    try {
+      await syncClaraTextDraftReviewNote({
+        record: updatedRecord as unknown as ClaraTextDraftRecord,
+        context: entry.context
+      });
+    } catch (error) {
+      console.warn(
+        error instanceof Error ? error.message : "Falha ao sincronizar observacao da Clara no Supabase."
+      );
+    }
+  }
 
   return updatedRecord;
 }

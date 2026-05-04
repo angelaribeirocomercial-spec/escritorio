@@ -8,6 +8,7 @@ import {
   updateClaraRecordReviewNote,
   updateClaraRecordWorkflowStatus
 } from "@/server/services/clara/clara-record-store";
+import { getClaraMinuta } from "@/server/services/clara/clara-minutas-store";
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
 
 type TextDraftPayload = Awaited<ReturnType<typeof getClaraTextDraftArtifact>>;
@@ -25,7 +26,7 @@ export async function GET(
 ) {
   try {
     const { recordId } = await context.params;
-    const record = await getClaraRecord(recordId);
+    const record = (await getClaraMinuta(recordId)) ?? (await getClaraRecord(recordId));
 
     if (!record || record.kind !== "text-draft") {
       return NextResponse.json({ ok: false, error: `Registro ${recordId} nao encontrado.` }, { status: 404 });
@@ -44,7 +45,7 @@ export async function PATCH(
   try {
     const { recordId } = await context.params;
     const body = bodySchema.parse(await request.json());
-    const current = await getClaraRecord(recordId);
+    const current = (await getClaraMinuta(recordId)) ?? (await getClaraRecord(recordId));
 
     if (!current || current.kind !== "text-draft") {
       return NextResponse.json({ ok: false, error: `Registro ${recordId} nao encontrado.` }, { status: 404 });

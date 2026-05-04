@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { mapClaraApiError } from "@/app/api/clara/_shared";
 import { getClaraRecord } from "@/server/services/clara/clara-record-store";
+import { getClaraMinuta } from "@/server/services/clara/clara-minutas-store";
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
 
 type TextDraftPayload = Awaited<ReturnType<typeof getClaraTextDraftArtifact>>;
@@ -12,7 +13,7 @@ export async function GET(
 ) {
   try {
     const { recordId } = await context.params;
-    const record = await getClaraRecord(recordId);
+    const record = (await getClaraMinuta(recordId)) ?? (await getClaraRecord(recordId));
 
     if (!record || record.kind !== "text-draft") {
       return NextResponse.json({ ok: false, error: `Registro ${recordId} nao encontrado.` }, { status: 404 });

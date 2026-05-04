@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { listClaraRecords } from "@/server/services/clara/clara-record-store";
+import { listClaraMinutas } from "@/server/services/clara/clara-minutas-store";
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
 
 function parseLimit(value: string | null) {
@@ -15,7 +16,11 @@ function parseLimit(value: string | null) {
 
 export async function GET(request: NextRequest) {
   const limit = parseLimit(new URL(request.url).searchParams.get("limit"));
-  const records = (await listClaraRecords(limit)).filter((record) => record.kind === "text-draft");
+  const persistedRecords = await listClaraMinutas(limit);
+  const records =
+    persistedRecords.length > 0
+      ? persistedRecords
+      : (await listClaraRecords(limit)).filter((record) => record.kind === "text-draft");
   type TextDraftPayload = Awaited<ReturnType<typeof getClaraTextDraftArtifact>>;
 
   return NextResponse.json({
