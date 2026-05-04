@@ -143,7 +143,7 @@ export async function getProcesses(): Promise<JudicialProcessWithRelations[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load processes.");
+    return [];
   }
 
   const supabase = getSupabaseServerClient();
@@ -154,7 +154,8 @@ export async function getProcesses(): Promise<JudicialProcessWithRelations[]> {
     .order("process_number", { ascending: true });
 
   if (error) {
-    throw new Error(`Failed to load processes for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load processes for tenant ${session.workspace.tenant.id}.`);
+    return [];
   }
 
   return (data ?? [])
@@ -168,7 +169,7 @@ export async function getProcessById(
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load process details.");
+    return null;
   }
 
   const supabase = getSupabaseServerClient();
@@ -180,9 +181,8 @@ export async function getProcessById(
     .maybeSingle();
 
   if (error) {
-    throw new Error(
-      `Failed to load process ${processId} for tenant ${session.workspace.tenant.id}.`
-    );
+    console.warn(`Failed to load process ${processId} for tenant ${session.workspace.tenant.id}.`);
+    return null;
   }
 
   return data ? mapProcessRow(data as ProcessRow) : null;
