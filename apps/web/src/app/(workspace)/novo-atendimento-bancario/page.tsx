@@ -1,60 +1,7 @@
 import { createBankingIntakeAction } from "@/app/(workspace)/novo-atendimento-bancario/actions";
 import { WorkspacePage } from "@/components/layout/workspace-page";
-import {
-  buildPersistedBankingCaseLifecycle,
-  getBankingCaseWorkflow
-} from "@/server/services/cases/get-banking-case-workflow";
-
-const previewLifecycle = buildPersistedBankingCaseLifecycle({
-  niche: "revisional",
-  stage: "Analise contratual inicial",
-  documentLabels: []
-});
 
 const intakeFormAction = createBankingIntakeAction as unknown as string;
-
-const nextSteps = [
-  {
-    label: "1. Cliente",
-    detail: "Cadastro minimo para abrir o caso."
-  },
-  {
-    label: "2. Caso e nicho",
-    detail: "Banco, nicho e objetivo inicial."
-  },
-  {
-    label: "3. Documentos",
-    detail: "Documentos essenciais na abertura."
-  }
-] as const;
-
-const revisionalWorkflowPreview = getBankingCaseWorkflow(
-  {
-    id: "preview-revisional",
-    clientId: "preview-client",
-    title: "Revisional de contrato",
-    bankName: "Banco de exemplo",
-    processNumber: "pendente",
-    contractNumber: "pendente",
-    claimType: "acao_revisional",
-    stage: "Analise contratual inicial",
-    status: "draft",
-    amountInDispute: 0,
-    estimatedValue: 0,
-    mainThesis: "Juros abusivos e revisao contratual",
-    legalRisk: "medium",
-    suggestedStrategy: "Consolidar contrato, memoria inicial e estrategia revisional.",
-    ownerLabel: "Equipe",
-    niche: "revisional",
-    linkedDocuments: [],
-    linkedTasks: [],
-    linkedDeadlines: [],
-    lexiaInsights: [],
-    workflowState: previewLifecycle.workflowState,
-    checklistState: previewLifecycle.checklistState
-  },
-  { documentLabels: [] }
-);
 
 export default function NovoAtendimentoBancarioPage({
   searchParams
@@ -83,6 +30,15 @@ function NovoAtendimentoBancarioPageContent({
       ]}
       title="Iniciar caso bancario"
     >
+      <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+          Novo atendimento bancario
+        </p>
+        <p className="mt-1 text-[11px] leading-5 text-slate-400">
+          Entrada unica do caso com anexacao de documentos. O restante do contexto segue no cockpit do cliente.
+        </p>
+      </div>
+
       {errorMessage ? (
         <div className="workspace-panel border border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100">
           <p className="font-semibold">Nao foi possivel concluir o atendimento.</p>
@@ -90,7 +46,7 @@ function NovoAtendimentoBancarioPageContent({
         </div>
       ) : null}
 
-      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-4">
         <form action={intakeFormAction} className="workspace-panel p-6" encType="multipart/form-data">
           <p className="text-sm font-semibold text-white">Entrada unica do caso</p>
           <p className="mt-2 text-sm leading-7 text-slate-300">
@@ -391,43 +347,6 @@ function NovoAtendimentoBancarioPageContent({
             Esta fase abre o caso com os dados minimos, ativa o checklist e encaminha o fluxo para o cockpit do cliente.
           </p>
         </form>
-
-        <article className="workspace-panel p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">O que esta fase faz</p>
-          <div className="mt-4 grid gap-2">
-            {nextSteps.map((step) => (
-              <div key={step.label} className="workspace-soft-card rounded-[4px] px-3 py-3">
-                <p className="text-sm font-semibold text-white">{step.label}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-400">{step.detail}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="workspace-soft-card mt-4 rounded-[4px] px-4 py-4 text-xs leading-5 text-slate-400">
-            O onboarding ja recebe documentos na propria jornada. Se algo faltar, a abertura falha de forma controlada e informa exatamente o que precisa ser anexado.
-          </div>
-
-          <div className="mt-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Workflow piloto que nasce com o caso
-            </p>
-            <div className="mt-4 grid gap-2">
-              {revisionalWorkflowPreview.steps.slice(0, 5).map((step, index) => (
-                <div
-                  key={step.id}
-                  className={`workspace-soft-card rounded-[4px] px-3 py-3 text-sm ${
-                    step.state === "current" ? "border border-cyan-300/20 bg-cyan-300/10" : ""
-                  }`}
-                >
-                  <p className="font-semibold text-white">
-                    {index + 1}. {step.title}
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-slate-400">{step.detail}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </article>
       </section>
     </WorkspacePage>
   );
