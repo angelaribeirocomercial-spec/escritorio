@@ -177,7 +177,7 @@ export async function getCases(filters?: {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load cases.");
+    return [];
   }
 
   const supabase = getSupabaseAdminClient();
@@ -197,7 +197,8 @@ export async function getCases(filters?: {
   const { data, error } = await query.order("process_number", { ascending: true });
 
   if (error) {
-    throw new Error(`Failed to load cases for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load cases for tenant ${session.workspace.tenant.id}.`);
+    return [];
   }
 
   return (data ?? [])

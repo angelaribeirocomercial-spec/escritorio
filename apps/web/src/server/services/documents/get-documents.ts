@@ -246,7 +246,7 @@ export async function getDocuments(): Promise<DocumentWithContext[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load documents.");
+    return [];
   }
 
   const supabase = getSupabaseAdminClient();
@@ -257,7 +257,8 @@ export async function getDocuments(): Promise<DocumentWithContext[]> {
     .order("uploaded_at", { ascending: false });
 
   if (error) {
-    throw new Error(`Failed to load documents for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load documents for tenant ${session.workspace.tenant.id}.`);
+    return [];
   }
 
   return (data ?? [])
@@ -271,7 +272,7 @@ export async function getDocumentById(
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load document details.");
+    return null;
   }
 
   const supabase = getSupabaseAdminClient();
@@ -283,9 +284,10 @@ export async function getDocumentById(
     .maybeSingle();
 
   if (error) {
-    throw new Error(
+    console.warn(
       `Failed to load document ${documentId} for tenant ${session.workspace.tenant.id}.`
     );
+    return null;
   }
 
   return data ? mapDocumentRow(data as DocumentRow) : null;

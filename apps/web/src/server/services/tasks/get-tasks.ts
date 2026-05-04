@@ -253,7 +253,7 @@ export async function getTasks(filters?: {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load tasks.");
+    return [];
   }
 
   const supabase = getSupabaseAdminClient();
@@ -273,7 +273,8 @@ export async function getTasks(filters?: {
   const { data, error } = await query.order("due_date", { ascending: true });
 
   if (error) {
-    throw new Error(`Failed to load tasks for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load tasks for tenant ${session.workspace.tenant.id}.`);
+    return [];
   }
 
   return (data ?? [])
@@ -285,7 +286,7 @@ export async function getTaskById(taskId: string): Promise<TaskWithContext | nul
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load task details.");
+    return null;
   }
 
   const supabase = getSupabaseAdminClient();
@@ -297,7 +298,8 @@ export async function getTaskById(taskId: string): Promise<TaskWithContext | nul
     .maybeSingle();
 
   if (error) {
-    throw new Error(`Failed to load task ${taskId} for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load task ${taskId} for tenant ${session.workspace.tenant.id}.`);
+    return null;
   }
 
   return data ? mapTaskRow(data as TaskRow) : null;

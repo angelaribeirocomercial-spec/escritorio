@@ -216,7 +216,7 @@ export async function getContractAnalyses(): Promise<ContractAnalysisRecord[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load contract analyses.");
+    return [];
   }
 
   const supabase = getSupabaseServerClient();
@@ -227,7 +227,8 @@ export async function getContractAnalyses(): Promise<ContractAnalysisRecord[]> {
     .order("document_id", { ascending: true });
 
   if (error) {
-    throw new Error(`Failed to load contract analyses for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load contract analyses for tenant ${session.workspace.tenant.id}.`);
+    return [];
   }
 
   return (data ?? []).map((row) => mapContractAnalysisRow(row as ContractAnalysisRow));
@@ -239,7 +240,7 @@ export async function getContractAnalysisByDocumentId(
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load contract analysis details.");
+    return null;
   }
 
   const supabase = getSupabaseServerClient();
@@ -251,9 +252,10 @@ export async function getContractAnalysisByDocumentId(
     .maybeSingle();
 
   if (error) {
-    throw new Error(
+    console.warn(
       `Failed to load contract analysis for document ${documentId} and tenant ${session.workspace.tenant.id}.`
     );
+    return null;
   }
 
   return data ? mapContractAnalysisRow(data as ContractAnalysisRow) : null;

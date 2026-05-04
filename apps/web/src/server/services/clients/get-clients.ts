@@ -53,7 +53,7 @@ export async function getClients(): Promise<ClientRecord[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load clients.");
+    return [];
   }
 
   const supabase = getSupabaseAdminClient();
@@ -86,7 +86,8 @@ export async function getClients(): Promise<ClientRecord[]> {
     .order("full_name", { ascending: true });
 
   if (error) {
-    throw new Error(`Failed to load clients for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load clients for tenant ${session.workspace.tenant.id}.`);
+    return [];
   }
 
   return (data ?? []).map((row) => mapClientRow(row as ClientRow));
@@ -96,7 +97,7 @@ export async function getClientById(clientId: string): Promise<ClientRecord | nu
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load client details.");
+    return null;
   }
 
   const supabase = getSupabaseAdminClient();
@@ -130,9 +131,8 @@ export async function getClientById(clientId: string): Promise<ClientRecord | nu
     .maybeSingle();
 
   if (error) {
-    throw new Error(
-      `Failed to load client ${clientId} for tenant ${session.workspace.tenant.id}.`
-    );
+    console.warn(`Failed to load client ${clientId} for tenant ${session.workspace.tenant.id}.`);
+    return null;
   }
 
   return data ? mapClientRow(data as ClientRow) : null;
