@@ -1933,66 +1933,66 @@ export default async function ClaraPage({
           />
         </section>
 
-        <section className="workspace-panel p-6">
-          <div className="flex flex-col gap-2">
-            <p className="workspace-kicker">Entrada unica do caso</p>
-            <p className="text-sm leading-6 text-slate-300">
-              Inicie um novo atendimento bancario por um unico ponto de entrada. O onboarding completo sera consolidado nas proximas entregas em vez de espalhar o fluxo por varias telas.
-            </p>
-          </div>
-          <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-            <Link
-              className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 p-5 transition hover:bg-emerald-300/15"
-              href="/novo-atendimento-bancario"
-            >
-              <div>
-                <p className="text-lg font-semibold text-white">Novo atendimento bancario</p>
-                <p className="mt-2 text-sm leading-6 text-slate-200">
-                  Cliente, caso, nicho, documentos e objetivo inicial devem nascer do mesmo ponto de entrada.
-                </p>
-              </div>
-              <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/30 bg-emerald-300/15 px-3 py-1 text-xs font-semibold text-emerald-100">
-                Abrir entrada unica
-              </span>
-            </Link>
-
-            <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Direcao desta fase
+          <section className="workspace-panel p-5">
+            <div className="flex flex-col gap-2">
+              <p className="workspace-kicker">Entrada unica do caso</p>
+              <p className="text-xs leading-5 text-slate-400">
+                Inicie um novo atendimento bancario por um unico ponto de entrada. O onboarding completo sera consolidado nas proximas entregas em vez de espalhar o fluxo por varias telas.
               </p>
-              <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
-                <li>1. Escolher o nicho bancario correto</li>
-                <li>2. Abrir o caso por uma unica entrada</li>
-                <li>3. Levar o caso para o cockpit do cliente</li>
-              </ul>
             </div>
-          </div>
-        </section>
-
-        <section className="workspace-panel p-6">
-          <div className="flex flex-col gap-2">
-            <p className="workspace-kicker">Nichos</p>
-            <p className="text-sm leading-6 text-slate-300">
-              O hub so escolhe o nicho. A sequencia operacional fica dentro do fluxo de trabalho escolhido.
-            </p>
-          </div>
-          <div className="mt-4 grid gap-4 lg:grid-cols-3">
-            {nicheItems.map((item) => (
+            <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
               <Link
-                key={item.id}
-                className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-white/10 bg-white/[0.04] p-5 transition hover:bg-white/[0.07]"
-                href={`/clara?niche=${item.id}&tab=analise`}
+                className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 p-4 transition hover:bg-emerald-300/15"
+                href="/novo-atendimento-bancario"
               >
                 <div>
-                  <p className="text-lg font-semibold text-white">{item.label}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{item.description}</p>
+                  <p className="text-base font-semibold text-white">Novo atendimento bancario</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-200">
+                    Cliente, caso, nicho, documentos e objetivo inicial devem nascer do mesmo ponto de entrada.
+                  </p>
                 </div>
-                <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-100">
-                  Abrir nicho
+                <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/30 bg-emerald-300/15 px-3 py-1 text-[11px] font-semibold text-emerald-100">
+                  Abrir entrada unica
                 </span>
               </Link>
-            ))}
-          </div>
+
+              <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Direcao desta fase
+                </p>
+                <ul className="mt-3 space-y-2 text-xs leading-5 text-slate-400">
+                  <li>1. Escolher o nicho bancario correto</li>
+                  <li>2. Abrir o caso por uma unica entrada</li>
+                  <li>3. Levar o caso para o cockpit do cliente</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section className="workspace-panel p-5">
+            <div className="flex flex-col gap-2">
+              <p className="workspace-kicker">Nichos</p>
+              <p className="text-xs leading-5 text-slate-400">
+                O hub so escolhe o nicho. A sequencia operacional fica dentro do fluxo de trabalho escolhido.
+              </p>
+            </div>
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              {nicheItems.map((item) => (
+                <Link
+                  key={item.id}
+                  className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.07]"
+                  href={`/clara?niche=${item.id}&tab=analise`}
+                >
+                  <div>
+                    <p className="text-base font-semibold text-white">{item.label}</p>
+                    <p className="mt-2 text-xs leading-5 text-slate-400">{item.description}</p>
+                  </div>
+                  <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[11px] font-semibold text-emerald-100">
+                    Abrir nicho
+                  </span>
+                </Link>
+              ))}
+            </div>
         </section>
 
       </div>
@@ -2004,7 +2004,7 @@ export default async function ClaraPage({
       <section className="workspace-panel scroll-mt-40 p-4" id="clara-nicho-ativo">
         <div className="flex flex-col gap-2">
           <p className="workspace-kicker">Nicho ativo</p>
-          <p className="text-sm leading-6 text-slate-300">
+          <p className="text-xs leading-5 text-slate-400">
             {nicheConfig?.summary ??
               "Escolha um nicho para abrir a sequencia operacional dentro do contexto correto."}
           </p>
@@ -2014,19 +2014,19 @@ export default async function ClaraPage({
             {nicheFlow.steps.map((step, index) => (
               <div
                 key={step.title}
-                className={`detail-soft-row flex h-full flex-col justify-between px-3 py-3 text-xs font-semibold text-slate-200 ${
+                className={`detail-soft-row flex h-full flex-col justify-between px-3 py-3 text-[11px] font-semibold text-slate-200 ${
                   index === 4 ? "border-emerald-300/20 bg-emerald-300/10" : ""
                 }`}
               >
                 <span>
                   {index + 1}. {step.title}
                 </span>
-                <p className="mt-2 text-xs font-normal leading-5 text-slate-300">{step.detail}</p>
+                <p className="mt-2 text-[11px] font-normal leading-5 text-slate-400">{step.detail}</p>
               </div>
             ))}
           </div>
         ) : null}
-        <p className="mt-3 text-xs leading-6 text-slate-400">
+        <p className="mt-3 text-[11px] leading-5 text-slate-500">
           A saida operacional fica abaixo como documento formal, revisao humana e impress�o.
         </p>
       </section>
@@ -2206,53 +2206,53 @@ export default async function ClaraPage({
       </section>
 
       {activeNiche && nicheOperational ? (
-        <section className="workspace-panel p-5">
-          <div className="flex flex-col gap-2">
-            <p className="workspace-kicker">Motor do nicho</p>
-            <p className="text-sm leading-6 text-slate-300">{nicheOperational.summary}</p>
-          </div>
-          <div className="mt-4 space-y-3">
-            {nicheOperational.cards.map((card, index) => (
-              <div key={card.label} className="workspace-soft-card flex items-start gap-3 p-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-xs font-semibold text-slate-100">
-                  {index + 1}
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    {card.label}
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-white">{card.value}</p>
-                </div>
+      <section className="workspace-panel p-5">
+        <div className="flex flex-col gap-2">
+          <p className="workspace-kicker">Motor do nicho</p>
+          <p className="text-xs leading-5 text-slate-400">{nicheOperational.summary}</p>
+        </div>
+        <div className="mt-4 space-y-3">
+          {nicheOperational.cards.map((card, index) => (
+            <div key={card.label} className="workspace-soft-card flex items-start gap-3 p-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-xs font-semibold text-slate-100">
+                {index + 1}
               </div>
-            ))}
-          </div>
-        </section>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  {card.label}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-white">{card.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
       ) : null}
 
       {activeNiche && nicheExecutionBlocks ? (
-        <section className="workspace-panel p-5">
-          <div className="flex flex-col gap-2">
-            <p className="workspace-kicker">{nicheExecutionBlocks.title}</p>
-            <p className="text-sm leading-6 text-slate-300">
-              A Clara usa esta trilha para manter o trabalho dentro do nicho escolhido antes de abrir a saida formal.
-            </p>
-          </div>
-          <div className="mt-4 space-y-3">
-            {nicheExecutionBlocks.steps.map((step, index) => (
-              <div key={step} className="workspace-soft-card flex items-start gap-3 p-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-xs font-semibold text-slate-100">
-                  {index + 1}
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Passo {index + 1}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-200">{step}</p>
-                </div>
+      <section className="workspace-panel p-5">
+        <div className="flex flex-col gap-2">
+          <p className="workspace-kicker">{nicheExecutionBlocks.title}</p>
+          <p className="text-xs leading-5 text-slate-400">
+            A Clara usa esta trilha para manter o trabalho dentro do nicho escolhido antes de abrir a saida formal.
+          </p>
+        </div>
+        <div className="mt-4 space-y-3">
+          {nicheExecutionBlocks.steps.map((step, index) => (
+            <div key={step} className="workspace-soft-card flex items-start gap-3 p-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-xs font-semibold text-slate-100">
+                {index + 1}
               </div>
-            ))}
-          </div>
-        </section>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Passo {index + 1}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-300">{step}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
       ) : null}
 
       {activeTab === "analise" ? (
