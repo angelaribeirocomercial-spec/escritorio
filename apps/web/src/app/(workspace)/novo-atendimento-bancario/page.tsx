@@ -16,15 +16,15 @@ const intakeFormAction = createBankingIntakeAction as unknown as string;
 const nextSteps = [
   {
     label: "1. Cliente",
-    detail: "Cadastrar o cliente com os dados minimos para iniciar o caso."
+    detail: "Cadastro minimo para abrir o caso."
   },
   {
     label: "2. Caso e nicho",
-    detail: "Registrar o banco, o nicho bancario e o objetivo inicial da demanda."
+    detail: "Banco, nicho e objetivo inicial."
   },
   {
     label: "3. Documentos",
-    detail: "Anexar os documentos essenciais ja na abertura para iniciar checklist e workflow."
+    detail: "Documentos essenciais na abertura."
   }
 ] as const;
 
@@ -387,37 +387,42 @@ function NovoAtendimentoBancarioPageContent({
           >
             Iniciar caso
           </button>
+          <p className="mt-3 text-xs leading-5 text-slate-400">
+            Esta fase abre o caso com os dados minimos, ativa o checklist e encaminha o fluxo para o cockpit do cliente.
+          </p>
         </form>
 
         <article className="workspace-panel p-6">
-          <p className="text-sm font-semibold text-white">O que esta fase faz</p>
-          <div className="mt-5 grid gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">O que esta fase faz</p>
+          <div className="mt-4 grid gap-2">
             {nextSteps.map((step) => (
-              <div key={step.label} className="workspace-soft-card rounded-[4px] px-4 py-4">
+              <div key={step.label} className="workspace-soft-card rounded-[4px] px-3 py-3">
                 <p className="text-sm font-semibold text-white">{step.label}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{step.detail}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">{step.detail}</p>
               </div>
             ))}
           </div>
 
-          <div className="workspace-soft-card mt-5 rounded-[4px] px-4 py-4 text-sm leading-6 text-slate-300">
+          <div className="workspace-soft-card mt-4 rounded-[4px] px-4 py-4 text-xs leading-5 text-slate-400">
             O onboarding ja recebe documentos na propria jornada. Se algo faltar, a abertura falha de forma controlada e informa exatamente o que precisa ser anexado.
           </div>
 
           <div className="mt-5">
-            <p className="text-sm font-semibold text-white">Workflow piloto que nasce com o caso</p>
-            <div className="mt-4 grid gap-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Workflow piloto que nasce com o caso
+            </p>
+            <div className="mt-4 grid gap-2">
               {revisionalWorkflowPreview.steps.slice(0, 5).map((step, index) => (
                 <div
                   key={step.id}
-                  className={`workspace-soft-card rounded-[4px] px-4 py-4 text-sm ${
+                  className={`workspace-soft-card rounded-[4px] px-3 py-3 text-sm ${
                     step.state === "current" ? "border border-cyan-300/20 bg-cyan-300/10" : ""
                   }`}
                 >
                   <p className="font-semibold text-white">
                     {index + 1}. {step.title}
                   </p>
-                  <p className="mt-2 leading-6 text-slate-300">{step.detail}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-400">{step.detail}</p>
                 </div>
               ))}
             </div>

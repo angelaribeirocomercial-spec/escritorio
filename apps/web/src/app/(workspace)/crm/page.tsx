@@ -50,9 +50,9 @@ export default async function CrmPage() {
       <section className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
         <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-100/80">Direcao do CRM</p>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-            A home do CRM mostra a carteira viva, a conversao real e o proximo passo comercial. O detalhe segue nos
-            blocos de pipeline, follow-ups, contratos, conversas e conversao.
+          <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-400">
+            A home do CRM mostra a carteira viva e aponta para os submenus. Conversas, follow-up e historico ficam
+            concentrados em CRM &gt; Conversas.
           </p>
         </div>
 
@@ -77,12 +77,6 @@ export default async function CrmPage() {
             >
               Abrir conversas
             </Link>
-            <Link
-              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-300/30 hover:bg-emerald-300/10"
-              href="/crm/conversao"
-            >
-              Abrir conversao
-            </Link>
           </div>
         </div>
       </section>
@@ -91,35 +85,33 @@ export default async function CrmPage() {
         {leads.map((lead, index) => (
           <article
             key={lead.id}
-            className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4 transition-colors hover:border-emerald-300/20 hover:bg-white/[0.06]"
+            className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-3 transition-colors hover:border-emerald-300/20 hover:bg-white/[0.06]"
           >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
               <div className="flex items-start gap-3 lg:min-w-[230px] lg:flex-1">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-sm font-semibold text-slate-100">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-xs font-semibold text-slate-100">
                   {index + 1}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-base font-semibold text-white">{lead.client.fullName}</p>
-                  <p className="mt-1 text-sm text-slate-400">{lead.client.bankName}</p>
+                  <p className="text-sm font-semibold text-white">{lead.client.fullName}</p>
+                  <p className="mt-1 text-xs text-slate-500">{lead.client.bankName}</p>
                 </div>
               </div>
 
-              <div className="grid flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</p>
-                  <p className="mt-2 text-sm text-slate-300">{lead.stageLabel}</p>
+                  <p className="mt-2 text-xs text-slate-300">{lead.stageLabel}</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Casos</p>
-                  <p className="mt-2 text-sm text-slate-300">{lead.caseCount} caso(s) vinculado(s)</p>
+                  <p className="mt-2 text-xs text-slate-300">{lead.caseCount} caso(s) vinculado(s)</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Viabilidade</p>
-                  <p className="mt-2 text-sm text-slate-300">{lead.client.legalViabilityScore}%</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Risco</p>
-                  <p className="mt-2 text-sm text-slate-300">{lead.riskLabel}</p>
+                  <p className="mt-2 text-xs text-slate-300">
+                    {lead.client.legalViabilityScore}% | Risco {lead.riskLabel}
+                  </p>
                 </div>
               </div>
 
@@ -127,28 +119,19 @@ export default async function CrmPage() {
                 <span className="rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-100">
                   {lead.pipelineLabel}
                 </span>
-                <div className="flex flex-wrap gap-2">
-                  <Link
-                    className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-300/30 hover:bg-emerald-300/10"
-                    href={`/pessoas/clientes/${lead.client.id}`}
-                  >
-                    Abrir cliente
-                  </Link>
-                  {lead.client.linkedCases[0]?.id ? (
-                    <Link
-                      className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-300/30 hover:bg-emerald-300/10"
-                      href={`/casos/${lead.client.linkedCases[0].id}`}
-                    >
-                      Abrir caso
-                    </Link>
-                  ) : null}
-                </div>
+                <Link
+                  className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-300/30 hover:bg-emerald-300/10"
+                  href={`/pessoas/clientes/${lead.client.id}`}
+                >
+                  Abrir cliente
+                </Link>
               </div>
             </div>
-
-            <p className="mt-3 text-sm leading-6 text-slate-300">{lead.nextAction}</p>
           </article>
         ))}
+        <p className="px-1 text-xs leading-5 text-slate-500">
+          Conversas detalhadas, follow-up e historico operacional ficam em CRM &gt; Conversas.
+        </p>
       </section>
     </WorkspacePage>
   );
