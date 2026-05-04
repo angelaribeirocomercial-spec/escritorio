@@ -1940,10 +1940,16 @@ export default async function ClaraPage({
       <div className="space-y-6">
         {globalSearchQuery ? (
           <section className="workspace-panel p-6">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               <p className="workspace-kicker">Resposta da Clara</p>
+              <div className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/8 px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200/90">Pergunta recebida</p>
+                <p className="mt-2 text-sm leading-6 text-slate-200">
+                  {globalSearchQuery}
+                </p>
+              </div>
               <p className="text-sm leading-6 text-slate-300">
-                Estou cruzando o pedido <span className="font-semibold text-white">{globalSearchQuery}</span> com o contexto local do workspace.
+                Estou preparando a resposta com base no contexto local do workspace e nas fontes já disponíveis no caso.
               </p>
             </div>
             {globalSearchMatches.length > 0 ? (
@@ -1962,7 +1968,7 @@ export default async function ClaraPage({
                       {item.detail ? <p className="mt-2 text-sm leading-6 text-slate-300">{item.detail}</p> : null}
                     </div>
                     <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-100">
-                      Abrir resultado
+                      Abrir contexto
                     </span>
                   </Link>
                 ))}
