@@ -1034,6 +1034,41 @@ export default async function ClaraPage({
   const workflowFields = [...activeWorkspace.workflow.fields];
   const globalSearchQuery = searchParams?.q?.trim() ?? "";
 
+  function buildClaraReply(question: string) {
+    const normalized = question
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
+    const clientMatch = clara.selectors.clients.find((client) => {
+      const clientName = client.label
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+
+      return normalized.includes(clientName) || clientName.includes(normalized);
+    });
+
+    if (normalized.includes("cliente") || normalized.includes("carlos")) {
+      if (clientMatch) {
+        return `Encontrei o cliente ${clientMatch.label}. Se quiser, eu também posso abrir o cockpit dele ou localizar o caso ligado a esse nome.`;
+      }
+
+      return "Não encontrei um cliente com esse nome no workspace. Se quiser, eu posso procurar por nome completo, sobrenome ou CPF.";
+    }
+
+    if (normalized.includes("caso")) {
+      return "Posso localizar o caso e cruzar cliente, processo e documentos. Se você me der um nome ou identificador, eu sigo direto.";
+    }
+
+    if (normalized.includes("documento")) {
+      return "Posso revisar os documentos ligados ao caso e apontar o que já está anexado e o que ainda falta.";
+    }
+
+    return "Posso localizar cliente, caso, processo ou documento. Me diga o que você quer encontrar que eu sigo direto.";
+  }
+
   function getFieldWeight(fieldType: string) {
     if (fieldType === "client") return 0;
     if (fieldType === "process") return 1;
@@ -1843,14 +1878,11 @@ export default async function ClaraPage({
           <ClaraConversationCard
             badgeLabel="CLARA"
             badgeSubtitle="Assistente especialista em direito bancario"
-            responseDetail="Converse com a Clara para tirar duvidas, localizar contexto do caso e seguir o fluxo bancario correto usando dados e APIs do sistema."
+            responseDetail="Converse com a Clara como em um chat de advogado bancario: pergunta direta, resposta curta e objetiva."
+            assistantReply={globalSearchQuery ? buildClaraReply(globalSearchQuery) : undefined}
             composerHint="Pressione Enter para enviar. Use Shift+Enter para quebrar linha."
             composerPlaceholder="Ex.: Quero revisar a tese do caso e listar documentos faltantes."
             composerValue={globalSearchQuery}
-            responseQuery={globalSearchQuery}
-            interactive={false}
-            statusLabel="Entrada"
-            statusLine="A Clara responde como especialista e pede a entrada unica do caso quando precisar abrir um fluxo novo."
           />
 
           <section className="workspace-panel p-5">
