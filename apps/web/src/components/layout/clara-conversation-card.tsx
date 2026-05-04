@@ -1,3 +1,6 @@
+"use client";
+
+import { useRef } from "react";
 import Link from "next/link";
 
 type ClaraConversationEntry = {
@@ -34,6 +37,7 @@ export function ClaraConversationCard({
   statusLabel,
   statusLine
 }: ClaraConversationCardProps) {
+  const formRef = useRef<HTMLFormElement | null>(null);
   const previewItems = searchIndex.slice(0, 3);
 
   return (
@@ -55,12 +59,20 @@ export function ClaraConversationCard({
       </div>
 
       {composerButtonLabel ? (
-        <form className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]">
+        <form ref={formRef} className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]">
           <textarea
             className="reference-search-input min-h-[7rem] w-full px-3 py-3 text-sm outline-none"
             defaultValue={composerValue}
             name="q"
             placeholder={composerPlaceholder ?? "Digite sua pergunta para a Clara."}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" || event.shiftKey) {
+                return;
+              }
+
+              event.preventDefault();
+              formRef.current?.requestSubmit();
+            }}
           />
           <div className="flex items-end">
             <button
