@@ -2256,88 +2256,88 @@ export default async function ClaraPage({
       ) : null}
 
       {activeTab === "analise" ? (
-        <section className="workspace-panel p-6">
+        <section className="workspace-panel p-5">
           <div className="flex flex-col gap-2">
             <p className="workspace-kicker">Nucleo juridico estruturado</p>
-            <p className="text-sm leading-6 text-slate-300">{clara.structuredCore.summary}</p>
+            <p className="text-xs leading-5 text-slate-400">{clara.structuredCore.summary}</p>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="workspace-soft-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <div className="workspace-soft-card p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Classificacao
               </p>
-              <p className="mt-2 text-sm font-semibold text-white">
+              <p className="mt-1 text-sm font-semibold text-white">
                 {clara.structuredCore.classification.scenarioLabel}
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
+              <p className="mt-1 text-xs leading-5 text-slate-400">
                 {clara.structuredCore.classification.decisionLabel}
               </p>
             </div>
-            <div className="workspace-soft-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <div className="workspace-soft-card p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Fatos confirmados
               </p>
-              <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-200">
+              <ul className="mt-2 space-y-2 text-xs leading-5 text-slate-200">
                 {clara.structuredCore.confirmedFacts.slice(0, 4).map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
             </div>
-            <div className="workspace-soft-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <div className="workspace-soft-card p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Lacunas documentais
               </p>
               {clara.structuredCore.documentsMissing.length > 0 ? (
-                <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-200">
+                <ul className="mt-2 space-y-2 text-xs leading-5 text-slate-200">
                   {clara.structuredCore.documentsMissing.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-2 text-sm leading-6 text-emerald-100">
+                <p className="mt-1 text-xs leading-5 text-emerald-100">
                   Nenhuma lacuna essencial identificada.
                 </p>
               )}
             </div>
-            <div className="workspace-soft-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <div className="workspace-soft-card p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Proxima decisao
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-200">{clara.structuredCore.nextStep}</p>
-              <p className="mt-3 text-xs leading-6 text-slate-400">{clara.structuredCore.recommendation}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-200">{clara.structuredCore.nextStep}</p>
+              <p className="mt-2 text-[11px] leading-5 text-slate-400">{clara.structuredCore.recommendation}</p>
             </div>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <div className="workspace-soft-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <div className="workspace-soft-card p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Documentos encontrados
               </p>
-              <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-200">
+              <ul className="mt-2 space-y-2 text-xs leading-5 text-slate-200">
                 {clara.structuredCore.documentsFound.map((document) => (
                   <li key={document.id}>{document.detail}</li>
                 ))}
               </ul>
             </div>
-            <div className="workspace-soft-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <div className="workspace-soft-card p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Riscos e consistencia
               </p>
-              <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-200">
+              <ul className="mt-2 space-y-2 text-xs leading-5 text-slate-200">
                 {clara.structuredCore.risks.map((risk) => (
                   <li key={risk}>{risk}</li>
                 ))}
               </ul>
             </div>
           </div>
-          <div className="mt-4 workspace-soft-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <div className="mt-4 workspace-soft-card p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
               Fontes externas preparadas
             </p>
             <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {clara.structuredCore.sourceAdapters.map((adapter) => (
-                <div key={adapter.sourceId} className="rounded-[4px] border border-white/10 bg-black/10 p-4">
+                <div key={adapter.sourceId} className="rounded-[4px] border border-white/10 bg-black/10 p-3">
                   <p className="text-sm font-semibold text-white">{adapter.sourceLabel}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-500">
+                  <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-slate-500">
                     {adapter.status === "failed"
                       ? "Falhou"
                       : adapter.status === "unavailable"
@@ -2346,25 +2346,25 @@ export default async function ClaraPage({
                           ? "Consultado"
                           : "Nao consultado"}
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{adapter.scope}</p>
-                  <p className="mt-2 text-xs leading-5 text-slate-400">{adapter.queryHint}</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-300">{adapter.scope}</p>
+                  <p className="mt-2 text-[11px] leading-5 text-slate-400">{adapter.queryHint}</p>
                   {adapter.failureReason ? (
-                    <p className="mt-2 text-xs leading-5 text-rose-200">{adapter.failureReason}</p>
+                    <p className="mt-2 text-[11px] leading-5 text-rose-200">{adapter.failureReason}</p>
                   ) : null}
                 </div>
               ))}
             </div>
           </div>
-          <div className="mt-4 workspace-soft-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <div className="mt-4 workspace-soft-card p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
               Trilha de auditoria
             </p>
-            <p className="mt-2 text-sm leading-6 text-slate-300">{clara.structuredCore.auditTrail.summary}</p>
-            <div className="mt-4 grid gap-3 md:grid-cols-4">
+            <p className="mt-2 text-xs leading-5 text-slate-400">{clara.structuredCore.auditTrail.summary}</p>
+            <div className="mt-3 grid gap-3 md:grid-cols-4">
               {Object.entries(clara.structuredCore.auditTrail.originCounts).map(([origin, count]) => (
-                <div key={origin} className="rounded-[4px] border border-white/10 bg-black/10 p-3">
+                <div key={origin} className="rounded-[4px] border border-white/10 bg-black/10 p-2">
                   <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{origin}</p>
-                  <p className="mt-2 text-lg font-semibold text-white">{count}</p>
+                  <p className="mt-1 text-base font-semibold text-white">{count}</p>
                 </div>
               ))}
             </div>
