@@ -13,6 +13,7 @@ import {
 } from "@/server/services/clara/clara-minutas-store";
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
 import {
+  commitClaraExecutionAction,
   updateClaraReviewNoteAction,
   updateClaraWorkflowStatusAction
 } from "@/app/(workspace)/clara/actions";
@@ -24,6 +25,48 @@ type RevisionalDraftBlock = {
 };
 
 type TextDraftPayload = Awaited<ReturnType<typeof getClaraTextDraftArtifact>>;
+
+function buildDraftCreationTargetPath(searchParams?: {
+  draft?: string;
+  created?: string;
+  case?: string;
+  document?: string;
+  process?: string;
+  piece?: string;
+  objetivo?: string;
+  revisedInstallment?: string;
+  estimatedTotalExcess?: string;
+  chargedInstallment?: string;
+  contractedInstallment?: string;
+}) {
+  if (!searchParams?.draft) {
+    return null;
+  }
+
+  const params = new URLSearchParams();
+  params.set("draft", searchParams.draft ?? "1");
+
+  const pairs: Array<[string, string | undefined]> = [
+    ["created", searchParams.created],
+    ["case", searchParams.case],
+    ["document", searchParams.document],
+    ["process", searchParams.process],
+    ["piece", searchParams.piece],
+    ["objetivo", searchParams.objetivo],
+    ["revisedInstallment", searchParams.revisedInstallment],
+    ["estimatedTotalExcess", searchParams.estimatedTotalExcess],
+    ["chargedInstallment", searchParams.chargedInstallment],
+    ["contractedInstallment", searchParams.contractedInstallment]
+  ];
+
+  for (const [key, value] of pairs) {
+    if (value) {
+      params.set(key, value);
+    }
+  }
+
+  return `/editor-de-texto/meus-textos?${params.toString()}`;
+}
 
 function buildRevisionalDraftBlocks(
   draftArtifact: Awaited<ReturnType<typeof getClaraTextDraftArtifact>>
@@ -339,13 +382,19 @@ function MeusTextosInner({
   draftArtifact,
   claraDisplay,
   claraRecord,
+  draftCreationTargetPath,
   textDraftRecords
 }: {
   draftArtifact: Awaited<ReturnType<typeof getClaraTextDraftArtifact>> | null;
   claraDisplay: ReturnType<typeof getClaraRecordDisplay> | null;
   claraRecord: ClaraRecord | null;
+  draftCreationTargetPath: string | null;
   textDraftRecords: ClaraTextDraftRecord[];
 }) {
+  const draftCreationSearchParams = draftCreationTargetPath
+    ? new URL(draftCreationTargetPath, "http://localhost").searchParams
+    : null;
+
   return (
     <div className="mj-model-page space-y-4">
       <div className="flex items-start justify-between">
@@ -353,10 +402,42 @@ function MeusTextosInner({
           <p className="mj-model-title">Meus textos</p>
           <p className="mj-model-subtitle">Exibindo {textDraftRecords.length} resultado(s)</p>
         </div>
-        <button className="mj-model-button-green" type="button">
-          Criar texto v
-        </button>
+        <span className="rounded-[2px] border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-[13px] font-semibold text-cyan-100">
+          Minuta assistida
+        </span>
       </div>
+
+      {draftArtifact && !claraRecord && draftCreationTargetPath ? (
+        <section className="mj-model-panel px-4 py-4">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                Minuta assistida pronta
+              </p>
+              <p className="mt-2 text-[13px] leading-6 text-slate-300">
+                Registre esta minuta para gravar a versao real no ERP e liberar o fluxo de revisao, exportacao e status documental.
+              </p>
+            </div>
+            {
+              // @ts-expect-error Next server action form binding
+              <form action={commitClaraExecutionAction} className="flex flex-wrap items-center gap-3">
+              <input name="targetPath" type="hidden" value={draftCreationTargetPath} />
+              <input name="recordKind" type="hidden" value="text-draft" />
+              <input name="sourceAction" type="hidden" value="Registrar minuta revisional" />
+              <input name="client" type="hidden" value={draftCreationSearchParams?.get("client") ?? ""} />
+              <input name="case" type="hidden" value={draftCreationSearchParams?.get("case") ?? ""} />
+              <input name="document" type="hidden" value={draftCreationSearchParams?.get("document") ?? ""} />
+              <input name="process" type="hidden" value={draftCreationSearchParams?.get("process") ?? ""} />
+              <input name="piece" type="hidden" value={draftCreationSearchParams?.get("piece") ?? ""} />
+              <input name="objective" type="hidden" value={draftCreationSearchParams?.get("objetivo") ?? ""} />
+              <button className="mj-model-button-green mt-3 md:mt-0" type="submit">
+                Registrar minuta na Clara
+              </button>
+              </form>
+            }
+          </div>
+        </section>
+      ) : null}
 
       <section className="rounded-[4px] border border-white/5 bg-black/10 px-4 py-4">
         <label className="mb-2 block text-[13px] font-semibold text-slate-300">Busca</label>
@@ -485,6 +566,7 @@ export default async function EditorSubpage({
     created?: string;
     record?: string;
     case?: string;
+    process?: string;
     document?: string;
     piece?: string;
     objetivo?: string;
@@ -520,6 +602,7 @@ export default async function EditorSubpage({
   const claraDisplay = draftArtifact
     ? getClaraRecordDisplay(claraRecord, "Rascunho preparado pela Clara", draftArtifact.preview)
     : null;
+  const draftCreationTargetPath = draftArtifact && !claraRecord ? buildDraftCreationTargetPath(searchParams) : null;
 
   if (params.subpage === "meus-textos") {
     return (
@@ -527,6 +610,7 @@ export default async function EditorSubpage({
         claraDisplay={claraDisplay}
         claraRecord={claraRecord?.kind === "text-draft" ? claraRecord : null}
         draftArtifact={draftArtifact}
+        draftCreationTargetPath={draftCreationTargetPath}
         textDraftRecords={textDraftRecords}
       />
     );
