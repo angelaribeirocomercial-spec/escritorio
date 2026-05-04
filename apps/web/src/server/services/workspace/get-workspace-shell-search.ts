@@ -22,130 +22,134 @@ function compactText(value: string, maxLength: number) {
 }
 
 export async function getWorkspaceShellSearchEntries(): Promise<WorkspaceSearchEntry[]> {
-  const [clientsResult, processesResult, documentsResult] = await Promise.allSettled([
-    getClients(),
-    getProcesses(),
-    getDocuments()
-  ]);
+  try {
+    const [clientsResult, processesResult, documentsResult] = await Promise.allSettled([
+      getClients(),
+      getProcesses(),
+      getDocuments()
+    ]);
 
-  if (clientsResult.status === "rejected") {
-    console.warn("Failed to load workspace shell clients.", clientsResult.reason);
-  }
-
-  if (processesResult.status === "rejected") {
-    console.warn("Failed to load workspace shell processes.", processesResult.reason);
-  }
-
-  if (documentsResult.status === "rejected") {
-    console.warn("Failed to load workspace shell documents.", documentsResult.reason);
-  }
-
-  const clients = clientsResult.status === "fulfilled" ? clientsResult.value : [];
-  const processes = processesResult.status === "fulfilled" ? processesResult.value : [];
-  const documents = documentsResult.status === "fulfilled" ? documentsResult.value : [];
-
-  const entries: WorkspaceSearchEntry[] = [];
-
-  for (const client of clients) {
-    entries.push({
-      id: `cliente-${client.id}`,
-      kind: "Cliente",
-      title: client.fullName,
-      preview: compactText(`${client.bankName} | ${client.serviceStatus} | ${client.feesLabel}`, 90),
-      href: `/pessoas/clientes/${client.id}`,
-      keywords: [
-        client.fullName,
-        client.documentId,
-        client.email,
-        client.phone,
-        client.whatsapp,
-        client.bankName,
-        client.leadSource,
-        client.notes,
-        client.iaContext
-      ]
-    });
-  }
-
-  for (const processItem of processes) {
-    entries.push({
-      id: `processo-${processItem.id}`,
-      kind: "Processo",
-      title: processItem.processNumber,
-      preview: compactText(
-        `${processItem.client.fullName} | ${processItem.bankingCase.title} | ${processItem.tribunal}`,
-        100
-      ),
-      href: `/processos/${processItem.id}`,
-      keywords: [
-        processItem.processNumber,
-        processItem.tribunal,
-        processItem.courtDistrict,
-        processItem.courtName,
-        processItem.proceduralPhase,
-        processItem.responsibleLawyer,
-        processItem.client.fullName,
-        processItem.bankingCase.title,
-        processItem.bankingCase.mainThesis,
-        processItem.bankingCase.suggestedStrategy
-      ]
-    });
-
-    entries.push({
-      id: `tese-${processItem.id}`,
-      kind: "Tese",
-      title: processItem.bankingCase.mainThesis,
-      preview: compactText(
-        `${processItem.bankingCase.title} | ${processItem.client.fullName} | ${processItem.processNumber}`,
-        100
-      ),
-      href: `/processos/${processItem.id}`,
-      keywords: [
-        processItem.bankingCase.mainThesis,
-        processItem.bankingCase.title,
-        processItem.bankingCase.claimType,
-        processItem.bankingCase.suggestedStrategy,
-        processItem.client.fullName,
-        processItem.processNumber,
-        processItem.tribunal
-      ]
-    });
-  }
-
-  for (const document of documents) {
-    entries.push({
-      id: `documento-${document.id}`,
-      kind: "Documento",
-      title: document.fileName,
-      preview: compactText(
-        `${document.documentType} | ${document.client.fullName} | ${document.summary}`,
-        100
-      ),
-      href: `/documentos/${document.id}`,
-      keywords: [
-        document.fileName,
-        document.originalFileName ?? "",
-        document.documentType,
-        document.category,
-        document.summary,
-        document.client.fullName,
-        document.bankingCase.title,
-        document.bankingCase.mainThesis,
-        document.tags.join(" ")
-      ]
-    });
-  }
-
-  const seen = new Set<string>();
-
-  return entries.filter((entry) => {
-    const key = normalizeText(`${entry.kind}::${entry.title}::${entry.href}`);
-
-    if (seen.has(key)) {
-      return false;
+    if (clientsResult.status === "rejected") {
+      console.warn("Failed to load workspace shell clients.", clientsResult.reason);
     }
 
-    seen.add(key);
-    return true;
-  });
+    if (processesResult.status === "rejected") {
+      console.warn("Failed to load workspace shell processes.", processesResult.reason);
+    }
+
+    if (documentsResult.status === "rejected") {
+      console.warn("Failed to load workspace shell documents.", documentsResult.reason);
+    }
+
+    const clients = clientsResult.status === "fulfilled" ? clientsResult.value : [];
+    const processes = processesResult.status === "fulfilled" ? processesResult.value : [];
+    const documents = documentsResult.status === "fulfilled" ? documentsResult.value : [];
+
+    const entries: WorkspaceSearchEntry[] = [];
+
+    for (const client of clients) {
+      entries.push({
+        id: `cliente-${client.id}`,
+        kind: "Cliente",
+        title: client.fullName,
+        preview: compactText(`${client.bankName} | ${client.serviceStatus} | ${client.feesLabel}`, 90),
+        href: `/pessoas/clientes/${client.id}`,
+        keywords: [
+          client.fullName,
+          client.documentId,
+          client.email,
+          client.phone,
+          client.whatsapp,
+          client.bankName,
+          client.leadSource,
+          client.notes,
+          client.iaContext
+        ]
+      });
+    }
+
+    for (const processItem of processes) {
+      entries.push({
+        id: `processo-${processItem.id}`,
+        kind: "Processo",
+        title: processItem.processNumber,
+        preview: compactText(
+          `${processItem.client.fullName} | ${processItem.bankingCase.title} | ${processItem.tribunal}`,
+          100
+        ),
+        href: `/processos/${processItem.id}`,
+        keywords: [
+          processItem.processNumber,
+          processItem.tribunal,
+          processItem.courtDistrict,
+          processItem.courtName,
+          processItem.proceduralPhase,
+          processItem.responsibleLawyer,
+          processItem.client.fullName,
+          processItem.bankingCase.title,
+          processItem.bankingCase.mainThesis,
+          processItem.bankingCase.suggestedStrategy
+        ]
+      });
+
+      entries.push({
+        id: `tese-${processItem.id}`,
+        kind: "Tese",
+        title: processItem.bankingCase.mainThesis,
+        preview: compactText(
+          `${processItem.bankingCase.title} | ${processItem.client.fullName} | ${processItem.processNumber}`,
+          100
+        ),
+        href: `/processos/${processItem.id}`,
+        keywords: [
+          processItem.bankingCase.mainThesis,
+          processItem.bankingCase.title,
+          processItem.bankingCase.claimType,
+          processItem.bankingCase.suggestedStrategy,
+          processItem.client.fullName,
+          processItem.processNumber,
+          processItem.tribunal
+        ]
+      });
+    }
+
+    for (const document of documents) {
+      entries.push({
+        id: `documento-${document.id}`,
+        kind: "Documento",
+        title: document.fileName,
+        preview: compactText(
+          `${document.documentType} | ${document.client.fullName} | ${document.summary}`,
+          100
+        ),
+        href: `/documentos/${document.id}`,
+        keywords: [
+          document.fileName,
+          document.originalFileName ?? "",
+          document.documentType,
+          document.category,
+          document.summary,
+          document.client.fullName,
+          document.bankingCase.title,
+          document.bankingCase.mainThesis,
+          document.tags.join(" ")
+        ]
+      });
+    }
+
+    const seen = new Set<string>();
+
+    return entries.filter((entry) => {
+      const key = normalizeText(`${entry.kind}::${entry.title}::${entry.href}`);
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+  } catch {
+    return [];
+  }
 }
