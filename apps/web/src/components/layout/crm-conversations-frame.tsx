@@ -28,6 +28,9 @@ function panelTone(active: boolean) {
 
 export function CrmConversationsFrame({ conversations }: CrmConversationsFrameProps) {
   const [activePanel, setActivePanel] = useState<PanelKey | null>("records");
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(
+    conversations[0]?.id ?? null
+  );
 
   const withCase = conversations.filter((conversation) => conversation.caseId).length;
   const withoutCase = conversations.filter((conversation) => !conversation.caseId).length;
@@ -53,39 +56,36 @@ export function CrmConversationsFrame({ conversations }: CrmConversationsFramePr
 
   return (
     <section className="space-y-6">
-      <section className="workspace-panel space-y-5 p-6">
+      <section className="workspace-panel space-y-5 p-5 lg:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl space-y-2">
             <p className="workspace-kicker">CRM</p>
-            <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-              Conversas do escritorio
-            </h2>
-            <p className="text-sm leading-7 text-slate-300">
-              A visão inicial mostra apenas o essencial. O detalhe abre por card quando a conversa precisa de mais
-              contexto.
+            <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">Conversas do escritorio</h2>
+            <p className="text-xs leading-5 text-slate-400">
+              Visao resumida. O detalhe abre por card quando a conversa precisa de mais contexto.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href="/crm/conversao">
+            <Link className="detail-link-button px-3 py-2 text-xs font-semibold" href="/crm/conversao">
               Ver conversao
             </Link>
-            <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href="/crm/pipeline">
+            <Link className="detail-link-button px-3 py-2 text-xs font-semibold" href="/crm/pipeline">
               Ver pipeline
             </Link>
           </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+          <div className="detail-soft-row px-3 py-3 text-xs text-slate-300">
             Conversas: <span className="font-semibold text-white">{conversations.length}</span>
           </div>
-          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+          <div className="detail-soft-row px-3 py-3 text-xs text-slate-300">
             Com caso: <span className="font-semibold text-white">{withCase}</span>
           </div>
-          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+          <div className="detail-soft-row px-3 py-3 text-xs text-slate-300">
             Sem caso: <span className="font-semibold text-white">{withoutCase}</span>
           </div>
-          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+          <div className="detail-soft-row px-3 py-3 text-xs text-slate-300">
             Foco atual: <span className="font-semibold text-white">Historico e follow-up</span>
           </div>
         </div>
@@ -106,9 +106,9 @@ export function CrmConversationsFrame({ conversations }: CrmConversationsFramePr
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">{card.title}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">{card.title}</p>
                   <p className="mt-2 text-sm font-semibold text-white">{card.summary}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{card.detail}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-300">{card.detail}</p>
                 </div>
                 <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-slate-300">
                   {active ? "Aberto" : "Abrir"}
@@ -126,17 +126,17 @@ export function CrmConversationsFrame({ conversations }: CrmConversationsFramePr
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="workspace-kicker">Historico de contato</p>
-                  <h3 className="mt-2 text-2xl font-semibold text-white">Trilha operacional de conversa</h3>
+                  <h3 className="mt-2 text-xl font-semibold text-white">Trilha operacional de conversa</h3>
                 </div>
-                <div className="detail-soft-row px-4 py-3 text-sm text-slate-300">
+                <div className="detail-soft-row px-3 py-2 text-xs text-slate-300">
                   {withCase} conversa(s) com caso
                 </div>
               </div>
-              <div className="detail-subpanel p-5">
+              <div className="detail-subpanel p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Descricao</p>
-                <p className="mt-3 text-sm leading-7 text-slate-200">
-                  O CRM expõe o histórico de conversa como trilha operacional, conectando contato comercial, contrato
-                  e caso quando isso já existe na carteira real.
+                <p className="mt-3 text-sm leading-6 text-slate-200">
+                  O CRM expoe o historico de conversa como trilha operacional, conectando contato comercial, contrato
+                  e caso quando isso ja existe na carteira real.
                 </p>
               </div>
             </div>
@@ -147,48 +147,64 @@ export function CrmConversationsFrame({ conversations }: CrmConversationsFramePr
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="workspace-kicker">Conversas</p>
-                  <h3 className="mt-2 text-2xl font-semibold text-white">Registros reais de contato</h3>
+                  <h3 className="mt-2 text-xl font-semibold text-white">Registros reais de contato</h3>
                 </div>
-                <div className="detail-soft-row px-4 py-3 text-sm text-slate-300">
+                <div className="detail-soft-row px-3 py-2 text-xs text-slate-300">
                   {conversations.length} registro(s)
                 </div>
               </div>
               <div className="grid gap-3">
-                {conversations.map((conversation) => (
-                  <article key={conversation.id} className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-white">{conversation.clientName}</p>
-                        <p className="mt-1 text-slate-400">{conversation.summary}</p>
-                      </div>
-                      <span className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-200">
-                        {conversation.statusLabel}
-                      </span>
-                    </div>
+                {conversations.map((conversation) => {
+                  const isOpen = activeConversationId === conversation.id;
 
-                    <p className="mt-3 leading-6">{conversation.lastMessage}</p>
-                    <p className="mt-2 leading-6 text-slate-400">{conversation.nextAction}</p>
-
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <Link
-                        className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
-                        href={`/pessoas/clientes/${conversation.clientId}`}
+                  return (
+                    <article key={conversation.id} className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                      <button
+                        className="flex w-full items-start justify-between gap-3 text-left"
+                        onClick={() => setActiveConversationId(isOpen ? null : conversation.id)}
+                        type="button"
                       >
-                        Abrir cliente
-                      </Link>
-                      {conversation.caseId ? (
-                        <Link
-                          className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
-                          href={`/casos/${conversation.caseId}`}
-                        >
-                          Abrir caso
-                        </Link>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-white">{conversation.clientName}</p>
+                          <p className="mt-1 text-xs text-slate-400">{conversation.summary}</p>
+                          <p className="mt-2 text-xs leading-5 text-slate-500">{conversation.lastMessage}</p>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-2">
+                          <span className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-200">
+                            {conversation.statusLabel}
+                          </span>
+                          <span className="rounded-full border border-white/10 bg-white/[0.02] px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                            {isOpen ? "Fechar" : "Abrir"}
+                          </span>
+                        </div>
+                      </button>
+
+                      {isOpen ? (
+                        <div className="mt-4 space-y-3 border-t border-white/10 pt-4">
+                          <p className="text-sm leading-6 text-slate-200">{conversation.nextAction}</p>
+                          <div className="flex flex-wrap gap-3">
+                            <Link
+                              className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+                              href={`/pessoas/clientes/${conversation.clientId}`}
+                            >
+                              Abrir cliente
+                            </Link>
+                            {conversation.caseId ? (
+                              <Link
+                                className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+                                href={`/casos/${conversation.caseId}`}
+                              >
+                                Abrir caso
+                              </Link>
+                            ) : null}
+                          </div>
+                        </div>
                       ) : null}
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
                 {topConversation ? (
-                  <div className="detail-soft-row px-4 py-4 text-sm text-slate-400">
+                  <div className="detail-soft-row px-4 py-3 text-xs text-slate-400">
                     Topo da fila: {topConversation.clientName}
                   </div>
                 ) : null}
