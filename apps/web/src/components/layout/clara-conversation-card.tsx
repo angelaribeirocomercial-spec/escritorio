@@ -11,6 +11,10 @@ type ClaraConversationCardProps = {
   badgeLabel: string;
   badgeSubtitle: string;
   responseDetail: string;
+  composerButtonLabel?: string;
+  composerHint?: string;
+  composerPlaceholder?: string;
+  composerValue?: string;
   searchIndex?: readonly ClaraConversationEntry[];
   interactive?: boolean;
   statusLabel: string;
@@ -21,6 +25,10 @@ export function ClaraConversationCard({
   badgeLabel,
   badgeSubtitle,
   responseDetail,
+  composerButtonLabel,
+  composerHint,
+  composerPlaceholder,
+  composerValue,
   searchIndex = [],
   interactive = false,
   statusLabel,
@@ -45,6 +53,27 @@ export function ClaraConversationCard({
           <p className="mt-2 text-sm leading-6 text-slate-300">{statusLine}</p>
         </div>
       </div>
+
+      {composerButtonLabel ? (
+        <form className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]">
+          <textarea
+            className="reference-search-input min-h-[7rem] w-full px-3 py-3 text-sm outline-none"
+            defaultValue={composerValue}
+            name="q"
+            placeholder={composerPlaceholder ?? "Digite sua pergunta para a Clara."}
+          />
+          <div className="flex items-end">
+            <button
+              className="clara-secondary-button h-fit rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-sm font-semibold text-emerald-50 transition hover:bg-emerald-300/15"
+              type="submit"
+            >
+              {composerButtonLabel}
+            </button>
+          </div>
+        </form>
+      ) : null}
+
+      {composerHint ? <p className="mt-3 text-[11px] leading-5 text-slate-500">{composerHint}</p> : null}
 
       {interactive ? (
         <div className="mt-5 grid gap-3 lg:grid-cols-3">
