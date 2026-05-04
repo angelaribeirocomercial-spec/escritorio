@@ -30,6 +30,8 @@ import {
 import { getBankingRevisionalWorkspace } from "@/server/services/clara/get-banking-revisional-workspace";
 import { getClaraStructuredCore } from "@/server/services/clara/get-clara-structured-core";
 import { getClaraWorkspace } from "@/server/services/clara/get-clara-workspace";
+import type { JudicialProcessWithRelations } from "@/server/services/processes/get-processes";
+import type { TaskWithContext } from "@/server/services/tasks/get-tasks";
 
 const tabItems = [
   { id: "analise", label: "Analise" },
@@ -772,7 +774,7 @@ export default async function ClaraPage({
         clara.selectors.clients[0]
       : selectedClientFromParam ?? clara.selectors.clients[0];
   const processOptions = clara.selectors.processes.filter((processItem) => processItem.clientId === selectedClient.id);
-  const selectedProcess =
+  let selectedProcess =
     selectedProcessFromParam && selectedProcessFromParam.clientId === selectedClient.id
       ? selectedProcessFromParam
       : processOptions[0] ?? selectedProcessFromParam ?? clara.selectors.processes[0];
@@ -789,7 +791,7 @@ export default async function ClaraPage({
     return document.clientId === selectedClient.id;
   });
   const selectedDocumentFromParam = clara.selectors.documents.find((item) => item.id === searchParams?.document);
-  const selectedDocument =
+  let selectedDocument =
     documentOptions.find((item) => item.id === selectedDocumentFromParam?.id) ??
     selectedDocumentFromParam ??
     documentOptions[0] ??
@@ -806,13 +808,63 @@ export default async function ClaraPage({
     return task.clientId === selectedClient.id;
   });
   const selectedTaskFromParam = clara.selectors.tasks.find((item) => item.id === searchParams?.task);
-  const selectedTask = 
+  const workspaceContext = clara.structuredCore.context;
+  const workspaceClient = workspaceContext.client;
+  const workspaceCase = workspaceContext.bankingCase;
+  const workspaceProcess = workspaceContext.process;
+  const resolvedDemoDocument = selectedDocument ?? workspaceContext.selectedDocument ?? selectedDocument2;
+  selectedDocument = resolvedDemoDocument;
+  const virtualProcess = {
+    id: `virtual-process-${workspaceCase.id}`,
+    caseId: workspaceCase.id,
+    clientId: workspaceClient.id,
+    label: `Processo demonstrativo · ${workspaceCase.processNumber}`,
+    processNumber: `Processo demonstrativo · ${workspaceCase.processNumber}`,
+    tribunal: workspaceCase.ownerLabel ?? "Tribunal nao vinculado",
+    courtDistrict: workspaceCase.ownerLabel ?? "Distrito nao vinculado",
+    courtName: workspaceCase.ownerLabel ?? "Juizo em construcao",
+    proceduralPhase: workspaceCase.stage,
+    status: workspaceProcess?.status ?? "awaiting-filing",
+    responsibleLawyer: workspaceProcess?.responsibleLawyer ?? "Clara",
+    monitoringMode: workspaceProcess?.monitoringMode ?? "manual",
+    latestTimeline: [],
+    client: workspaceClient,
+    bankingCase: workspaceCase
+  } as JudicialProcessWithRelations & { label: string };
+  const virtualTask = {
+    id: `virtual-task-${workspaceCase.id}`,
+    clientId: workspaceClient.id,
+    caseId: workspaceCase.id,
+    label: `Pauta operacional de ${workspaceCase.title}`,
+    title: `Pauta operacional de ${workspaceCase.title}`,
+    description:
+      "Tarefa sintetica para demonstracao da Clara em estado operacional quando o tenant ainda nao vinculou processo.",
+    assigneeLabel: workspaceProcess?.responsibleLawyer ?? "Clara",
+    dueDate: new Date().toISOString(),
+    priority: "medium",
+    status: "todo",
+    notes: "Gerada para demonstracao e navegacao.",
+    checklist: [],
+    suggestedByClaimType: workspaceCase.claimType,
+    lexiaNextStep: clara.structuredCore.nextStep,
+    client: workspaceClient,
+    bankingCase: workspaceCase,
+    completedChecklistCount: 0
+  } as TaskWithContext & { label: string };
+  let selectedTask = 
     taskOptions.find((item) => item.id === selectedTaskFromParam?.id) ??
     selectedTaskFromParam ??
     taskOptions[0] ??
-    clara.selectors.tasks[0];
+    clara.selectors.tasks[0] ??
+    virtualTask;
+  if (!selectedProcess) {
+    selectedProcess = virtualProcess;
+  }
+  if (!selectedTask) {
+    selectedTask = virtualTask;
+  }
 
-  if (!selectedClient || !selectedProcess || !selectedCase || !selectedDocument || !selectedTask) {
+  if (!selectedClient || !selectedProcess || !selectedCase || !resolvedDemoDocument || !selectedTask) {
     return (
       <WorkspacePage
         description="A Clara exige pelo menos um cliente, caso, processo, documento e tarefa para abrir a sessao operacional completa."
