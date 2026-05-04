@@ -66,13 +66,6 @@ const nicheItems = [
 
 type TabId = (typeof tabItems)[number]["id"];
 type NicheId = (typeof nicheItems)[number]["id"] | "cartao-consignado" | "beneficio-descontos";
-type ClaraSearchEntry = {
-  kind: string;
-  label: string;
-  detail?: string;
-  href: string;
-  keywords?: readonly string[];
-};
 
 type SearchParams = {
   tab?: string;
@@ -129,50 +122,6 @@ function getCustomFieldName(tab: TabId | "revisional", label: string) {
   if (tab === "proximos-passos" && label === "Janela") return "mode";
 
   return label.toLowerCase().replace(/\s+/g, "-");
-}
-
-function normalizeSearchQuery(value: string) {
-  return value.toLowerCase().trim();
-}
-
-function rankSearchEntries(query: string, entries: readonly ClaraSearchEntry[]) {
-  const normalized = normalizeSearchQuery(query);
-
-  if (!normalized) {
-    return [];
-  }
-
-  const tokens = normalized.split(/[^a-z0-9À-ÿ]+/u).filter((token) => token.length > 2);
-
-  return entries
-    .map((entry) => {
-      const haystack = [entry.kind, entry.label, entry.detail, ...(entry.keywords ?? [])]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      let score = 0;
-
-      if (haystack.includes(normalized)) {
-        score += 5;
-      }
-
-      for (const token of tokens) {
-        if (haystack.includes(token)) {
-          score += 1;
-        }
-      }
-
-      if (entry.label.toLowerCase() === normalized) {
-        score += 2;
-      }
-
-      return { entry, score };
-    })
-    .filter(({ score }) => score >= 2)
-    .sort((left, right) => right.score - left.score || left.entry.label.localeCompare(right.entry.label))
-    .slice(0, 5)
-    .map(({ entry }) => entry);
 }
 
 function renderClaraContextualAnalysis(
@@ -1083,55 +1032,7 @@ export default async function ClaraPage({
     : null;
   const selectedAction = searchParams?.action;
   const workflowFields = [...activeWorkspace.workflow.fields];
-  function compactKeywords(values: Array<string | undefined>) {
-    return values.filter((value): value is string => Boolean(value));
-  }
-  const searchIndex: ClaraSearchEntry[] = [
-    ...clara.selectors.clients.map((item) => ({
-      kind: "Cliente",
-      label: item.label,
-      href: `/pessoas/clientes/${item.id}`,
-      keywords: compactKeywords([item.id])
-    })),
-    ...clara.selectors.processes.map((item) => ({
-      kind: "Processo",
-      label: item.label,
-      href: `/processos/${item.id}`,
-      keywords: compactKeywords([item.id, item.clientId, item.caseId])
-    })),
-    ...clara.selectors.cases.map((item) => ({
-      kind: "Caso",
-      label: item.label,
-      href: `/casos/${item.id}`,
-      keywords: compactKeywords([item.id, item.clientId])
-    })),
-    ...clara.selectors.documents.map((item) => ({
-      kind: "Documento",
-      label: item.label,
-      href: `/documentos/${item.id}`,
-      keywords: compactKeywords([item.id, item.clientId, item.caseId])
-    })),
-    ...clara.selectors.tasks.map((item) => ({
-      kind: "Tarefa",
-      label: item.label,
-      href: `/tarefas/${item.id}`,
-      keywords: compactKeywords([item.id, item.clientId, item.caseId])
-    })),
-    ...recentRecords.map((record) => ({
-      kind: "Registro",
-      label: record.editedTitle || record.sourceAction || record.kind,
-      detail: record.editedDetail || record.reviewNote || record.targetPath,
-      href: record.targetPath,
-      keywords: compactKeywords([
-        record.kind,
-        record.workflowStatus,
-        record.id,
-        record.sourceAction
-      ])
-    }))
-  ];
   const globalSearchQuery = searchParams?.q?.trim() ?? "";
-  const globalSearchMatches = rankSearchEntries(globalSearchQuery, searchIndex);
 
   function getFieldWeight(fieldType: string) {
     if (fieldType === "client") return 0;
@@ -1938,58 +1839,15 @@ export default async function ClaraPage({
   if (!activeNiche) {
     return (
       <div className="space-y-6">
-        {globalSearchQuery ? (
-          <section className="workspace-panel p-6">
-            <div className="flex flex-col gap-3">
-              <p className="workspace-kicker">Resposta da Clara</p>
-              <div className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/8 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200/90">Pergunta recebida</p>
-                <p className="mt-2 text-sm leading-6 text-slate-200">
-                  {globalSearchQuery}
-                </p>
-              </div>
-              <p className="text-sm leading-6 text-slate-300">
-                Estou preparando a resposta com base no contexto local do workspace e nas fontes já disponíveis no caso.
-              </p>
-            </div>
-            {globalSearchMatches.length > 0 ? (
-              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {globalSearchMatches.map((item) => (
-                  <Link
-                    key={`${item.kind}-${item.href}`}
-                    className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.07]"
-                    href={item.href}
-                  >
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
-                        {item.kind}
-                      </p>
-                      <p className="mt-3 text-sm font-semibold text-white">{item.label}</p>
-                      {item.detail ? <p className="mt-2 text-sm leading-6 text-slate-300">{item.detail}</p> : null}
-                    </div>
-                    <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-100">
-                      Abrir contexto
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-4 rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm leading-6 text-slate-300">
-                Nenhuma correspondência direta foi encontrada. A Clara pode seguir com a entrada unica do caso ou você pode refinar a pergunta.
-              </div>
-            )}
-          </section>
-        ) : null}
-
         <section className="space-y-4">
           <ClaraConversationCard
             badgeLabel="CLARA"
             badgeSubtitle="Assistente especialista em direito bancario"
             responseDetail="Converse com a Clara para tirar duvidas, localizar contexto do caso e seguir o fluxo bancario correto usando dados e APIs do sistema."
-            composerButtonLabel="Enviar para Clara"
-            composerHint="A resposta vem ancorada no caso e nas fontes já disponíveis no sistema."
+            composerHint="Pressione Enter para enviar. Use Shift+Enter para quebrar linha."
             composerPlaceholder="Ex.: Quero revisar a tese do caso e listar documentos faltantes."
             composerValue={globalSearchQuery}
+            responseQuery={globalSearchQuery}
             interactive={false}
             statusLabel="Entrada"
             statusLine="A Clara responde como especialista e pede a entrada unica do caso quando precisar abrir um fluxo novo."
