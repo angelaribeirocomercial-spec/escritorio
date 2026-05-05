@@ -39,6 +39,10 @@ function statusLabel(status: string) {
   }
 }
 
+const CANONICAL_CLIENT_ID = "cl-002";
+const CANONICAL_CASE_ID = "case-205";
+const CANONICAL_PROCESS_ID = "proc-205";
+
 export default async function ProcessosPage({
   searchParams
 }: {
@@ -75,9 +79,19 @@ export default async function ProcessosPage({
   const quickSearch = searchParams?.localizar?.toLowerCase().trim() ?? "";
   const activeField =
     filterOptions.find((option) => option.value === filterType) ?? filterOptions[0];
-  const modelClient = clients[0] ?? null;
-  const modelCase = cases[0] ?? null;
-  const modelProcess = processes[0] ?? null;
+  const modelClient =
+    clients.find((client) => client.id === CANONICAL_CLIENT_ID) ?? clients[0] ?? null;
+  const modelCase =
+    cases.find((caseItem) => caseItem.id === CANONICAL_CASE_ID) ??
+    cases.find((caseItem) => caseItem.client.id === CANONICAL_CLIENT_ID) ??
+    cases[0] ??
+    null;
+  const modelProcess =
+    processes.find((processItem) => processItem.id === CANONICAL_PROCESS_ID) ??
+    processes.find((processItem) => processItem.caseId === CANONICAL_CASE_ID) ??
+    processes.find((processItem) => processItem.client.id === CANONICAL_CLIENT_ID) ??
+    processes[0] ??
+    null;
 
   const filteredProcesses = processes.filter((processItem) => {
     const normalizedStatus = statusLabel(processItem.status);
@@ -113,10 +127,8 @@ export default async function ProcessosPage({
   const hasNoRealProcesses = !state && filteredProcesses.length === 0;
   const modelCard = modelClient || modelCase || modelProcess
     ? {
-        title:
-          modelProcess?.processNumber ??
-          modelCase?.processNumber ??
-          "0000000-00.2026.8.13.0000",
+        caseTitle: modelCase?.title ?? "Caso modelo",
+        title: modelProcess?.processNumber ?? modelCase?.processNumber ?? "0000000-00.2026.8.13.0000",
         clientName:
           modelProcess?.client.fullName ?? modelCase?.client.fullName ?? modelClient?.fullName ?? "Cliente modelo",
         clientDocumentId:
@@ -126,11 +138,7 @@ export default async function ProcessosPage({
         courtDistrict: modelProcess?.courtDistrict ?? "Belo Horizonte/MG",
         courtName: modelProcess?.courtName ?? "4a Vara Civel de Belo Horizonte",
         processId: modelProcess?.id ?? modelCase?.id ?? modelClient?.id ?? "modelo-processo",
-        statusLabel: modelProcess
-          ? statusLabel(modelProcess.status)
-          : modelCase
-            ? "ativo"
-            : "pronto para distribuir"
+        statusLabel: "Pronto para distribuir"
       }
     : null;
   const flowCards = [
@@ -308,9 +316,11 @@ export default async function ProcessosPage({
               <p className="mt-2 text-xs leading-5 text-slate-400">{modelCard.clientDocumentId}</p>
             </div>
             <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Banco / Tribunal</p>
-              <p className="mt-2 text-sm font-semibold text-white">{modelCard.bankName}</p>
-              <p className="mt-2 text-xs leading-5 text-slate-400">{modelCard.tribunal}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Caso</p>
+              <p className="mt-2 text-sm font-semibold text-white">{modelCard.caseTitle}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                {modelCard.bankName} | {modelCard.title}
+              </p>
             </div>
             <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Comarca</p>

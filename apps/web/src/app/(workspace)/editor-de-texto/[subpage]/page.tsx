@@ -289,7 +289,7 @@ function DistributionPage({
                     className="mj-model-button-green"
                     href={selectedModel.pdfLink ?? "/editor-de-texto/meus-textos?draft=1"}
                   >
-                    Marcar como pronto para distribuir
+                    Pronto para distribuir
                   </Link>
                   <span className="rounded-[4px] border px-3 py-2 text-[13px] text-slate-400">
                     Saida formal assistida

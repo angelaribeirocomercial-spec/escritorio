@@ -46,7 +46,7 @@ export function ClaraMinutaActions({ recordId }: ClaraMinutaActionsProps) {
         Saida final da minuta
       </p>
       <p className="text-[13px] leading-6 text-slate-300">
-        O PDF abaixo e a simulacao final ficam no mesmo bloco. Nenhuma distribuicao real acontece aqui.
+        O PDF abaixo e a revisao final ficam no mesmo bloco. Nenhuma distribuicao real acontece aqui.
       </p>
       {error ? <p className="text-[13px] text-red-200">{error}</p> : null}
       <div className="grid gap-3 md:grid-cols-4">
@@ -72,7 +72,7 @@ export function ClaraMinutaActions({ recordId }: ClaraMinutaActionsProps) {
           type="button"
           onClick={simulateDistribution}
         >
-          {isSimulating ? "Simulando..." : "Marcar como pronto para distribuir"}
+          {isSimulating ? "Marcando..." : "Pronto para distribuir"}
         </button>
         <button
           className="mj-model-button-gray"

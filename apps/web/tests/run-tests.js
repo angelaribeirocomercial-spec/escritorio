@@ -558,8 +558,8 @@ assert.match(
 );
 assert.match(
   claraMinutaActionsSource,
-  /Marcar como pronto para distribuir/,
-  "Expected Clara minuta actions to expose the final simulated distribution action."
+  /Pronto para distribuir/,
+  "Expected Clara minuta actions to expose the final distribution action."
 );
 
 const crmPageSource = fs.readFileSync(
