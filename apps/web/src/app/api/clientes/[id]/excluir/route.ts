@@ -7,7 +7,7 @@ import { getClientById } from "@/server/services/clients/get-clients";
 
 type RouteContext = {
   params: {
-    clientId: string;
+    id: string;
   };
 };
 
@@ -26,7 +26,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return jsonError("Seu perfil nao tem permissao para excluir clientes.", 403);
   }
 
-  const clientId = context.params.clientId;
+  const clientId = context.params.id;
   const client = await getClientById(clientId);
 
   if (!client) {
@@ -38,43 +38,43 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   const supabase = getSupabaseAdminClient();
   const tenantId = session.workspace.tenant.id;
 
-  const deleteFinancialEntries = async (predicate: { client?: string; caseIds?: string[] }) => {
-    let query = supabase.from("financial_entries").delete().eq("tenant_id", tenantId);
-
-    if (predicate.client) {
-      query = query.eq("client_id", predicate.client);
-    }
-
-    if (predicate.caseIds?.length) {
-      query = query.in("case_id", predicate.caseIds);
-    }
-
-    const { error } = await query;
-
-    if (error) {
-      throw new Error(`Nao foi possivel limpar os lancamentos financeiros: ${error.message}`);
-    }
-  };
-
-  const deleteCrmLeads = async (predicate: { client?: string; caseIds?: string[] }) => {
-    let query = supabase.from("crm_leads").delete().eq("tenant_id", tenantId);
-
-    if (predicate.client) {
-      query = query.eq("client_id", predicate.client);
-    }
-
-    if (predicate.caseIds?.length) {
-      query = query.in("case_id", predicate.caseIds);
-    }
-
-    const { error } = await query;
-
-    if (error) {
-      throw new Error(`Nao foi possivel limpar os leads do CRM: ${error.message}`);
-    }
-  };
-
   try {
+    const deleteFinancialEntries = async (predicate: { client?: string; caseIds?: string[] }) => {
+      let query = supabase.from("financial_entries").delete().eq("tenant_id", tenantId);
+
+      if (predicate.client) {
+        query = query.eq("client_id", predicate.client);
+      }
+
+      if (predicate.caseIds?.length) {
+        query = query.in("case_id", predicate.caseIds);
+      }
+
+      const { error } = await query;
+
+      if (error) {
+        throw new Error(`Nao foi possivel limpar os lancamentos financeiros: ${error.message}`);
+      }
+    };
+
+    const deleteCrmLeads = async (predicate: { client?: string; caseIds?: string[] }) => {
+      let query = supabase.from("crm_leads").delete().eq("tenant_id", tenantId);
+
+      if (predicate.client) {
+        query = query.eq("client_id", predicate.client);
+      }
+
+      if (predicate.caseIds?.length) {
+        query = query.in("case_id", predicate.caseIds);
+      }
+
+      const { error } = await query;
+
+      if (error) {
+        throw new Error(`Nao foi possivel limpar os leads do CRM: ${error.message}`);
+      }
+    };
+
     await deleteFinancialEntries({ client: clientId });
     if (caseIds.length > 0) {
       await deleteFinancialEntries({ caseIds });

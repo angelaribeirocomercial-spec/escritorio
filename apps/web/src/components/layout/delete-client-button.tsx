@@ -31,7 +31,7 @@ export function DeleteClientButton({ clientId, clientName, caseCount }: DeleteCl
     setError(null);
 
     try {
-      const response = await fetch(`/api/clientes/${clientId}`, {
+      const response = await fetch(`/api/clientes/${clientId}/excluir`, {
         method: "DELETE"
       });
       const payload = (await response.json().catch(() => null)) as { error?: string } | null;
