@@ -189,6 +189,7 @@ function renderNavItem(
   pathname: string,
   openSections: Record<string, boolean>,
   toggleSection: (href: string, fallbackOpen: boolean) => void,
+  clearSections: () => void,
   mode: "desktop" | "mobile" = "desktop"
 ) {
   const isActive =
@@ -250,6 +251,7 @@ function renderNavItem(
             isActive ? "text-white" : "theme-shell-muted hover:bg-white/[0.06] hover:text-white"
           }`}
           href={item.href}
+          onClick={clearSections}
           style={isActive ? { backgroundColor: "var(--shell-active-bg)" } : undefined}
         >
           <span className="flex items-center gap-3">
@@ -297,6 +299,7 @@ function renderNavItem(
 export function WorkspaceShell({ children, searchEntries, session }: WorkspaceShellProps) {
   const pathname = usePathname();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const clearSections = () => setOpenSections({});
 
   useEffect(() => {
     const activeParent = navigationItems.find(
@@ -377,9 +380,9 @@ export function WorkspaceShell({ children, searchEntries, session }: WorkspaceSh
                   </p>
                 ) : null}
                 <div className="space-y-1">
-                  {section.items.map((item) =>
-                    renderNavItem(item, pathname, openSections, toggleSection)
-                  )}
+                    {section.items.map((item) =>
+                      renderNavItem(item, pathname, openSections, toggleSection, clearSections)
+                    )}
                 </div>
               </div>
             ))}
@@ -434,7 +437,7 @@ export function WorkspaceShell({ children, searchEntries, session }: WorkspaceSh
                   </p>
                   <div className="space-y-2">
                     {section.items.map((item) =>
-                      renderNavItem(item, pathname, openSections, toggleSection, "mobile")
+                      renderNavItem(item, pathname, openSections, toggleSection, clearSections, "mobile")
                     )}
                   </div>
                 </div>
