@@ -714,14 +714,19 @@ export default async function ClaraPage({
         }
       }[activeNiche]
     : null;
-  const selectedClientFromParam = clara.selectors.clients.find((item) => item.id === searchParams?.client);
+  const canonicalClientOptions = clara.selectors.clients;
+  const filteredCanonicalClientOptions = canonicalClientOptions.filter(
+    (client) => clara.selectors.cases.filter((caseItem) => caseItem.clientId === client.id).length <= 1
+  );
+  const visibleClientOptions = filteredCanonicalClientOptions.length > 0 ? filteredCanonicalClientOptions : canonicalClientOptions;
+  const selectedClientFromParam = visibleClientOptions.find((item) => item.id === searchParams?.client);
   const selectedProcessFromParam = clara.selectors.processes.find((item) => item.id === searchParams?.process);
   const selectedClient =
     selectedProcessFromParam
-      ? clara.selectors.clients.find((item) => item.id === selectedProcessFromParam.clientId) ??
+      ? visibleClientOptions.find((item) => item.id === selectedProcessFromParam.clientId) ??
         selectedClientFromParam ??
-        clara.selectors.clients[0]
-      : selectedClientFromParam ?? clara.selectors.clients[0];
+        visibleClientOptions[0]
+      : selectedClientFromParam ?? visibleClientOptions[0];
 
   if (!selectedClient) {
     return (
@@ -729,7 +734,7 @@ export default async function ClaraPage({
         description="A Clara precisa de pelo menos um cliente real para abrir a bancada de trabalho sem inventar contexto."
         eyebrow="Clara"
         metrics={[
-          { label: "Clientes", value: `${clara.selectors.clients.length}` },
+          { label: "Clientes", value: `${visibleClientOptions.length}` },
           { label: "Casos", value: `${clara.selectors.cases.length}` },
           { label: "Processos", value: `${clara.selectors.processes.length}` },
           { label: "Documentos", value: `${clara.selectors.documents.length}` }
@@ -844,7 +849,7 @@ export default async function ClaraPage({
         description="A Clara exige pelo menos um cliente, caso, processo, documento e tarefa para abrir a sessao operacional completa."
         eyebrow="Clara"
         metrics={[
-          { label: "Clientes", value: `${clara.selectors.clients.length}` },
+          { label: "Clientes", value: `${visibleClientOptions.length}` },
           { label: "Casos", value: `${clara.selectors.cases.length}` },
           { label: "Processos", value: `${clara.selectors.processes.length}` },
           { label: "Documentos", value: `${clara.selectors.documents.length}` }
@@ -1066,7 +1071,7 @@ export default async function ClaraPage({
       .toLowerCase()
       .trim();
 
-    const clientMatch = clara.selectors.clients.find((client) => {
+    const clientMatch = visibleClientOptions.find((client) => {
       const clientName = client.label
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
@@ -1119,7 +1124,7 @@ export default async function ClaraPage({
     .slice(2);
 
   function getOptions(type: string) {
-    if (type === "client") return clara.selectors.clients;
+    if (type === "client") return visibleClientOptions;
     if (type === "process") return processOptions;
     if (type === "case") return caseOptions;
     if (type === "document") return documentOptions;
@@ -1914,7 +1919,7 @@ export default async function ClaraPage({
             composerHint="Pressione Enter para enviar. Use Shift+Enter para quebrar linha."
             composerPlaceholder="Ex.: Quero revisar a tese do caso e listar documentos faltantes."
             composerValue={globalSearchQuery}
-            clientOptions={clara.selectors.clients}
+            clientOptions={visibleClientOptions}
           />
 
           <section className="workspace-panel p-5">
@@ -2054,7 +2059,7 @@ export default async function ClaraPage({
                   defaultValue={selectedClient.id}
                   name="client"
                 >
-                  {clara.selectors.clients.map((option) => (
+                  {visibleClientOptions.map((option) => (
                     <option key={option.id} value={option.id}>
                       {option.label}
                     </option>
