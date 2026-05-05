@@ -141,7 +141,8 @@ export default async function ProcessDetailPage({
           continueClara: `/clara?tab=analise&process=${params.processId}&client=${processItem.client.id}#clara-workbench`,
           backToProcesses: "/processos",
           openClaraHistory: `/clara?tab=analise&process=${params.processId}&client=${processItem.client.id}#clara-history`,
-          openDataJud: `/api/processos/${encodeURIComponent(processItem.processNumber)}/datajud`
+          openDataJud: `/api/processos/${encodeURIComponent(processItem.processNumber)}/datajud`,
+          openOabMonitoring: `/processos/importar-oab?process=${encodeURIComponent(processItem.id)}`
         }}
         dataJudLabel="Consultar DataJud"
         bankingCase={{

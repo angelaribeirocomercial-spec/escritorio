@@ -30,6 +30,9 @@ export default async function ProcessosImportarOabPage({
   const oabProcesses = processes.filter((processItem) => processItem.monitoringMode === "oab");
   const availableProcesses = processes.filter((processItem) => processItem.monitoringMode !== "oab");
   const selectedProcess = searchParams?.process?.trim() ?? "";
+  const focusProcess = selectedProcess
+    ? processes.find((processItem) => processItem.id === selectedProcess) ?? null
+    : null;
 
   return (
     <div className="mj-model-page space-y-4">
@@ -60,6 +63,19 @@ export default async function ProcessosImportarOabPage({
         />
       ) : null}
 
+      {focusProcess ? (
+        <section className="mj-model-soft-panel px-4 py-4 text-[13px] leading-6 text-slate-300">
+          <p className="font-semibold text-white">Processo em foco</p>
+          <p className="mt-2">
+            {focusProcess.processNumber} | {focusProcess.client.fullName} | {focusProcess.bankingCase.title}
+          </p>
+          <p className="mt-2 text-slate-400">
+            {focusProcess.tribunal} | {focusProcess.responsibleLawyer} |{" "}
+            {focusProcess.monitoringMode === "oab" ? "OAB ativa" : "Aguardando ativacao"}
+          </p>
+        </section>
+      ) : null}
+
       {searchParams?.error ? (
         <WorkspaceStatePanel
           actionHref="/processos"
@@ -81,11 +97,12 @@ export default async function ProcessosImportarOabPage({
         {processes.length ? (
           processes.map((processItem, index) => {
             const alreadyOab = processItem.monitoringMode === "oab";
+            const isFocused = focusProcess?.id === processItem.id;
 
             return (
               <div
                 key={processItem.id}
-                className="grid grid-cols-[1fr_1fr_11rem_10rem] items-center px-3 py-3 text-[13px]"
+                className={`grid grid-cols-[1fr_1fr_11rem_10rem] items-center px-3 py-3 text-[13px] ${isFocused ? "bg-cyan-300/5" : ""}`}
                 style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}
               >
                 <div className="min-w-0">

@@ -92,6 +92,7 @@ type ProcessCockpitFrameProps = {
     backToProcesses: string;
     openDataJud: string;
     openClaraHistory: string;
+    openOabMonitoring: string;
   };
   dataJudLabel: string;
 };
@@ -236,6 +237,9 @@ export function ProcessCockpitFrame({
             </Link>
             <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.openDataJud}>
               {dataJudLabel}
+            </Link>
+            <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.openOabMonitoring}>
+              Monitorar por OAB
             </Link>
             <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.backToProcesses}>
               Voltar para processos
