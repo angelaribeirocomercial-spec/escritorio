@@ -1914,6 +1914,7 @@ export default async function ClaraPage({
             composerHint="Pressione Enter para enviar. Use Shift+Enter para quebrar linha."
             composerPlaceholder="Ex.: Quero revisar a tese do caso e listar documentos faltantes."
             composerValue={globalSearchQuery}
+            clientOptions={clara.selectors.clients}
           />
 
           <section className="workspace-panel p-5">
