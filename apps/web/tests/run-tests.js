@@ -523,6 +523,11 @@ const claraMinutaExportRouteSource = fs.readFileSync(
 );
 assert.match(
   claraMinutaExportRouteSource,
+  /application\/pdf/,
+  "Expected Clara minuta export route to emit a real PDF response."
+);
+assert.match(
+  claraMinutaExportRouteSource,
   /printable: true/,
   "Expected Clara minuta export route to mark the export as printable."
 );
@@ -550,6 +555,11 @@ assert.match(
   claraMinutaActionsSource,
   /Abrir PDF/,
   "Expected Clara minuta actions to expose PDF distribution."
+);
+assert.match(
+  claraMinutaActionsSource,
+  /Marcar como pronto para distribuir/,
+  "Expected Clara minuta actions to expose the final simulated distribution action."
 );
 
 const crmPageSource = fs.readFileSync(
