@@ -5,16 +5,15 @@ import { mapClaraApiError } from "@/app/api/clara/_shared";
 import { getClaraClientApiPayload } from "@/server/services/clara/clara-api";
 
 const paramsSchema = z.object({
-  id: z.string().min(1, "Informe o cliente.")
+  clientId: z.string().min(1, "Informe o cliente.")
 });
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: { clientId: string } }) {
   try {
-    const { id } = paramsSchema.parse(params);
-    const data = await getClaraClientApiPayload(id);
+    const { clientId } = paramsSchema.parse(params);
+    const data = await getClaraClientApiPayload(clientId);
     return NextResponse.json({ ok: true, data });
   } catch (error) {
     return mapClaraApiError(error);
   }
 }
-

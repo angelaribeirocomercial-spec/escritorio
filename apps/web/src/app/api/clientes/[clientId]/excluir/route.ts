@@ -7,7 +7,7 @@ import { getClientById } from "@/server/services/clients/get-clients";
 
 type RouteContext = {
   params: {
-    id: string;
+    clientId: string;
   };
 };
 
@@ -36,7 +36,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return jsonError("Seu perfil nao tem permissao para excluir clientes.", 403);
   }
 
-  const clientId = context.params.id;
+  const clientId = context.params.clientId;
   const client = await getClientById(clientId);
 
   if (!client) {

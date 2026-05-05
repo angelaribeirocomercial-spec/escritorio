@@ -53,7 +53,7 @@ assert.equal(true, true);
   "src/app/(workspace)/documentos/relatorios/page.tsx",
   "src/components/layout/workspace-global-search.tsx",
   "src/components/layout/workspace-search-types.ts",
-  "src/app/api/clientes/[id]/route.ts",
+  "src/app/api/clientes/[clientId]/route.ts",
   "src/app/api/casos/[id]/route.ts",
   "src/app/api/casos/[id]/documentos/route.ts",
   "src/app/api/casos/[id]/checklist/route.ts",
