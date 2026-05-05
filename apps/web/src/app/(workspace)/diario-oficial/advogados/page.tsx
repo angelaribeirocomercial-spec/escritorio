@@ -31,10 +31,10 @@ export default async function DiarioOficialAdvogadosPage() {
         </div>
         <Link
           className="mj-model-button-green inline-flex items-center justify-center"
-          href="/processos/importar-oab"
-          title="Abrir o fluxo relacionado a OAB e monitoramento formal."
+          href="/configuracoes/integracoes"
+          title="Abrir a configuracao das integracoes oficiais."
         >
-          Adicionar
+          Configurar OAB
         </Link>
       </div>
 

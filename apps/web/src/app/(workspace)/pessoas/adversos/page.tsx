@@ -45,10 +45,10 @@ export default async function PessoasAdversosPage({
         <div className="flex gap-2">
           <Link
             className="mj-model-button-gray inline-flex items-center justify-center"
-            href="/processos/importar-lote"
-            title="Abrir o estado controlado de importacao em lote."
+            href="/configuracoes/integracoes"
+            title="Abrir a configuracao das integracoes oficiais."
           >
-            Importar lote
+            Configurar integração
           </Link>
           <Link className="mj-model-button-green inline-flex items-center justify-center" href="/pessoas/adversos/novo">
             Novo adverso

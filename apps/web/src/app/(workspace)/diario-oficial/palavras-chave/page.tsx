@@ -49,10 +49,10 @@ export default async function DiarioOficialPalavrasPage() {
         </div>
         <Link
           className="mj-model-button-green inline-flex items-center justify-center"
-          href="/processos/importar-oab"
-          title="A captura formal ainda depende da integracao do Diario Oficial. Abrir fluxo relacionado."
+          href="/configuracoes/integracoes"
+          title="Abrir a configuracao das integracoes oficiais."
         >
-          Adicionar
+          Configurar OAB
         </Link>
       </div>
 

@@ -70,8 +70,6 @@ export const navSections: NavSection[] = [
         children: [
           { href: "/processos", label: "Lista" },
           { href: "/processos/ultimos-andamentos", label: "Ultimos andamentos" },
-          { href: "/processos/importar-lote", label: "Importar lote" },
-          { href: "/processos/importar-oab", label: "Importar via OAB" },
           { href: "/processos/lixeira", label: "Lixeira" }
         ]
       },
