@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { DeleteClientButton } from "@/components/layout/delete-client-button";
+
 type ClientCockpitCase = {
   id: string;
   title: string;
@@ -67,6 +69,7 @@ type ClientCockpitFrameProps = {
   normalizedCaseInsights: ReadonlyArray<string>;
   normalizedClientIaContext: string;
   normalizedTimeline: ReadonlyArray<string>;
+  clientCaseCount: number;
   actionLinks: {
     attachDocuments?: string;
     continueClara: string;
@@ -95,6 +98,7 @@ export function ClientCockpitFrame({
   normalizedCaseInsights,
   normalizedClientIaContext,
   normalizedTimeline,
+  clientCaseCount,
   actionLinks
 }: ClientCockpitFrameProps) {
   const [activePanel, setActivePanel] = useState<PanelKey | null>(activeCase ? "case" : null);
@@ -209,6 +213,7 @@ export function ClientCockpitFrame({
                 <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.backToClients}>
                   Voltar para clientes
                 </Link>
+                <DeleteClientButton clientId={client.id} clientName={client.fullName} caseCount={clientCaseCount} />
               </div>
             </div>
 

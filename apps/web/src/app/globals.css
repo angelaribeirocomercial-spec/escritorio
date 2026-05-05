@@ -664,6 +664,14 @@ h4,
     box-shadow: none;
   }
 
+  .detail-danger-button {
+    border: 1px solid rgba(248, 113, 113, 0.24);
+    border-radius: 4px;
+    background: rgba(220, 38, 38, 0.14);
+    color: rgb(254 226 226);
+    box-shadow: none;
+  }
+
   .detail-panel {
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
@@ -903,6 +911,13 @@ html[data-theme="light"] .detail-link-button {
   border-color: rgba(203, 213, 225, 0.95) !important;
   background: #ffffff !important;
   color: rgb(51 65 85) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .detail-danger-button {
+  border-color: rgba(248, 113, 113, 0.35) !important;
+  background: rgba(254, 242, 242, 0.98) !important;
+  color: rgb(153 27 27) !important;
   box-shadow: none !important;
 }
 

@@ -328,6 +328,7 @@ export default async function ClientDetailPage({
         normalizedCaseInsights={normalizedCaseInsights}
         normalizedClientIaContext={normalizedClientIaContext}
         normalizedTimeline={normalizedTimeline}
+        clientCaseCount={clientCases.length}
         relatedClaraRecordsCount={relatedClaraRecords.length}
         workflow={cockpitFrameWorkflow}
       >
