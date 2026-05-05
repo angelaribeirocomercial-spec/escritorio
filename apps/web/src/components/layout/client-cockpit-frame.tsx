@@ -379,6 +379,21 @@ export function ClientCockpitFrame({
                         </Link>
                       </div>
                     </div>
+                    <div className="detail-soft-row border border-cyan-300/15 bg-cyan-300/5 px-4 py-4 text-sm text-slate-300">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                        Pacote documental do cliente
+                      </p>
+                      <p className="mt-2 leading-6 text-slate-200">
+                        Aqui ficam os PDFs prontos para revisao humana: peticao inicial, procuracao e contrato de honorarios.
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        {generatedDocuments.map((document) => (
+                          <Link key={document.kind} className="detail-link-button px-4 py-3 text-sm font-semibold" href={document.href}>
+                            {document.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
                     <div className="grid gap-3 md:grid-cols-2">
                       <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
                         Registros da Clara: <span className="font-semibold text-white">{relatedClaraRecordsCount}</span>
