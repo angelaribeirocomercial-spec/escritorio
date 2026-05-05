@@ -736,6 +736,16 @@ assert.match(
   /Consultar DataJud/,
   "Expected the process cockpit to expose the DataJud consultation link."
 );
+assert.match(
+  processDetailSource,
+  /\/processos\/\$\{encodeURIComponent\(processItem\.id\)\}\/datajud/,
+  "Expected the process cockpit to open the DataJud consultation page instead of the raw API route."
+);
+assert.doesNotMatch(
+  processDetailSource,
+  /\/api\/processos\/\$\{encodeURIComponent\(processItem\.processNumber\)\}\/datajud/,
+  "Expected the process cockpit to stop linking DataJud to the raw API route."
+);
 
 const clientServiceSource = fs.readFileSync(
   path.join(__dirname, "..", "src/server/services/clients/get-clients.ts"),

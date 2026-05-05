@@ -203,7 +203,7 @@ function DistributionPage({
     <div className="mj-model-page space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="mj-model-title">Distribuicao simulada</p>
+          <p className="mj-model-title">Distribuicao assistida</p>
           <p className="mj-model-subtitle">
             Um modelo canonico por nicho, com minuta em PDF e sem protocolo real.
           </p>
@@ -279,7 +279,7 @@ function DistributionPage({
 
               <div className="rounded-[4px] border bg-black/10 px-4 py-4 mj-model-gridline">
                 <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Distribuicao simulada
+                  Distribuicao assistida
                 </p>
                 <p className="mt-3 text-[13px] leading-6 text-slate-300">
                   A acao fica apenas marcada como pronta para distribuir. Nenhum protocolo real e disparado.
@@ -292,7 +292,7 @@ function DistributionPage({
                     Marcar como pronto para distribuir
                   </Link>
                   <span className="rounded-[4px] border px-3 py-2 text-[13px] text-slate-400">
-                    Saida formal simulada
+                    Saida formal assistida
                   </span>
                 </div>
               </div>

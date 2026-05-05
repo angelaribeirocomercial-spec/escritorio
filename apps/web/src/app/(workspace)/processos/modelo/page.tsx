@@ -130,7 +130,7 @@ export default async function ProcessModelPage() {
       {
         id: "modelo-t1",
         occurredAt: "2026-05-05",
-        title: "Prontidao simulada",
+        title: "Prontidao assistida",
         description: "O quadro apresenta os dados locais que o escritorio acompanharia antes do processo nascer.",
         source: "MODELO",
         criticality: "medium" as const
@@ -148,12 +148,12 @@ export default async function ProcessModelPage() {
   return (
     <div className="space-y-6">
       <WorkspacePage
-        description="Fluxo canonico: caso -> pronto para distribuir -> processo, com distribuicao apenas simulada e sem protocolo real."
+        description="Fluxo canonico: caso -> pronto para distribuir -> processo, com distribuicao assistida e sem protocolo real."
         eyebrow="Processos"
         metrics={[
           { label: "Caso", value: "Pronto para distribuir" },
           { label: "Processo", value: "Modelo canonico" },
-          { label: "Prontidao", value: "Simulada" },
+          { label: "Prontidao", value: "Assistida" },
           { label: "Protocolo", value: "Nao automatizado" }
         ]}
         title="Modelo de processo"
@@ -170,7 +170,7 @@ export default async function ProcessModelPage() {
             continueClara: `/clara?tab=analise&process=${process.id}&client=${modelClient?.id ?? process.id}#clara-workbench`,
             backToProcesses: "/processos",
             openClaraHistory: `/clara?tab=analise&process=${process.id}&client=${modelClient?.id ?? process.id}#clara-history`,
-            openDataJud: `/api/processos/${encodeURIComponent(process.processNumber)}/datajud`,
+            openDataJud: `/processos/${encodeURIComponent(process.id)}/datajud`,
             openOabMonitoring: `/processos/importar-oab?process=${encodeURIComponent(process.id)}`,
             openOfficialSystem: "https://pje.tjmg.jus.br/pje/"
           }}

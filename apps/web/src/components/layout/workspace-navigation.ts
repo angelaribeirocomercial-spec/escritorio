@@ -88,7 +88,7 @@ export const navSections: NavSection[] = [
       },
       {
         href: "/editor-de-texto/distribuicao",
-        label: "Distribuicao simulada",
+        label: "Distribuicao",
         shortLabel: "Distribuicao",
         icon: "editor",
         description: "Minutas e saida assistida da Clara."

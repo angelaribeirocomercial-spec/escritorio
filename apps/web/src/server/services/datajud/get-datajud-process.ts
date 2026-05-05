@@ -44,7 +44,7 @@ export type DataJudProcessConsultation = {
 type TribunalAliasMap = Record<string, { alias: string; label: string }>;
 
 const DATAJUD_TRIBUNAL_ALIASES: TribunalAliasMap = {
-  TJSP: { alias: "api_publica_tjsp", label: "Tribunal de Justiça de São Paulo" },
+  TJSP: { alias: "api_publica_tjsp", label: "Tribunal de Justica de Sao Paulo" },
   TJRJ: { alias: "api_publica_tjrj", label: "Tribunal de Justiça do Rio de Janeiro" },
   TJMG: { alias: "api_publica_tjmg", label: "Tribunal de Justiça de Minas Gerais" },
   TJBA: { alias: "api_publica_tjba", label: "Tribunal de Justiça da Bahia" },
@@ -289,3 +289,4 @@ export async function getDataJudProcessConsultation(processNumber: string) {
     hits
   };
 }
+
