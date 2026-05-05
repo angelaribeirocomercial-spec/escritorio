@@ -87,7 +87,6 @@ type ClientCockpitFrameProps = {
     hubClara: string;
     prepareContext: string;
   };
-  children: React.ReactNode;
 };
 
 type PanelKey = "documents" | "workflow" | "clara" | "case" | "pieces" | "timeline";
@@ -109,8 +108,7 @@ export function ClientCockpitFrame({
   normalizedClientIaContext,
   normalizedTimeline,
   clientCaseCount,
-  actionLinks,
-  children
+  actionLinks
 }: ClientCockpitFrameProps) {
   const [activePanel, setActivePanel] = useState<PanelKey | null>(activeCase ? "case" : null);
 
@@ -242,9 +240,6 @@ export function ClientCockpitFrame({
                 <DeleteClientButton clientId={client.id} clientName={client.fullName} caseCount={clientCaseCount} />
               </div>
             </div>
-
-            {children}
-
             <div className="detail-soft-row border border-cyan-300/15 bg-cyan-300/5 px-4 py-4 text-sm text-slate-300">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Pacote documental do cliente</p>
               <p className="mt-2 leading-6 text-slate-200">
