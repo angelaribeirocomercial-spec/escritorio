@@ -15,6 +15,16 @@ function jsonError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
+function isSchemaCacheTableError(error: { message?: string } | null | undefined) {
+  const message = error?.message?.toLowerCase() ?? "";
+
+  return (
+    message.includes("schema cache") ||
+    message.includes("could not find the table") ||
+    message.includes("could not find table")
+  );
+}
+
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   const session = await getWorkspaceSession();
 
@@ -71,6 +81,11 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       const { error } = await query;
 
       if (error) {
+        if (isSchemaCacheTableError(error)) {
+          console.warn("CRM leads table not available in schema cache during client delete.", error.message);
+          return;
+        }
+
         throw new Error(`Nao foi possivel limpar os leads do CRM: ${error.message}`);
       }
     };
