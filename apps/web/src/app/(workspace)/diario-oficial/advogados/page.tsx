@@ -31,15 +31,15 @@ export default async function DiarioOficialAdvogadosPage() {
         </div>
         <Link
           className="mj-model-button-green inline-flex items-center justify-center"
-          href="/configuracoes/integracoes"
-          title="Abrir a configuracao das integracoes oficiais."
+          href="/processos/importar-oab"
+          title="Abrir o monitoramento operacional por OAB."
         >
           Configurar OAB
         </Link>
       </div>
 
       <div className="mj-model-soft-panel px-4 py-4 text-[13px] leading-6 text-slate-400">
-        Responsaveis derivados dos processos reais. A configuracao formal de busca por OAB ainda depende da integracao do Diario Oficial.
+        Responsaveis derivados dos processos reais. A OAB agora pode ser ativada de forma operacional no fluxo de processos.
       </div>
 
       {state ? (

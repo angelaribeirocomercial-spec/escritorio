@@ -49,8 +49,8 @@ export default async function DiarioOficialPalavrasPage() {
         </div>
         <Link
           className="mj-model-button-green inline-flex items-center justify-center"
-          href="/configuracoes/integracoes"
-          title="Abrir a configuracao das integracoes oficiais."
+          href="/processos/importar-oab"
+          title="Abrir o monitoramento operacional por OAB."
         >
           Configurar OAB
         </Link>
@@ -74,6 +74,9 @@ export default async function DiarioOficialPalavrasPage() {
               {warning}
             </p>
           ))}
+          <p className="mt-3 break-words text-slate-500">
+            Agora a configuracao de OAB pode ser aplicada diretamente ao processo no fluxo operacional.
+          </p>
         </div>
       </div>
 
