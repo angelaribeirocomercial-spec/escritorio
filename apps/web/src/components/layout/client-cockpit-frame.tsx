@@ -38,6 +38,14 @@ type ClientCockpitDocument = {
   summary: string;
 };
 
+type ClientCockpitGeneratedDocument = {
+  kind: "peticao-inicial" | "procuracao" | "contrato-honorarios";
+  label: string;
+  detail: string;
+  href: string;
+  statusLabel: string;
+};
+
 type ClientCockpitFrameProps = {
   client: {
     id: string;
@@ -63,6 +71,7 @@ type ClientCockpitFrameProps = {
     readiness: ReadonlyArray<ClientCockpitReadinessItem>;
   } | null;
   caseDocuments: ReadonlyArray<ClientCockpitDocument>;
+  generatedDocuments: ReadonlyArray<ClientCockpitGeneratedDocument>;
   nextStepLabel: string;
   nextTaskTitle: string | null;
   relatedClaraRecordsCount: number;
@@ -92,6 +101,7 @@ export function ClientCockpitFrame({
   activeCase,
   workflow,
   caseDocuments,
+  generatedDocuments,
   nextStepLabel,
   nextTaskTitle,
   relatedClaraRecordsCount,
@@ -455,6 +465,35 @@ export function ClientCockpitFrame({
                       <p className="text-sm leading-7 text-slate-200">
                         A peça fica acessível no editor formal quando o workflow do caso e a base documental forem suficientes para sair da leitura operacional.
                       </p>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          Documentos gerados em PDF
+                        </p>
+                        <span className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                          Pacote documental do cliente
+                        </span>
+                      </div>
+                      {generatedDocuments.length ? (
+                        <div className="grid gap-3">
+                          {generatedDocuments.map((document) => (
+                            <div key={document.kind} className="detail-soft-row flex items-center justify-between gap-3 px-4 py-4 text-sm text-slate-300">
+                              <div className="min-w-0">
+                                <p className="font-semibold text-white">{document.label}</p>
+                                <p className="mt-1 text-sm leading-6 text-slate-400">{document.detail}</p>
+                              </div>
+                              <Link className="detail-link-button shrink-0 px-4 py-3 text-sm font-semibold" href={document.href}>
+                                {document.statusLabel}
+                              </Link>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="detail-soft-row px-4 py-4 text-sm text-slate-400">
+                          Nenhum PDF gerado ainda para este caso.
+                        </div>
+                      )}
                     </div>
                     {workflow?.readiness.length ? (
                       <div className="grid gap-3">

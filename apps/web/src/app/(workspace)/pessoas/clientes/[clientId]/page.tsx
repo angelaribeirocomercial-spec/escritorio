@@ -220,9 +220,34 @@ export default async function ClientDetailPage({
         nextTask?.lexiaNextStep ?? workflow?.nextStep ?? activeCase.suggestedStrategy
       )
     : "Abrir o primeiro caso bancario deste cliente pela entrada de Novo atendimento bancario.";
+  const generatedDocuments = activeCase
+    ? [
+        {
+          kind: "peticao-inicial" as const,
+          label: "Petição inicial em PDF",
+          detail: `Minuta assistida do caso ${activeCase.title}.`,
+          href: `/api/clientes/${client.id}/documentos-gerados/peticao-inicial/pdf?caseId=${activeCase.id}`,
+          statusLabel: "Abrir PDF"
+        },
+        {
+          kind: "procuracao" as const,
+          label: "Procuração em PDF",
+          detail: `Documento de representação vinculado ao caso ${activeCase.processNumber}.`,
+          href: `/api/clientes/${client.id}/documentos-gerados/procuracao/pdf?caseId=${activeCase.id}`,
+          statusLabel: "Abrir PDF"
+        },
+        {
+          kind: "contrato-honorarios" as const,
+          label: "Contrato de honorários em PDF",
+          detail: `Acordo de honorários do fluxo ${getBankingNicheLabel(activeCase.niche).toLowerCase()}.`,
+          href: `/api/clientes/${client.id}/documentos-gerados/contrato-honorarios/pdf?caseId=${activeCase.id}`,
+          statusLabel: "Abrir PDF"
+        }
+      ]
+    : [];
   const normalizedClaraSummary = claraDisplay
     ? {
-        title: normalizeVisibleCopy(claraDisplay.title),
+      title: normalizeVisibleCopy(claraDisplay.title),
         detail: normalizeVisibleCopy(claraDisplay.detail)
       }
     : null;
@@ -310,6 +335,7 @@ export default async function ClientDetailPage({
         }}
         activeCase={cockpitFrameActiveCase}
         caseDocuments={caseDocuments}
+        generatedDocuments={generatedDocuments}
         client={{
           id: client.id,
           fullName: client.fullName,
