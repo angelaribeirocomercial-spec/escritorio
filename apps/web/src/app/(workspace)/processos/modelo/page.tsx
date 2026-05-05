@@ -63,7 +63,7 @@ export default async function ProcessModelPage() {
   const bankingCase = modelCase
     ? {
         ...modelCase,
-        stage: "Pronto para distribuir",
+        stage: "Distribuido",
         status: "active" as const,
         linkedDocuments: [...modelCase.linkedDocuments, "Boletim de ocorrencia", "Extrato bancario detalhado"],
         linkedTasks: [...modelCase.linkedTasks, "Conferir poderes de representacao"],
@@ -81,7 +81,7 @@ export default async function ProcessModelPage() {
         processNumber: "5011274-65.2026.8.19.0001",
         contractNumber: "MODELO-001",
         claimType: "fraude_bancaria",
-        stage: "Pronto para distribuir",
+        stage: "Distribuido",
         status: "active" as const,
         amountInDispute: 18750,
         estimatedValue: 41000,
@@ -115,8 +115,8 @@ export default async function ProcessModelPage() {
         tribunal: modelProcess.tribunal,
         courtDistrict: modelProcess.courtDistrict,
         courtName: modelProcess.courtName,
-        proceduralPhase: "Pronto para distribuir",
-        statusLabel: "Pronto para distribuir",
+        proceduralPhase: "Distribuido",
+        statusLabel: "Distribuido",
         monitoringModeLabel: "Monitoramento manual",
         responsibleLawyer: modelProcess.responsibleLawyer
       }
@@ -128,8 +128,8 @@ export default async function ProcessModelPage() {
         tribunal: "TJRJ",
         courtDistrict: "Rio de Janeiro/RJ",
         courtName: "7o Juizado Especial Civel da Capital",
-        proceduralPhase: "Pronto para distribuir",
-        statusLabel: "Pronto para distribuir",
+        proceduralPhase: "Distribuido",
+        statusLabel: "Distribuido",
         monitoringModeLabel: "Monitoramento manual",
         responsibleLawyer: bankingCase.ownerLabel
       };
@@ -139,16 +139,16 @@ export default async function ProcessModelPage() {
       {
         id: "modelo-t1",
         occurredAt: "2026-05-05",
-        title: "Prontidao assistida",
+        title: "Distribuicao concluida",
         description:
-          "O quadro apresenta os dados locais que o escritorio acompanharia antes do processo nascer, usando o cliente Carlos Henrique Duarte como base.",
+          "O quadro apresenta o processo apos a saida do handoff, usando o cliente Carlos Henrique Duarte como referencia inicial.",
         source: "MODELO",
         criticality: "medium" as const
       },
       {
         id: "modelo-t2",
         occurredAt: "2026-05-05",
-        title: "Acesso oficial aberto manualmente",
+        title: "Acompanhamento oficial habilitado",
         description:
           "O acesso externo existe apenas como atalho, sem integracao automatica. A pos-distribuicao real entra por importacao do orgao competente.",
         source: "MODELO",
@@ -159,21 +159,21 @@ export default async function ProcessModelPage() {
   return (
     <div className="space-y-6">
       <WorkspacePage
-        description="Fluxo canonico de Carlos Henrique Duarte: caso -> pronto para distribuir -> processo, com distribuicao assistida e sem protocolo real."
+        description="Fluxo pos-distribuicao de Carlos Henrique Duarte: handoff concluido -> processo -> acompanhamento oficial."
         eyebrow="Processos"
         metrics={[
           { label: "Caso", value: "Carlos Henrique Duarte" },
           { label: "Processo", value: "5011274-65.2026.8.19.0001" },
-          { label: "Prontidao", value: "Assistida" },
+          { label: "Distribuicao", value: "Concluida" },
           { label: "Protocolo", value: "Nao automatizado" }
         ]}
-        title="Modelo de processo"
+        title="Processo pos-distribuicao"
       >
         <div className="mj-model-panel border border-cyan-300/20 bg-cyan-300/10 px-4 py-4">
-          <p className="mj-model-title">Fluxo canonico</p>
+          <p className="mj-model-title">Fluxo pos-distribuicao</p>
           <p className="mt-1 text-[13px] leading-6 text-slate-300">
-            Carlos Henrique Duarte {"->"} caso {"->"} pronto para distribuir {"->"} processo. Esta tela mostra a prontidao
-            do caso e o processo resultante, mas nao executa protocolo real.
+            Carlos Henrique Duarte {"->"} distribuicao {"->"} processo. Esta tela mostra o registro apos o ato humano e
+            deixa claro que o processo nasce depois da distribuicao, nao antes.
           </p>
         </div>
         <ProcessCockpitFrame
@@ -211,40 +211,40 @@ export default async function ProcessModelPage() {
             status: bankingCase.status,
             suggestedStrategy: bankingCase.suggestedStrategy,
             title: bankingCase.title,
-            workflowCompletionLabel: "Documentos completos para distribuicao assistida",
-            workflowCurrentStep: "Pronto para distribuir",
+            workflowCompletionLabel: "Processo distribuido e pronto para acompanhamento",
+            workflowCurrentStep: "Processo distribuido",
             workflowPhaseLabel: bankingCase.stage,
             workflowReadiness: [
               {
                 id: "docs",
                 label: "Documentos",
                 state: "ready",
-                detail: "Todos os docs do caso foram preenchidos para o exemplo.",
+                detail: "Base documental fechada antes do protocolo humano.",
                 blockers: []
               },
               {
                 id: "piece",
                 label: "Peca",
                 state: "ready",
-                detail: "A minuta está gerada e aguardando o ato de distribuicao.",
+                detail: "A minuta foi usada no handoff e gerou o ato de distribuicao.",
                 blockers: []
               },
               {
                 id: "protocol",
                 label: "Distribuicao",
                 state: "ready",
-                detail: "A distribuicao depende apenas do fechamento humano no orgao competente.",
+                detail: "A distribuicao foi concluida e agora o processo pode ser acompanhado.",
                 blockers: []
               }
             ],
             workflowSteps: [
-              { id: "triagem", title: "Triagem documental", detail: "Caso e documentos conferidos", state: "done" },
-              { id: "peca", title: "Geracao da peca", detail: "Minuta liberada para revisao", state: "done" },
+              { id: "triagem", title: "Triagem documental", detail: "Base fechada antes do handoff", state: "done" },
+              { id: "peca", title: "Geracao da peca", detail: "Minuta usada para protocolar", state: "done" },
               {
                 id: "distribuir",
-                title: "Pronto para distribuir",
-                detail: "Ato final depende do advogado ou do orgao competente",
-                state: "current"
+                title: "Distribuicao",
+                detail: "Ato humano concluido e processo registrado",
+                state: "done"
               }
             ]
           }}
@@ -257,7 +257,7 @@ export default async function ProcessModelPage() {
             competenceLabel: process.courtName,
             distributedProcessNumber: process.processNumber,
             distributionDateLabel: latestTimeline[0]?.occurredAt ?? "2026-05-05",
-            distributionStatusLabel: "Caso pronto para distribuir",
+            distributionStatusLabel: "Distribuido e em acompanhamento",
             integrationStatusLabel: "Exemplo canonico sem protocolo automatizado.",
             officialSystemLabel: "Abrir PJe/TJMG",
             processClassLabel: suggestedJudicialClass(bankingCase.niche),

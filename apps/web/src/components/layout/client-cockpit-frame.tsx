@@ -126,8 +126,14 @@ export function ClientCockpitFrame({
     relatedClaraRecordsCount > 0
       ? nextStepLabel
       : "Preparar contexto para a proxima tarefa juridica";
-  const piecesStatus =
-    workflow?.readiness.some((item) => item.state === "blocked") ? "Bloqueada" : "Pronta";
+  const piecesReady =
+    Boolean(workflow) &&
+    (workflow?.readiness.length ?? 0) > 0 &&
+    workflow?.readiness.every((item) => item.state === "ready");
+  const piecesStatus = piecesReady ? "Pronta" : "Bloqueada";
+  const piecesActionLabel = piecesReady
+    ? "A peca pode seguir para o handoff"
+    : "A peca fica retida ate o caso fechar";
   const lastTimelineEvent = normalizedTimeline[normalizedTimeline.length - 1] ?? "Sem eventos registrados";
   const hasGeneratedDocuments = generatedDocuments.length > 0;
 
@@ -165,7 +171,7 @@ export function ClientCockpitFrame({
         key: "pieces" as const,
         title: "Pecas",
         summary: piecesStatus,
-        detail: nextTaskTitle ? `Proxima: ${nextTaskTitle}` : "Minuta em espera",
+        detail: nextTaskTitle ? `Proxima: ${nextTaskTitle}` : piecesActionLabel,
         tone: piecesStatus === "Bloqueada" ? "text-amber-100" : "text-emerald-100"
       },
       {
@@ -187,6 +193,7 @@ export function ClientCockpitFrame({
       nextTaskTitle,
       normalizedTimeline.length,
       piecesStatus,
+      piecesActionLabel,
       workflowCurrentStep,
       workflowProgress,
       relatedClaraRecordsCount
@@ -486,7 +493,8 @@ export function ClientCockpitFrame({
                     </div>
                     <div className="detail-subpanel p-5">
                       <p className="text-sm leading-7 text-slate-200">
-                        A peça fica acessível no editor formal quando o workflow do caso e a base documental forem suficientes para sair da leitura operacional.
+                        A peça permanece bloqueada enquanto o caso nao fecha a leitura documental e juridica.
+                        Quando a base estiver pronta, ela sai do cockpit do cliente e segue para o handoff de distribuicao.
                       </p>
                     </div>
                     <div className="space-y-3">

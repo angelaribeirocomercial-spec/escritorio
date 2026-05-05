@@ -175,12 +175,12 @@ export function ProcessCockpitFrame({
     {
       id: "case",
       title: "Caso",
-      detail: `${bankingCase.title} | ${bankingCase.stage}`
+      detail: `${bankingCase.title} | origem do processo`
     },
     {
-      id: "ready-for-filing",
-      title: "Pronto para distribuir",
-      detail: "O caso fechou a triagem interna e segue para a etapa de processo sem protocolo automatizado."
+      id: "handoff",
+      title: "Handoff de distribuicao",
+      detail: "A superficie oficial concentra os acessos do ato humano de distribuicao."
     },
     {
       id: "process",
@@ -297,11 +297,11 @@ export function ProcessCockpitFrame({
         <div className="max-w-3xl space-y-2">
           <p className="workspace-kicker">Fluxo canonico</p>
           <h3 className="text-2xl font-semibold text-white">
-            Caso {"->"} pronto para distribuir {"->"} processo
+            Caso {"->"} handoff {"->"} processo
           </h3>
           <p className="text-sm leading-7 text-slate-300">
-            O cockpit deixa claro quando o caso ja esta pronto para seguir para o processo. Esta superficie organiza a
-            prontidao e a leitura operacional; ela nao executa protocolo nem simula automacao externa.
+            O cockpit deixa claro o registro pos-distribuicao. Esta superficie organiza a leitura oficial do processo e
+            nao executa protocolo nem simula automacao externa.
           </p>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
@@ -324,12 +324,12 @@ export function ProcessCockpitFrame({
       <section className="detail-panel p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="workspace-kicker">Pronto para distribuir</p>
-            <h3 className="mt-2 text-2xl font-semibold text-white">Dados do caso antes do processo</h3>
+            <p className="workspace-kicker">Registro pos-distribuicao</p>
+            <h3 className="mt-2 text-2xl font-semibold text-white">Dados oficiais do processo</h3>
           </div>
           <div className="max-w-xl text-sm leading-7 text-slate-300">
-            Quadro operacional montado com base local do caso. As sugestoes abaixo nao substituem revisao juridica nem
-            representam integracao automatica com tribunal.
+            Quadro operacional montado com base oficial do processo. As sugestoes abaixo nao substituem revisao juridica
+            nem representam integracao automatica com tribunal.
           </div>
         </div>
 
@@ -371,25 +371,25 @@ export function ProcessCockpitFrame({
         <div className="mt-5 detail-subpanel p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-              Prontidao do caso para distribuir
+              Registro oficial do processo
             </p>
             <span className="text-xs text-slate-400">{distributionSummary.integrationStatusLabel}</span>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Processo de referencia:{" "}
+              Numero do processo:{" "}
               <span className="font-semibold text-white">{distributionSummary.distributedProcessNumber}</span>
             </div>
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Data da prontidao:{" "}
+              Data da distribuicao:{" "}
               <span className="font-semibold text-white">{distributionSummary.distributionDateLabel}</span>
             </div>
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Comprovante interno:{" "}
+              Comprovante oficial:{" "}
               <span className="font-semibold text-white">{distributionSummary.protocolReceiptLabel}</span>
             </div>
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Status do fluxo:{" "}
+              Status do registro:{" "}
               <span className="font-semibold text-white">{distributionSummary.distributionStatusLabel}</span>
             </div>
           </div>

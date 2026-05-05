@@ -138,24 +138,24 @@ export default async function ProcessosPage({
         courtDistrict: modelProcess?.courtDistrict ?? "Belo Horizonte/MG",
         courtName: modelProcess?.courtName ?? "4a Vara Civel de Belo Horizonte",
         processId: modelProcess?.id ?? modelCase?.id ?? modelClient?.id ?? "modelo-processo",
-        statusLabel: "Pronto para distribuir"
+        statusLabel: "Distribuido"
       }
     : null;
   const flowCards = [
     {
       id: "case",
       title: "Caso",
-      detail: "A entrada do atendimento concentra cliente, docs e tese antes da prontidao para distribuir."
+      detail: "A entrada do atendimento concentra cliente, docs e tese antes do handoff de distribuicao."
     },
     {
-      id: "ready",
-      title: "Pronto para distribuir",
-      detail: "O caso fecha a triagem e fica preparado para virar processo sem automacao externa."
+      id: "handoff",
+      title: "Handoff de distribuicao",
+      detail: "A minuta abre os acessos oficiais e o advogado conclui o ato humano."
     },
     {
       id: "process",
       title: "Processo",
-      detail: "A listagem e o detalhe mostram o processo resultante e seus filtros operacionais."
+      detail: "A listagem e o detalhe mostram o registro pos-distribuicao e seus filtros operacionais."
     }
   ] as const;
 
@@ -270,8 +270,8 @@ export default async function ProcessosPage({
         <div className="max-w-3xl">
           <p className="mj-model-title">Fluxo canonico</p>
           <p className="mt-1 text-[13px] leading-6 text-slate-200">
-            Caso {"->"} pronto para distribuir {"->"} processo. A pagina deixa visivel quando o caso ja pode seguir para o
-            processo e deixa claro que a distribuicao aqui e apenas uma prontidao operacional.
+            Caso {"->"} handoff {"->"} processo. A pagina deixa visivel a separacao entre a minuta, o ato humano de
+            distribuicao e o registro pos-distribuicao.
           </p>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -297,13 +297,13 @@ export default async function ProcessosPage({
 
       {hasNoRealProcesses && modelCard ? (
         <div className="mj-model-panel border border-cyan-300/20 bg-cyan-300/10 px-4 py-4">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="min-w-0">
-              <p className="mj-model-title">Exemplo canonico de caso pronto para distribuir</p>
-              <p className="mt-1 text-[13px] text-slate-300">
-                Use este card para visualizar a transicao do caso para o processo, partindo de um cliente real do tenant.
-              </p>
-            </div>
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0">
+            <p className="mj-model-title">Exemplo canonico de processo pos-distribuicao</p>
+            <p className="mt-1 text-[13px] text-slate-300">
+                Use este card para visualizar o processo ja nascido depois do handoff, partindo de um cliente real do tenant.
+            </p>
+          </div>
             <Link className="mj-model-button-gray inline-flex items-center justify-center" href="/processos/modelo">
               Ver fluxo canonico
             </Link>
@@ -328,10 +328,10 @@ export default async function ProcessosPage({
               <p className="mt-2 text-xs leading-5 text-slate-400">{modelCard.courtName}</p>
             </div>
             <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Pronto para distribuir</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Handoff de distribuicao</p>
               <p className="mt-2 text-sm font-semibold text-white">Caso fechado para o processo</p>
               <p className="mt-2 text-xs leading-5 text-slate-400">
-                O quadro do detalhe mostra classe, assunto, urgencia e prontidao interna antes do processo.
+                O quadro do detalhe mostra classe, assunto, urgencia e os acessos oficiais antes do processo nascer.
               </p>
             </div>
             <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">

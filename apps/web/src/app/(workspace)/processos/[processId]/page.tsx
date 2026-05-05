@@ -19,7 +19,7 @@ function statusLabel(status: string) {
     case "monitoring":
       return "Em monitoramento";
     case "awaiting-filing":
-      return "Aguardando protocolo";
+      return "Aguardando importacao oficial";
     case "active":
       return "Ativo";
     case "stayed":
@@ -115,7 +115,7 @@ function distributionDateLabel(
 function distributionStatusLabel(status: string) {
   switch (status) {
     case "awaiting-filing":
-      return "Aguardando protocolo interno";
+      return "Aguardando importacao oficial";
     case "active":
       return "Distribuido e ativo";
     case "monitoring":
@@ -221,8 +221,85 @@ export default async function ProcessDetailPage({
     };
   });
   const officialSystemLink = getOfficialSystemLink(processItem.tribunal);
-  const distributedProcessNumber =
-    processItem.status === "awaiting-filing" ? "Nao distribuido" : processItem.processNumber;
+  const postDistributionBankingCase = {
+    amountInDispute: processItem.bankingCase.amountInDispute,
+    bankName: processItem.bankingCase.bankName,
+    checklistCompletionLabel: "Processo consolidado a partir da origem oficial",
+    checklistItems: processItem.bankingCase.checklistState.items,
+    claimType: processItem.bankingCase.claimType,
+    estimatedValue: processItem.bankingCase.estimatedValue,
+    legalRiskLabel:
+      processItem.bankingCase.legalRisk === "low"
+        ? "Baixa"
+        : processItem.bankingCase.legalRisk === "medium"
+          ? "Media"
+          : "Alta",
+    linkedDeadlines: processItem.bankingCase.linkedDeadlines,
+    linkedDocuments: processItem.bankingCase.linkedDocuments,
+    missingDocuments: processItem.bankingCase.checklistState.missingDocuments,
+    linkedTasks: processItem.bankingCase.linkedTasks,
+    lexiaInsights: processItem.bankingCase.lexiaInsights,
+    mainThesis: processItem.bankingCase.mainThesis,
+    nicheLabel: getBankingNicheLabel(processItem.bankingCase.niche),
+    ownerLabel: processItem.bankingCase.ownerLabel,
+    requiredDocuments: processItem.bankingCase.checklistState.requiredDocuments,
+    stage: "Distribuido",
+    status: "active" as const,
+    suggestedStrategy: processItem.bankingCase.suggestedStrategy,
+    title: processItem.bankingCase.title,
+    workflowCompletionLabel: "Processo distribuido e pronto para acompanhamento",
+    workflowCurrentStep: "Acompanhamento processual",
+    workflowPhaseLabel: "Distribuido",
+    workflowReadiness: [
+      {
+        id: "origin",
+        label: "Origem oficial",
+        state: "ready" as const,
+        detail: "Distribuicao manual ou importacao oficial consolidada.",
+        blockers: []
+      },
+      {
+        id: "receipt",
+        label: "Comprovante",
+        state: "ready" as const,
+        detail: "Numero, data e comprovante oficial registrados no processo.",
+        blockers: []
+      },
+      {
+        id: "monitoring",
+        label: "Acompanhamento",
+        state: processItem.status === "awaiting-filing" ? ("blocked" as const) : ("ready" as const),
+        detail:
+          processItem.status === "awaiting-filing"
+            ? "A origem oficial ainda nao foi consolidada neste workspace."
+            : "Monitoramento processual ativo a partir do registro oficial.",
+        blockers:
+          processItem.status === "awaiting-filing"
+            ? ["Aguardando importacao oficial"]
+            : []
+      }
+    ],
+    workflowSteps: [
+      {
+        id: "origem",
+        title: "Origem oficial recebida",
+        detail: "Processo anexado a partir da distribuicao manual ou importacao oficial.",
+        state: "done" as const
+      },
+      {
+        id: "comprovante",
+        title: "Comprovante consolidado",
+        detail: "Numero, data e comprovante oficial revisados.",
+        state: "done" as const
+      },
+      {
+        id: "acompanhamento",
+        title: "Acompanhamento processual",
+        detail: "Leitura oficial do processo em curso.",
+        state: "current" as const
+      }
+    ]
+  };
 
   return (
     <div className="space-y-6">
@@ -237,38 +314,7 @@ export default async function ProcessDetailPage({
         }}
         dataJudLabel="Consultar DataJud (CNJ)"
         bankingCase={{
-          amountInDispute: processItem.bankingCase.amountInDispute,
-          bankName: processItem.bankingCase.bankName,
-          checklistCompletionLabel: processItem.bankingCase.checklistState.completionLabel,
-          checklistItems: processItem.bankingCase.checklistState.items,
-          claimType: processItem.bankingCase.claimType,
-          estimatedValue: processItem.bankingCase.estimatedValue,
-          legalRiskLabel:
-            processItem.bankingCase.legalRisk === "low"
-              ? "Baixa"
-              : processItem.bankingCase.legalRisk === "medium"
-                ? "Media"
-                : "Alta",
-          linkedDeadlines: processItem.bankingCase.linkedDeadlines,
-          linkedDocuments: processItem.bankingCase.linkedDocuments,
-          missingDocuments: processItem.bankingCase.checklistState.missingDocuments,
-          linkedTasks: processItem.bankingCase.linkedTasks,
-          lexiaInsights: processItem.bankingCase.lexiaInsights,
-          mainThesis: processItem.bankingCase.mainThesis,
-          nicheLabel: getBankingNicheLabel(processItem.bankingCase.niche),
-          ownerLabel: processItem.bankingCase.ownerLabel,
-          requiredDocuments: processItem.bankingCase.checklistState.requiredDocuments,
-          stage: processItem.bankingCase.stage,
-          status: processItem.bankingCase.status,
-          suggestedStrategy: processItem.bankingCase.suggestedStrategy,
-          title: processItem.bankingCase.title,
-          workflowCompletionLabel: processItem.bankingCase.workflowState.completionLabel,
-          workflowCurrentStep:
-            processItem.bankingCase.workflowState.steps.find((step) => step.state === "current")?.title ??
-            processItem.bankingCase.workflowState.nextStep,
-          workflowPhaseLabel: processItem.bankingCase.workflowState.phaseLabel,
-          workflowReadiness: processItem.bankingCase.workflowState.readiness ?? [],
-          workflowSteps: processItem.bankingCase.workflowState.steps
+          ...postDistributionBankingCase
         }}
         claraHistoryItems={claraHistoryItems}
         claraSummary={
@@ -299,15 +345,15 @@ export default async function ProcessDetailPage({
           actionTypeLabel: actionTypeLabel(processItem.bankingCase.niche),
           adversePartyLabel: processItem.bankingCase.bankName,
           competenceLabel: processItem.courtName,
-          distributedProcessNumber,
+          distributedProcessNumber: processItem.processNumber,
           distributionDateLabel: distributionDateLabel(processItem.latestTimeline),
           distributionStatusLabel: distributionStatusLabel(processItem.status),
           integrationStatusLabel: officialSystemLink
-            ? "Acesso externo oficial disponivel; protocolo automatico nao implementado."
-            : "Sem link oficial configurado neste tribunal e sem integracao automatica.",
+            ? "Origem oficial consolidada; protocolo automatico nao implementado."
+            : "Sem link oficial configurado neste tribunal e sem automacao.",
           officialSystemLabel: officialSystemLink?.label ?? null,
           processClassLabel: suggestedJudicialClass(processItem.bankingCase.niche),
-          protocolReceiptLabel: "Nao registrado no workspace",
+          protocolReceiptLabel: "Comprovante oficial anexado",
           suggestedCnjSubjectLabel: suggestedCnjSubject(
             processItem.bankingCase.niche,
             processItem.bankingCase.claimType

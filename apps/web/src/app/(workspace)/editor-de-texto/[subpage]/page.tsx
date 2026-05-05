@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { BANKING_NICHES, getBankingNicheLabel, type BankingNiche } from "@lexia/domain";
 
@@ -17,6 +18,7 @@ import {
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
 import { getCases } from "@/server/services/cases/get-cases";
 import { getDocuments } from "@/server/services/documents/get-documents";
+import { getProcesses } from "@/server/services/processes/get-processes";
 import {
   commitClaraExecutionAction,
   updateClaraReviewNoteAction,
@@ -190,22 +192,46 @@ async function buildCanonicalModels(
 
 function DistributionPage({
   models,
-  selectedNiche
+  selectedNiche,
+  draftArtifact,
+  claraDisplay,
+  claraRecord,
+  processes
 }: {
   models: CanonicalModel[];
   selectedNiche: BankingNiche | null;
+  draftArtifact: Awaited<ReturnType<typeof getClaraTextDraftArtifact>> | null;
+  claraDisplay: ReturnType<typeof getClaraRecordDisplay> | null;
+  claraRecord: ClaraRecord | null;
+  processes: Awaited<ReturnType<typeof getProcesses>>;
 }) {
   const selectedModel = selectedNiche
     ? models.find((model) => model.niche === selectedNiche) ?? models[0] ?? null
     : models[0] ?? null;
+  const processLabel = draftArtifact?.processLabel ?? selectedModel?.processLabel ?? null;
+  const referencedProcess = processLabel
+    ? processes.find((processItem) => processItem.processNumber === processLabel) ?? null
+    : null;
+  const processReferenceLabel = referencedProcess?.processNumber ?? processLabel ?? "Pendente";
+  const processDetailLabel = referencedProcess
+    ? `${referencedProcess.client.fullName} | ${referencedProcess.tribunal} | ${referencedProcess.courtDistrict}`
+    : selectedModel
+      ? `${selectedModel.clientName} | ${selectedModel.bankLabel}`
+      : "Aguardando referencia oficial do processo";
+  const clientLabel = draftArtifact?.caseLabel ?? selectedModel?.clientName ?? "Caso sem referencia";
+  const officialSystemHref = "https://pje.tjmg.jus.br/pje/";
+  const dataJudHref = referencedProcess ? `/processos/${encodeURIComponent(referencedProcess.id)}/datajud` : "/processos";
+  const oabHref = referencedProcess
+    ? `/processos/importar-oab?process=${encodeURIComponent(referencedProcess.id)}`
+    : "/processos/importar-oab";
 
   return (
     <div className="mj-model-page space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="mj-model-title">Distribuicao assistida</p>
+          <p className="mj-model-title">Handoff de distribuicao</p>
           <p className="mj-model-subtitle">
-            Um modelo canonico por nicho, com minuta em PDF e sem protocolo real.
+            A minuta sai do editor e abre os acessos oficiais. Nenhum protocolo automatico e disparado.
           </p>
         </div>
         <Link className="mj-model-button-gray" href="/editor-de-texto/meus-textos">
@@ -213,95 +239,120 @@ function DistributionPage({
         </Link>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-        <section className="mj-model-panel overflow-hidden">
-          <div className="grid grid-cols-[12rem_1fr_10rem] border-b bg-black/10 px-3 py-3 text-[13px] font-semibold text-slate-300 mj-model-gridline">
-            <span>Nicho</span>
-            <span>Modelo canonico</span>
-            <span className="text-right">Estado</span>
+      <section className="mj-model-panel px-4 py-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-cyan-100">
+              {draftArtifact?.statusLabel ?? "Handoff assistido"}
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold text-white">{clientLabel}</h1>
+            <p className="mt-2 text-[13px] leading-6 text-slate-300">
+              Caso: {draftArtifact?.caseLabel ?? selectedModel?.caseLabel ?? "Sem caso"} | Processo de referencia:{" "}
+              {processReferenceLabel}
+            </p>
+            <p className="mt-2 text-[13px] leading-6 text-slate-400">{processDetailLabel}</p>
           </div>
-          {models.map((model, index) => (
-            <Link
-              key={model.niche}
-              href={`/editor-de-texto/distribuicao?niche=${encodeURIComponent(model.niche)}`}
-              className="grid grid-cols-[12rem_1fr_10rem] items-center px-3 py-3 text-[13px] transition hover:bg-white/[0.04]"
-              style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}
-            >
-              <span className="text-slate-200">{model.nicheLabel}</span>
-              <span className="min-w-0 truncate text-slate-300">
-                {model.caseLabel} | {model.clientName}
-              </span>
-              <span className="text-right text-slate-400">{model.statusLabel}</span>
-            </Link>
-          ))}
-        </section>
+          <div className="rounded-[4px] border bg-black/10 px-4 py-3 text-[13px] text-slate-300 mj-model-gridline">
+            <p className="font-semibold text-slate-100">Distribuicao manual</p>
+            <p className="mt-2 leading-6">
+              A superficie oficial nao protocola nada sozinha. Ela apenas concentra os acessos para o ato humano de
+              distribuicao e para a leitura posterior do processo.
+            </p>
+          </div>
+        </div>
+      </section>
 
+      <section className="grid gap-4 xl:grid-cols-3">
+        <a
+          className="mj-model-panel px-4 py-4 transition hover:bg-white/[0.04]"
+          href={officialSystemHref}
+          rel="noreferrer"
+          target="_blank"
+        >
+          <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">PJe/TJMG</p>
+          <p className="mt-2 text-[13px] leading-6 text-slate-200">
+            Abrir o portal oficial para a distribuicao manual do caso.
+          </p>
+          <p className="mt-3 text-[13px] text-slate-400">Link oficial externo</p>
+        </a>
+
+        {referencedProcess ? (
+          <Link className="mj-model-panel px-4 py-4 transition hover:bg-white/[0.04]" href={dataJudHref}>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">DataJud</p>
+            <p className="mt-2 text-[13px] leading-6 text-slate-200">
+              Consultar a origem oficial antes de abrir o processo pos-distribuicao.
+            </p>
+            <p className="mt-3 text-[13px] text-slate-400">Abrir consulta interna</p>
+          </Link>
+        ) : (
+          <div className="mj-model-panel px-4 py-4">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">DataJud</p>
+            <p className="mt-2 text-[13px] leading-6 text-slate-200">
+              A referencia oficial do processo ainda nao foi localizada neste workspace.
+            </p>
+          </div>
+        )}
+
+        {referencedProcess ? (
+          <Link className="mj-model-panel px-4 py-4 transition hover:bg-white/[0.04]" href={oabHref}>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">Boundary OAB</p>
+            <p className="mt-2 text-[13px] leading-6 text-slate-200">
+              Registrar o boundary de acompanhamento depois da distribuicao oficial.
+            </p>
+            <p className="mt-3 text-[13px] text-slate-400">Abrir boundary</p>
+          </Link>
+        ) : (
+          <div className="mj-model-panel px-4 py-4">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">Boundary OAB</p>
+            <p className="mt-2 text-[13px] leading-6 text-slate-200">
+              A importacao oficial depende da existencia do processo distribuido.
+            </p>
+          </div>
+        )}
+      </section>
+
+      <section className="mj-model-panel px-4 py-4">
+        <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+          Quando o processo nasce
+        </p>
+        <p className="mt-3 text-[13px] leading-6 text-slate-300">
+          O processo real so e anexado depois da distribuicao manual ou da importacao oficial pelo orgao competente.
+          Esta pagina nao simula protocolo e nao representa o detalhe do processo.
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="mj-model-gridline rounded-[4px] border px-3 py-3 text-[13px] text-slate-300">
+            <p className="font-semibold text-white">Cliente / caso</p>
+            <p className="mt-2 text-slate-400">{claraDisplay?.title ?? draftArtifact?.caseLabel ?? clientLabel}</p>
+          </div>
+          <div className="mj-model-gridline rounded-[4px] border px-3 py-3 text-[13px] text-slate-300">
+            <p className="font-semibold text-white">Peca</p>
+            <p className="mt-2 text-slate-400">{draftArtifact?.pieceLabel ?? selectedModel?.preview ?? "Minuta em revisao"}</p>
+          </div>
+          <div className="mj-model-gridline rounded-[4px] border px-3 py-3 text-[13px] text-slate-300">
+            <p className="font-semibold text-white">Processo de referencia</p>
+            <p className="mt-2 text-slate-400">{processReferenceLabel}</p>
+          </div>
+        </div>
+      </section>
+
+      {claraRecord ? (
         <section className="mj-model-panel px-4 py-4">
-          {selectedModel ? (
-            <div className="space-y-4">
-              <div>
-                <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-cyan-100">
-                  {selectedModel.nicheLabel}
-                </p>
-                <p className="mt-2 text-[13px] leading-6 text-slate-300">
-                  {selectedModel.caseLabel}
-                </p>
-              </div>
-
-              <div className="space-y-2 text-[13px] text-slate-300">
-                <p>Cliente: {selectedModel.clientName}</p>
-                <p>Processo: {selectedModel.processLabel}</p>
-                <p>Documento: {selectedModel.documentLabel}</p>
-                <p>Banco: {selectedModel.bankLabel}</p>
-              </div>
-
-              <div className="rounded-[4px] border bg-white/[0.03] px-4 py-4 mj-model-gridline">
-                <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Pre-visualizacao da minuta
-                </p>
-                <p className="mt-3 text-[13px] leading-6 text-slate-200">{selectedModel.preview}</p>
-                <div className="mt-4 grid gap-2 text-[13px] text-slate-300">
-                  <p>Status: {selectedModel.stageLabel}</p>
-                  <p>PDF: {selectedModel.pdfReady ? "pronto" : "a gerar"}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                {selectedModel.pdfLink ? (
-                  <Link className="mj-model-button-green" href={selectedModel.pdfLink}>
-                    Abrir minuta assistida
-                  </Link>
-                ) : null}
-                <Link className="mj-model-button-gray" href={`/editor-de-texto/meus-textos?draft=1`}>
-                  Ir para registro da minuta
-                </Link>
-              </div>
-
-              <div className="rounded-[4px] border bg-black/10 px-4 py-4 mj-model-gridline">
-                <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Distribuicao assistida
-                </p>
-                <p className="mt-3 text-[13px] leading-6 text-slate-300">
-                  A acao fica apenas marcada como pronta para distribuir. Nenhum protocolo real e disparado.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <Link
-                    className="mj-model-button-green"
-                    href={selectedModel.pdfLink ?? "/editor-de-texto/meus-textos?draft=1"}
-                  >
-                    Pronto para distribuir
-                  </Link>
-                  <span className="rounded-[4px] border px-3 py-2 text-[13px] text-slate-400">
-                    Saida formal assistida
-                  </span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <p className="mj-model-empty">Selecione um nicho para abrir o modelo canonico.</p>
-          )}
+          <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">Registro da minuta</p>
+          <p className="mt-3 text-[13px] leading-6 text-slate-300">
+            {claraDisplay?.detail ?? "Registro carregado da Clara para orientar o handoff de distribuicao."}
+          </p>
         </section>
-      </div>
+      ) : null}
+
+      {!referencedProcess ? (
+        <WorkspaceStatePanel
+          actionHref="/processos"
+          actionLabel="Ver processos"
+          description="Nao foi possivel localizar a referencia oficial do processo para esta minuta."
+          title="Processo ainda nao anexado"
+          tone="warning"
+        />
+      ) : null}
     </div>
   );
 }
@@ -818,6 +869,7 @@ export default async function EditorSubpage({
     estimatedTotalExcess?: string;
     chargedInstallment?: string;
     contractedInstallment?: string;
+    handoff?: string;
   };
 }) {
   const persistedTextDraftRecords = await listClaraMinutas(80);
@@ -849,6 +901,8 @@ export default async function EditorSubpage({
   const draftCreationTargetPath = draftArtifact && !claraRecord ? buildDraftCreationTargetPath(searchParams) : null;
   const canonicalModels = await buildCanonicalModels(textDraftRecords);
   const selectedNiche = isBankingNiche(searchParams?.niche) ? searchParams.niche : null;
+  const distributionProcesses =
+    params.subpage === "distribuicao" ? await getProcesses() : [];
 
   if (params.subpage === "meus-textos") {
     return (
@@ -867,7 +921,16 @@ export default async function EditorSubpage({
   }
 
   if (params.subpage === "distribuicao") {
-    return <DistributionPage models={canonicalModels} selectedNiche={selectedNiche} />;
+    return (
+      <DistributionPage
+        claraDisplay={claraDisplay}
+        claraRecord={claraRecord}
+        draftArtifact={draftArtifact}
+        models={canonicalModels}
+        selectedNiche={selectedNiche}
+        processes={distributionProcesses}
+      />
+    );
   }
 
   notFound();

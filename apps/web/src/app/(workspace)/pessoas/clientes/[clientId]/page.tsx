@@ -184,6 +184,7 @@ export default async function ClientDetailPage({
         documentLabels: caseDocuments.map((document) => document.documentType)
       })
     : null;
+  const canonicalWorkflow = workflow;
   const nextTask =
     activeCaseTasks.find((task) => task.status !== "done") ?? activeCaseTasks[0] ?? null;
   const relatedClaraRecords = claraRecords.filter((record) => {
@@ -216,9 +217,7 @@ export default async function ClientDetailPage({
     ? getClaraRecordDisplay(claraRecord, "Resumo contextual da Clara carregado", claraArtifact.summary)
     : null;
   const nextStepLabel = activeCase
-    ? normalizeVisibleCopy(
-        nextTask?.lexiaNextStep ?? workflow?.nextStep ?? activeCase.suggestedStrategy
-      )
+    ? normalizeVisibleCopy(nextTask?.lexiaNextStep ?? workflow?.nextStep ?? activeCase.suggestedStrategy)
     : "Abrir o primeiro caso bancario deste cliente pela entrada de Novo atendimento bancario.";
   const generatedDocuments = activeCase
     ? [
@@ -254,23 +253,11 @@ export default async function ClientDetailPage({
   const normalizedClientIaContext = normalizeVisibleCopy(client.iaContext);
   const normalizedTimeline = normalizeVisibleCopyList(client.timeline);
   const normalizedCaseInsights = normalizeVisibleCopyList(activeCase?.lexiaInsights ?? []);
-  const checklistItems = workflow?.requiredDocuments.map((label) => ({
+  const checklistItems = canonicalWorkflow?.requiredDocuments.map((label) => ({
     label,
-    missing: workflow.missingDocuments.includes(label)
+    missing: canonicalWorkflow.missingDocuments.includes(label as string)
   })) ?? [];
   const receivedDocuments = caseDocuments.length;
-  const availableNow = [
-    "Cockpit do caso ativo",
-    "Checklist documental inicial",
-    "Workflow visivel do nicho",
-    "Retorno do onboarding e do upload documental"
-  ];
-  const comingNext = [
-    "Pecas e minutas com revisao humana",
-    "Processo judicial completo apos distribuicao",
-    "Andamentos e Diario Oficial correlacionados ao caso",
-    "Clara executora com historico operacional ampliado"
-  ];
   const metrics = [
     {
       label: "Caso Ativo",
@@ -282,7 +269,7 @@ export default async function ClientDetailPage({
     },
     {
       label: "Documentos",
-      value: workflow?.completionLabel ?? `${client.documentsSent} enviados`
+      value: canonicalWorkflow?.completionLabel ?? workflow?.completionLabel ?? `${client.documentsSent} enviados`
     },
     {
       label: "Proximo passo",
@@ -303,21 +290,21 @@ export default async function ClientDetailPage({
       }
     : null;
 
-  const cockpitFrameWorkflow = workflow
+  const cockpitFrameWorkflow = canonicalWorkflow
     ? {
-        phaseLabel: workflow.phaseLabel,
-        completionLabel: workflow.completionLabel,
-        requiredDocuments: workflow.requiredDocuments,
-        missingDocuments: workflow.missingDocuments,
-        blockers: workflow.blockers,
-        steps: workflow.steps,
-        readiness: workflow.readiness
+        phaseLabel: canonicalWorkflow.phaseLabel,
+        completionLabel: canonicalWorkflow.completionLabel,
+        requiredDocuments: canonicalWorkflow.requiredDocuments,
+        missingDocuments: canonicalWorkflow.missingDocuments,
+        blockers: canonicalWorkflow.blockers,
+        steps: canonicalWorkflow.steps,
+        readiness: canonicalWorkflow.readiness
       }
     : null;
 
   return (
     <WorkspacePage
-      description="Cockpit inicial do cliente orientado pelo caso ativo, com contexto juridico, base documental e proximo passo operacional no mesmo lugar."
+      description="Cockpit do cliente orientado pelo caso ativo, com contexto juridico, base documental e a peça mantida bloqueada ate o fechamento humano."
       eyebrow="Clientes"
       metrics={metrics}
       title={client.fullName}
