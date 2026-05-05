@@ -28,7 +28,7 @@ function panelTone(active: boolean) {
 }
 
 export function CrmContractsFrame({ contracts }: CrmContractsFrameProps) {
-  const [activePanel, setActivePanel] = useState<PanelKey | null>("records");
+  const [activePanel, setActivePanel] = useState<PanelKey | null>(null);
 
   const withCase = contracts.filter((contract) => contract.caseId).length;
   const uniqueClients = new Set(contracts.map((contract) => contract.clientId)).size;

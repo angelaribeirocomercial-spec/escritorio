@@ -48,7 +48,7 @@ function priorityTone(priority: "low" | "medium" | "high") {
 }
 
 export function CrmPipelineFrame({ totals, stages, followUps }: CrmPipelineFrameProps) {
-  const [activePanel, setActivePanel] = useState<PanelKey | null>("stages");
+  const [activePanel, setActivePanel] = useState<PanelKey | null>(null);
 
   const cards = useMemo(
     () => [
