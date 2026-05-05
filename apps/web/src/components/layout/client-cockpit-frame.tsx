@@ -84,6 +84,7 @@ type ClientCockpitFrameProps = {
     continueClara: string;
     backToClients: string;
     openEditor: string;
+    openDistributionHandoff?: string;
     hubClara: string;
     prepareContext: string;
   };
@@ -236,6 +237,14 @@ export function ClientCockpitFrame({
                 {actionLinks.attachDocuments ? (
                   <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.attachDocuments}>
                     Anexar documentos
+                  </Link>
+                ) : null}
+                {actionLinks.openDistributionHandoff ? (
+                  <Link
+                    className="detail-link-button px-4 py-3 text-sm font-semibold"
+                    href={actionLinks.openDistributionHandoff}
+                  >
+                    Pronto para distribuir
                   </Link>
                 ) : null}
                 <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.continueClara}>
@@ -478,9 +487,18 @@ export function ClientCockpitFrame({
                         <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.openEditor}>
                           Gerar minuta da peça
                         </Link>
-                        <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.openEditor}>
-                          Enviar para revisão humana
-                        </Link>
+                        {actionLinks.openDistributionHandoff ? (
+                          <Link
+                            className="detail-link-button px-4 py-3 text-sm font-semibold"
+                            href={actionLinks.openDistributionHandoff}
+                          >
+                            Pronto para distribuir
+                          </Link>
+                        ) : (
+                          <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.openEditor}>
+                            Enviar para revisão humana
+                          </Link>
+                        )}
                       </div>
                     </div>
                     <div className="grid gap-3 md:grid-cols-2">

@@ -312,6 +312,9 @@ export default async function ClientDetailPage({
       <ClientCockpitFrame
         actionLinks={{
           attachDocuments: activeCase ? `/documentos/enviar-arquivos?caseId=${activeCase.id}` : undefined,
+          openDistributionHandoff: activeCase
+            ? `/editor-de-texto/distribuicao?handoff=1&client=${params.clientId}&case=${activeCase.id}&process=${activeCase.processNumber}`
+            : undefined,
           continueClara: `/clara?tab=proximos-passos&client=${params.clientId}${activeCase ? `&case=${activeCase.id}` : ""}#clara-workbench`,
           backToClients: "/pessoas/clientes",
           openEditor: activeCase
