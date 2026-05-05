@@ -1,4 +1,7 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+
+import { BANKING_NICHES, getBankingNicheLabel, type BankingNiche } from "@lexia/domain";
 
 import {
   getClaraRecord,
@@ -12,6 +15,8 @@ import {
   type ClaraTextDraftRecord
 } from "@/server/services/clara/clara-minutas-store";
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
+import { getCases } from "@/server/services/cases/get-cases";
+import { getDocuments } from "@/server/services/documents/get-documents";
 import {
   commitClaraExecutionAction,
   updateClaraReviewNoteAction,
@@ -25,6 +30,23 @@ type RevisionalDraftBlock = {
 };
 
 type TextDraftPayload = Awaited<ReturnType<typeof getClaraTextDraftArtifact>>;
+
+type CanonicalModel = {
+  niche: BankingNiche;
+  nicheLabel: string;
+  clientName: string;
+  caseLabel: string;
+  caseId: string;
+  documentId: string;
+  documentLabel: string;
+  processLabel: string;
+  bankLabel: string;
+  preview: string;
+  pdfLink: string | null;
+  pdfReady: boolean;
+  statusLabel: string;
+  stageLabel: string;
+};
 
 function buildDraftCreationTargetPath(searchParams?: {
   draft?: string;
@@ -66,6 +88,222 @@ function buildDraftCreationTargetPath(searchParams?: {
   }
 
   return `/editor-de-texto/meus-textos?${params.toString()}`;
+}
+
+function isBankingNiche(value?: string): value is BankingNiche {
+  return Boolean(value) && BANKING_NICHES.some((entry) => entry.value === value);
+}
+
+function buildDistributionTargetPath(params: {
+  niche: BankingNiche;
+  caseId: string;
+  documentId: string;
+  pieceLabel: string;
+  objective?: string;
+}) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("niche", params.niche);
+  searchParams.set("case", params.caseId);
+  searchParams.set("document", params.documentId);
+  searchParams.set("piece", params.pieceLabel);
+  searchParams.set("objetivo", params.objective ?? "Preparar acao revisional");
+  searchParams.set("draft", "1");
+  return `/editor-de-texto/distribuicao?${searchParams.toString()}`;
+}
+
+async function buildCanonicalModels(
+  textDraftRecords: ClaraTextDraftRecord[]
+): Promise<CanonicalModel[]> {
+  const [cases, documents] = await Promise.all([getCases(), getDocuments()]);
+
+  return Promise.all(
+    BANKING_NICHES.map(async (entry) => {
+      const bankingCase = cases.find((candidate) => candidate.niche === entry.value) ?? null;
+
+      if (!bankingCase) {
+        return {
+          niche: entry.value,
+          nicheLabel: entry.label,
+          clientName: "Sem caso canônico",
+          caseLabel: "Fluxo ainda nao consolidado",
+          caseId: "",
+          documentId: "",
+          documentLabel: "Documento pendente",
+          processLabel: "Processo pendente",
+          bankLabel: "Banco pendente",
+          preview: "Este nicho ainda nao tem caso canonico consolidado no tenant ativo.",
+          pdfLink: null,
+          pdfReady: false,
+          statusLabel: "Pendente",
+          stageLabel: "Aguardando base"
+        } satisfies CanonicalModel;
+      }
+
+      const caseDocuments = documents.filter((document) => document.caseId === bankingCase.id);
+      const firstDocument = caseDocuments[0] ?? null;
+      const pieceLabel = bankingCase.niche === "revisional" ? "acao-revisional" : "peticao-inicial";
+      const draftLink = firstDocument
+        ? buildDraftCreationTargetPath({
+            case: bankingCase.id,
+            document: firstDocument.id,
+            piece: pieceLabel,
+            objetivo: "Preparar acao revisional",
+            revisedInstallment: "R$ 1.598,00",
+            estimatedTotalExcess: "R$ 17.864,00",
+            chargedInstallment: "R$ 2.214,00",
+            contractedInstallment: "R$ 1.842,00"
+          })
+        : null;
+      const recordId = firstDocument ? `TXT-${bankingCase.id.toUpperCase()}-${firstDocument.id.toUpperCase()}` : null;
+      const matchingDraft = recordId
+        ? textDraftRecords.find((record) => record.id.toUpperCase() === recordId.toUpperCase())
+        : null;
+      const draftArtifact = firstDocument
+        ? await getClaraTextDraftArtifact({
+            caseId: bankingCase.id,
+            documentId: firstDocument.id,
+            piece: pieceLabel,
+            objective: "Preparar acao revisional",
+            committed: Boolean(matchingDraft)
+          })
+        : null;
+
+      return {
+        niche: entry.value,
+        nicheLabel: entry.label,
+        clientName: bankingCase.client.fullName,
+        caseLabel: bankingCase.title,
+        caseId: bankingCase.id,
+        documentId: firstDocument?.id ?? "",
+        documentLabel: firstDocument?.fileName ?? "Documento pendente",
+        processLabel: bankingCase.processNumber,
+        bankLabel: bankingCase.bankName,
+        preview: draftArtifact?.preview ?? "Modelo pronto para gerar minuta assistida.",
+        pdfLink: draftLink,
+        pdfReady: Boolean(matchingDraft),
+        statusLabel: matchingDraft ? "PDF pronto" : "PDF por gerar",
+        stageLabel: bankingCase.stage
+      } satisfies CanonicalModel;
+    })
+  );
+}
+
+function DistributionPage({
+  models,
+  selectedNiche
+}: {
+  models: CanonicalModel[];
+  selectedNiche: BankingNiche | null;
+}) {
+  const selectedModel = selectedNiche
+    ? models.find((model) => model.niche === selectedNiche) ?? models[0] ?? null
+    : models[0] ?? null;
+
+  return (
+    <div className="mj-model-page space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="mj-model-title">Distribuicao simulada</p>
+          <p className="mj-model-subtitle">
+            Um modelo canonico por nicho, com minuta em PDF e sem protocolo real.
+          </p>
+        </div>
+        <Link className="mj-model-button-gray" href="/editor-de-texto/meus-textos">
+          Voltar aos textos
+        </Link>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+        <section className="mj-model-panel overflow-hidden">
+          <div className="grid grid-cols-[12rem_1fr_10rem] border-b bg-black/10 px-3 py-3 text-[13px] font-semibold text-slate-300 mj-model-gridline">
+            <span>Nicho</span>
+            <span>Modelo canonico</span>
+            <span className="text-right">Estado</span>
+          </div>
+          {models.map((model, index) => (
+            <Link
+              key={model.niche}
+              href={`/editor-de-texto/distribuicao?niche=${encodeURIComponent(model.niche)}`}
+              className="grid grid-cols-[12rem_1fr_10rem] items-center px-3 py-3 text-[13px] transition hover:bg-white/[0.04]"
+              style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}
+            >
+              <span className="text-slate-200">{model.nicheLabel}</span>
+              <span className="min-w-0 truncate text-slate-300">
+                {model.caseLabel} | {model.clientName}
+              </span>
+              <span className="text-right text-slate-400">{model.statusLabel}</span>
+            </Link>
+          ))}
+        </section>
+
+        <section className="mj-model-panel px-4 py-4">
+          {selectedModel ? (
+            <div className="space-y-4">
+              <div>
+                <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                  {selectedModel.nicheLabel}
+                </p>
+                <p className="mt-2 text-[13px] leading-6 text-slate-300">
+                  {selectedModel.caseLabel}
+                </p>
+              </div>
+
+              <div className="space-y-2 text-[13px] text-slate-300">
+                <p>Cliente: {selectedModel.clientName}</p>
+                <p>Processo: {selectedModel.processLabel}</p>
+                <p>Documento: {selectedModel.documentLabel}</p>
+                <p>Banco: {selectedModel.bankLabel}</p>
+              </div>
+
+              <div className="rounded-[4px] border bg-white/[0.03] px-4 py-4 mj-model-gridline">
+                <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  Pre-visualizacao da minuta
+                </p>
+                <p className="mt-3 text-[13px] leading-6 text-slate-200">{selectedModel.preview}</p>
+                <div className="mt-4 grid gap-2 text-[13px] text-slate-300">
+                  <p>Status: {selectedModel.stageLabel}</p>
+                  <p>PDF: {selectedModel.pdfReady ? "pronto" : "a gerar"}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {selectedModel.pdfLink ? (
+                  <Link className="mj-model-button-green" href={selectedModel.pdfLink}>
+                    Abrir minuta assistida
+                  </Link>
+                ) : null}
+                <Link className="mj-model-button-gray" href={`/editor-de-texto/meus-textos?draft=1`}>
+                  Ir para registro da minuta
+                </Link>
+              </div>
+
+              <div className="rounded-[4px] border bg-black/10 px-4 py-4 mj-model-gridline">
+                <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  Distribuicao simulada
+                </p>
+                <p className="mt-3 text-[13px] leading-6 text-slate-300">
+                  A acao fica apenas marcada como pronta para distribuir. Nenhum protocolo real e disparado.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Link
+                    className="mj-model-button-green"
+                    href={selectedModel.pdfLink ?? "/editor-de-texto/meus-textos?draft=1"}
+                  >
+                    Marcar como pronto para distribuir
+                  </Link>
+                  <span className="rounded-[4px] border px-3 py-2 text-[13px] text-slate-400">
+                    Saida formal simulada
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="mj-model-empty">Selecione um nicho para abrir o modelo canonico.</p>
+          )}
+        </section>
+      </div>
+    </div>
+  );
 }
 
 function buildRevisionalDraftBlocks(
@@ -402,9 +640,14 @@ function MeusTextosInner({
           <p className="mj-model-title">Meus textos</p>
           <p className="mj-model-subtitle">Exibindo {textDraftRecords.length} resultado(s)</p>
         </div>
-        <span className="rounded-[2px] border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-[13px] font-semibold text-cyan-100">
-          Minuta assistida
-        </span>
+        <div className="flex flex-wrap gap-2">
+          <Link className="mj-model-button-gray" href="/editor-de-texto/distribuicao">
+            Ver distribuicao
+          </Link>
+          <span className="rounded-[2px] border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-[13px] font-semibold text-cyan-100">
+            Minuta assistida
+          </span>
+        </div>
       </div>
 
       {draftArtifact && !claraRecord && draftCreationTargetPath ? (
@@ -565,6 +808,7 @@ export default async function EditorSubpage({
     draft?: string;
     created?: string;
     record?: string;
+    niche?: string;
     case?: string;
     process?: string;
     document?: string;
@@ -603,6 +847,8 @@ export default async function EditorSubpage({
     ? getClaraRecordDisplay(claraRecord, "Rascunho preparado pela Clara", draftArtifact.preview)
     : null;
   const draftCreationTargetPath = draftArtifact && !claraRecord ? buildDraftCreationTargetPath(searchParams) : null;
+  const canonicalModels = await buildCanonicalModels(textDraftRecords);
+  const selectedNiche = isBankingNiche(searchParams?.niche) ? searchParams.niche : null;
 
   if (params.subpage === "meus-textos") {
     return (
@@ -618,6 +864,10 @@ export default async function EditorSubpage({
 
   if (params.subpage === "modelos") {
     return <ModelosPage textDraftRecords={textDraftRecords} />;
+  }
+
+  if (params.subpage === "distribuicao") {
+    return <DistributionPage models={canonicalModels} selectedNiche={selectedNiche} />;
   }
 
   notFound();
