@@ -72,7 +72,7 @@ export default async function CrmPage() {
               Abrir contratos
             </Link>
             <Link
-              className="inline-flex rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-300/30 hover:bg-emerald-300/10"
+              className="inline-flex rounded-[4px] border border-emerald-300/30 bg-emerald-300/10 px-3 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:border-emerald-300/50 hover:bg-emerald-300/20"
               href="/crm/conversas"
             >
               Abrir conversas
@@ -81,57 +81,32 @@ export default async function CrmPage() {
         </div>
       </section>
 
-      <section className="space-y-3">
-        {leads.map((lead, index) => (
-          <article
-            key={lead.id}
-            className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-3 transition-colors hover:border-emerald-300/20 hover:bg-white/[0.06]"
+      <section className="grid gap-4 lg:grid-cols-3">
+        <article className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Carteira ativa</p>
+          <p className="mt-3 text-3xl font-semibold text-white">{activeLeads.length}</p>
+          <p className="mt-2 text-xs leading-5 text-slate-400">Leads ainda em acompanhamento comercial.</p>
+        </article>
+
+        <article className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Convertidos</p>
+          <p className="mt-3 text-3xl font-semibold text-white">{convertedLeads.length}</p>
+          <p className="mt-2 text-xs leading-5 text-slate-400">Leads que ja chegaram ao contrato fechado.</p>
+        </article>
+
+        <article className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Foco atual</p>
+          <p className="mt-3 text-sm font-semibold text-white">Conversas, follow-up e historico</p>
+          <p className="mt-2 text-xs leading-5 text-slate-400">
+            A lista operacional detalhada fica em CRM &gt; Conversas para evitar duplicacao na home.
+          </p>
+          <Link
+            className="mt-4 inline-flex rounded-[4px] border border-emerald-300/30 bg-emerald-300/10 px-3 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:border-emerald-300/50 hover:bg-emerald-300/20"
+            href="/crm/conversas"
           >
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
-              <div className="flex items-start gap-3 lg:min-w-[230px] lg:flex-1">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-xs font-semibold text-slate-100">
-                  {index + 1}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-white">{lead.client.fullName}</p>
-                  <p className="mt-1 text-xs text-slate-500">{lead.client.bankName}</p>
-                </div>
-              </div>
-
-              <div className="grid flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</p>
-                  <p className="mt-2 text-xs text-slate-300">{lead.stageLabel}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Casos</p>
-                  <p className="mt-2 text-xs text-slate-300">{lead.caseCount} caso(s) vinculado(s)</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Viabilidade</p>
-                  <p className="mt-2 text-xs text-slate-300">
-                    {lead.client.legalViabilityScore}% | Risco {lead.riskLabel}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex shrink-0 flex-col items-start gap-2 lg:items-end">
-                <span className="rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-100">
-                  {lead.pipelineLabel}
-                </span>
-                <Link
-                  className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-emerald-300/30 hover:bg-emerald-300/10"
-                  href={`/pessoas/clientes/${lead.client.id}`}
-                >
-                  Abrir cliente
-                </Link>
-              </div>
-            </div>
-          </article>
-        ))}
-        <p className="px-1 text-xs leading-5 text-slate-500">
-          Conversas detalhadas, follow-up e historico operacional ficam em CRM &gt; Conversas.
-        </p>
+            Abrir conversas
+          </Link>
+        </article>
       </section>
     </WorkspacePage>
   );
