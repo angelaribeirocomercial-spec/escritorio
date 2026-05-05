@@ -503,7 +503,7 @@ export default async function ClaraPage({
         <WorkspaceStatePanel
           actionHref="/novo-atendimento-bancario"
           actionLabel="Abrir novo atendimento bancario"
-          description="Faltou contexto real suficiente para a Clara montar cliente, caso, processo e documento com seguranca. Continue pelo atendimento bancario ou valide a base do tenant/demo."
+          description="Faltou contexto real suficiente para a Clara montar cliente, caso, processo e documento com seguranca. Continue pelo atendimento bancario ou valide a base do tenant ativo."
           title="Falha ao montar o contexto da Clara"
           tone="danger"
         />
@@ -792,8 +792,8 @@ export default async function ClaraPage({
     id: `virtual-process-${workspaceCase.id}`,
     caseId: workspaceCase.id,
     clientId: workspaceClient.id,
-    label: `Processo demonstrativo · ${workspaceCase.processNumber}`,
-    processNumber: `Processo demonstrativo · ${workspaceCase.processNumber}`,
+    label: `Processo operacional · ${workspaceCase.processNumber}`,
+    processNumber: `Processo operacional · ${workspaceCase.processNumber}`,
     tribunal: workspaceCase.ownerLabel ?? "Tribunal nao vinculado",
     courtDistrict: workspaceCase.ownerLabel ?? "Distrito nao vinculado",
     courtName: workspaceCase.ownerLabel ?? "Juizo em construcao",
@@ -812,12 +812,12 @@ export default async function ClaraPage({
     label: `Pauta operacional de ${workspaceCase.title}`,
     title: `Pauta operacional de ${workspaceCase.title}`,
     description:
-      "Tarefa sintetica para demonstracao da Clara em estado operacional quando o tenant ainda nao vinculou processo.",
+      "Tarefa operacional para a Clara em estado inicial quando o tenant ainda nao vinculou processo.",
     assigneeLabel: workspaceProcess?.responsibleLawyer ?? "Clara",
     dueDate: new Date().toISOString(),
     priority: "medium",
     status: "todo",
-    notes: "Gerada para demonstracao e navegacao.",
+    notes: "Gerada para continuidade operacional.",
     checklist: [],
     suggestedByClaimType: workspaceCase.claimType,
     lexiaNextStep: clara.structuredCore.nextStep,
