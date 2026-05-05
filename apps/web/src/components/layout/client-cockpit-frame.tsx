@@ -397,7 +397,8 @@ export function ClientCockpitFrame({
                         Pacote documental do cliente
                       </p>
                       <p className="mt-2 leading-6 text-slate-200">
-                        Aqui ficam os PDFs prontos para revisao humana: peticao inicial, procuracao e contrato de honorarios.
+                        Aqui voce clica para gerar e abrir modelos PDF sob demanda: peticao inicial, procuracao e
+                        contrato de honorarios. Esses arquivos sao rascunhos internos para revisao humana.
                       </p>
                       {generatedDocumentsContent}
                     </div>

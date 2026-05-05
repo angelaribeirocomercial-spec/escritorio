@@ -1922,41 +1922,6 @@ export default async function ClaraPage({
             clientOptions={visibleClientOptions}
           />
 
-          <section className="workspace-panel p-5">
-            <div className="flex flex-col gap-2">
-              <p className="workspace-kicker">Entrada unica do caso</p>
-              <p className="text-xs leading-5 text-slate-400">
-                Inicie um novo atendimento bancario por um unico ponto de entrada. O fluxo do caso nasce aqui e depois segue para a Clara com contexto real.
-              </p>
-            </div>
-            <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-              <Link
-                className="workspace-soft-card flex h-full flex-col justify-between rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 p-4 transition hover:bg-emerald-300/15"
-                href="/novo-atendimento-bancario"
-              >
-                <div>
-                  <p className="text-base font-semibold text-white">Novo atendimento bancario</p>
-                  <p className="mt-2 text-xs leading-5 text-slate-200">
-                    Cliente, caso, nicho, documentos e objetivo inicial devem nascer do mesmo ponto de entrada.
-                  </p>
-                </div>
-                <span className="mt-4 inline-flex w-fit rounded-[4px] border border-emerald-300/30 bg-emerald-300/15 px-3 py-1 text-[11px] font-semibold text-emerald-100">
-                  Abrir entrada unica
-                </span>
-              </Link>
-
-              <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Direcao desta fase
-                </p>
-                <ul className="mt-3 space-y-2 text-xs leading-5 text-slate-400">
-                  <li>1. Abrir o caso por uma unica entrada</li>
-                  <li>2. Levar o contexto para a Clara especialista</li>
-                  <li>3. Seguir para o cockpit do cliente e do processo</li>
-                </ul>
-              </div>
-            </div>
-          </section>
         </section>
 
       </div>

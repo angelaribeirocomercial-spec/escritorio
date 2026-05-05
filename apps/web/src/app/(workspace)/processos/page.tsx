@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { WorkspaceStatePanel } from "@lexia/ui";
 
+import { getCases } from "@/server/services/cases/get-cases";
+import { getClients } from "@/server/services/clients/get-clients";
 import {
   JudicialProcessWithRelations,
   getProcesses
@@ -48,6 +50,8 @@ export default async function ProcessosPage({
   };
 }) {
   let processes: JudicialProcessWithRelations[] = [];
+  let clients: Awaited<ReturnType<typeof getClients>> = [];
+  let cases: Awaited<ReturnType<typeof getCases>> = [];
   let state: {
     title: string;
     description: string;
@@ -55,7 +59,7 @@ export default async function ProcessosPage({
   } | null = null;
 
   try {
-    processes = await getProcesses();
+    [processes, clients, cases] = await Promise.all([getProcesses(), getClients(), getCases()]);
   } catch {
     state = {
       title: "Processos indisponiveis no momento",
@@ -71,6 +75,9 @@ export default async function ProcessosPage({
   const quickSearch = searchParams?.localizar?.toLowerCase().trim() ?? "";
   const activeField =
     filterOptions.find((option) => option.value === filterType) ?? filterOptions[0];
+  const modelClient = clients[0] ?? null;
+  const modelCase = cases[0] ?? null;
+  const modelProcess = processes[0] ?? null;
 
   const filteredProcesses = processes.filter((processItem) => {
     const normalizedStatus = statusLabel(processItem.status);
@@ -102,6 +109,20 @@ export default async function ProcessosPage({
 
     return matchesStatus && matchesSelectedField && matchesQuickSearch;
   });
+
+  const hasNoRealProcesses = !state && filteredProcesses.length === 0;
+  const modelCard = modelProcess ?? modelCase
+    ? {
+        title: modelProcess?.processNumber ?? modelCase?.processNumber ?? "0000000-00.0000.0.00.0000",
+        clientName: modelProcess?.client.fullName ?? modelCase?.client.fullName ?? modelClient?.fullName ?? "Cliente modelo",
+        bankName: modelProcess?.bankingCase.bankName ?? modelCase?.bankName ?? modelClient?.bankName ?? "Banco modelo",
+        tribunal: modelProcess?.tribunal ?? "TJMG",
+        courtDistrict: modelProcess?.courtDistrict ?? "Belo Horizonte/MG",
+        courtName: modelProcess?.courtName ?? "4a Vara Civel de Belo Horizonte",
+        processId: modelProcess?.id ?? "modelo-processo",
+        statusLabel: modelProcess ? statusLabel(modelProcess.status) : "ativo"
+      }
+    : null;
 
   return (
     <div className="mj-model-page space-y-4">
@@ -218,7 +239,52 @@ export default async function ProcessosPage({
         />
       ) : null}
 
-      {!state && filteredProcesses.length === 0 ? (
+      {hasNoRealProcesses && modelCard ? (
+        <div className="mj-model-panel border border-cyan-300/20 bg-cyan-300/10 px-4 py-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="min-w-0">
+              <p className="mj-model-title">Exemplo canônico de processo</p>
+              <p className="mt-1 text-[13px] text-slate-300">
+                Use este card para visualizar o quadro de distribuição mesmo quando a lista real vier vazia.
+              </p>
+            </div>
+            <Link className="mj-model-button-gray inline-flex items-center justify-center" href="/processos/modelo">
+              Abrir modelo completo
+            </Link>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Processo</p>
+              <p className="mt-2 text-sm font-semibold text-white">{modelCard.title}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                {modelCard.clientName} | {modelCard.bankName} | {modelCard.tribunal}
+              </p>
+            </div>
+            <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Comarca</p>
+              <p className="mt-2 text-sm font-semibold text-white">{modelCard.courtDistrict}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">{modelCard.courtName}</p>
+            </div>
+            <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Distribuicao</p>
+              <p className="mt-2 text-sm font-semibold text-white">Estado local visivel</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                O quadro do detalhe mostra classe, assunto, urgencia e status de protocolo.
+              </p>
+            </div>
+            <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Status</p>
+              <p className="mt-2 text-sm font-semibold text-white">{modelCard.statusLabel}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                Clique para abrir o modelo e ver o detalhe completo do processo.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {!state && filteredProcesses.length === 0 && !modelCard ? (
         <div className="mj-model-panel px-4 py-4">
           <p className="mj-model-empty">Nenhum processo encontrado para o filtro atual.</p>
         </div>

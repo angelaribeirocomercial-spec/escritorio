@@ -1,0 +1,27 @@
+handoff:
+  date: 2026-05-05
+  from: "@analyst"
+  to:
+    - "@architect"
+    - "@po"
+    - "@dev"
+  branch: "feature/clara-hardening"
+  title: "Gap de integracao PJe/TJMG e registro oficial de distribuicao"
+  summary:
+    - "O workspace agora exibe um quadro simples de distribuicao no detalhe do processo."
+    - "O botao `Abrir PJe/TJMG` abre apenas o sistema oficial externo do TJMG."
+    - "Nao existe integracao automatica de protocolo, persistencia de comprovante ou retorno oficial do tribunal."
+  implemented_now:
+    - "Cliente, CPF/CNPJ, parte contraria, classe/assunto sugeridos, comarca, competencia, valor da causa, tipo de acao e urgencia sugerida no cockpit do processo."
+    - "Numero distribuido, data da distribuicao, comprovante e status expostos a partir do estado local disponivel."
+    - "Copy do pacote documental do cliente alinhada para modelos PDF internos gerados sob demanda."
+  gaps:
+    - "Persistir numero do processo distribuido distinto do numero local quando aplicavel."
+    - "Persistir data da distribuicao com origem oficial."
+    - "Upload/armazenamento de comprovante de protocolo."
+    - "Status de protocolo com historico de tentativas e falhas."
+    - "Contrato de integracao PJe/TJMG ou decisao explicita de manter acesso apenas manual."
+  recommended_next_steps:
+    - "Arquitetar schema para registro oficial de distribuicao e comprovantes."
+    - "Definir se a integracao sera manual assistida, deep-link oficial ou automacao homologada."
+    - "Abrir story especifica para PJe/TJMG com credenciais, limites operacionais e regras de auditoria."

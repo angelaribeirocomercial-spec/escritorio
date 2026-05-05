@@ -137,6 +137,22 @@ export async function getWorkspaceShellSearchEntries(): Promise<WorkspaceSearchE
       });
     }
 
+    entries.push({
+      id: "processo-modelo-distribuicao",
+      kind: "Processo",
+      title: "Modelo de distribuicao processual",
+      preview: "Exemplo canônico com quadro de distribuicao, acesso ao PJe/TJMG e resumo operacional.",
+      href: "/processos/modelo",
+      keywords: [
+        "processo modelo",
+        "distribuicao",
+        "pje",
+        "tjmg",
+        "quadro de distribuicao",
+        "estado local da distribuicao"
+      ]
+    });
+
     const seen = new Set<string>();
 
     return entries.filter((entry) => {

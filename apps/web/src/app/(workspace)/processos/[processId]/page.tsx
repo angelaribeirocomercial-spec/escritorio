@@ -51,6 +51,93 @@ function workflowStatusLabel(status: "created" | "reviewed" | "completed") {
   }
 }
 
+function actionTypeLabel(niche: string) {
+  switch (niche) {
+    case "fraude":
+      return "Fraude bancaria";
+    case "busca-apreensao":
+      return "Busca e apreensao";
+    default:
+      return "Revisional";
+  }
+}
+
+function suggestedJudicialClass(niche: string) {
+  switch (niche) {
+    case "busca-apreensao":
+      return "Busca e apreensao";
+    default:
+      return "Procedimento comum civel";
+  }
+}
+
+function suggestedCnjSubject(niche: string, claimType: string) {
+  const normalizedClaimType = claimType.toLowerCase();
+
+  if (niche === "fraude" || normalizedClaimType.includes("fraude")) {
+    return "Falha na prestacao do servico bancario / fraude";
+  }
+
+  if (niche === "busca-apreensao" || normalizedClaimType.includes("busca")) {
+    return "Alienacao fiduciaria / busca e apreensao";
+  }
+
+  return "Contratos bancarios / revisao de clausulas";
+}
+
+function suggestedUrgencyLabel(input: {
+  title: string;
+  claimType: string;
+  mainThesis: string;
+  suggestedStrategy: string;
+}) {
+  const evidence = [input.title, input.claimType, input.mainThesis, input.suggestedStrategy]
+    .join(" ")
+    .toLowerCase();
+
+  return /urg|tutela|negativ|busca|apreens|fraude/.test(evidence) ? "Sim" : "Nao";
+}
+
+function distributionDateLabel(
+  timeline: ReadonlyArray<{
+    occurredAt: string;
+    title: string;
+    description: string;
+  }>
+) {
+  const distributionEvent = timeline.find((item) =>
+    /distribu/i.test(`${item.title} ${item.description}`)
+  );
+
+  return distributionEvent?.occurredAt ?? "Nao registrada";
+}
+
+function distributionStatusLabel(status: string) {
+  switch (status) {
+    case "awaiting-filing":
+      return "Aguardando protocolo interno";
+    case "active":
+      return "Distribuido e ativo";
+    case "monitoring":
+      return "Em monitoramento";
+    case "stayed":
+      return "Distribuido e suspenso";
+    default:
+      return "Encerrado";
+  }
+}
+
+function getOfficialSystemLink(tribunal: string) {
+  if (tribunal === "TJMG") {
+    return {
+      href: "https://pje.tjmg.jus.br/pje/",
+      label: "Abrir PJe/TJMG"
+    };
+  }
+
+  return null;
+}
+
 export default async function ProcessDetailPage({
   params,
   searchParams
@@ -133,6 +220,9 @@ export default async function ProcessDetailPage({
       workflowStatusLabel: workflowStatusLabel(record.workflowStatus)
     };
   });
+  const officialSystemLink = getOfficialSystemLink(processItem.tribunal);
+  const distributedProcessNumber =
+    processItem.status === "awaiting-filing" ? "Nao distribuido" : processItem.processNumber;
 
   return (
     <div className="space-y-6">
@@ -142,9 +232,10 @@ export default async function ProcessDetailPage({
           backToProcesses: "/processos",
           openClaraHistory: `/clara?tab=analise&process=${params.processId}&client=${processItem.client.id}#clara-history`,
           openDataJud: `/api/processos/${encodeURIComponent(processItem.processNumber)}/datajud`,
-          openOabMonitoring: `/processos/importar-oab?process=${encodeURIComponent(processItem.id)}`
+          openOabMonitoring: `/processos/importar-oab?process=${encodeURIComponent(processItem.id)}`,
+          openOfficialSystem: officialSystemLink?.href
         }}
-        dataJudLabel="Consultar DataJud"
+        dataJudLabel="Consultar DataJud (CNJ)"
         bankingCase={{
           amountInDispute: processItem.bankingCase.amountInDispute,
           bankName: processItem.bankingCase.bankName,
@@ -193,6 +284,7 @@ export default async function ProcessDetailPage({
         linkedUpdates={linkedUpdates}
         process={{
           clientName: processItem.client.fullName,
+          clientDocumentId: processItem.client.documentId,
           courtDistrict: processItem.courtDistrict,
           courtName: processItem.courtName,
           id: processItem.id,
@@ -202,6 +294,31 @@ export default async function ProcessDetailPage({
           responsibleLawyer: processItem.responsibleLawyer,
           statusLabel: statusLabel(processItem.status),
           tribunal: processItem.tribunal
+        }}
+        distributionSummary={{
+          actionTypeLabel: actionTypeLabel(processItem.bankingCase.niche),
+          adversePartyLabel: processItem.bankingCase.bankName,
+          competenceLabel: processItem.courtName,
+          distributedProcessNumber,
+          distributionDateLabel: distributionDateLabel(processItem.latestTimeline),
+          distributionStatusLabel: distributionStatusLabel(processItem.status),
+          integrationStatusLabel: officialSystemLink
+            ? "Acesso externo oficial disponivel; protocolo automatico nao implementado."
+            : "Sem link oficial configurado neste tribunal e sem integracao automatica.",
+          officialSystemLabel: officialSystemLink?.label ?? null,
+          processClassLabel: suggestedJudicialClass(processItem.bankingCase.niche),
+          protocolReceiptLabel: "Nao registrado no workspace",
+          suggestedCnjSubjectLabel: suggestedCnjSubject(
+            processItem.bankingCase.niche,
+            processItem.bankingCase.claimType
+          ),
+          urgencyLabel: suggestedUrgencyLabel({
+            title: processItem.bankingCase.title,
+            claimType: processItem.bankingCase.claimType,
+            mainThesis: processItem.bankingCase.mainThesis,
+            suggestedStrategy: processItem.bankingCase.suggestedStrategy
+          }),
+          valueInCauseLabel: `R$ ${processItem.bankingCase.estimatedValue.toLocaleString("pt-BR")}`
         }}
         relatedClaraRecordsCount={relatedClaraRecords.length}
       />

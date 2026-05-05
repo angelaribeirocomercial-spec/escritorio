@@ -224,24 +224,24 @@ export default async function ClientDetailPage({
     ? [
         {
           kind: "peticao-inicial" as const,
-          label: "Petição inicial em PDF",
-          detail: `Minuta assistida do caso ${activeCase.title}.`,
+          label: "Gerar modelo PDF da peticao inicial",
+          detail: `Rascunho interno do caso ${activeCase.title}, gerado sob demanda para revisao humana.`,
           href: `/api/clientes/${client.id}/documentos-gerados/peticao-inicial/pdf?caseId=${activeCase.id}`,
-          statusLabel: "Abrir PDF"
+          statusLabel: "Abrir modelo"
         },
         {
           kind: "procuracao" as const,
-          label: "Procuração em PDF",
-          detail: `Documento de representação vinculado ao caso ${activeCase.processNumber}.`,
+          label: "Gerar modelo PDF da procuracao",
+          detail: `Rascunho interno de representacao vinculado ao caso ${activeCase.processNumber}.`,
           href: `/api/clientes/${client.id}/documentos-gerados/procuracao/pdf?caseId=${activeCase.id}`,
-          statusLabel: "Abrir PDF"
+          statusLabel: "Abrir modelo"
         },
         {
           kind: "contrato-honorarios" as const,
-          label: "Contrato de honorários em PDF",
-          detail: `Acordo de honorários do fluxo ${getBankingNicheLabel(activeCase.niche).toLowerCase()}.`,
+          label: "Gerar modelo PDF do contrato de honorarios",
+          detail: `Rascunho interno de honorarios do fluxo ${getBankingNicheLabel(activeCase.niche).toLowerCase()}.`,
           href: `/api/clientes/${client.id}/documentos-gerados/contrato-honorarios/pdf?caseId=${activeCase.id}`,
-          statusLabel: "Abrir PDF"
+          statusLabel: "Abrir modelo"
         }
       ]
     : [];

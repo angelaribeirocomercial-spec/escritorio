@@ -8,6 +8,7 @@ type ProcessCockpitFrameProps = {
     id: string;
     processNumber: string;
     clientName: string;
+    clientDocumentId: string;
     tribunal: string;
     courtDistrict: string;
     courtName: string;
@@ -93,8 +94,24 @@ type ProcessCockpitFrameProps = {
     openDataJud: string;
     openClaraHistory: string;
     openOabMonitoring: string;
+    openOfficialSystem?: string;
   };
   dataJudLabel: string;
+  distributionSummary: {
+    adversePartyLabel: string;
+    processClassLabel: string;
+    suggestedCnjSubjectLabel: string;
+    competenceLabel: string;
+    valueInCauseLabel: string;
+    actionTypeLabel: string;
+    urgencyLabel: string;
+    distributedProcessNumber: string;
+    distributionDateLabel: string;
+    protocolReceiptLabel: string;
+    distributionStatusLabel: string;
+    integrationStatusLabel: string;
+    officialSystemLabel: string | null;
+  };
 };
 
 type PanelKey = "case" | "workflow" | "documents" | "clara" | "timeline" | "updates";
@@ -139,7 +156,8 @@ export function ProcessCockpitFrame({
   claraHistoryItems,
   linkedUpdates,
   actionLinks,
-  dataJudLabel
+  dataJudLabel,
+  distributionSummary
 }: ProcessCockpitFrameProps) {
   const [activePanel, setActivePanel] = useState<PanelKey | null>("case");
 
@@ -238,12 +256,97 @@ export function ProcessCockpitFrame({
             <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.openDataJud}>
               {dataJudLabel}
             </Link>
+            {actionLinks.openOfficialSystem ? (
+              <a
+                className="detail-link-button px-4 py-3 text-sm font-semibold"
+                href={actionLinks.openOfficialSystem}
+                rel="noreferrer"
+                target="_blank"
+              >
+                {distributionSummary.officialSystemLabel ?? "Abrir portal oficial"}
+              </a>
+            ) : null}
             <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.openOabMonitoring}>
               Monitorar por OAB
             </Link>
             <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.backToProcesses}>
               Voltar para processos
             </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="detail-panel p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="workspace-kicker">Distribuicao</p>
+            <h3 className="mt-2 text-2xl font-semibold text-white">Dados processuais para protocolo</h3>
+          </div>
+          <div className="max-w-xl text-sm leading-7 text-slate-300">
+            Quadro operacional montado com base local do processo. As sugestoes abaixo nao substituem revisao juridica
+            nem representam integracao automatica com tribunal.
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            Cliente: <span className="font-semibold text-white">{process.clientName}</span>
+          </div>
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            CPF/CNPJ: <span className="font-semibold text-white">{process.clientDocumentId}</span>
+          </div>
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            Parte contraria: <span className="font-semibold text-white">{distributionSummary.adversePartyLabel}</span>
+          </div>
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            Classe judicial sugerida:{" "}
+            <span className="font-semibold text-white">{distributionSummary.processClassLabel}</span>
+          </div>
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            Assunto CNJ sugerido:{" "}
+            <span className="font-semibold text-white">{distributionSummary.suggestedCnjSubjectLabel}</span>
+          </div>
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            Comarca: <span className="font-semibold text-white">{process.courtDistrict}</span>
+          </div>
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            Competencia: <span className="font-semibold text-white">{distributionSummary.competenceLabel}</span>
+          </div>
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            Valor da causa: <span className="font-semibold text-white">{distributionSummary.valueInCauseLabel}</span>
+          </div>
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            Tipo de acao: <span className="font-semibold text-white">{distributionSummary.actionTypeLabel}</span>
+          </div>
+          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+            Urgencia sugerida: <span className="font-semibold text-white">{distributionSummary.urgencyLabel}</span>
+          </div>
+        </div>
+
+        <div className="mt-5 detail-subpanel p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+              Registro oficial de distribuicao
+            </p>
+            <span className="text-xs text-slate-400">{distributionSummary.integrationStatusLabel}</span>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Numero distribuido:{" "}
+              <span className="font-semibold text-white">{distributionSummary.distributedProcessNumber}</span>
+            </div>
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Data da distribuicao:{" "}
+              <span className="font-semibold text-white">{distributionSummary.distributionDateLabel}</span>
+            </div>
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Comprovante de protocolo:{" "}
+              <span className="font-semibold text-white">{distributionSummary.protocolReceiptLabel}</span>
+            </div>
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Status da distribuicao:{" "}
+              <span className="font-semibold text-white">{distributionSummary.distributionStatusLabel}</span>
+            </div>
           </div>
         </div>
       </section>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { WorkspaceSearchEntry } from "@/components/layout/workspace-search-types";
@@ -121,6 +122,7 @@ function SearchResult({
 }
 
 export function WorkspaceGlobalSearch({ entries }: WorkspaceGlobalSearchProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -193,6 +195,18 @@ export function WorkspaceGlobalSearch({ entries }: WorkspaceGlobalSearchProps) {
       .map(({ entry }) => entry);
   }, [entries, query, suggestions]);
 
+  function openBestResult() {
+    const target = filteredEntries[0];
+
+    if (!target) {
+      return;
+    }
+
+    setIsOpen(false);
+    setQuery("");
+    router.push(target.href);
+  }
+
   return (
     <div className="relative w-full sm:w-[23rem]" ref={containerRef}>
       {isOpen ? (
@@ -203,6 +217,12 @@ export function WorkspaceGlobalSearch({ entries }: WorkspaceGlobalSearchProps) {
               ref={inputRef}
               className="w-full bg-transparent text-[13px] font-medium text-white outline-none placeholder:text-cyan-100/45"
               onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  openBestResult();
+                }
+              }}
               placeholder="Buscar cliente, processo, documento ou tese"
               type="search"
               value={query}

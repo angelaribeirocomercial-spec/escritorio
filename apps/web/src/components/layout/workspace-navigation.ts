@@ -87,15 +87,11 @@ export const navSections: NavSection[] = [
         ]
       },
       {
-        href: "/editor-de-texto/meus-textos",
-        label: "Meus textos",
-        shortLabel: "Textos",
+        href: "/editor-de-texto/distribuicao",
+        label: "Distribuicao simulada",
+        shortLabel: "Distribuicao",
         icon: "editor",
-        description: "Minutas, PDFs e saida assistida da Clara.",
-        children: [
-          { href: "/editor-de-texto/meus-textos", label: "Meus textos" },
-          { href: "/editor-de-texto/distribuicao", label: "Distribuicao simulada" }
-        ]
+        description: "Minutas e saida assistida da Clara."
       },
       {
         href: "/andamentos",
