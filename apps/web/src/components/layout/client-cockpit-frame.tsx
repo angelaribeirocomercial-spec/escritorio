@@ -240,14 +240,6 @@ export function ClientCockpitFrame({
                 <DeleteClientButton clientId={client.id} clientName={client.fullName} caseCount={clientCaseCount} />
               </div>
             </div>
-            <div className="detail-soft-row border border-cyan-300/15 bg-cyan-300/5 px-4 py-4 text-sm text-slate-300">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Pacote documental do cliente</p>
-              <p className="mt-2 leading-6 text-slate-200">
-                PDFs prontos para revisao humana: peticao inicial, procuracao e contrato de honorarios.
-              </p>
-              {generatedDocumentsContent}
-            </div>
-
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {cards.map((card) => {
                 const active = activePanel === card.key;

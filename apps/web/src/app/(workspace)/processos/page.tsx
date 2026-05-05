@@ -114,6 +114,9 @@ export default async function ProcessosPage({
           <Link className="mj-model-button-green inline-flex items-center justify-center" href="/novo-atendimento-bancario">
             Iniciar caso
           </Link>
+          <Link className="mj-model-button-gray inline-flex items-center justify-center" href="/processos/importar-oab">
+            Monitoramento OAB
+          </Link>
         </div>
       </div>
 
