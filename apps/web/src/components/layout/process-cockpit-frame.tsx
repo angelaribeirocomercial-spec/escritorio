@@ -171,6 +171,23 @@ export function ProcessCockpitFrame({
   const documentsPending = bankingCase.missingDocuments.length;
   const claraStatus =
     relatedClaraRecordsCount > 0 ? "Pronta" : bankingCase.status === "active" ? "Pendente" : "Bloqueada";
+  const canonicalFlowCards = [
+    {
+      id: "case",
+      title: "Caso",
+      detail: `${bankingCase.title} | ${bankingCase.stage}`
+    },
+    {
+      id: "ready-for-filing",
+      title: "Pronto para distribuir",
+      detail: "O caso fechou a triagem interna e segue para a etapa de processo sem protocolo automatizado."
+    },
+    {
+      id: "process",
+      title: "Processo",
+      detail: `${process.processNumber} | ${process.proceduralPhase}`
+    }
+  ] as const;
 
   const cards = useMemo(
     () => [
@@ -267,7 +284,7 @@ export function ProcessCockpitFrame({
               </a>
             ) : null}
             <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.openOabMonitoring}>
-              Monitorar por OAB
+              Boundary OAB
             </Link>
             <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.backToProcesses}>
               Voltar para processos
@@ -276,15 +293,43 @@ export function ProcessCockpitFrame({
         </div>
       </section>
 
+      <section className="workspace-panel space-y-4 p-6">
+        <div className="max-w-3xl space-y-2">
+          <p className="workspace-kicker">Fluxo canonico</p>
+          <h3 className="text-2xl font-semibold text-white">
+            Caso {"->"} pronto para distribuir {"->"} processo
+          </h3>
+          <p className="text-sm leading-7 text-slate-300">
+            O cockpit deixa claro quando o caso ja esta pronto para seguir para o processo. Esta superficie organiza a
+            prontidao e a leitura operacional; ela nao executa protocolo nem simula automacao externa.
+          </p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {canonicalFlowCards.map((card, index) => (
+            <div key={card.id} className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-semibold text-white">
+                  {index + 1}. {card.title}
+                </p>
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-slate-300">
+                  Etapa
+                </span>
+              </div>
+              <p className="mt-3 leading-6 text-slate-300">{card.detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="detail-panel p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="workspace-kicker">Distribuicao</p>
-            <h3 className="mt-2 text-2xl font-semibold text-white">Dados processuais para protocolo</h3>
+            <p className="workspace-kicker">Pronto para distribuir</p>
+            <h3 className="mt-2 text-2xl font-semibold text-white">Dados do caso antes do processo</h3>
           </div>
           <div className="max-w-xl text-sm leading-7 text-slate-300">
-            Quadro operacional montado com base local do processo. As sugestoes abaixo nao substituem revisao juridica
-            nem representam integracao automatica com tribunal.
+            Quadro operacional montado com base local do caso. As sugestoes abaixo nao substituem revisao juridica nem
+            representam integracao automatica com tribunal.
           </div>
         </div>
 
@@ -326,25 +371,25 @@ export function ProcessCockpitFrame({
         <div className="mt-5 detail-subpanel p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-              Registro oficial de distribuicao
+              Prontidao do caso para distribuir
             </p>
             <span className="text-xs text-slate-400">{distributionSummary.integrationStatusLabel}</span>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Numero distribuido:{" "}
+              Processo de referencia:{" "}
               <span className="font-semibold text-white">{distributionSummary.distributedProcessNumber}</span>
             </div>
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Data da distribuicao:{" "}
+              Data da prontidao:{" "}
               <span className="font-semibold text-white">{distributionSummary.distributionDateLabel}</span>
             </div>
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Comprovante de protocolo:{" "}
+              Comprovante interno:{" "}
               <span className="font-semibold text-white">{distributionSummary.protocolReceiptLabel}</span>
             </div>
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Status da distribuicao:{" "}
+              Status do fluxo:{" "}
               <span className="font-semibold text-white">{distributionSummary.distributionStatusLabel}</span>
             </div>
           </div>

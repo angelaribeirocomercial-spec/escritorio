@@ -32,7 +32,7 @@ function statusLabel(status: string) {
 function monitoringModeLabel(mode: string) {
   switch (mode) {
     case "oab":
-      return "Monitoramento por OAB";
+      return "Boundary OAB";
     case "court":
       return "Monitoramento por tribunal";
     default:

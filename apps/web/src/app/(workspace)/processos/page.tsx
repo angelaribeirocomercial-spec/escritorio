@@ -111,18 +111,45 @@ export default async function ProcessosPage({
   });
 
   const hasNoRealProcesses = !state && filteredProcesses.length === 0;
-  const modelCard = modelProcess ?? modelCase
+  const modelCard = modelClient || modelCase || modelProcess
     ? {
-        title: modelProcess?.processNumber ?? modelCase?.processNumber ?? "0000000-00.0000.0.00.0000",
-        clientName: modelProcess?.client.fullName ?? modelCase?.client.fullName ?? modelClient?.fullName ?? "Cliente modelo",
+        title:
+          modelProcess?.processNumber ??
+          modelCase?.processNumber ??
+          "0000000-00.2026.8.13.0000",
+        clientName:
+          modelProcess?.client.fullName ?? modelCase?.client.fullName ?? modelClient?.fullName ?? "Cliente modelo",
+        clientDocumentId:
+          modelProcess?.client.documentId ?? modelCase?.client.documentId ?? modelClient?.documentId ?? "000.000.000-00",
         bankName: modelProcess?.bankingCase.bankName ?? modelCase?.bankName ?? modelClient?.bankName ?? "Banco modelo",
         tribunal: modelProcess?.tribunal ?? "TJMG",
         courtDistrict: modelProcess?.courtDistrict ?? "Belo Horizonte/MG",
         courtName: modelProcess?.courtName ?? "4a Vara Civel de Belo Horizonte",
-        processId: modelProcess?.id ?? "modelo-processo",
-        statusLabel: modelProcess ? statusLabel(modelProcess.status) : "ativo"
+        processId: modelProcess?.id ?? modelCase?.id ?? modelClient?.id ?? "modelo-processo",
+        statusLabel: modelProcess
+          ? statusLabel(modelProcess.status)
+          : modelCase
+            ? "ativo"
+            : "pronto para distribuir"
       }
     : null;
+  const flowCards = [
+    {
+      id: "case",
+      title: "Caso",
+      detail: "A entrada do atendimento concentra cliente, docs e tese antes da prontidao para distribuir."
+    },
+    {
+      id: "ready",
+      title: "Pronto para distribuir",
+      detail: "O caso fecha a triagem e fica preparado para virar processo sem automacao externa."
+    },
+    {
+      id: "process",
+      title: "Processo",
+      detail: "A listagem e o detalhe mostram o processo resultante e seus filtros operacionais."
+    }
+  ] as const;
 
   return (
     <div className="mj-model-page space-y-4">
@@ -136,7 +163,7 @@ export default async function ProcessosPage({
             Iniciar caso
           </Link>
           <Link className="mj-model-button-gray inline-flex items-center justify-center" href="/processos/importar-oab">
-            Monitoramento OAB
+            Boundary OAB
           </Link>
         </div>
       </div>
@@ -231,6 +258,27 @@ export default async function ProcessosPage({
         </form>
       </div>
 
+      <div className="mj-model-panel border border-cyan-300/20 bg-cyan-300/10 px-4 py-4">
+        <div className="max-w-3xl">
+          <p className="mj-model-title">Fluxo canonico</p>
+          <p className="mt-1 text-[13px] leading-6 text-slate-200">
+            Caso {"->"} pronto para distribuir {"->"} processo. A pagina deixa visivel quando o caso ja pode seguir para o
+            processo e deixa claro que a distribuicao aqui e apenas uma prontidao operacional.
+          </p>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {flowCards.map((card, index) => (
+            <div key={card.id} className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                {index + 1}. {card.title}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-white">{card.title}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">{card.detail}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {state ? (
         <WorkspaceStatePanel
           description={state.description}
@@ -243,23 +291,26 @@ export default async function ProcessosPage({
         <div className="mj-model-panel border border-cyan-300/20 bg-cyan-300/10 px-4 py-4">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="min-w-0">
-              <p className="mj-model-title">Exemplo canônico de processo</p>
+              <p className="mj-model-title">Exemplo canonico de caso pronto para distribuir</p>
               <p className="mt-1 text-[13px] text-slate-300">
-                Use este card para visualizar o quadro de distribuição mesmo quando a lista real vier vazia.
+                Use este card para visualizar a transicao do caso para o processo, partindo de um cliente real do tenant.
               </p>
             </div>
             <Link className="mj-model-button-gray inline-flex items-center justify-center" href="/processos/modelo">
-              Abrir modelo completo
+              Ver fluxo canonico
             </Link>
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Processo</p>
-              <p className="mt-2 text-sm font-semibold text-white">{modelCard.title}</p>
-              <p className="mt-2 text-xs leading-5 text-slate-400">
-                {modelCard.clientName} | {modelCard.bankName} | {modelCard.tribunal}
-              </p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Cliente</p>
+              <p className="mt-2 text-sm font-semibold text-white">{modelCard.clientName}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">{modelCard.clientDocumentId}</p>
+            </div>
+            <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Banco / Tribunal</p>
+              <p className="mt-2 text-sm font-semibold text-white">{modelCard.bankName}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">{modelCard.tribunal}</p>
             </div>
             <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Comarca</p>
@@ -267,15 +318,16 @@ export default async function ProcessosPage({
               <p className="mt-2 text-xs leading-5 text-slate-400">{modelCard.courtName}</p>
             </div>
             <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Distribuicao</p>
-              <p className="mt-2 text-sm font-semibold text-white">Estado local visivel</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Pronto para distribuir</p>
+              <p className="mt-2 text-sm font-semibold text-white">Caso fechado para o processo</p>
               <p className="mt-2 text-xs leading-5 text-slate-400">
-                O quadro do detalhe mostra classe, assunto, urgencia e status de protocolo.
+                O quadro do detalhe mostra classe, assunto, urgencia e prontidao interna antes do processo.
               </p>
             </div>
             <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Status</p>
-              <p className="mt-2 text-sm font-semibold text-white">{modelCard.statusLabel}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Processo</p>
+              <p className="mt-2 text-sm font-semibold text-white">{modelCard.title}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">{modelCard.statusLabel}</p>
               <p className="mt-2 text-xs leading-5 text-slate-400">
                 Clique para abrir o modelo e ver o detalhe completo do processo.
               </p>

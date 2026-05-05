@@ -22,8 +22,8 @@ export default async function ProcessosImportarOabPage({
     processes = await getProcesses();
   } catch {
     state = {
-      title: "Monitoramento por OAB indisponivel",
-      description: "Nao foi possivel carregar os processos reais do tenant ativo para habilitar OAB.",
+      title: "Boundary OAB indisponivel",
+      description: "Nao foi possivel carregar os processos reais do tenant ativo para abrir o boundary OAB.",
       tone: "danger"
     };
   }
@@ -40,9 +40,9 @@ export default async function ProcessosImportarOabPage({
     <div className="mj-model-page space-y-4">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <p className="mj-model-title">Monitoramento por OAB</p>
+          <p className="mj-model-title">Boundary OAB</p>
           <p className="mj-model-subtitle">
-            {oabProcesses.length} processo(s) monitorado(s) por OAB | {availableProcesses.length} disponivel(eis)
+            {oabProcesses.length} processo(s) no boundary OAB | {availableProcesses.length} disponivel(eis)
           </p>
         </div>
         <Link className="mj-model-button-gray inline-flex items-center justify-center" href="/processos">
@@ -51,17 +51,17 @@ export default async function ProcessosImportarOabPage({
       </div>
 
       <div className="mj-model-soft-panel px-4 py-4 text-[13px] leading-6 text-slate-400">
-        Esta rota legada nao importa dados externos. Ela apenas ativa o monitoramento por OAB em um processo real do
-        tenant, registra a trilha processual e mantem o processo disponivel para acompanhamento em andamentos e
-        publicacoes.
+        Esta rota legada nao importa dados externos nem protocola processos. Ela apenas marca um processo real do
+        tenant para o boundary OAB, registra a trilha processual e mantem o processo disponivel para acompanhamento
+        interno.
       </div>
 
       {searchParams?.enabled === "1" && successProcessLabel ? (
         <WorkspaceStatePanel
           actionHref="/processos"
           actionLabel="Voltar para processos"
-          description={`Monitoramento por OAB ativado para o processo ${successProcessLabel}. A trilha processual foi registrada.`}
-          title="Monitoramento por OAB ativado"
+          description={`Boundary OAB ativado para o processo ${successProcessLabel}. A trilha processual foi registrada.`}
+          title="Boundary OAB ativado"
           tone="neutral"
         />
       ) : null}
@@ -74,7 +74,7 @@ export default async function ProcessosImportarOabPage({
           </p>
           <p className="mt-2 text-slate-400">
             {focusProcess.tribunal} | {focusProcess.responsibleLawyer} |{" "}
-            {focusProcess.monitoringMode === "oab" ? "OAB ativa" : "Aguardando ativacao"}
+            {focusProcess.monitoringMode === "oab" ? "Boundary OAB ativa" : "Aguardando ativacao"}
           </p>
         </section>
       ) : null}
@@ -93,7 +93,7 @@ export default async function ProcessosImportarOabPage({
         <div className="grid grid-cols-[1fr_1fr_11rem_10rem] border-b bg-black/10 px-3 py-3 text-[13px] font-semibold text-slate-300 mj-model-gridline">
           <span>Processo</span>
           <span>Cliente / Caso</span>
-          <span>Monitoramento atual</span>
+          <span>Estado boundary</span>
           <span className="text-right">Acao</span>
         </div>
 
@@ -117,7 +117,7 @@ export default async function ProcessosImportarOabPage({
                   <p className="mt-1 truncate text-[12px] text-slate-400">{processItem.bankingCase.title}</p>
                 </div>
                 <span className="text-slate-300">
-                  {alreadyOab ? "OAB ativa" : processItem.monitoringMode === "court" ? "Tribunal" : "Manual"}
+                  {alreadyOab ? "Boundary OAB ativa" : processItem.monitoringMode === "court" ? "Tribunal" : "Manual"}
                 </span>
                 <div className="flex justify-end">
                   {alreadyOab ? (
@@ -128,7 +128,7 @@ export default async function ProcessosImportarOabPage({
                     <form action={enableProcessOabAction as any}>
                       <input type="hidden" name="processId" value={processItem.id} />
                       <button className="mj-model-button-green" type="submit">
-                        Ativar OAB
+                        Ativar boundary
                       </button>
                     </form>
                   )}
@@ -143,7 +143,7 @@ export default async function ProcessosImportarOabPage({
 
       <section className="grid gap-4 xl:grid-cols-2">
         <div className="mj-model-panel px-4 py-4">
-          <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-slate-400">Monitorados por OAB</p>
+          <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-slate-400">Processos no boundary OAB</p>
           <div className="mt-3 space-y-2 text-[13px] text-slate-300">
             {oabProcesses.length ? (
               oabProcesses.map((processItem) => (
@@ -153,7 +153,7 @@ export default async function ProcessosImportarOabPage({
                 </div>
               ))
             ) : (
-              <p className="text-slate-400">Nenhum processo com monitoramento por OAB ainda.</p>
+              <p className="text-slate-400">Nenhum processo no boundary OAB ainda.</p>
             )}
           </div>
         </div>
@@ -161,8 +161,8 @@ export default async function ProcessosImportarOabPage({
         <div className="mj-model-panel px-4 py-4">
           <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-slate-400">Proxima leitura</p>
           <p className="mt-3 text-[13px] leading-6 text-slate-300">
-            A ativacao por OAB atualiza o monitoramento do processo e passa a alimentar a visao de andamentos e
-            publicacoes vinculadas.
+            A ativacao por OAB apenas ajusta o acompanhamento interno do processo. Ela nao importa dados externos,
+            nao protocola e nao cria comprovante oficial.
           </p>
         </div>
       </section>

@@ -24,7 +24,7 @@ function statusLabel(status: string) {
 function monitoringModeLabel(mode: string) {
   switch (mode) {
     case "oab":
-      return "Monitoramento por OAB";
+      return "Boundary OAB";
     case "court":
       return "Monitoramento por tribunal";
     default:
@@ -76,18 +76,18 @@ export default async function ProcessModelPage() {
   const fallbackCase = {
     id: "case-modelo",
     clientId: modelClient?.id ?? "cl-modelo",
-    title: "Modelo revisional com quadro de distribuicao",
+    title: "Caso revisional pronto para distribuir",
     bankName: modelClient?.bankName ?? "Banco modelo",
     processNumber: "7012844-11.2026.8.13.0024",
     contractNumber: "MODELO-001",
     claimType: "acao_revisional",
-    stage: "Pronto para distribuicao",
+    stage: "Pronto para distribuir",
     status: "active" as const,
     amountInDispute: 248000,
     estimatedValue: 118000,
     mainThesis: "Capitalizacao mensal indevida",
     legalRisk: "low" as const,
-    suggestedStrategy: "Consolidar a inicial com memoria de calculo e conferir os anexos antes do protocolo.",
+    suggestedStrategy: "Consolidar a inicial com memoria de calculo e conferir os anexos antes de virar processo.",
     ownerLabel: "Dra. Julia Ramalho",
     niche: "revisional" as const,
     linkedDocuments: ["CCB", "Extratos", "Comprovantes bancarios"],
@@ -119,8 +119,8 @@ export default async function ProcessModelPage() {
         tribunal: "TJMG",
         courtDistrict: "Belo Horizonte/MG",
         courtName: "4a Vara Civel de Belo Horizonte",
-        proceduralPhase: "Distribuicao assistida",
-        statusLabel: "Aguardando protocolo",
+        proceduralPhase: "Pronto para distribuir",
+        statusLabel: "Pronto para distribuir",
         monitoringModeLabel: "Monitoramento manual",
         responsibleLawyer: bankingCase.ownerLabel
       };
@@ -130,8 +130,8 @@ export default async function ProcessModelPage() {
       {
         id: "modelo-t1",
         occurredAt: "2026-05-05",
-        title: "Distribuicao simulada",
-        description: "O quadro apresenta os dados locais que o escritorio acompanharia antes do protocolo oficial.",
+        title: "Prontidao simulada",
+        description: "O quadro apresenta os dados locais que o escritorio acompanharia antes do processo nascer.",
         source: "MODELO",
         criticality: "medium" as const
       },
@@ -148,16 +148,23 @@ export default async function ProcessModelPage() {
   return (
     <div className="space-y-6">
       <WorkspacePage
-        description="Exemplo canônico de processo para visualizar o quadro de distribuicao, mesmo quando a lista real estiver vazia."
+        description="Fluxo canonico: caso -> pronto para distribuir -> processo, com distribuicao apenas simulada e sem protocolo real."
         eyebrow="Processos"
         metrics={[
-          { label: "Modelo", value: "Canônico" },
-          { label: "Distribuicao", value: "Simulada" },
-          { label: "PJe/TJMG", value: "Atalho externo" },
+          { label: "Caso", value: "Pronto para distribuir" },
+          { label: "Processo", value: "Modelo canonico" },
+          { label: "Prontidao", value: "Simulada" },
           { label: "Protocolo", value: "Nao automatizado" }
         ]}
         title="Modelo de processo"
       >
+        <div className="mj-model-panel border border-cyan-300/20 bg-cyan-300/10 px-4 py-4">
+          <p className="mj-model-title">Fluxo canonico</p>
+          <p className="mt-1 text-[13px] leading-6 text-slate-300">
+            Caso {"->"} pronto para distribuir {"->"} processo. Esta tela mostra a prontidao do caso e o processo resultante,
+            mas nao executa protocolo real.
+          </p>
+        </div>
         <ProcessCockpitFrame
           actionLinks={{
             continueClara: `/clara?tab=analise&process=${process.id}&client=${modelClient?.id ?? process.id}#clara-workbench`,
@@ -203,7 +210,7 @@ export default async function ProcessModelPage() {
             competenceLabel: process.courtName,
             distributedProcessNumber: process.processNumber,
             distributionDateLabel: latestTimeline[0]?.occurredAt ?? "2026-05-05",
-            distributionStatusLabel: "Aguardando protocolo interno",
+            distributionStatusLabel: "Caso pronto para distribuir",
             integrationStatusLabel: "Exemplo canônico sem protocolo automatizado.",
             officialSystemLabel: "Abrir PJe/TJMG",
             processClassLabel: suggestedJudicialClass(bankingCase.niche),

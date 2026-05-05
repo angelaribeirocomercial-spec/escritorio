@@ -924,8 +924,8 @@ assert.match(
 );
 assert.match(
   processOabImportSource,
-  /Esta rota legada nao importa dados externos\./,
-  "Expected processos/importar-oab to explain that the route enables monitoring instead of importing external data."
+  /Esta rota legada nao importa dados externos nem protocola processos\./,
+  "Expected processos/importar-oab to explain that the route is a boundary and does not import external data."
 );
 assert.match(
   processOabImportSource,
