@@ -109,7 +109,8 @@ export function ClientCockpitFrame({
   normalizedClientIaContext,
   normalizedTimeline,
   clientCaseCount,
-  actionLinks
+  actionLinks,
+  children
 }: ClientCockpitFrameProps) {
   const [activePanel, setActivePanel] = useState<PanelKey | null>(activeCase ? "case" : null);
 
@@ -130,6 +131,7 @@ export function ClientCockpitFrame({
   const piecesStatus =
     workflow?.readiness.some((item) => item.state === "blocked") ? "Bloqueada" : "Pronta";
   const lastTimelineEvent = normalizedTimeline[normalizedTimeline.length - 1] ?? "Sem eventos registrados";
+  const hasGeneratedDocuments = generatedDocuments.length > 0;
 
   const cards = useMemo(
     () => [
@@ -193,6 +195,20 @@ export function ClientCockpitFrame({
     ]
   );
 
+  const generatedDocumentsContent = hasGeneratedDocuments ? (
+    <div className="mt-4 flex flex-wrap gap-3">
+      {generatedDocuments.map((document) => (
+        <Link key={document.kind} className="detail-link-button px-4 py-3 text-sm font-semibold" href={document.href}>
+          {document.label}
+        </Link>
+      ))}
+    </div>
+  ) : (
+    <div className="mt-4 detail-soft-row px-4 py-4 text-sm text-slate-300">
+      Nenhum PDF do pacote documental foi gerado para este cliente ainda.
+    </div>
+  );
+
   return (
     <section className="space-y-6">
       <section className="workspace-panel space-y-5 p-6">
@@ -227,18 +243,14 @@ export function ClientCockpitFrame({
               </div>
             </div>
 
+            {children}
+
             <div className="detail-soft-row border border-cyan-300/15 bg-cyan-300/5 px-4 py-4 text-sm text-slate-300">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Pacote documental do cliente</p>
               <p className="mt-2 leading-6 text-slate-200">
                 PDFs prontos para revisao humana: peticao inicial, procuracao e contrato de honorarios.
               </p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                {generatedDocuments.map((document) => (
-                  <Link key={document.kind} className="detail-link-button px-4 py-3 text-sm font-semibold" href={document.href}>
-                    {document.label}
-                  </Link>
-                ))}
-              </div>
+              {generatedDocumentsContent}
             </div>
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -400,13 +412,7 @@ export function ClientCockpitFrame({
                       <p className="mt-2 leading-6 text-slate-200">
                         Aqui ficam os PDFs prontos para revisao humana: peticao inicial, procuracao e contrato de honorarios.
                       </p>
-                      <div className="mt-4 flex flex-wrap gap-3">
-                        {generatedDocuments.map((document) => (
-                          <Link key={document.kind} className="detail-link-button px-4 py-3 text-sm font-semibold" href={document.href}>
-                            {document.label}
-                          </Link>
-                        ))}
-                      </div>
+                      {generatedDocumentsContent}
                     </div>
                     <div className="grid gap-3 md:grid-cols-2">
                       <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">

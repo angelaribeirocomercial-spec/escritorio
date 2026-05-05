@@ -13,9 +13,15 @@ export async function enableProcessOabAction(formData: FormData) {
 
   try {
     const result = await enableOabMonitoring({ processId });
-    redirect(`/processos/importar-oab?process=${encodeURIComponent(result.processNumber)}&enabled=1`);
+    redirect(
+      `/processos/importar-oab?processId=${encodeURIComponent(processId)}&enabled=1&process=${encodeURIComponent(
+        result.processNumber
+      )}`
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Falha ao ativar monitoramento por OAB.";
-    redirect(`/processos/importar-oab?error=${encodeURIComponent(message)}`);
+    redirect(
+      `/processos/importar-oab?processId=${encodeURIComponent(processId)}&error=${encodeURIComponent(message)}`
+    );
   }
 }

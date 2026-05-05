@@ -1,0 +1,30 @@
+from_agent: dev
+to_agent: devops
+last_command: "*develop 18.14"
+story_ids:
+  - "18.14"
+  - "12.31"
+consumed: false
+branch: "feature/clara-hardening"
+summary: "Cliente cockpit PDF package visibility fixed and OAB monitoring flow aligned with current runtime semantics."
+quality_gates:
+  lint: pass
+  typecheck: pass
+  test: pass
+changes:
+  - "Render children in ClientCockpitFrame so page content is no longer dropped."
+  - "Show explicit empty state when generated PDF package is unavailable."
+  - "Preserve processId across OAB monitoring redirect and keep visual focus after action."
+  - "Align guard tests and architecture/docs with OAB monitoring route semantics."
+files:
+  - "apps/web/src/components/layout/client-cockpit-frame.tsx"
+  - "apps/web/src/app/(workspace)/processos/importar-oab/actions.ts"
+  - "apps/web/src/app/(workspace)/processos/importar-oab/page.tsx"
+  - "apps/web/tests/run-tests.js"
+  - "docs/architecture/system-architecture.md"
+  - "docs/stories/12.31.importacao-processos-estado-controlado.md"
+  - "docs/stories/18.14.pacote-documental-do-cliente-com-procuracao-e-honorarios.md"
+next_recommended_command: "*push"
+notes:
+  - "No external OAB importer was implemented; route semantics remain local monitoring enablement."
+  - "Untracked `.codex/memories/` and `apps/web/tsconfig.tsbuildinfo` were intentionally excluded from publication."

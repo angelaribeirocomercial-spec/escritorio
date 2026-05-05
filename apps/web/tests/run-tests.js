@@ -898,26 +898,55 @@ assert.equal(
   "Expected loading state for the process trash route."
 );
 
-[
-  "importar-lote",
-  "importar-oab"
-].forEach((route) => {
-  const source = fs.readFileSync(
-    path.join(__dirname, "..", `src/app/(workspace)/processos/${route}/page.tsx`),
-    "utf8"
-  );
+const processBatchImportSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/importar-lote/page.tsx"),
+  "utf8"
+);
+assert.match(
+  processBatchImportSource,
+  /WorkspaceStatePanel/,
+  "Expected processos/importar-lote to render a controlled unavailable state."
+);
+assert.doesNotMatch(
+  processBatchImportSource,
+  /Area preparada/,
+  "Expected processos/importar-lote to stop rendering a placeholder prepared area."
+);
 
-  assert.match(
-    source,
-    /WorkspaceStatePanel/,
-    `Expected processos/${route} to render a controlled unavailable state.`
-  );
-  assert.doesNotMatch(
-    source,
-    /Area preparada/,
-    `Expected processos/${route} to stop rendering a placeholder prepared area.`
-  );
-});
+const processOabImportSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/importar-oab/page.tsx"),
+  "utf8"
+);
+assert.match(
+  processOabImportSource,
+  /enableProcessOabAction/,
+  "Expected processos/importar-oab to submit the OAB monitoring action."
+);
+assert.match(
+  processOabImportSource,
+  /Esta rota legada nao importa dados externos\./,
+  "Expected processos/importar-oab to explain that the route enables monitoring instead of importing external data."
+);
+assert.match(
+  processOabImportSource,
+  /processId\?\: string;/,
+  "Expected processos/importar-oab to preserve focus through the processId search param."
+);
+assert.doesNotMatch(
+  processOabImportSource,
+  /Area preparada|controlled unavailable state/,
+  "Expected processos/importar-oab to stop behaving like an unavailable placeholder route."
+);
+
+const processOabActionSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/importar-oab/actions.ts"),
+  "utf8"
+);
+assert.match(
+  processOabActionSource,
+  /processId=/,
+  "Expected processos/importar-oab action redirects to preserve the focused processId."
+);
 
 assert.equal(
   fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/processos/loading.tsx")),

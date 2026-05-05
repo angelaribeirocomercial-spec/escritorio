@@ -11,6 +11,7 @@ export default async function ProcessosImportarOabPage({
   searchParams?: {
     enabled?: string;
     error?: string;
+    processId?: string;
     process?: string;
   };
 }) {
@@ -29,10 +30,11 @@ export default async function ProcessosImportarOabPage({
 
   const oabProcesses = processes.filter((processItem) => processItem.monitoringMode === "oab");
   const availableProcesses = processes.filter((processItem) => processItem.monitoringMode !== "oab");
-  const selectedProcess = searchParams?.process?.trim() ?? "";
-  const focusProcess = selectedProcess
-    ? processes.find((processItem) => processItem.id === selectedProcess) ?? null
+  const selectedProcessId = (searchParams?.processId?.trim() || searchParams?.process?.trim() || "");
+  const focusProcess = selectedProcessId
+    ? processes.find((processItem) => processItem.id === selectedProcessId) ?? null
     : null;
+  const successProcessLabel = focusProcess?.processNumber ?? searchParams?.process?.trim() ?? selectedProcessId;
 
   return (
     <div className="mj-model-page space-y-4">
@@ -49,15 +51,16 @@ export default async function ProcessosImportarOabPage({
       </div>
 
       <div className="mj-model-soft-panel px-4 py-4 text-[13px] leading-6 text-slate-400">
-        Selecione um processo real do tenant para ativar monitoramento por OAB. A ativacao registra a trilha
-        processual e deixa o processo visivel em monitoramentos e andamentos sem simulacao falsa.
+        Esta rota legada nao importa dados externos. Ela apenas ativa o monitoramento por OAB em um processo real do
+        tenant, registra a trilha processual e mantem o processo disponivel para acompanhamento em andamentos e
+        publicacoes.
       </div>
 
-      {searchParams?.enabled === "1" && selectedProcess ? (
+      {searchParams?.enabled === "1" && successProcessLabel ? (
         <WorkspaceStatePanel
           actionHref="/processos"
           actionLabel="Voltar para processos"
-          description={`Monitoramento por OAB ativado para o processo ${selectedProcess}. A trilha processual foi registrada.`}
+          description={`Monitoramento por OAB ativado para o processo ${successProcessLabel}. A trilha processual foi registrada.`}
           title="Monitoramento por OAB ativado"
           tone="neutral"
         />
