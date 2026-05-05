@@ -10,7 +10,7 @@ export const DEMO_EMAIL = "owner@lexia-demo.local";
 export const DEMO_PASSWORD = "ChangeMe123!";
 export const DEMO_VISIBLE_EMAIL = "workspace.demo@clara.local";
 export const DEMO_VISIBLE_TENANT_NAME = "Clara Bancaria Demo";
-export const DEMO_VISIBLE_TENANT_SLUG = "clara-demo";
+export const DEMO_VISIBLE_TENANT_SLUG = "clara-bancaria-demo";
 
 export function isDemoAccessEnabled() {
   return process.env.LEXIA_DISABLE_DEMO_ACCESS !== "true";
