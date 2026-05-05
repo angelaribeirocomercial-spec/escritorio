@@ -167,15 +167,15 @@ function NovoAtendimentoBancarioPageContent({
                 required
               >
                 <optgroup label="Revisional">
-                  <option value="revisional">Revisional de contratos</option>
+                  <option value="revisional">Revisional de contratos (veículos)</option>
                 </optgroup>
                 <optgroup label="Fraude bancaria">
-                  <option value="fraude">Fraude bancaria</option>
+                  <option value="fraude">Fraude bancaria (PIX)</option>
                   <option value="cartao-consignado">Cartao consignado / RMC</option>
                   <option value="beneficio-descontos">Descontos indevidos em beneficio previdenciario</option>
                 </optgroup>
                 <optgroup label="Busca e apreensao">
-                  <option value="busca-apreensao">Busca e apreensao</option>
+                  <option value="busca-apreensao">Busca e apreensao (veículos)</option>
                 </optgroup>
               </select>
             </div>

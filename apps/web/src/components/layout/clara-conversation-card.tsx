@@ -197,9 +197,35 @@ export function ClaraConversationCard({
       </div>
 
       <div className="mt-5 flex min-h-[28rem] flex-col">
+        <form
+          ref={formRef}
+          className="border-b border-white/10 pb-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            sendMessage();
+          }}
+        >
+          <textarea
+            className="reference-search-input min-h-[7rem] w-full px-3 py-3 text-sm outline-none"
+            name="q"
+            placeholder={composerPlaceholder ?? "Escreva sua pergunta para a Clara."}
+            onChange={(event) => setInputValue(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" || event.shiftKey) {
+                return;
+              }
+
+              event.preventDefault();
+              sendMessage();
+            }}
+            value={inputValue}
+          />
+          {composerHint ? <p className="mt-3 text-[11px] leading-5 text-slate-500">{composerHint}</p> : null}
+        </form>
+
         <div
           ref={threadRef}
-          className="max-h-[22rem] flex-1 space-y-3 overflow-y-auto pr-1"
+          className="mt-4 max-h-[22rem] flex-1 space-y-3 overflow-y-auto pr-1"
         >
           {thread.length === 0 ? (
             <div className="rounded-[4px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm leading-6 text-slate-300">
@@ -227,32 +253,6 @@ export function ClaraConversationCard({
             ))
           )}
         </div>
-
-        <form
-          ref={formRef}
-          className="mt-4 border-t border-white/10 pt-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            sendMessage();
-          }}
-        >
-          <textarea
-            className="reference-search-input min-h-[7rem] w-full px-3 py-3 text-sm outline-none"
-            name="q"
-            placeholder={composerPlaceholder ?? "Escreva sua pergunta para a Clara."}
-            onChange={(event) => setInputValue(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key !== "Enter" || event.shiftKey) {
-                return;
-              }
-
-              event.preventDefault();
-              sendMessage();
-            }}
-            value={inputValue}
-          />
-          {composerHint ? <p className="mt-3 text-[11px] leading-5 text-slate-500">{composerHint}</p> : null}
-        </form>
       </div>
     </article>
   );
