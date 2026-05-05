@@ -48,6 +48,17 @@ export const navSections: NavSection[] = [
         description: "Advogada digital e porta inteligente do fluxo do caso."
       },
       {
+        href: "/editor-de-texto/meus-textos",
+        label: "Meus textos",
+        shortLabel: "Textos",
+        icon: "editor",
+        description: "Minutas, PDFs e saida assistida da Clara.",
+        children: [
+          { href: "/editor-de-texto/meus-textos", label: "Meus textos" },
+          { href: "/editor-de-texto/distribuicao", label: "Distribuicao simulada" }
+        ]
+      },
+      {
         href: "/crm",
         label: "CRM",
         shortLabel: "CRM",

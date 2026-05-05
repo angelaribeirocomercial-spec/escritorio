@@ -1071,27 +1071,33 @@ export default async function ClaraPage({
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
+      const clientId = client.id
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
 
-      return normalized.includes(clientName) || clientName.includes(normalized);
+      return (
+        normalized.includes(clientName) ||
+        clientName.includes(normalized) ||
+        normalized.includes(clientId)
+      );
     });
 
-    if (normalized.includes("cliente") || normalized.includes("carlos")) {
-      if (clientMatch) {
-        return `Encontrei o cliente ${clientMatch.label}. Se quiser, eu também posso abrir o cockpit dele ou localizar o caso ligado a esse nome.`;
-      }
+    if (clientMatch) {
+      const clientLabel = clientMatch.label.split(" · ")[0] ?? clientMatch.label;
 
-      return "Não encontrei um cliente com esse nome no workspace. Se quiser, eu posso procurar por nome completo, sobrenome ou CPF.";
+      return `Encontrei o cliente ${clientLabel}. Posso abrir o cockpit dele, localizar o caso e mostrar as ações prontas do fluxo.`;
     }
 
-    if (normalized.includes("caso")) {
-      return "Posso localizar o caso e cruzar cliente, processo e documentos. Se você me der um nome ou identificador, eu sigo direto.";
+    if (normalized.includes("cliente") || normalized.includes("caso")) {
+      return "Não encontrei um cliente com esse nome no workspace. Se quiser, eu posso procurar por nome completo, sobrenome ou CPF.";
     }
 
     if (normalized.includes("documento")) {
       return "Posso revisar os documentos ligados ao caso e apontar o que já está anexado e o que ainda falta.";
     }
 
-    return "Posso localizar cliente, caso, processo ou documento. Me diga o que você quer encontrar que eu sigo direto.";
+    return "Posso localizar cliente, caso, processo ou documento. Me diga o nome, CPF ou identificador que eu sigo direto.";
   }
 
   function getFieldWeight(fieldType: string) {
