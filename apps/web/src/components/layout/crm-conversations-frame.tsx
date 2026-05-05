@@ -27,7 +27,7 @@ function panelTone(active: boolean) {
 }
 
 export function CrmConversationsFrame({ conversations }: CrmConversationsFrameProps) {
-  const [activePanel, setActivePanel] = useState<PanelKey | null>(null);
+  const [activePanel, setActivePanel] = useState<PanelKey | null>("summary");
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
   const withCase = conversations.filter((conversation) => conversation.caseId).length;

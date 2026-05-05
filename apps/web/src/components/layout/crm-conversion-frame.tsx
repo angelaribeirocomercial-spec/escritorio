@@ -27,7 +27,7 @@ function panelTone(active: boolean) {
 }
 
 export function CrmConversionFrame({ conversions }: CrmConversionFrameProps) {
-  const [activePanel, setActivePanel] = useState<PanelKey | null>(null);
+  const [activePanel, setActivePanel] = useState<PanelKey | null>("intake");
 
   const convertedCount = conversions.filter((conversion) => conversion.caseId).length;
   const contractCount = conversions.filter((conversion) => conversion.stageLabel === "Contrato fechado").length;

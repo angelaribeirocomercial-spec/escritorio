@@ -39,11 +39,7 @@ export default async function CrmPage() {
     <WorkspacePage
       description="O CRM organiza a carteira real de leads, o status de conversao e o proximo passo comercial antes do caso entrar no cockpit juridico."
       eyebrow="CRM"
-      metrics={[
-        { label: "Carteira ativa", value: String(activeLeads.length) },
-        { label: "Convertidos", value: String(convertedLeads.length) },
-        { label: "Foco atual", value: "Leads e conversao" }
-      ]}
+      metrics={[]}
       title="Leads e conversao do escritorio"
     >
       <section className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
@@ -102,30 +98,7 @@ export default async function CrmPage() {
           <p className="mt-2 text-xs leading-5 text-slate-400">
             A lista operacional detalhada fica em CRM &gt; Conversas para evitar duplicacao na home.
           </p>
-          <Link
-            className="mt-4 inline-flex rounded-[4px] border border-emerald-300/30 bg-emerald-300/10 px-3 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:border-emerald-300/50 hover:bg-emerald-300/20"
-            href="/crm/conversas"
-          >
-            Abrir conversas
-          </Link>
         </article>
-      </section>
-
-      <section className="workspace-panel p-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Foco atual</p>
-            <p className="text-sm leading-6 text-slate-300">
-              Conversas, follow-up e historico ficam concentrados em CRM &gt; Conversas para evitar duplicacao.
-            </p>
-          </div>
-          <Link
-            className="inline-flex rounded-[4px] border border-emerald-300/30 bg-emerald-300/10 px-3 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:border-emerald-300/50 hover:bg-emerald-300/20"
-            href="/crm/conversas"
-          >
-            Abrir conversas
-          </Link>
-        </div>
       </section>
     </WorkspacePage>
   );
