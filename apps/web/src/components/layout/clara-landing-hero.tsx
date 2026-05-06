@@ -134,19 +134,32 @@ export function ClaraLandingHero({
               </div>
               <div>
                 <p className="text-sm font-semibold text-white">CLARA</p>
-                <p className="text-xs text-slate-400">Inteligencia Juridica ADVOCUS</p>
+                <p className="text-xs text-slate-400">Inteligencia Juridica ADVX</p>
               </div>
             </div>
             <div className="mt-4 h-px bg-white/10" />
           </div>
 
-          <div className="relative mt-5 flex justify-end">
-            <div className="max-w-[22rem] rounded-[1.2rem] border border-amber-300/25 bg-amber-300/90 px-4 py-3 text-sm font-medium text-slate-950 shadow-[0_16px_40px_rgba(212,168,68,0.2)]">
-              CLARA, analise esta intimacao e me diga o prazo para resposta.
-            </div>
-          </div>
-
           <div className="relative mt-5 grid gap-4">
+            <div className="relative flex justify-center">
+              <div className="relative aspect-[4/5] w-full max-w-[13.25rem] overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-950/55 shadow-[0_28px_90px_rgba(2,6,23,0.45)]">
+                <Image
+                  alt="Clara, Advogada Digital IA"
+                  className="object-cover object-[center_15%]"
+                  fill
+                  priority
+                  sizes="(max-width: 1280px) 100vw, 13.25rem"
+                  src="/clara/avatar.png"
+                />
+              </div>
+            </div>
+
+            <div className="relative flex justify-end">
+              <div className="max-w-[22rem] rounded-[1.2rem] border border-amber-300/25 bg-amber-300/90 px-4 py-3 text-sm font-medium text-slate-950 shadow-[0_16px_40px_rgba(212,168,68,0.2)]">
+                CLARA, analise esta intimacao e me diga o prazo para resposta.
+              </div>
+            </div>
+
             <div className="rounded-[1.4rem] border border-white/15 bg-[#0b1220]/95 p-4 shadow-[0_22px_60px_rgba(2,6,23,0.35)]">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-white">Analisando processo 0001234-56.2024.8.26.0100...</p>
@@ -178,19 +191,6 @@ export function ClaraLandingHero({
               <p className="mt-4 text-sm leading-6 text-slate-300">
                 Deseja que eu redija um rascunho da contestacao?
               </p>
-            </div>
-
-            <div className="relative flex justify-center">
-              <div className="relative aspect-[4/5] w-full max-w-[18.5rem] overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-950/55 shadow-[0_28px_90px_rgba(2,6,23,0.45)]">
-                <Image
-                  alt="Clara, Advogada Digital IA"
-                  className="object-cover object-[center_18%]"
-                  fill
-                  priority
-                  sizes="(max-width: 1280px) 100vw, 18.5rem"
-                  src="/clara/avatar.png"
-                />
-              </div>
             </div>
 
             <div className="flex items-center gap-2 text-xs text-slate-500">

@@ -65,7 +65,7 @@ function ClaraAvatarGlyph() {
     <div className="relative h-16 w-16 overflow-hidden rounded-full border border-cyan-200/30 bg-[radial-gradient(circle_at_35%_30%,rgba(248,250,252,0.95),rgba(125,211,252,0.3)_45%,rgba(15,23,42,0.95)_100%)] shadow-[0_18px_45px_rgba(8,145,178,0.28)]">
       <Image
         alt="Avatar da Clara"
-        className="object-cover object-[center_20%]"
+        className="object-cover object-[center_14%]"
         fill
         priority
         sizes="64px"
