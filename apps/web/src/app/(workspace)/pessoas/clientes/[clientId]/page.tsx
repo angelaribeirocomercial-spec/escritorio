@@ -1,25 +1,22 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBankingNicheLabel } from "@lexia/domain";
 import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { ClientCockpitFrame } from "@/components/layout/client-cockpit-frame";
-import { ClaraContextActions } from "@/components/layout/clara-context-actions";
 import { WorkspacePage } from "@/components/layout/workspace-page";
 import {
   normalizeVisibleCopy,
   normalizeVisibleCopyList
 } from "@/lib/branding/normalize-visible-copy";
 import {
-  getClaraRecord,
-  getClaraRecordDisplay,
   listClaraRecords
 } from "@/server/services/clara/clara-record-store";
-import { getClaraClientArtifact } from "@/server/services/clara/get-clara-artifacts";
 import { getBankingCaseWorkflow } from "@/server/services/cases/get-banking-case-workflow";
 import { getCases } from "@/server/services/cases/get-cases";
 import { getClientById } from "@/server/services/clients/get-clients";
 import { getDocumentsByCaseId } from "@/server/services/documents/get-documents";
+import { getProcessByCaseId } from "@/server/services/processes/get-processes";
+import { getProceduralUpdatesByProcessId } from "@/server/services/procedural-updates/get-procedural-updates";
 import { getTasks } from "@/server/services/tasks/get-tasks";
 
 const CASE_STATUS_PRIORITY = {
@@ -28,17 +25,6 @@ const CASE_STATUS_PRIORITY = {
   draft: 2,
   closed: 3
 } as const;
-
-function workflowStatusLabel(status: "created" | "reviewed" | "completed") {
-  switch (status) {
-    case "reviewed":
-      return "Revisado";
-    case "completed":
-      return "Concluido";
-    default:
-      return "Criado";
-  }
-}
 
 function serviceStatusLabel(status: string) {
   switch (status) {
@@ -120,6 +106,78 @@ function readClaraRecordContext(targetPath: string) {
   };
 }
 
+function monitoringModeLabel(mode: string) {
+  switch (mode) {
+    case "oab":
+      return "Boundary OAB";
+    case "court":
+      return "Monitoramento por tribunal";
+    default:
+      return "Monitoramento manual";
+  }
+}
+
+function actionTypeLabel(niche: string) {
+  switch (niche) {
+    case "fraude":
+      return "Fraude bancaria";
+    case "busca-apreensao":
+      return "Busca e apreensao";
+    default:
+      return "Revisional";
+  }
+}
+
+function suggestedJudicialClass(niche: string) {
+  switch (niche) {
+    case "busca-apreensao":
+      return "Busca e apreensao";
+    default:
+      return "Procedimento comum civel";
+  }
+}
+
+function suggestedCnjSubject(niche: string, claimType: string) {
+  const normalizedClaimType = claimType.toLowerCase();
+
+  if (niche === "fraude" || normalizedClaimType.includes("fraude")) {
+    return "Falha na prestacao do servico bancario / fraude";
+  }
+
+  if (niche === "busca-apreensao" || normalizedClaimType.includes("busca")) {
+    return "Alienacao fiduciaria / busca e apreensao";
+  }
+
+  return "Contratos bancarios / revisao de clausulas";
+}
+
+function suggestedUrgencyLabel(input: {
+  title: string;
+  claimType: string;
+  mainThesis: string;
+  suggestedStrategy: string;
+}) {
+  const evidence = [input.title, input.claimType, input.mainThesis, input.suggestedStrategy]
+    .join(" ")
+    .toLowerCase();
+
+  return /urg|tutela|negativ|busca|apreens|fraude/.test(evidence) ? "Sim" : "Nao";
+}
+
+function distributionDateLabel(
+  timeline: ReadonlyArray<{
+    occurredAt: string;
+    title: string;
+    description: string;
+  }>
+) {
+  const distributionEvent = timeline.find((item) =>
+    /distribu/i.test(`${item.title} ${item.description}`)
+  );
+
+  return distributionEvent?.occurredAt ?? "Nao registrada";
+}
+
 export default async function ClientDetailPage({
   params,
   searchParams
@@ -167,18 +225,21 @@ export default async function ClientDetailPage({
     notFound();
   }
 
-  const [clientCases, claraRecord, claraRecords] = await Promise.all([
+  const [clientCases, claraRecords] = await Promise.all([
     getCases({ clientId: params.clientId }),
-    getClaraRecord(searchParams?.record),
     listClaraRecords(80)
   ]);
   const activeCase = resolveCanonicalActiveCase(clientCases, client.linkedCases, searchParams?.case);
-  const [caseDocuments, activeCaseTasks] = activeCase
+  const [caseDocuments, activeCaseTasks, relatedProcess] = activeCase
     ? await Promise.all([
         getDocumentsByCaseId(activeCase.id),
-        getTasks({ caseId: activeCase.id })
+        getTasks({ caseId: activeCase.id }),
+        getProcessByCaseId(activeCase.id)
       ])
-    : [[], []];
+    : [[], [], null];
+  const relatedProcessUpdates = relatedProcess
+    ? await getProceduralUpdatesByProcessId(relatedProcess.id)
+    : [];
   const workflow = activeCase
     ? getBankingCaseWorkflow(activeCase, {
         documentLabels: caseDocuments.map((document) => document.documentType)
@@ -192,7 +253,7 @@ export default async function ClientDetailPage({
       return false;
     }
 
-    const payload = record.payload as Awaited<ReturnType<typeof getClaraClientArtifact>>;
+    const payload = record.payload as { recordId?: string };
     const recordContext = readClaraRecordContext(record.targetPath);
     const matchesClient =
       recordContext.clientId === client.id || payload.recordId === `CLI-${client.id.toUpperCase()}`;
@@ -207,15 +268,6 @@ export default async function ClientDetailPage({
 
     return !recordContext.caseId || recordContext.caseId === activeCase.id;
   });
-  const claraArtifact =
-    claraRecord?.kind === "client"
-      ? (claraRecord.payload as Awaited<ReturnType<typeof getClaraClientArtifact>>)
-      : searchParams?.clara
-        ? await getClaraClientArtifact(params.clientId, activeCase?.id, false)
-        : null;
-  const claraDisplay = claraArtifact
-    ? getClaraRecordDisplay(claraRecord, "Resumo contextual da Clara carregado", claraArtifact.summary)
-    : null;
   const nextStepLabel = activeCase
     ? normalizeVisibleCopy(nextTask?.lexiaNextStep ?? workflow?.nextStep ?? activeCase.suggestedStrategy)
     : "Abrir o primeiro caso bancario deste cliente pela entrada de Novo atendimento bancario.";
@@ -244,20 +296,9 @@ export default async function ClientDetailPage({
         }
       ]
     : [];
-  const normalizedClaraSummary = claraDisplay
-    ? {
-      title: normalizeVisibleCopy(claraDisplay.title),
-        detail: normalizeVisibleCopy(claraDisplay.detail)
-      }
-    : null;
   const normalizedClientIaContext = normalizeVisibleCopy(client.iaContext);
   const normalizedTimeline = normalizeVisibleCopyList(client.timeline);
   const normalizedCaseInsights = normalizeVisibleCopyList(activeCase?.lexiaInsights ?? []);
-  const checklistItems = canonicalWorkflow?.requiredDocuments.map((label) => ({
-    label,
-    missing: canonicalWorkflow.missingDocuments.includes(label as string)
-  })) ?? [];
-  const receivedDocuments = caseDocuments.length;
   const metrics = [
     {
       label: "Caso Ativo",
@@ -346,6 +387,37 @@ export default async function ClientDetailPage({
         normalizedTimeline={normalizedTimeline}
         clientCaseCount={clientCases.length}
         relatedClaraRecordsCount={relatedClaraRecords.length}
+        relatedProcess={
+          relatedProcess
+            ? {
+                processNumber: relatedProcess.processNumber,
+                tribunal: relatedProcess.tribunal,
+                courtDistrict: relatedProcess.courtDistrict,
+                courtName: relatedProcess.courtName,
+                statusLabel: relatedProcess.status,
+                proceduralPhase: relatedProcess.proceduralPhase,
+                monitoringModeLabel: monitoringModeLabel(relatedProcess.monitoringMode),
+                processClassLabel: suggestedJudicialClass(relatedProcess.bankingCase.niche),
+                suggestedCnjSubjectLabel: suggestedCnjSubject(
+                  relatedProcess.bankingCase.niche,
+                  relatedProcess.bankingCase.claimType
+                ),
+                urgencyLabel: suggestedUrgencyLabel({
+                  title: relatedProcess.bankingCase.title,
+                  claimType: relatedProcess.bankingCase.claimType,
+                  mainThesis: relatedProcess.bankingCase.mainThesis,
+                  suggestedStrategy: relatedProcess.bankingCase.suggestedStrategy
+                }),
+                actionTypeLabel: actionTypeLabel(relatedProcess.bankingCase.niche),
+                valueInCauseLabel: `R$ ${relatedProcess.bankingCase.estimatedValue.toLocaleString("pt-BR")}`,
+                distributionDateLabel: distributionDateLabel(relatedProcess.latestTimeline),
+                protocolReceiptLabel: "Comprovante oficial anexado",
+                integrationStatusLabel: "Processo oficial consolidado a partir da distribuicao manual.",
+                officialTimeline: relatedProcess.latestTimeline,
+                linkedUpdates: relatedProcessUpdates
+              }
+            : null
+        }
         workflow={cockpitFrameWorkflow}
       />
     </WorkspacePage>

@@ -4,7 +4,9 @@ import type {
   BankingCaseWorkflowStateRecord,
   ClientLinkedCaseSummary,
   ClientRecord,
-  JudicialProcessRecord
+  DocumentRecord,
+  JudicialProcessRecord,
+  ProceduralUpdateRecord
 } from "@lexia/domain";
 
 export const DEMO_CLIENT_ID = "cl-002";
@@ -191,3 +193,127 @@ export const DEMO_PROCESS_RECORD: JudicialProcessRecord = {
   ]
 };
 
+export const DEMO_DOCUMENT_RECORDS: DocumentRecord[] = [
+  {
+    id: "doc-205-pix",
+    clientId: DEMO_CLIENT_ID,
+    caseId: DEMO_CASE_ID,
+    fileName: "comprovantes-pix-carlos-henrique.pdf",
+    originalFileName: "comprovantes-pix.pdf",
+    documentType: "Comprovantes PIX",
+    category: "financeiro",
+    tags: ["pix", "fraude", "banco"],
+    aiStatus: "analyzed",
+    summary: "Comprovantes das transferencias via PIX vinculadas ao evento principal da fraude.",
+    pageCount: 4,
+    uploadedAt: "2026-05-05T09:00:00.000Z",
+    previewLabel: "Comprovantes PIX consolidados",
+    storageBucket: "demo",
+    storagePath: "documents/case-205/comprovantes-pix.pdf",
+    storageMimeType: "application/pdf",
+    storageSizeBytes: 245760,
+    actions: ["visualizar"]
+  },
+  {
+    id: "doc-205-atendimento",
+    clientId: DEMO_CLIENT_ID,
+    caseId: DEMO_CASE_ID,
+    fileName: "atendimento-bancario-carlos-henrique.pdf",
+    originalFileName: "atendimento-bancario.pdf",
+    documentType: "Atendimento bancario",
+    category: "atendimento",
+    tags: ["banco", "protocolo"],
+    aiStatus: "analyzed",
+    summary: "Protocolos de atendimento e respostas iniciais do banco sobre a contestacao.",
+    pageCount: 3,
+    uploadedAt: "2026-05-05T09:10:00.000Z",
+    previewLabel: "Atendimento bancario registrado",
+    storageBucket: "demo",
+    storagePath: "documents/case-205/atendimento-bancario.pdf",
+    storageMimeType: "application/pdf",
+    storageSizeBytes: 188416,
+    actions: ["visualizar"]
+  },
+  {
+    id: "doc-205-capturas",
+    clientId: DEMO_CLIENT_ID,
+    caseId: DEMO_CASE_ID,
+    fileName: "capturas-de-tela-carlos-henrique.pdf",
+    originalFileName: "capturas-de-tela.pdf",
+    documentType: "Capturas de tela",
+    category: "prova-digital",
+    tags: ["whatsapp", "aplicativo", "fraude"],
+    aiStatus: "needs_review",
+    summary: "Capturas do aplicativo bancario e das mensagens usadas para reconstruir a cronologia.",
+    pageCount: 8,
+    uploadedAt: "2026-05-05T09:20:00.000Z",
+    previewLabel: "Capturas da cronologia",
+    storageBucket: "demo",
+    storagePath: "documents/case-205/capturas-de-tela.pdf",
+    storageMimeType: "application/pdf",
+    storageSizeBytes: 412876,
+    actions: ["visualizar"]
+  },
+  {
+    id: "doc-205-bo",
+    clientId: DEMO_CLIENT_ID,
+    caseId: DEMO_CASE_ID,
+    fileName: "boletim-de-ocorrencia-carlos-henrique.pdf",
+    originalFileName: "boletim-de-ocorrencia.pdf",
+    documentType: "Boletim de ocorrencia",
+    category: "prova-oficial",
+    tags: ["bo", "delegacia"],
+    aiStatus: "analyzed",
+    summary: "Boletim de ocorrencia anexado e pronto para reforcar a narrativa probatoria da inicial.",
+    pageCount: 2,
+    uploadedAt: "2026-05-05T09:30:00.000Z",
+    previewLabel: "Boletim de ocorrencia validado",
+    storageBucket: "demo",
+    storagePath: "documents/case-205/boletim-de-ocorrencia.pdf",
+    storageMimeType: "application/pdf",
+    storageSizeBytes: 102400,
+    actions: ["visualizar"]
+  }
+];
+
+export const DEMO_PROCEDURAL_UPDATE_RECORDS: ProceduralUpdateRecord[] = [
+  {
+    id: "upd-205-1",
+    processId: DEMO_PROCESS_ID,
+    caseId: DEMO_CASE_ID,
+    clientId: DEMO_CLIENT_ID,
+    occurredAt: "2026-05-05T13:45:00.000Z",
+    movementType: "Distribuicao protocolada",
+    sourceCourt: "TJRJ",
+    sourceLabel: "PJe / comprovante oficial",
+    rawMovement: "Protocolo gerado e distribuicao confirmada no sistema oficial.",
+    operationalSummary: "Processo protocolado com comprovante oficial e numero judicial consolidado no workspace.",
+    criticality: "medium",
+    claraImpactSummary: "Clara pode assumir acompanhamento pos-distribuicao com base no numero oficial.",
+    claraCaution: "Conferir anexos finais e poderes antes de qualquer nova medida.",
+    claraNextActions: [
+      "Validar recibo de protocolo",
+      "Cruzar dados do processo com o caso",
+      "Abrir rotina de acompanhamento"
+    ]
+  },
+  {
+    id: "upd-205-2",
+    processId: DEMO_PROCESS_ID,
+    caseId: DEMO_CASE_ID,
+    clientId: DEMO_CLIENT_ID,
+    occurredAt: "2026-05-06T10:15:00.000Z",
+    movementType: "Cadastro para acompanhamento",
+    sourceCourt: "TJRJ",
+    sourceLabel: "Leitura interna",
+    rawMovement: "Processo marcado para acompanhamento manual e conferencia inicial.",
+    operationalSummary: "Acompanhamento manual habilitado enquanto nao ha importacao automatica do tribunal.",
+    criticality: "low",
+    claraImpactSummary: "A Clara passa a operar sobre um processo real, sem confundir etapa de caso com processo.",
+    claraCaution: "Sem automacao externa; cada andamento precisa de leitura humana.",
+    claraNextActions: [
+      "Registrar proxima janela de leitura",
+      "Atualizar cliente sobre distribuicao"
+    ]
+  }
+];

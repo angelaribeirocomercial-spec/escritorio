@@ -6,6 +6,11 @@ import {
 
 import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  DEMO_CASE_RECORD,
+  DEMO_CLIENT_RECORD,
+  DEMO_DOCUMENT_RECORDS
+} from "@/server/services/demo/demo-workspace-data";
 
 type DocumentWithContext = DocumentRecord & {
   client: ClientRecord;
@@ -247,6 +252,18 @@ export async function getDocuments(): Promise<DocumentWithContext[]> {
 
   if (!session) {
     return [];
+  }
+
+  if (
+    session.workspace.tenant.slug === "clara-bancaria-demo" ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
+  ) {
+    return DEMO_DOCUMENT_RECORDS.map((document) => ({
+      ...document,
+      client: DEMO_CLIENT_RECORD,
+      bankingCase: DEMO_CASE_RECORD
+    }));
   }
 
   const supabase = getSupabaseAdminClient();

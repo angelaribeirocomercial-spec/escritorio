@@ -9,6 +9,12 @@ import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getCases } from "@/server/services/cases/get-cases";
 import { getClients } from "@/server/services/clients/get-clients";
+import {
+  DEMO_CASE_RECORD,
+  DEMO_CLIENT_RECORD,
+  DEMO_PROCESS_RECORD,
+  DEMO_PROCEDURAL_UPDATE_RECORDS
+} from "@/server/services/demo/demo-workspace-data";
 import { getProcesses } from "@/server/services/processes/get-processes";
 
 export type ProceduralUpdateWithRelations = ProceduralUpdateRecord & {
@@ -94,7 +100,20 @@ export async function getProceduralUpdates(): Promise<
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load procedural updates.");
+    return [];
+  }
+
+  if (
+    session.workspace.tenant.slug === "clara-bancaria-demo" ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
+  ) {
+    return DEMO_PROCEDURAL_UPDATE_RECORDS.map((update) => ({
+      ...update,
+      client: DEMO_CLIENT_RECORD,
+      bankingCase: DEMO_CASE_RECORD,
+      judicialProcess: DEMO_PROCESS_RECORD
+    }));
   }
 
   const supabase = getSupabaseServerClient();
@@ -110,7 +129,8 @@ export async function getProceduralUpdates(): Promise<
   ]);
 
   if (error) {
-    throw new Error(`Failed to load procedural updates for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load procedural updates for tenant ${session.workspace.tenant.id}.`);
+    return [];
   }
 
   return (data ?? [])

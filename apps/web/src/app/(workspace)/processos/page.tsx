@@ -141,24 +141,6 @@ export default async function ProcessosPage({
         statusLabel: "Distribuido"
       }
     : null;
-  const flowCards = [
-    {
-      id: "case",
-      title: "Caso",
-      detail: "A entrada do atendimento concentra cliente, docs e tese antes do handoff de distribuicao."
-    },
-    {
-      id: "handoff",
-      title: "Handoff de distribuicao",
-      detail: "A minuta abre os acessos oficiais e o advogado conclui o ato humano."
-    },
-    {
-      id: "process",
-      title: "Processo",
-      detail: "A listagem e o detalhe mostram o registro pos-distribuicao e seus filtros operacionais."
-    }
-  ] as const;
-
   return (
     <div className="mj-model-page space-y-4">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -264,27 +246,6 @@ export default async function ProcessosPage({
             </div>
           </div>
         </form>
-      </div>
-
-      <div className="mj-model-panel border border-cyan-300/20 bg-cyan-300/10 px-4 py-4">
-        <div className="max-w-3xl">
-          <p className="mj-model-title">Fluxo canonico</p>
-          <p className="mt-1 text-[13px] leading-6 text-slate-200">
-            Caso {"->"} handoff {"->"} processo. A pagina deixa visivel a separacao entre a minuta, o ato humano de
-            distribuicao e o registro pos-distribuicao.
-          </p>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {flowCards.map((card, index) => (
-            <div key={card.id} className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                {index + 1}. {card.title}
-              </p>
-              <p className="mt-2 text-sm font-semibold text-white">{card.title}</p>
-              <p className="mt-2 text-xs leading-5 text-slate-400">{card.detail}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
       {state ? (
