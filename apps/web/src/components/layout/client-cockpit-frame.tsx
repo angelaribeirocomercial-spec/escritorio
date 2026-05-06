@@ -135,6 +135,7 @@ export function ClientCockpitFrame({
   const piecesActionLabel = piecesReady
     ? "A peca pode seguir para o handoff"
     : "A peca fica retida ate o caso fechar";
+  const distributionHandoffLabel = piecesReady ? "Pronto para distribuir" : "Ver prontidao para distribuir";
   const lastTimelineEvent = normalizedTimeline[normalizedTimeline.length - 1] ?? "Sem eventos registrados";
   const hasGeneratedDocuments = generatedDocuments.length > 0;
 
@@ -234,17 +235,17 @@ export function ClientCockpitFrame({
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
+                {actionLinks.openDistributionHandoff ? (
+                  <Link
+                    className="mj-model-button-green inline-flex items-center justify-center px-4 py-3 text-sm font-semibold"
+                    href={actionLinks.openDistributionHandoff}
+                  >
+                    {distributionHandoffLabel}
+                  </Link>
+                ) : null}
                 {actionLinks.attachDocuments ? (
                   <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.attachDocuments}>
                     Anexar documentos
-                  </Link>
-                ) : null}
-                {actionLinks.openDistributionHandoff ? (
-                  <Link
-                    className="detail-link-button px-4 py-3 text-sm font-semibold"
-                    href={actionLinks.openDistributionHandoff}
-                  >
-                    Pronto para distribuir
                   </Link>
                 ) : null}
                 <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.continueClara}>
@@ -484,21 +485,22 @@ export function ClientCockpitFrame({
                         <h3 className="mt-2 text-2xl font-semibold text-white">Minuta e revisão humana</h3>
                       </div>
                       <div className="flex flex-wrap gap-2">
+                        {actionLinks.openDistributionHandoff ? (
+                          <Link
+                            className="mj-model-button-green inline-flex items-center justify-center px-4 py-3 text-sm font-semibold"
+                            href={actionLinks.openDistributionHandoff}
+                          >
+                            {distributionHandoffLabel}
+                          </Link>
+                        ) : null}
                         <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.openEditor}>
                           Gerar minuta da peça
                         </Link>
-                        {actionLinks.openDistributionHandoff ? (
-                          <Link
-                            className="detail-link-button px-4 py-3 text-sm font-semibold"
-                            href={actionLinks.openDistributionHandoff}
-                          >
-                            Pronto para distribuir
-                          </Link>
-                        ) : (
+                        {!actionLinks.openDistributionHandoff ? (
                           <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.openEditor}>
                             Enviar para revisão humana
                           </Link>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                     <div className="grid gap-3 md:grid-cols-2">
@@ -511,8 +513,9 @@ export function ClientCockpitFrame({
                     </div>
                     <div className="detail-subpanel p-5">
                       <p className="text-sm leading-7 text-slate-200">
-                        A peça permanece bloqueada enquanto o caso nao fecha a leitura documental e juridica.
-                        Quando a base estiver pronta, ela sai do cockpit do cliente e segue para o handoff de distribuicao.
+                        A peca permanece bloqueada enquanto o caso nao fecha a leitura documental e juridica.
+                        Quando a base estiver pronta, ela sai do cockpit do cliente e vai direto para a superficie de
+                        handoff de distribuicao.
                       </p>
                     </div>
                     <div className="space-y-3">

@@ -2,6 +2,7 @@ import { getBankingNicheLabel } from "@lexia/domain";
 
 import { ProcessCockpitFrame } from "@/components/layout/process-cockpit-frame";
 import { WorkspacePage } from "@/components/layout/workspace-page";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getCases } from "@/server/services/cases/get-cases";
 import { getClients } from "@/server/services/clients/get-clients";
 import { getProcesses } from "@/server/services/processes/get-processes";
@@ -44,143 +45,157 @@ function urgencyLabel(title: string, claimType: string, mainThesis: string, sugg
   return /urg|tutela|negativ|busca|apreens|fraude/.test(evidence) ? "Sim" : "Nao";
 }
 
-export default async function ProcessModelPage() {
-  const [processes, clients, cases] = await Promise.all([getProcesses(), getClients(), getCases()]);
+type ProcessList = Awaited<ReturnType<typeof getProcesses>>;
+type ClientList = Awaited<ReturnType<typeof getClients>>;
+type CaseList = Awaited<ReturnType<typeof getCases>>;
 
-  const modelClient = clients.find((client) => client.id === CANONICAL_CLIENT_ID) ?? clients[0] ?? null;
+function buildDemoModel() {
+  return {
+    client: {
+      id: CANONICAL_CLIENT_ID,
+      fullName: "Carlos Henrique Duarte",
+      documentId: "123.456.789-00"
+    },
+    bankingCase: {
+      id: CANONICAL_CASE_ID,
+      clientId: CANONICAL_CLIENT_ID,
+      title: "Fraude bancaria via PIX",
+      bankName: "Itau",
+      processNumber: "5011274-65.2026.8.19.0001",
+      contractNumber: "MODELO-001",
+      claimType: "fraude_bancaria",
+      stage: "Distribuido",
+      status: "active" as const,
+      amountInDispute: 18750,
+      estimatedValue: 41000,
+      mainThesis: "Falha de seguranca e dano moral",
+      legalRisk: "medium" as const,
+      suggestedStrategy:
+        "Fechar cronologia do evento, reforcar prova documental e estruturar narrativa de falha na seguranca da operacao PIX.",
+      ownerLabel: "Dr. Caio Nascimento",
+      niche: "fraude" as const,
+      linkedDocuments: [
+        "Comprovantes PIX",
+        "Atendimento bancario",
+        "Capturas de tela",
+        "Boletim de ocorrencia",
+        "Extrato bancario detalhado"
+      ],
+      linkedTasks: ["Cobrar boletim de ocorrencia", "Solicitar comprovante bancario detalhado", "Montar cronologia do golpe"],
+      linkedDeadlines: ["Revisar pendencias documentais em 11/04/2026"],
+      lexiaInsights: [
+        "Sem boletim de ocorrencia, a narrativa probatoria fica fragil.",
+        "A tese principal permanece viavel se a cronologia for bem consolidada."
+      ]
+    },
+    process: {
+      id: CANONICAL_PROCESS_ID,
+      processNumber: "5011274-65.2026.8.19.0001",
+      client: {
+        id: CANONICAL_CLIENT_ID,
+        fullName: "Carlos Henrique Duarte",
+        documentId: "123.456.789-00"
+      },
+      tribunal: "TJRJ",
+      courtDistrict: "Rio de Janeiro/RJ",
+      courtName: "7o Juizado Especial Civel da Capital",
+      proceduralPhase: "Distribuido",
+      statusLabel: "Distribuido",
+      monitoringModeLabel: "Monitoramento manual",
+      responsibleLawyer: "Dr. Caio Nascimento",
+      latestTimeline: [
+        {
+          id: "modelo-t1",
+          occurredAt: "2026-05-05",
+          title: "Distribuicao concluida",
+          description:
+            "O quadro apresenta o processo apenas depois do ato humano de distribuicao, usando Carlos Henrique Duarte como referencia canonica.",
+          source: "MODELO",
+          criticality: "medium" as const
+        },
+        {
+          id: "modelo-t2",
+          occurredAt: "2026-05-05",
+          title: "Acompanhamento oficial habilitado",
+          description:
+            "A leitura oficial entra por importacao do orgao competente; aqui a tela apenas organiza o registro pos-distribuicao.",
+          source: "MODELO",
+          criticality: "low" as const
+        }
+      ]
+    },
+  };
+}
+
+export default async function ProcessModelPage() {
+  const localModel = buildDemoModel();
+  const supabaseConfigured = isSupabaseConfigured();
+
+  const [processes, clients, cases]: [ProcessList, ClientList, CaseList] = supabaseConfigured
+    ? await Promise.all([getProcesses(), getClients(), getCases()])
+    : [[], [], []];
+
+  const modelClient = clients.find((client) => client.id === CANONICAL_CLIENT_ID) ?? clients[0] ?? localModel.client;
   const modelCase =
     cases.find((caseItem) => caseItem.id === CANONICAL_CASE_ID) ??
     cases.find((caseItem) => caseItem.client.id === CANONICAL_CLIENT_ID) ??
     cases[0] ??
-    null;
+    localModel.bankingCase;
   const modelProcess =
     processes.find((processItem) => processItem.id === CANONICAL_PROCESS_ID) ??
     processes.find((processItem) => processItem.caseId === CANONICAL_CASE_ID) ??
     processes.find((processItem) => processItem.client.id === CANONICAL_CLIENT_ID) ??
     processes[0] ??
-    null;
+    localModel.process;
 
-  const bankingCase = modelCase
-    ? {
-        ...modelCase,
-        stage: "Distribuido",
-        status: "active" as const,
-        linkedDocuments: [...modelCase.linkedDocuments, "Boletim de ocorrencia", "Extrato bancario detalhado"],
-        linkedTasks: [...modelCase.linkedTasks, "Conferir poderes de representacao"],
-        linkedDeadlines: [...modelCase.linkedDeadlines, "Validar anexos ate 17/04/2026"],
-        lexiaInsights: [
-          ...modelCase.lexiaInsights,
-          "Exemplo canonico para visualizar a transicao do cliente ate a distribuicao."
-        ]
-      }
-    : {
-        id: "case-modelo",
-        clientId: modelClient?.id ?? CANONICAL_CLIENT_ID,
-        title: "Fraude bancaria via PIX",
-        bankName: "Itau",
-        processNumber: "5011274-65.2026.8.19.0001",
-        contractNumber: "MODELO-001",
-        claimType: "fraude_bancaria",
-        stage: "Distribuido",
-        status: "active" as const,
-        amountInDispute: 18750,
-        estimatedValue: 41000,
-        mainThesis: "Falha de seguranca e dano moral",
-        legalRisk: "medium" as const,
-        suggestedStrategy:
-          "Fechar cronologia do evento, reforcar prova documental e estruturar narrativa de falha na seguranca da operacao PIX.",
-        ownerLabel: "Dr. Caio Nascimento",
-        niche: "fraude" as const,
-        linkedDocuments: [
-          "Comprovantes PIX",
-          "Atendimento bancario",
-          "Capturas de tela",
-          "Boletim de ocorrencia",
-          "Extrato bancario detalhado"
-        ],
-        linkedTasks: ["Cobrar boletim de ocorrencia", "Solicitar comprovante bancario detalhado", "Montar cronologia do golpe"],
-        linkedDeadlines: ["Revisar pendencias documentais em 11/04/2026"],
-        lexiaInsights: [
-          "Sem boletim de ocorrencia, a narrativa probatoria fica fragil.",
-          "A tese principal permanece viavel se a cronologia for bem consolidada."
-        ]
-      };
+  const bankingCase = {
+    ...modelCase,
+    stage: "Distribuido",
+    status: "active" as const,
+    linkedDocuments: [...modelCase.linkedDocuments, "Boletim de ocorrencia", "Extrato bancario detalhado"],
+    linkedTasks: [...modelCase.linkedTasks, "Conferir poderes de representacao"],
+    linkedDeadlines: [...modelCase.linkedDeadlines, "Validar anexos ate 17/04/2026"],
+    lexiaInsights: [
+      ...modelCase.lexiaInsights,
+      "Exemplo canonico para visualizar a transicao do cliente ate a distribuicao."
+    ]
+  };
 
-  const process = modelProcess
-    ? {
-        id: modelProcess.id,
-        processNumber: modelProcess.processNumber,
-        clientName: modelProcess.client.fullName,
-        clientDocumentId: modelProcess.client.documentId,
-        tribunal: modelProcess.tribunal,
-        courtDistrict: modelProcess.courtDistrict,
-        courtName: modelProcess.courtName,
-        proceduralPhase: "Distribuido",
-        statusLabel: "Distribuido",
-        monitoringModeLabel: "Monitoramento manual",
-        responsibleLawyer: modelProcess.responsibleLawyer
-      }
-    : {
-        id: "modelo-processo",
-        processNumber: bankingCase.processNumber,
-        clientName: modelClient?.fullName ?? "Carlos Henrique Duarte",
-        clientDocumentId: modelClient?.documentId ?? "000.000.000-00",
-        tribunal: "TJRJ",
-        courtDistrict: "Rio de Janeiro/RJ",
-        courtName: "7o Juizado Especial Civel da Capital",
-        proceduralPhase: "Distribuido",
-        statusLabel: "Distribuido",
-        monitoringModeLabel: "Monitoramento manual",
-        responsibleLawyer: bankingCase.ownerLabel
-      };
+  const process = {
+    id: modelProcess.id,
+    processNumber: modelProcess.processNumber,
+    clientName: modelProcess.client.fullName,
+    clientDocumentId: modelProcess.client.documentId,
+    tribunal: modelProcess.tribunal,
+    courtDistrict: modelProcess.courtDistrict,
+    courtName: modelProcess.courtName,
+    proceduralPhase: "Distribuido",
+    statusLabel: "Distribuido",
+    monitoringModeLabel: "Monitoramento manual",
+    responsibleLawyer: modelProcess.responsibleLawyer
+  };
 
-  const latestTimeline =
-    modelProcess?.latestTimeline ?? [
-      {
-        id: "modelo-t1",
-        occurredAt: "2026-05-05",
-        title: "Distribuicao concluida",
-        description:
-          "O quadro apresenta o processo apos a saida do handoff, usando o cliente Carlos Henrique Duarte como referencia inicial.",
-        source: "MODELO",
-        criticality: "medium" as const
-      },
-      {
-        id: "modelo-t2",
-        occurredAt: "2026-05-05",
-        title: "Acompanhamento oficial habilitado",
-        description:
-          "O acesso externo existe apenas como atalho, sem integracao automatica. A pos-distribuicao real entra por importacao do orgao competente.",
-        source: "MODELO",
-        criticality: "low" as const
-      }
-    ];
+  const latestTimeline = modelProcess.latestTimeline ?? localModel.process.latestTimeline;
+  const relatedClientId = modelProcess.client.id ?? modelCase.clientId ?? modelClient.id;
 
   return (
     <div className="space-y-6">
       <WorkspacePage
-        description="Fluxo pos-distribuicao de Carlos Henrique Duarte: handoff concluido -> processo -> acompanhamento oficial."
+        description="Registro pos-distribuicao de Carlos Henrique Duarte. O caso vive no cockpit; esta tela so exibe o processo ja nascido e sua leitura oficial."
         eyebrow="Processos"
         metrics={[
           { label: "Caso", value: "Carlos Henrique Duarte" },
-          { label: "Processo", value: "5011274-65.2026.8.19.0001" },
+          { label: "Processo", value: process.processNumber },
           { label: "Distribuicao", value: "Concluida" },
           { label: "Protocolo", value: "Nao automatizado" }
         ]}
         title="Processo pos-distribuicao"
       >
-        <div className="mj-model-panel border border-cyan-300/20 bg-cyan-300/10 px-4 py-4">
-          <p className="mj-model-title">Fluxo pos-distribuicao</p>
-          <p className="mt-1 text-[13px] leading-6 text-slate-300">
-            Carlos Henrique Duarte {"->"} distribuicao {"->"} processo. Esta tela mostra o registro apos o ato humano e
-            deixa claro que o processo nasce depois da distribuicao, nao antes.
-          </p>
-        </div>
         <ProcessCockpitFrame
           actionLinks={{
-            continueClara: `/clara?tab=analise&process=${process.id}&client=${modelClient?.id ?? process.id}#clara-workbench`,
+            continueClara: `/clara?tab=analise&process=${process.id}&client=${relatedClientId}#clara-workbench`,
             backToProcesses: "/processos",
-            openClaraHistory: `/clara?tab=analise&process=${process.id}&client=${modelClient?.id ?? process.id}#clara-history`,
+            openClaraHistory: `/clara?tab=analise&process=${process.id}&client=${relatedClientId}#clara-history`,
             openDataJud: `/processos/${encodeURIComponent(process.id)}/datajud`,
             openOabMonitoring: `/processos/importar-oab?process=${encodeURIComponent(process.id)}`,
             openOfficialSystem: "https://pje.tjmg.jus.br/pje/"

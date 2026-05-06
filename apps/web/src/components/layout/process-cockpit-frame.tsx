@@ -174,8 +174,8 @@ export function ProcessCockpitFrame({
   const canonicalFlowCards = [
     {
       id: "case",
-      title: "Caso",
-      detail: `${bankingCase.title} | origem do processo`
+      title: "Caso preparado",
+      detail: `${bankingCase.title} | origem do atendimento, ainda sem processo`
     },
     {
       id: "handoff",
@@ -184,8 +184,8 @@ export function ProcessCockpitFrame({
     },
     {
       id: "process",
-      title: "Processo",
-      detail: `${process.processNumber} | ${process.proceduralPhase}`
+      title: "Processo oficial",
+      detail: `${process.processNumber} | registro apos a distribuicao`
     }
   ] as const;
 
@@ -295,9 +295,9 @@ export function ProcessCockpitFrame({
 
       <section className="workspace-panel space-y-4 p-6">
         <div className="max-w-3xl space-y-2">
-          <p className="workspace-kicker">Fluxo canonico</p>
+          <p className="workspace-kicker">Separacao canonica</p>
           <h3 className="text-2xl font-semibold text-white">
-            Caso {"->"} handoff {"->"} processo
+            Caso preparado {"->"} handoff {"->"} processo oficial
           </h3>
           <p className="text-sm leading-7 text-slate-300">
             O cockpit deixa claro o registro pos-distribuicao. Esta superficie organiza a leitura oficial do processo e

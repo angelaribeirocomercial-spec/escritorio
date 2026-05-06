@@ -693,7 +693,7 @@ function MeusTextosInner({
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className="mj-model-button-gray" href="/editor-de-texto/distribuicao">
-            Ver distribuicao
+            Abrir handoff de distribuicao
           </Link>
           <span className="rounded-[2px] border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-[13px] font-semibold text-cyan-100">
             Minuta assistida
