@@ -3,18 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-
-const STORAGE_KEY = "clara-floating-avatar-minimized";
-
-function readContextLabel(pathname: string) {
-  if (pathname.startsWith("/clara")) return "Workspace juridico ativo";
-  if (pathname.startsWith("/pessoas/clientes")) return "Cliente em contexto";
-  if (pathname.startsWith("/processos")) return "Processo em contexto";
-  if (pathname.startsWith("/documentos")) return "Documento em contexto";
-  if (pathname.startsWith("/agenda")) return "Agenda operacional";
-  return "Workspace do escritorio";
-}
+import { useMemo } from "react";
 
 function buildClaraHref(pathname: string, searchParams: URLSearchParams) {
   const routeParts = pathname.split("/").filter(Boolean);
@@ -78,85 +67,21 @@ function ClaraAvatarGlyph() {
 export function ClaraFloatingAvatar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [minimized, setMinimized] = useState(true);
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved === "expanded") {
-      setMinimized(false);
-    }
-  }, []);
-
-  function updateMinimized(nextValue: boolean) {
-    setMinimized(nextValue);
-    window.localStorage.setItem(STORAGE_KEY, nextValue ? "minimized" : "expanded");
-  }
 
   const claraHref = useMemo(
     () => buildClaraHref(pathname, new URLSearchParams(searchParams.toString())),
     [pathname, searchParams]
   );
-  const contextLabel = readContextLabel(pathname);
-  const isClaraPage = pathname.startsWith("/clara");
 
   return (
     <div className="pointer-events-none fixed bottom-4 right-4 z-30 flex max-w-[calc(100vw-2rem)] items-end justify-end lg:bottom-6 lg:right-6">
-      {minimized ? (
-        <button
-          aria-label="Abrir Clara"
-          className="pointer-events-auto flex h-20 w-20 items-center justify-center rounded-full border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(30,41,59,0.96))] p-1.5 shadow-[0_24px_70px_rgba(15,23,42,0.42)] transition hover:-translate-y-0.5 hover:border-cyan-200/35"
-          onClick={() => updateMinimized(false)}
-          type="button"
-        >
-          <ClaraAvatarGlyph />
-        </button>
-      ) : (
-        <section className="pointer-events-auto w-[19rem] rounded-[1.2rem] border border-cyan-300/18 bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(30,41,59,0.98))] p-4 text-white shadow-[0_24px_80px_rgba(15,23,42,0.48)] backdrop-blur-xl">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <ClaraAvatarGlyph />
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-100/85">CLARA</p>
-                <p className="mt-1 text-sm font-semibold text-white">Advogada Digital IA</p>
-                <p className="mt-1 text-[11px] text-slate-400">Fato confirmado, pendencia, risco e proxima acao.</p>
-              </div>
-            </div>
-            <button
-              aria-label="Minimizar Clara"
-              className="rounded-full border border-white/10 px-2 py-1 text-xs text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
-              onClick={() => updateMinimized(true)}
-              type="button"
-            >
-              -
-            </button>
-          </div>
-
-          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100/80">{contextLabel}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              {isClaraPage
-                ? "Clara ativa neste workspace. Continue a triagem, a estrategia ou a revisao sem sair do fluxo."
-                : "Abra a Clara com o contexto atual para seguir com leitura juridica, pendencias e proxima acao."}
-            </p>
-          </div>
-
-          <div className="mt-4 flex gap-2">
-            <Link
-              className="flex-1 rounded-[0.9rem] bg-[linear-gradient(90deg,#22c55e,#4ade80)] px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:brightness-105"
-              href={claraHref}
-            >
-              {isClaraPage ? "Abrir contexto" : "Abrir na Clara"}
-            </Link>
-            <button
-              className="rounded-[0.9rem] border border-white/10 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06]"
-              onClick={() => updateMinimized(true)}
-              type="button"
-            >
-              Recolher
-            </button>
-          </div>
-        </section>
-      )}
+      <Link
+        aria-label="Abrir Clara"
+        className="pointer-events-auto flex h-20 w-20 items-center justify-center rounded-full border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(30,41,59,0.96))] p-1.5 shadow-[0_24px_70px_rgba(15,23,42,0.42)] transition hover:-translate-y-0.5 hover:border-cyan-200/35"
+        href={claraHref}
+      >
+        <ClaraAvatarGlyph />
+      </Link>
     </div>
   );
 }

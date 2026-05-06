@@ -9,8 +9,6 @@ type ClaraLandingHeroProps = {
   caseLabel: string;
   processLabel: string;
   summary: string;
-  nextStep: string;
-  recommendation: string;
   factsConfirmed: string[];
   documentsMissing: string[];
   risks: string[];
@@ -36,9 +34,7 @@ export function ClaraLandingHero({
   clientLabel,
   documentsMissing,
   factsConfirmed,
-  nextStep,
   processLabel,
-  recommendation,
   risks,
   summary,
   tabs
@@ -97,7 +93,7 @@ export function ClaraLandingHero({
 
         <div className="mt-10 flex flex-wrap gap-3">
           <Link
-            className="rounded-[0.9rem] bg-[linear-gradient(90deg,#d4a844,#f5c97a)] px-6 py-4 text-sm font-semibold text-slate-950 transition hover:brightness-105"
+            className="rounded-[0.9rem] bg-[linear-gradient(90deg,#22c55e,#4ade80)] px-6 py-4 text-sm font-semibold text-slate-950 transition hover:brightness-105"
             href="/clara?tab=analise#clara-workbench"
           >
             Abrir fluxo da Clara
@@ -198,50 +194,8 @@ export function ClaraLandingHero({
               <span>CLARA esta analisando...</span>
             </div>
           </div>
-
-          <div className="relative mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Proxima acao: <span className="font-semibold text-white">{nextStep}</span>
-            </div>
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Recomendacao: <span className="font-semibold text-white">{recommendation}</span>
-            </div>
-          </div>
         </div>
       </aside>
-
-      <div className="grid gap-3 md:grid-cols-3 xl:col-span-2">
-        <div className="workspace-soft-card p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-100">
-            Fatos confirmados
-          </p>
-          <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-            {factsConfirmed.slice(0, 3).map((item) => (
-              <li key={item}>- {item}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="workspace-soft-card p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-100">
-            Pendencias
-          </p>
-          <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-            {documentsMissing.slice(0, 3).map((item) => (
-              <li key={item}>- {item}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="workspace-soft-card p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-fuchsia-100">
-            Riscos
-          </p>
-          <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-            {risks.slice(0, 3).map((item) => (
-              <li key={item}>- {item}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
     </section>
   );
 }

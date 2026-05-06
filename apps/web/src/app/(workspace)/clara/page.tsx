@@ -1964,9 +1964,7 @@ export default async function ClaraPage({
           clientLabel={clara.structuredCore.context.client.fullName}
           documentsMissing={clara.structuredCore.documentsMissing}
           factsConfirmed={clara.structuredCore.confirmedFacts}
-          nextStep={clara.structuredCore.nextStep}
           processLabel={clara.structuredCore.context.process?.processNumber ?? "Processo pendente"}
-          recommendation={clara.structuredCore.recommendation}
           risks={clara.structuredCore.risks}
           summary={clara.structuredCore.summary}
           tabs={tabItems}
