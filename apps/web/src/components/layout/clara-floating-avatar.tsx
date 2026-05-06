@@ -62,13 +62,13 @@ function buildClaraHref(pathname: string, searchParams: URLSearchParams) {
 
 function ClaraAvatarGlyph() {
   return (
-    <div className="relative h-14 w-14 overflow-hidden rounded-full border border-cyan-200/30 bg-[radial-gradient(circle_at_35%_30%,rgba(248,250,252,0.95),rgba(125,211,252,0.3)_45%,rgba(15,23,42,0.95)_100%)] shadow-[0_18px_45px_rgba(8,145,178,0.28)]">
+    <div className="relative h-16 w-16 overflow-hidden rounded-full border border-cyan-200/30 bg-[radial-gradient(circle_at_35%_30%,rgba(248,250,252,0.95),rgba(125,211,252,0.3)_45%,rgba(15,23,42,0.95)_100%)] shadow-[0_18px_45px_rgba(8,145,178,0.28)]">
       <Image
         alt="Avatar da Clara"
-        className="object-cover"
+        className="object-cover object-[center_20%]"
         fill
         priority
-        sizes="56px"
+        sizes="64px"
         src="/clara/avatar.png"
       />
     </div>
@@ -104,7 +104,7 @@ export function ClaraFloatingAvatar() {
       {minimized ? (
         <button
           aria-label="Abrir Clara"
-          className="pointer-events-auto flex h-16 w-16 items-center justify-center rounded-full border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(30,41,59,0.96))] p-1.5 shadow-[0_24px_70px_rgba(15,23,42,0.42)] transition hover:-translate-y-0.5 hover:border-cyan-200/35"
+          className="pointer-events-auto flex h-20 w-20 items-center justify-center rounded-full border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(30,41,59,0.96))] p-1.5 shadow-[0_24px_70px_rgba(15,23,42,0.42)] transition hover:-translate-y-0.5 hover:border-cyan-200/35"
           onClick={() => updateMinimized(false)}
           type="button"
         >

@@ -3,6 +3,7 @@
 import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { ClaraConversationCard } from "@/components/layout/clara-conversation-card";
+import { ClaraLandingHero } from "@/components/layout/clara-landing-hero";
 import { WorkspacePage } from "@/components/layout/workspace-page";
 import {
   commitClaraExecutionAction,
@@ -1957,20 +1958,19 @@ export default async function ClaraPage({
   if (!activeNiche) {
     return (
       <div className="space-y-6">
-        <section className="space-y-4">
-          <ClaraConversationCard
-            badgeLabel="CLARA"
-            badgeSubtitle="Assistente especialista em direito bancario"
-            responseDetail="Converse com a Clara como em um chat de advogado bancario: pergunta direta, resposta curta e objetiva."
-            assistantReply={globalSearchQuery ? buildClaraReply(globalSearchQuery) : undefined}
-            composerHint="Pressione Enter para enviar. Use Shift+Enter para quebrar linha."
-            composerPlaceholder="Ex.: Quero revisar a tese do caso e listar documentos faltantes."
-            composerValue={globalSearchQuery}
-            clientOptions={visibleClientOptions}
-          />
-
-        </section>
-
+        <ClaraLandingHero
+          activeModeLabel={tabItems.find((item) => item.id === activeTab)?.label ?? "Triagem"}
+          caseLabel={clara.structuredCore.context.bankingCase.title}
+          clientLabel={clara.structuredCore.context.client.fullName}
+          documentsMissing={clara.structuredCore.documentsMissing}
+          factsConfirmed={clara.structuredCore.confirmedFacts}
+          nextStep={clara.structuredCore.nextStep}
+          processLabel={clara.structuredCore.context.process?.processNumber ?? "Processo pendente"}
+          recommendation={clara.structuredCore.recommendation}
+          risks={clara.structuredCore.risks}
+          summary={clara.structuredCore.summary}
+          tabs={tabItems}
+        />
       </div>
     );
   }
