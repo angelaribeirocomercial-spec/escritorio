@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -62,15 +63,14 @@ function buildClaraHref(pathname: string, searchParams: URLSearchParams) {
 function ClaraAvatarGlyph() {
   return (
     <div className="relative h-14 w-14 overflow-hidden rounded-full border border-cyan-200/30 bg-[radial-gradient(circle_at_35%_30%,rgba(248,250,252,0.95),rgba(125,211,252,0.3)_45%,rgba(15,23,42,0.95)_100%)] shadow-[0_18px_45px_rgba(8,145,178,0.28)]">
-      <div className="absolute inset-x-3 top-2 h-5 rounded-full bg-[linear-gradient(180deg,#0f172a,#1e293b)]" />
-      <div className="absolute left-[18px] top-[14px] h-6 w-6 rounded-full bg-[#f5d0c5]" />
-      <div className="absolute left-[15px] top-[23px] h-2 w-2 rounded-full border border-slate-700/50 bg-white/20" />
-      <div className="absolute right-[15px] top-[23px] h-2 w-2 rounded-full border border-slate-700/50 bg-white/20" />
-      <div className="absolute left-[20px] top-[24px] h-[2px] w-[4px] rounded-full bg-slate-800" />
-      <div className="absolute right-[20px] top-[24px] h-[2px] w-[4px] rounded-full bg-slate-800" />
-      <div className="absolute left-[22px] top-[30px] h-[2px] w-[12px] rounded-full bg-rose-200/90" />
-      <div className="absolute bottom-0 left-[11px] h-6 w-8 rounded-t-[14px] bg-[linear-gradient(180deg,#e2e8f0,#94a3b8)]" />
-      <div className="absolute bottom-0 left-[6px] h-5 w-10 rounded-t-[16px] bg-[linear-gradient(180deg,#0f172a,#1e3a5f)]" />
+      <Image
+        alt="Avatar da Clara"
+        className="object-cover"
+        fill
+        priority
+        sizes="56px"
+        src="/clara/avatar.png"
+      />
     </div>
   );
 }
@@ -118,6 +118,7 @@ export function ClaraFloatingAvatar() {
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-100/85">CLARA</p>
                 <p className="mt-1 text-sm font-semibold text-white">Advogada Digital IA</p>
+                <p className="mt-1 text-[11px] text-slate-400">Fato confirmado, pendencia, risco e proxima acao.</p>
               </div>
             </div>
             <button
