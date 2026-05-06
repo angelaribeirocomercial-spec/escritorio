@@ -105,18 +105,6 @@ export function ClaraLandingHero({
             Ver funcoes
           </Link>
         </div>
-
-        <div className="mt-8 grid gap-3 sm:grid-cols-3">
-          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-            Cliente em contexto: <span className="font-semibold text-white">{clientLabel}</span>
-          </div>
-          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-            Caso analisado: <span className="font-semibold text-white">{caseLabel}</span>
-          </div>
-          <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-            Processo vinculado: <span className="font-semibold text-white">{processLabel}</span>
-          </div>
-        </div>
       </div>
 
       <aside className="workspace-panel overflow-hidden p-0">
