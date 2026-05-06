@@ -307,7 +307,7 @@ export function ClientCockpitFrame({
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
             <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.continueClara}>
-              Continuar na Clara
+              Abrir na Clara
             </Link>
             <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.backToClients}>
               Voltar para clientes
@@ -582,10 +582,10 @@ export function ClientCockpitFrame({
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.hubClara}>
-                      Hub Clara
+                      Abrir na Clara
                     </Link>
                     <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.continueClara}>
-                      Continuar na Clara
+                      Atualizar na Clara
                     </Link>
                     <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.prepareContext}>
                       Preparar contexto

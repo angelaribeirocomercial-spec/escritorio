@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
+import { ClaraFloatingAvatar } from "@/components/layout/clara-floating-avatar";
 import { SessionActions } from "@/components/layout/session-actions";
 import { WorkspaceGlobalSearch } from "@/components/layout/workspace-global-search";
 import {
@@ -453,6 +454,7 @@ export function WorkspaceShell({ children, searchEntries, session }: WorkspaceSh
           <main className="min-w-0">{children}</main>
         </div>
       </div>
+      <ClaraFloatingAvatar />
     </div>
   );
 }

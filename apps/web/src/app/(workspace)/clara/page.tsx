@@ -10,6 +10,11 @@ import {
   updateClaraReviewNoteAction,
   updateClaraWorkflowStatusAction
 } from "@/app/(workspace)/clara/actions";
+import {
+  buildClaraStructuredResponse,
+  getClaraLegalModeByTab
+} from "@/server/services/clara/clara-legal-modes";
+import { buildClaraConsultationLog } from "@/server/services/clara/clara-consultation-log";
 import { listClaraRecords } from "@/server/services/clara/clara-record-store";
 import type { ClaraRecord } from "@/server/services/clara/clara-record-types";
 import {
@@ -27,20 +32,22 @@ import {
   getClaraContextualAnalysis,
   type ClaraContextualTaskType
 } from "@/server/services/clara/get-clara-contextual-analysis";
+import { getClaraIntimationAnalysis } from "@/server/services/clara/get-clara-intimation-analysis";
 import { getBankingRevisionalWorkspace } from "@/server/services/clara/get-banking-revisional-workspace";
 import { getClaraStructuredCore } from "@/server/services/clara/get-clara-structured-core";
 import { getClaraWorkspace } from "@/server/services/clara/get-clara-workspace";
+import { getJurisprudenceConsultation } from "@/server/services/jurisprudence/get-jurisprudence-consultation";
 import type { JudicialProcessWithRelations } from "@/server/services/processes/get-processes";
 import type { TaskWithContext } from "@/server/services/tasks/get-tasks";
 
 const tabItems = [
-  { id: "analise", label: "Analise" },
+  { id: "analise", label: "Triagem" },
   { id: "intimacao", label: "Intimacao" },
-  { id: "pecas", label: "Pecas" },
+  { id: "pecas", label: "Peca" },
   { id: "jurisprudencia", label: "Jurisprudencia" },
-  { id: "checklist", label: "Checklist" },
-  { id: "proximos-passos", label: "Proximos passos" },
-  { id: "comparador", label: "Comparador de documentos" }
+  { id: "checklist", label: "Acompanhamento" },
+  { id: "proximos-passos", label: "Estrategia" },
+  { id: "comparador", label: "Revisao" }
 ] as const;
 
 const nicheItems = [
@@ -105,8 +112,16 @@ function hasOptions(field: { type: string; options?: string[] }): field is { typ
 
 function getContextualTaskType(tab: TabId): ClaraContextualTaskType {
   switch (tab) {
+    case "intimacao":
+      return "analisar-intimacao";
+    case "pecas":
+      return "gerar-peca";
+    case "jurisprudencia":
+      return "consultar-jurisprudencia";
     case "checklist":
-      return "checklist-documental";
+      return "acompanhar-processo";
+    case "comparador":
+      return "revisar-minuta";
     case "proximos-passos":
       return "sugerir-proximos-passos";
     default:
@@ -359,6 +374,8 @@ export default async function ClaraPage({
   let recentRecords: Awaited<ReturnType<typeof listClaraRecords>>;
   let revisionalWorkspace: Awaited<ReturnType<typeof getBankingRevisionalWorkspace>> | null;
   let contextualAnalysis: Awaited<ReturnType<typeof getClaraContextualAnalysis>> | null;
+  let intimationAnalysis: Awaited<ReturnType<typeof getClaraIntimationAnalysis>> | null = null;
+  let jurisprudenceConsultation: Awaited<ReturnType<typeof getJurisprudenceConsultation>> | null = null;
   let hasResolvedProcess = false;
   let hasResolvedDocument = false;
   const contextualTaskType = getContextualTaskType(activeTab);
@@ -406,6 +423,20 @@ export default async function ClaraPage({
             targetReductionPercent: searchParams?.targetReductionPercent
           })
         : null;
+    if (activeTab === "intimacao") {
+      intimationAnalysis = await getClaraIntimationAnalysis({
+        clientId: searchParams?.client ?? clara.structuredCore.context.client.id,
+        caseId: searchParams?.case ?? clara.structuredCore.context.bankingCase.id,
+        processId: searchParams?.process ?? clara.structuredCore.context.process?.id,
+        documentId: searchParams?.document ?? clara.structuredCore.context.selectedDocument?.id
+      }).catch(() => null);
+    }
+    if (activeTab === "jurisprudencia") {
+      jurisprudenceConsultation = await getJurisprudenceConsultation(
+        "stj",
+        `${clara.structuredCore.context.bankingCase.title} ${clara.structuredCore.context.bankingCase.mainThesis}`
+      ).catch(() => null);
+    }
   } catch {
     const structuredCoreFallback = await getClaraStructuredCore({
       clientId: searchParams?.client,
@@ -1906,6 +1937,22 @@ export default async function ClaraPage({
   }
 
   const claraPageBaseHref = `/clara?niche=${encodeURIComponent(activeNiche ?? "revisional")}&client=${encodeURIComponent(selectedClient.id)}&case=${encodeURIComponent(selectedCase.id)}&process=${encodeURIComponent(selectedProcess.id)}&document=${encodeURIComponent(selectedDocument.id)}&task=${encodeURIComponent(selectedTask.id)}`;
+  const activeModeLabel = tabItems.find((item) => item.id === activeTab)?.label ?? "Triagem";
+  const activeLegalMode = getClaraLegalModeByTab(activeTab);
+  const documentsFoundItems = clara.structuredCore.documentsFound.slice(0, 4);
+  const pendingItems = clara.structuredCore.documentsMissing.slice(0, 4);
+  const pieceRecords = filteredRecords.filter((record) => record.kind === "text-draft" || record.kind === "filing-package");
+  const sourceItems = clara.structuredCore.sourceAdapters.slice(0, 4);
+  const sidebarAlerts = clara.structuredCore.risks.slice(0, 3);
+  const structuredResponse = buildClaraStructuredResponse({
+    tab: activeTab,
+    structuredCore: clara.structuredCore,
+    sourceTrace: contextualAnalysis?.sourceTrace
+  });
+  const consultationLog = buildClaraConsultationLog({
+    sourceAdapters: clara.structuredCore.sourceAdapters,
+    jurisprudence: jurisprudenceConsultation
+  });
 
   if (!activeNiche) {
     return (
@@ -1930,78 +1977,260 @@ export default async function ClaraPage({
 
   return (
     <div className="space-y-6">
-      <section className="workspace-panel scroll-mt-40 p-4" id="clara-nicho-ativo">
-        <div className="flex flex-col gap-2">
-          <p className="workspace-kicker">Nicho ativo</p>
-          <p className="text-xs leading-5 text-slate-400">
-            {nicheConfig?.summary ??
-              "Escolha um nicho para abrir a sequencia operacional dentro do contexto correto."}
-          </p>
-        </div>
-        <section className="mt-4 workspace-panel p-5">
-          <div className="flex flex-col gap-2">
-            <p className="workspace-kicker">Abas do caso</p>
-            <p className="text-xs leading-5 text-slate-400">
-              Estas ferramentas aparecem quando o caso ja esta resolvido e a Clara entra no fluxo operacional.
+      <section className="workspace-panel scroll-mt-40 p-6" id="clara-nicho-ativo">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-4xl">
+            <p className="workspace-kicker">CLARA</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              Advogada Digital IA
+            </h1>
+            <p className="mt-3 text-sm leading-7 text-slate-300">
+              Workspace juridico profissional para triagem, estrategia, intimacao, peca, jurisprudencia e revisao,
+              sem poluir as paginas de cliente e processo.
             </p>
           </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {tabItems.map((item) => (
-              <Link
-                key={item.id}
-                className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-50 transition hover:bg-cyan-300/15"
-                href={`${claraPageBaseHref}&tab=${item.id}`}
-              >
-                {item.label}
-              </Link>
-            ))}
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Cliente: <span className="font-semibold text-white">{selectedClient.label.split(" · ")[0]}</span>
+            </div>
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Caso: <span className="font-semibold text-white">{workspaceCase.title}</span>
+            </div>
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Processo: <span className="font-semibold text-white">{workspaceProcess?.processNumber ?? selectedProcess.label}</span>
+            </div>
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Modo: <span className="font-semibold text-white">{activeModeLabel}</span>
+            </div>
           </div>
-        </section>
-        {nicheFlow ? (
-          <div className="mt-4 grid gap-2 md:grid-cols-5">
-            {nicheFlow.steps.map((step, index) => (
-              <div
-                key={step.title}
-                className={`detail-soft-row flex h-full flex-col justify-between px-3 py-3 text-[11px] font-semibold text-slate-200 ${
-                  index === 4 ? "border-emerald-300/20 bg-emerald-300/10" : ""
-                }`}
-              >
-                <span>
-                  {index + 1}. {step.title}
-                </span>
-                <p className="mt-2 text-[11px] font-normal leading-5 text-slate-400">{step.detail}</p>
-              </div>
-            ))}
-          </div>
-        ) : null}
-        <p className="mt-3 text-[11px] leading-5 text-slate-500">
-          A saida operacional fica abaixo como documento formal, revisao humana e impress�o.
-        </p>
-      </section>
-
-      {renderClaraContextualAnalysis(contextualAnalysis)}
-
-      <section className="workspace-panel p-6">
-        <div className="flex flex-wrap gap-3">
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2">
           {tabItems.map((item) => {
             const active = item.id === activeTab;
 
             return (
-                <Link
-                  key={item.id}
-                  className={`rounded-[4px] px-4 py-3 text-sm font-semibold transition ${
-                    active
-                      ? "bg-[linear-gradient(90deg,#22c55e,#4ade80)] text-slate-950 shadow-soft"
-                      : "clara-secondary-button border border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]"
-                  }`}
-                  href={`/clara?niche=${activeNiche ?? "revisional"}&tab=${item.id}#clara-workbench`}
+              <Link
+                key={item.id}
+                className={`rounded-[4px] px-4 py-3 text-sm font-semibold transition ${
+                  active
+                    ? "bg-[linear-gradient(90deg,#22c55e,#4ade80)] text-slate-950 shadow-soft"
+                    : "clara-secondary-button border border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]"
+                }`}
+                href={`${claraPageBaseHref}&tab=${item.id}#clara-workbench`}
               >
                 {item.label}
               </Link>
             );
           })}
         </div>
+        <p className="mt-4 text-xs leading-6 text-slate-400">
+          {nicheConfig?.summary ??
+            "Escolha um nicho para abrir a sequencia operacional dentro do contexto correto."}
+        </p>
       </section>
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_22rem]">
+        <div className="space-y-4">
+          <ClaraConversationCard
+            badgeLabel="CLARA"
+            badgeSubtitle={`${nicheConfig?.title ?? "Workspace juridico"} · ${activeModeLabel}`}
+            responseDetail={activeWorkspace.summary}
+            assistantReply={globalSearchQuery ? buildClaraReply(globalSearchQuery) : undefined}
+            composerHint="Pressione Enter para enviar. Use Shift+Enter para quebrar linha."
+            composerPlaceholder="Ex.: Analise a prova, diga o risco e monte a proxima acao juridica."
+            composerValue={globalSearchQuery}
+            clientOptions={visibleClientOptions}
+          />
+
+          <section className="workspace-panel p-5">
+            <div className="flex flex-col gap-2">
+              <p className="workspace-kicker">Resposta estruturada</p>
+              <h3 className="text-lg font-semibold text-white">{activeLegalMode.label}</h3>
+              <p className="text-sm leading-6 text-slate-300">{activeLegalMode.summary}</p>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="workspace-soft-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">Fatos confirmados</p>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                  {structuredResponse.factsConfirmed.map((item) => (
+                    <li key={item}>- {item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="workspace-soft-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">Pendencias</p>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                  {structuredResponse.pendingItems.map((item) => (
+                    <li key={item}>- {item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="workspace-soft-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">Riscos</p>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                  {structuredResponse.risks.map((item) => (
+                    <li key={item}>- {item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="workspace-soft-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Sugestao juridica</p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">{structuredResponse.legalSuggestion}</p>
+              </div>
+              <div className="workspace-soft-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Proxima acao</p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">{structuredResponse.nextAction}</p>
+              </div>
+              <div className="workspace-soft-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Fontes e revisao</p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  Banco interno: {structuredResponse.sourceBuckets.origem_interna.length} | API: {structuredResponse.sourceBuckets.origem_api.length} | Inferencia: {structuredResponse.sourceBuckets.inferencia_controlada.length}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-400">{structuredResponse.reviewStatus}</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside className="space-y-4">
+          <section className="workspace-panel p-5">
+            <p className="workspace-kicker">Resumo do caso</p>
+            <p className="mt-3 text-sm font-semibold text-white">{clara.structuredCore.classification.scenarioLabel}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{clara.structuredCore.summary}</p>
+            <div className="mt-4 space-y-2 text-sm text-slate-300">
+              <div className="detail-soft-row px-3 py-3">
+                Fase: <span className="font-semibold text-white">{workspaceCase.stage}</span>
+              </div>
+              <div className="detail-soft-row px-3 py-3">
+                Risco: <span className="font-semibold text-white">{clara.structuredCore.classification.decisionLabel}</span>
+              </div>
+              <div className="detail-soft-row px-3 py-3">
+                Proxima acao: <span className="font-semibold text-white">{clara.structuredCore.nextStep}</span>
+              </div>
+            </div>
+          </section>
+
+          <section className="workspace-panel p-5">
+            <p className="workspace-kicker">Documentos e pendencias</p>
+            <div className="mt-4 space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">Presentes</p>
+                <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
+                  {documentsFoundItems.length > 0 ? (
+                    documentsFoundItems.map((document) => <li key={document.id}>- {document.label}</li>)
+                  ) : (
+                    <li>- Nenhum documento base confirmado.</li>
+                  )}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">Pendentes</p>
+                <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
+                  {pendingItems.length > 0 ? (
+                    pendingItems.map((item) => <li key={item}>- {item}</li>)
+                  ) : (
+                    <li>- Nenhuma pendencia essencial aberta.</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section className="workspace-panel p-5">
+            <p className="workspace-kicker">Pecas e revisao</p>
+            <div className="mt-4 space-y-3 text-sm text-slate-300">
+              <div className="detail-soft-row px-3 py-3">
+                Registros prontos: <span className="font-semibold text-white">{pieceRecords.length}</span>
+              </div>
+              <div className="detail-soft-row px-3 py-3">
+                Historico da Clara: <span className="font-semibold text-white">{filteredRecords.length}</span>
+              </div>
+              <div className="detail-soft-row px-3 py-3">
+                Revisao final: <span className="font-semibold text-white">Humana obrigatoria</span>
+              </div>
+            </div>
+          </section>
+
+          <section className="workspace-panel p-5">
+            <p className="workspace-kicker">Fontes e alertas</p>
+            <div className="mt-4 space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Consultas preparadas</p>
+                <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
+                  {sourceItems.map((adapter) => (
+                    <li key={adapter.sourceId}>
+                      - {adapter.sourceLabel}: {adapter.status === "consulted" ? "consultada" : adapter.status === "not_consulted" ? "preparada" : adapter.status === "failed" ? "falha" : "indisponivel"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">Alertas</p>
+                <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
+                  {sidebarAlerts.length > 0 ? (
+                    sidebarAlerts.map((alert) => <li key={alert}>- {alert}</li>)
+                  ) : (
+                    <li>- Nenhum alerta critico adicional aberto.</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {activeTab === "intimacao" && intimationAnalysis ? (
+            <section className="workspace-panel p-5">
+              <p className="workspace-kicker">Analise de intimacao</p>
+              <div className="mt-4 space-y-3 text-sm text-slate-300">
+                <div className="detail-soft-row px-3 py-3">
+                  Prazo: <span className="font-semibold text-white">{intimationAnalysis.deadlineLabel}</span>
+                </div>
+                <div className="detail-soft-row px-3 py-3">
+                  Ato exigido: <span className="font-semibold text-white">{intimationAnalysis.actionRequired}</span>
+                </div>
+                <div className="detail-soft-row px-3 py-3">
+                  Risco: <span className="font-semibold text-white">{intimationAnalysis.riskLabel}</span>
+                </div>
+                <p className="text-xs leading-6 text-slate-400">Fonte: {intimationAnalysis.sourceLabel}</p>
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === "jurisprudencia" && jurisprudenceConsultation ? (
+            <section className="workspace-panel p-5">
+              <p className="workspace-kicker">Jurisprudencia rastreavel</p>
+              <p className="mt-3 text-sm leading-6 text-slate-300">{jurisprudenceConsultation.summary}</p>
+              <div className="mt-4 space-y-3 text-sm text-slate-300">
+                <div className="detail-soft-row px-3 py-3">
+                  Status: <span className="font-semibold text-white">{jurisprudenceConsultation.consulted ? "Consultada" : "Sugestao de pesquisa"}</span>
+                </div>
+                <div className="detail-soft-row px-3 py-3">
+                  Citar precedente: <span className="font-semibold text-white">{jurisprudenceConsultation.canCitePrecedent ? "Sim" : "Nao"}</span>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          <section className="workspace-panel p-5">
+            <p className="workspace-kicker">Log de consultas</p>
+            <div className="mt-4 space-y-3">
+              {consultationLog.map((entry) => (
+                <div key={entry.id} className="detail-soft-row px-3 py-3 text-sm text-slate-300">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-semibold text-white">{entry.sourceLabel}</span>
+                    <span className="text-xs text-slate-400">{new Date(entry.loggedAt).toLocaleString("pt-BR")}</span>
+                  </div>
+                  <p className="mt-2 leading-6">{entry.queryHint}</p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    Status: {entry.status} | Confianca: {entry.confidenceLabel}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </aside>
+      </section>
+
+      {renderClaraContextualAnalysis(contextualAnalysis)}
 
       <section className="workspace-panel scroll-mt-96 p-5" id="clara-workbench">
         <div className="flex flex-col gap-2">

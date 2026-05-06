@@ -181,7 +181,7 @@ export function ClaraSideCopilot() {
           className="detail-link-button px-4 py-3 text-sm font-semibold"
           href="/clara"
         >
-          Abrir fluxo da Clara
+          Abrir na Clara
         </Link>
       </div>
       <div className="mt-4 flex flex-wrap gap-2">

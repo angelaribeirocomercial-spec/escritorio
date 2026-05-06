@@ -175,7 +175,7 @@ export function ProcessCockpitFrame({
 
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
             <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.continueClara}>
-              Continuar na Clara
+              Abrir na Clara
             </Link>
             <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.openDataJud}>
               {dataJudLabel}

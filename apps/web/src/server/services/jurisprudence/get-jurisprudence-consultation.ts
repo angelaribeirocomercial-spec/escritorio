@@ -11,7 +11,7 @@ export type JurisprudenceConsultationRecord = {
 
 export type JurisprudenceConsultationFinding = {
   findingId: string;
-  category: "precedent";
+  category: "precedent" | "research_hint";
   title: string;
   detail: string;
   referenceIds: string[];
@@ -23,8 +23,11 @@ export type JurisprudenceConsultationResult = {
   scope: string;
   query: string;
   normalizedQuery: string;
-  status: "prepared_stub";
+  mode: "prepared_stub";
+  status: "not_consulted" | "consulted" | "failed";
   consulted: boolean;
+  loggedAt: string;
+  canCitePrecedent: boolean;
   queryHint: string;
   summary: string;
   sourceTrail: {
@@ -80,8 +83,11 @@ export async function getJurisprudenceConsultation(
     scope: config.scope,
     query: consulta,
     normalizedQuery,
-    status: "prepared_stub",
+    mode: "prepared_stub",
+    status: "not_consulted",
     consulted: false,
+    loggedAt: new Date().toISOString(),
+    canCitePrecedent: false,
     queryHint:
       sourceId === "stj"
         ? `Pesquisar precedentes do STJ para ${normalizedQuery}.`
@@ -119,15 +125,15 @@ export async function getJurisprudenceConsultation(
     findings: [
       {
         findingId: `${sourceId}-${normalizedQuery.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "finding"}`,
-        category: "precedent",
+        category: "research_hint",
         title:
           sourceId === "stj"
             ? "Pesquisa de precedentes preparada"
             : "Triagem constitucional preparada",
         detail:
           sourceId === "stj"
-            ? "O contrato de consulta esta pronto para logging e persistencia sem fingir resultado oficial."
-            : "O contrato de consulta delimita o recorte constitucional sem misturar o STF com a regra geral do caso.",
+            ? "Nenhum precedente foi citado como utilizavel; a resposta ficou rebaixada para sugestao de pesquisa rastreavel."
+            : "Nenhum precedente foi citado como utilizavel; o recorte ficou restrito a sugestao constitucional rastreavel.",
         referenceIds: [
           `${sourceId}-${normalizedQuery.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "consulta"}`
         ]

@@ -4,6 +4,17 @@ import { listClaraRecords } from "@/server/services/clara/clara-record-store";
 import { listClaraMinutas } from "@/server/services/clara/clara-minutas-store";
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
 
+function workflowStatusLabel(status: "created" | "reviewed" | "completed") {
+  switch (status) {
+    case "reviewed":
+      return "Em revisao";
+    case "completed":
+      return "Aprovado";
+    default:
+      return "Gerado";
+  }
+}
+
 function parseLimit(value: string | null) {
   const parsed = Number.parseInt(value ?? "", 10);
 
@@ -31,6 +42,7 @@ export async function GET(request: NextRequest) {
         ...(record.payload as TextDraftPayload),
         id: record.id,
         workflowStatus: record.workflowStatus,
+        workflowStatusLabel: workflowStatusLabel(record.workflowStatus),
         reviewNote: record.reviewNote ?? "",
         updatedAt: record.updatedAt,
         createdAt: record.createdAt,

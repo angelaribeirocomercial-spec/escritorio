@@ -1,6 +1,10 @@
 import { getCaseById, getCases } from "@/server/services/cases/get-cases";
 import { getClientById } from "@/server/services/clients/get-clients";
 import {
+  buildClaraStructuredResponse,
+  getClaraLegalModeByTab
+} from "@/server/services/clara/clara-legal-modes";
+import {
   getClaraContextualAnalysis,
   type ClaraContextualTaskType
 } from "@/server/services/clara/get-clara-contextual-analysis";
@@ -294,9 +298,33 @@ export async function getClaraAnalysisApiPayload(params: {
     analysis = null;
   }
 
+  const structuredCore = await getClaraStructuredCore({
+    clientId: params.clientId,
+    caseId: params.caseId,
+    processId: params.processId,
+    documentId: params.documentId,
+    strict: true
+  }).catch(() => null);
+  const tab =
+    params.taskType === "sugerir-proximos-passos"
+      ? "proximos-passos"
+      : params.taskType === "analisar-intimacao"
+        ? "intimacao"
+        : params.taskType === "gerar-peca"
+          ? "pecas"
+          : params.taskType === "consultar-jurisprudencia"
+            ? "jurisprudencia"
+            : params.taskType === "acompanhar-processo"
+              ? "checklist"
+              : params.taskType === "revisar-minuta"
+                ? "comparador"
+                : "analise";
+  const legalMode = getClaraLegalModeByTab(tab);
+
   return {
     executionId: analysis?.executionId ?? `clara-api-fallback-${Date.now()}`,
     taskType: params.taskType,
+    legalMode,
     contextSnapshot:
       analysis?.contextSnapshot ?? {
         clientId: params.clientId,
@@ -337,7 +365,15 @@ export async function getClaraAnalysisApiPayload(params: {
           "Voltar ao cockpit do cliente para completar o contexto.",
           "Anexar documentos do caso antes da saida final."
         ]
-      }
+      },
+    structuredResponse:
+      structuredCore
+        ? buildClaraStructuredResponse({
+            tab,
+            structuredCore,
+            sourceTrace: analysis?.sourceTrace
+          })
+        : null
   };
 }
 

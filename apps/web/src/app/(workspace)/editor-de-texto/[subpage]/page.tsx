@@ -634,9 +634,9 @@ function ClaraDraftPanel({
                 defaultValue={claraRecord.workflowStatus}
                 name="workflowStatus"
               >
-                <option value="created">created</option>
-                <option value="reviewed">reviewed</option>
-                <option value="completed">completed</option>
+                <option value="created">Gerado</option>
+                <option value="reviewed">Em revisao</option>
+                <option value="completed">Aprovado</option>
               </select>
               <button className="mj-model-button-green" type="submit">
                 Atualizar status
@@ -760,7 +760,13 @@ function MeusTextosInner({
                     {payload.pieceLabel} | {payload.documentLabel}
                   </p>
                 </div>
-                <span className="text-slate-400">{record.workflowStatus}</span>
+                <span className="text-slate-400">
+                  {record.workflowStatus === "reviewed"
+                    ? "Em revisao"
+                    : record.workflowStatus === "completed"
+                      ? "Aprovado"
+                      : "Gerado"}
+                </span>
               </div>
             );
           })}

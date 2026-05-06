@@ -7,7 +7,12 @@ export type ClaraContextualTaskType =
   | "analisar-caso"
   | "checklist-documental"
   | "sugerir-proximos-passos"
-  | "parecer-tecnico";
+  | "parecer-tecnico"
+  | "analisar-intimacao"
+  | "gerar-peca"
+  | "consultar-jurisprudencia"
+  | "acompanhar-processo"
+  | "revisar-minuta";
 
 type ClaraExecutionLog = {
   executionId: string;
