@@ -2,6 +2,11 @@ import { BankingCaseRecord, ClientRecord } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  DEMO_CASE_RECORD,
+  DEMO_CLIENT_ID,
+  DEMO_CASE_ID
+} from "@/server/services/demo/demo-workspace-data";
 
 type BankingCaseWithClient = BankingCaseRecord & {
   client: ClientRecord;
@@ -180,6 +185,17 @@ export async function getCases(filters?: {
     return [];
   }
 
+  if (
+    session.workspace.tenant.slug === "clara-bancaria-demo" ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
+  ) {
+    const matchesClient = !filters?.clientId || filters.clientId === DEMO_CLIENT_ID;
+    const matchesCase = !filters?.caseId || filters.caseId === DEMO_CASE_ID;
+
+    return matchesClient && matchesCase ? [DEMO_CASE_RECORD] : [];
+  }
+
   const supabase = getSupabaseAdminClient();
   let query = supabase
     .from("cases")
@@ -207,6 +223,18 @@ export async function getCases(filters?: {
 }
 
 export async function getCaseById(caseId: string): Promise<BankingCaseWithClient | null> {
+  const session = await getWorkspaceSession();
+
+  if (
+    session &&
+    (session.workspace.tenant.slug === "clara-bancaria-demo" ||
+      process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null) &&
+    caseId === DEMO_CASE_ID
+  ) {
+    return DEMO_CASE_RECORD;
+  }
+
   const [bankingCase] = await getCases({ caseId });
 
   return bankingCase ?? null;

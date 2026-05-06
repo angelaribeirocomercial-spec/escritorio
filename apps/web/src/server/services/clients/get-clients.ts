@@ -1,5 +1,9 @@
 import { ClientLinkedCaseSummary, ClientRecord } from "@lexia/domain";
 
+import {
+  DEMO_CLIENT_RECORD,
+  DEMO_CLIENT_ID
+} from "@/server/services/demo/demo-workspace-data";
 import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -56,6 +60,10 @@ export async function getClients(): Promise<ClientRecord[]> {
     return [];
   }
 
+  if (session.workspace.tenant.slug === "clara-bancaria-demo" || process.env.NEXT_PUBLIC_SUPABASE_URL == null || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null) {
+    return [DEMO_CLIENT_RECORD];
+  }
+
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("clients")
@@ -98,6 +106,15 @@ export async function getClientById(clientId: string): Promise<ClientRecord | nu
 
   if (!session) {
     return null;
+  }
+
+  if (
+    clientId === DEMO_CLIENT_ID &&
+    (session.workspace.tenant.slug === "clara-bancaria-demo" ||
+      process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null)
+  ) {
+    return DEMO_CLIENT_RECORD;
   }
 
   const supabase = getSupabaseAdminClient();

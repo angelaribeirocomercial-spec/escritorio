@@ -8,6 +8,11 @@ import {
 
 import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  DEMO_CASE_RECORD,
+  DEMO_CLIENT_RECORD,
+  DEMO_PROCESS_RECORD
+} from "@/server/services/demo/demo-workspace-data";
 
 export type JudicialProcessWithRelations = JudicialProcessRecord & {
   client: ClientRecord;
@@ -146,6 +151,20 @@ export async function getProcesses(): Promise<JudicialProcessWithRelations[]> {
     return [];
   }
 
+  if (
+    session.workspace.tenant.slug === "clara-bancaria-demo" ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
+  ) {
+    return [
+      {
+        ...DEMO_PROCESS_RECORD,
+        client: DEMO_CLIENT_RECORD,
+        bankingCase: DEMO_CASE_RECORD
+      }
+    ];
+  }
+
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("processes")
@@ -170,6 +189,19 @@ export async function getProcessById(
 
   if (!session) {
     return null;
+  }
+
+  if (
+    processId === DEMO_PROCESS_RECORD.id &&
+    (session.workspace.tenant.slug === "clara-bancaria-demo" ||
+      process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null)
+  ) {
+    return {
+      ...DEMO_PROCESS_RECORD,
+      client: DEMO_CLIENT_RECORD,
+      bankingCase: DEMO_CASE_RECORD
+    };
   }
 
   const supabase = getSupabaseServerClient();
