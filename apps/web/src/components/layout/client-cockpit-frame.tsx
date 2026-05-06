@@ -306,19 +306,6 @@ export function ClientCockpitFrame({
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-            {piecesReady && actionLinks.openDistributionHandoff ? (
-              <Link
-                className="mj-model-button-green inline-flex items-center justify-center px-4 py-3 text-sm font-semibold"
-                href={actionLinks.openDistributionHandoff}
-              >
-                Pronto para distribuir
-              </Link>
-            ) : null}
-            {actionLinks.attachDocuments ? (
-              <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.attachDocuments}>
-                Anexar documentos
-              </Link>
-            ) : null}
             <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.continueClara}>
               Continuar na Clara
             </Link>
@@ -418,6 +405,20 @@ export function ClientCockpitFrame({
                     Nenhum documento foi vinculado ao caso ativo ainda.
                   </div>
                 )}
+                <div className="detail-subpanel p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                        Pacote documental do cliente
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-slate-200">
+                        Gere e abra os PDFs de peticao inicial, procuracao e contrato de honorarios sob demanda para
+                        revisao humana.
+                      </p>
+                    </div>
+                  </div>
+                  {generatedDocumentsContent}
+                </div>
                 {relatedProcess ? (
                   <div className="detail-subpanel p-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
@@ -519,14 +520,6 @@ export function ClientCockpitFrame({
                     <h3 className="mt-2 text-2xl font-semibold text-white">Minuta e revisao humana</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {piecesReady && actionLinks.openDistributionHandoff ? (
-                      <Link
-                        className="mj-model-button-green inline-flex items-center justify-center px-4 py-3 text-sm font-semibold"
-                        href={actionLinks.openDistributionHandoff}
-                      >
-                        Pronto para distribuir
-                      </Link>
-                    ) : null}
                     <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={actionLinks.openEditor}>
                       Gerar minuta da peca
                     </Link>
@@ -561,35 +554,6 @@ export function ClientCockpitFrame({
                     </div>
                   </div>
                 ) : null}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Documentos gerados em PDF
-                    </p>
-                    <span className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
-                      Pacote documental do cliente
-                    </span>
-                  </div>
-                  {generatedDocuments.length ? (
-                    <div className="grid gap-3">
-                      {generatedDocuments.map((document) => (
-                        <div key={document.kind} className="detail-soft-row flex items-center justify-between gap-3 px-4 py-4 text-sm text-slate-300">
-                          <div className="min-w-0">
-                            <p className="font-semibold text-white">{document.label}</p>
-                            <p className="mt-1 text-sm leading-6 text-slate-400">{document.detail}</p>
-                          </div>
-                          <Link className="detail-link-button shrink-0 px-4 py-3 text-sm font-semibold" href={document.href}>
-                            {document.statusLabel}
-                          </Link>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="detail-soft-row px-4 py-4 text-sm text-slate-400">
-                      Nenhum PDF gerado ainda para este caso.
-                    </div>
-                  )}
-                </div>
                 {workflow?.readiness.length ? (
                   <div className="grid gap-3">
                     {workflow.readiness.map((item) => (
@@ -627,16 +591,6 @@ export function ClientCockpitFrame({
                       Preparar contexto
                     </Link>
                   </div>
-                </div>
-                <div className="detail-soft-row border border-cyan-300/15 bg-cyan-300/5 px-4 py-4 text-sm text-slate-300">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
-                    Pacote documental do cliente
-                  </p>
-                  <p className="mt-2 leading-6 text-slate-200">
-                    Aqui voce clica para gerar e abrir modelos PDF sob demanda: peticao inicial, procuracao e
-                    contrato de honorarios. Esses arquivos sao rascunhos internos para revisao humana.
-                  </p>
-                  {generatedDocumentsContent}
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">

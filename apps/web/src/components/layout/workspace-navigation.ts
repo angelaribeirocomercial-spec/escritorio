@@ -87,13 +87,6 @@ export const navSections: NavSection[] = [
         ]
       },
       {
-        href: "/editor-de-texto/distribuicao",
-        label: "Distribuicao",
-        shortLabel: "Distribuicao",
-        icon: "editor",
-        description: "Minutas e saida assistida da Clara."
-      },
-      {
         href: "/andamentos",
         label: "Andamentos",
         shortLabel: "Andamentos",
