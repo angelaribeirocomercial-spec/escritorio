@@ -18,17 +18,17 @@ export type CrmContractRecord = {
 type ClientRow = {
   id: string;
   full_name: string;
-  document_id: string;
-  email: string;
+  document_id: string | null;
+  email: string | null;
   phone: string;
-  whatsapp: string;
+  whatsapp: string | null;
   address: string;
-  lead_source: string;
-  bank_name: string;
+  lead_source: string | null;
+  bank_name: string | null;
   service_status: string;
   signed_contract: boolean;
   legal_viability_score: number;
-  fees_label: string;
+  fees_label: string | null;
   documents_sent: number;
   notes: string;
   ia_context: string;
@@ -41,9 +41,9 @@ type CaseRow = {
   id: string;
   client_id: string;
   title: string;
-  bank_name: string;
+  bank_name: string | null;
   process_number: string;
-  contract_number: string;
+  contract_number: string | null;
   claim_type: string;
   stage: string;
   status: string;
@@ -100,7 +100,7 @@ function mapClientRow(row: ClientRow) {
   return {
     id: row.id,
     fullName: row.full_name,
-    bankName: row.bank_name,
+    bankName: row.bank_name ?? "",
     serviceStatus: row.service_status,
     signedContract: row.signed_contract,
     linkedCases: row.linked_cases ?? [],
@@ -113,8 +113,8 @@ function mapCaseRow(row: CaseRow) {
     id: row.id,
     clientId: row.client_id,
     title: row.title,
-    bankName: row.bank_name,
-    contractNumber: row.contract_number
+    bankName: row.bank_name ?? "",
+    contractNumber: row.contract_number ?? ""
   };
 }
 

@@ -34,6 +34,7 @@ export default function NovoFinanceiroPage({
 }: {
   params: { subpage: string };
   searchParams?: {
+    error?: string;
     clientId?: string;
     caseId?: string;
     title?: string;
@@ -47,6 +48,7 @@ export default function NovoFinanceiroPage({
   };
 }) {
   const kind = kindBySubpage[params.subpage];
+  const errorMessage = searchParams?.error ? decodeURIComponent(searchParams.error) : null;
 
   if (!kind) {
     notFound();
@@ -66,6 +68,13 @@ export default function NovoFinanceiroPage({
           Voltar
         </a>
       </div>
+
+      {errorMessage ? (
+        <div className="mj-model-panel border border-amber-300/20 bg-amber-300/10 px-4 py-4 text-sm text-amber-100">
+          <p className="font-semibold">Nao foi possivel criar o lancamento.</p>
+          <p className="mt-2 leading-6">{errorMessage}</p>
+        </div>
+      ) : null}
 
       <form action={createFinancialEntryAction as any} className="mj-model-panel space-y-4 px-4 py-4">
         <input type="hidden" name="kind" value={kind} />
@@ -100,6 +109,9 @@ export default function NovoFinanceiroPage({
               placeholder="Conta Principal"
               type="text"
             />
+            <p className="mt-2 text-[12px] leading-5 text-slate-500">
+              `Conta Principal` ainda funciona como rotulo operacional. Este slice nao modela caixa nem contas reais.
+            </p>
           </div>
           <div>
             <label className="mb-2 block text-[13px] text-slate-400">Contraparte</label>
@@ -119,9 +131,12 @@ export default function NovoFinanceiroPage({
               className="mj-model-input w-full px-3 outline-none"
               defaultValue={searchParams?.amount ?? ""}
               name="amount"
-              placeholder="0,00"
+              placeholder="1500,45"
               type="text"
             />
+            <p className="mt-2 text-[12px] leading-5 text-slate-500">
+              Aceita `1500`, `1500,45` e `1.500,45`.
+            </p>
           </div>
           <div>
             <label className="mb-2 block text-[13px] text-slate-400">Data</label>
@@ -129,9 +144,12 @@ export default function NovoFinanceiroPage({
               className="mj-model-input w-full px-3 outline-none"
               defaultValue={searchParams?.dueDate ?? ""}
               name="dueDate"
-              placeholder="2026-05-04"
+              placeholder="07/05/2026 ou 2026-05-07"
               type="text"
             />
+            <p className="mt-2 text-[12px] leading-5 text-slate-500">
+              A data e convertida para ISO antes de gravar.
+            </p>
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -152,6 +170,9 @@ export default function NovoFinanceiroPage({
               type="text"
             />
           </div>
+        </div>
+        <div className="rounded-[4px] border border-white/10 bg-white/[0.03] px-4 py-4 text-[12px] leading-6 text-slate-400">
+          Este fluxo ainda nao faz conciliacao, saldo entre contas reais nem modelagem de caixa. Transferencias continuam como registro operacional simples.
         </div>
         <div className="flex justify-end">
           <button className="mj-model-button-green" type="submit">

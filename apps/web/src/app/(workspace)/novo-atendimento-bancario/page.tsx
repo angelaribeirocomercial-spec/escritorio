@@ -20,12 +20,12 @@ function NovoAtendimentoBancarioPageContent({
 
   return (
     <WorkspacePage
-      description="A abertura do caso passa a concentrar cliente, dados do caso, nicho e documentos essenciais em uma unica jornada principal."
+      description="A abertura minima do atendimento captura identificacao e documento pessoal agora; banco, nicho e o restante dos anexos podem entrar depois no cockpit."
       eyebrow="Novo atendimento bancario"
       metrics={[
         { label: "Papel", value: "Entrada unica" },
-        { label: "Fase", value: "Onboarding com anexos" },
-        { label: "Nicho piloto", value: "Revisional" },
+        { label: "Fase", value: "Triagem inicial" },
+        { label: "Minimo", value: "Contato + documento" },
         { label: "Destino", value: "Cockpit do cliente" }
       ]}
       title="Iniciar caso bancario"
@@ -35,7 +35,7 @@ function NovoAtendimentoBancarioPageContent({
           Novo atendimento bancario
         </p>
         <p className="mt-1 text-[11px] leading-5 text-slate-400">
-          Entrada unica do caso com anexacao de documentos. O restante do contexto segue no cockpit do cliente.
+          O atendimento agora nasce pela triagem minima. Banco, nicho e anexos complementares podem ser fechados depois no cockpit do cliente.
         </p>
       </div>
 
@@ -48,9 +48,9 @@ function NovoAtendimentoBancarioPageContent({
 
       <section className="grid gap-4">
         <form action={intakeFormAction} className="workspace-panel p-6" encType="multipart/form-data">
-          <p className="text-sm font-semibold text-white">Entrada unica do caso</p>
+          <p className="text-sm font-semibold text-white">Triagem minima do atendimento</p>
           <p className="mt-2 text-sm leading-7 text-slate-300">
-            Preencha cliente, caso, nicho e os documentos essenciais da triagem. Ao concluir, o sistema abre o cockpit do cliente com o caso e o workflow inicial ja preparados.
+            So `nome`, `endereco`, `telefone` e `documento pessoal` bloqueiam esta abertura. Banco, nicho juridico, objetivo e os demais anexos podem ser complementados depois.
           </p>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -74,8 +74,7 @@ function NovoAtendimentoBancarioPageContent({
               <input
                 className="reference-search-input w-full px-3 py-2 text-sm outline-none"
                 name="documentId"
-                placeholder="CPF ou CNPJ"
-                required
+                placeholder="CPF ou CNPJ se ja estiver disponivel"
                 type="text"
               />
             </div>
@@ -88,7 +87,6 @@ function NovoAtendimentoBancarioPageContent({
                 className="reference-search-input w-full px-3 py-2 text-sm outline-none"
                 name="email"
                 placeholder="cliente@exemplo.com"
-                required
                 type="email"
               />
             </div>
@@ -113,7 +111,7 @@ function NovoAtendimentoBancarioPageContent({
               <input
                 className="reference-search-input w-full px-3 py-2 text-sm outline-none"
                 name="whatsapp"
-                placeholder="Se vazio, repete o telefone"
+                placeholder="Pode ser preenchido depois"
                 type="text"
               />
             </div>
@@ -124,7 +122,7 @@ function NovoAtendimentoBancarioPageContent({
               </label>
               <input
                 className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                defaultValue="Clara"
+                placeholder="Ex.: Clara, indicacao, campanha"
                 name="leadSource"
                 type="text"
               />
@@ -150,8 +148,7 @@ function NovoAtendimentoBancarioPageContent({
               <input
                 className="reference-search-input w-full px-3 py-2 text-sm outline-none"
                 name="bankName"
-                placeholder="Banco envolvido"
-                required
+                placeholder="Pode ser preenchido depois"
                 type="text"
               />
             </div>
@@ -162,12 +159,12 @@ function NovoAtendimentoBancarioPageContent({
               </label>
               <select
                 className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                defaultValue="revisional"
+                defaultValue=""
                 name="niche"
-                required
               >
+                <option value="">Classificar depois na triagem</option>
                 <optgroup label="Revisional">
-                  <option value="revisional">Revisional de contratos (veículos)</option>
+                  <option value="revisional">Revisional de contratos (veiculos)</option>
                 </optgroup>
                 <optgroup label="Fraude bancaria">
                   <option value="fraude">Fraude bancaria (PIX)</option>
@@ -175,7 +172,7 @@ function NovoAtendimentoBancarioPageContent({
                   <option value="beneficio-descontos">Descontos indevidos em beneficio previdenciario</option>
                 </optgroup>
                 <optgroup label="Busca e apreensao">
-                  <option value="busca-apreensao">Busca e apreensao (veículos)</option>
+                  <option value="busca-apreensao">Busca e apreensao (veiculos)</option>
                 </optgroup>
               </select>
             </div>
@@ -218,10 +215,10 @@ function NovoAtendimentoBancarioPageContent({
             <div className="md:col-span-2">
               <div className="rounded-[4px] border border-white/10 bg-white/[0.02] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Documentos essenciais da abertura
+                  Documentos da triagem
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Anexe na propria jornada os arquivos essenciais do caso. O sistema valida o que e obrigatorio de acordo com o nicho selecionado.
+                  O documento pessoal do cliente abre o atendimento. Os demais anexos podem entrar depois, sem travar o inicio do caso.
                 </p>
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -233,6 +230,7 @@ function NovoAtendimentoBancarioPageContent({
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                       className="reference-search-input w-full px-3 py-2 text-sm outline-none"
                       name="personalDocumentFile"
+                      required
                       type="file"
                     />
                   </div>
@@ -344,7 +342,7 @@ function NovoAtendimentoBancarioPageContent({
             Iniciar caso
           </button>
           <p className="mt-3 text-xs leading-5 text-slate-400">
-            Esta fase abre o caso com os dados minimos, ativa o checklist e encaminha o fluxo para o cockpit do cliente.
+            Esta fase abre o caso em `triagem inicial`, registra pendencias e encaminha o restante da completude para o cockpit do cliente.
           </p>
         </form>
       </section>

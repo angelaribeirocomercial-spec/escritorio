@@ -66,7 +66,13 @@ export interface ClientRecord {
 
 export type BankingCaseStatus = "draft" | "active" | "awaiting-action" | "closed";
 export type BankingCaseRisk = "low" | "medium" | "high";
-export type BankingNiche = "revisional" | "fraude" | "busca-apreensao" | "cartao-consignado" | "beneficio-descontos";
+export type BankingNiche =
+  | "triagem-inicial"
+  | "revisional"
+  | "fraude"
+  | "busca-apreensao"
+  | "cartao-consignado"
+  | "beneficio-descontos";
 export type BankingWorkflowStepState = "done" | "current" | "pending";
 export type BankingChecklistItemState = "received" | "missing";
 export type BankingWorkflowReadinessState = "ready" | "blocked";
@@ -83,6 +89,10 @@ export const BANKING_NICHES: ReadonlyArray<{
 ] as const;
 
 export function getBankingNicheLabel(niche: BankingNiche): string {
+  if (niche === "triagem-inicial") {
+    return "Triagem inicial";
+  }
+
   return (
     BANKING_NICHES.find((entry) => entry.value === niche)?.label ?? "Nicho bancario"
   );

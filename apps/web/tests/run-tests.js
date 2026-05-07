@@ -27,6 +27,7 @@ assert.equal(true, true);
   "src/app/(workspace)/processos/lista/page.tsx",
   "src/app/(workspace)/processos/lixeira/page.tsx",
   "src/app/(workspace)/processos/ultimos-andamentos/page.tsx",
+  "src/app/(workspace)/processos/monitoramentos/page.tsx",
   "src/app/(workspace)/processos/importar-lote/page.tsx",
   "src/app/(workspace)/processos/importar-oab/page.tsx",
   "src/app/(workspace)/processos/[processId]/page.tsx",
@@ -304,6 +305,11 @@ assert.match(
   claraSideCopilotSource,
   /if \(pathname\.startsWith\("\/dashboard"\)\) return "crm";/,
   "Expected the Clara side copilot to treat dashboard as CRM compatibility, not as primary context."
+);
+assert.match(
+  claraSideCopilotSource,
+  /if \(pathname\.startsWith\("\/andamentos"\)\) return "processos";/,
+  "Expected legacy andamentos routes to inherit the process context in the Clara side copilot."
 );
 
 const supabaseServerSource = fs.readFileSync(
@@ -1130,13 +1136,13 @@ const proceduralUpdatesPageSource = fs.readFileSync(
 );
 assert.match(
   proceduralUpdatesPageSource,
-  /getProceduralUpdates\(\)/,
-  "Expected automatic procedural updates page to read real procedural updates."
+  /redirect\(href\)/,
+  "Expected automatic procedural updates route to redirect to the canonical process updates page."
 );
 assert.match(
   proceduralUpdatesPageSource,
-  /Andamentos indisponiveis no momento/,
-  "Expected automatic procedural updates page to render a controlled error state."
+  /processos\/ultimos-andamentos/,
+  "Expected automatic procedural updates route to point at the canonical process updates page."
 );
 assert.equal(
   fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/andamentos/automaticos/loading.tsx")),
@@ -1150,13 +1156,13 @@ const proceduralMonitoringPageSource = fs.readFileSync(
 );
 assert.match(
   proceduralMonitoringPageSource,
-  /getProcesses\(\)/,
-  "Expected procedural monitoring page to read real processes."
+  /redirect\(href\)/,
+  "Expected procedural monitoring route to redirect to the canonical process monitoring page."
 );
 assert.match(
   proceduralMonitoringPageSource,
-  /Monitoramentos indisponiveis no momento/,
-  "Expected procedural monitoring page to render a controlled error state."
+  /processos\/monitoramentos/,
+  "Expected procedural monitoring route to point at the canonical process monitoring page."
 );
 assert.equal(
   fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/andamentos/monitoramentos/loading.tsx")),
@@ -1182,6 +1188,31 @@ assert.equal(
   fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/processos/ultimos-andamentos/loading.tsx")),
   true,
   "Expected loading state for the process latest updates route."
+);
+
+const processMonitoringPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/monitoramentos/page.tsx"),
+  "utf8"
+);
+assert.match(
+  processMonitoringPageSource,
+  /getProcesses\(\)/,
+  "Expected process monitoring page to read real processes."
+);
+assert.match(
+  processMonitoringPageSource,
+  /Monitoramentos indisponiveis no momento/,
+  "Expected process monitoring page to render a controlled error state."
+);
+assert.match(
+  processMonitoringPageSource,
+  /Ver ultimos andamentos/,
+  "Expected process monitoring page to link back to the canonical latest updates list."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/processos/monitoramentos/loading.tsx")),
+  true,
+  "Expected loading state for the process monitoring route."
 );
 
 const claraArtifactsSource = fs.readFileSync(
@@ -1674,6 +1705,81 @@ assert.match(
   /demonstracao atual nao possui Supabase configurado/,
   "Expected banking intake action to fail with a controlled onboarding message when Supabase is unavailable."
 );
+assert.match(
+  bankingIntakeActionSource,
+  /const niche: BankingNiche = nicheValue && isBankingNiche\(nicheValue\) \? nicheValue : "triagem-inicial";/,
+  "Expected banking intake action to default incomplete onboarding to the triagem-inicial niche."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /Anexe o documento pessoal do cliente para abrir a triagem inicial\./,
+  "Expected banking intake action to require only the personal document upload for minimal intake."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /status: "draft"/,
+  "Expected banking intake action to keep the new case in draft while triage is still incomplete."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /document_id: documentId \|\| null[\s\S]*email: email \|\| null[\s\S]*whatsapp: whatsapp \|\| null[\s\S]*lead_source: leadSource \|\| null[\s\S]*bank_name: bankName \|\| null[\s\S]*fees_label: null/s,
+  "Expected banking intake action to persist optional client fields as null instead of placeholder empty strings."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /bank_name: bankName \|\| null[\s\S]*contract_number: contractNumber \|\| null/s,
+  "Expected banking intake action to persist optional case fields as null instead of placeholder empty strings."
+);
+
+const bankingIntakePageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/novo-atendimento-bancario/page.tsx"),
+  "utf8"
+);
+assert.match(
+  bankingIntakePageSource,
+  /So `nome`, `endereco`, `telefone` e `documento pessoal` bloqueiam esta abertura\./,
+  "Expected banking intake page to explain the reduced minimum required data."
+);
+assert.match(
+  bankingIntakePageSource,
+  /<option value="">Classificar depois na triagem<\/option>/,
+  "Expected banking intake page to allow postponing niche classification."
+);
+assert.match(
+  bankingIntakePageSource,
+  /name="personalDocumentFile"[\s\S]*required/s,
+  "Expected banking intake page to require the personal document upload."
+);
+
+const bankingWorkflowSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/cases/get-banking-case-workflow.ts"),
+  "utf8"
+);
+assert.match(
+  bankingWorkflowSource,
+  /"triagem-inicial": \{/,
+  "Expected banking case workflow to define a generic triagem-inicial blueprint."
+);
+
+const bankingIntakeMigrationSource = fs.readFileSync(
+  path.join(__dirname, "..", "..", "..", "supabase/migrations/0016_banking_intake_triage_nullable.sql"),
+  "utf8"
+);
+assert.match(
+  bankingIntakeMigrationSource,
+  /alter column email drop not null/,
+  "Expected banking intake migration to relax client email nullability."
+);
+assert.match(
+  bankingIntakeMigrationSource,
+  /cases_niche_check/,
+  "Expected banking intake migration to recreate the cases niche constraint."
+);
+assert.match(
+  bankingIntakeMigrationSource,
+  /'triagem-inicial'/,
+  "Expected banking intake migration to accept triagem-inicial in cases.niche."
+);
 
 const tenantDocumentUploadHelperSource = fs.readFileSync(
   path.join(__dirname, "..", "src/server/services/documents/upload-tenant-document.ts"),
@@ -1936,6 +2042,56 @@ assert.doesNotMatch(
   "Expected generic finance subpage route to stop rendering a static empty list."
 );
 
+const financeCreatePageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/financeiro/[subpage]/novo/page.tsx"),
+  "utf8"
+);
+assert.match(
+  financeCreatePageSource,
+  /decodeURIComponent\(searchParams\.error\)/,
+  "Expected financial creation form to render controlled validation errors from search params."
+);
+assert.match(
+  financeCreatePageSource,
+  /Conta Principal` ainda funciona como rotulo operacional/,
+  "Expected financial creation form to explain that Conta Principal is still an operational label."
+);
+assert.match(
+  financeCreatePageSource,
+  /Aceita `1500`, `1500,45` e `1\.500,45`\./,
+  "Expected financial creation form to document the accepted pt-BR amount formats."
+);
+
+const financeCreateActionSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/financeiro/[subpage]/novo/actions.ts"),
+  "utf8"
+);
+assert.match(
+  financeCreateActionSource,
+  /function parseAmountInput/,
+  "Expected financial creation action to normalize pt-BR amount input."
+);
+assert.match(
+  financeCreateActionSource,
+  /function parseOperationalDate/,
+  "Expected financial creation action to normalize operational date input."
+);
+assert.match(
+  financeCreateActionSource,
+  /buildRedirectUrl/,
+  "Expected financial creation action to preserve form data on validation redirects."
+);
+assert.match(
+  financeCreateActionSource,
+  /Valor invalido: use um formato numerico como 1500, 1500,45 ou 1\.500,45\./,
+  "Expected financial creation action to return a specific invalid amount message."
+);
+assert.match(
+  financeCreateActionSource,
+  /Data invalida: use 07\/05\/2026 ou 2026-05-07\./,
+  "Expected financial creation action to return a specific invalid date message."
+);
+
 const teamSubpageSource = fs.readFileSync(
   path.join(__dirname, "..", "src/app/(workspace)/equipe/[subpage]/page.tsx"),
   "utf8"
@@ -2102,8 +2258,13 @@ assert.match(
 );
 assert.match(
   workspaceNavigationSource,
+  /label: "Monitoramentos"/,
+  "Expected navigation config to expose Monitoramentos under Processos."
+);
+assert.doesNotMatch(
+  workspaceNavigationSource,
   /label: "Andamentos"/,
-  "Expected navigation config to expose Andamentos in the primary flow."
+  "Expected navigation config to remove Andamentos from the visible primary flow."
 );
 assert.match(
   workspaceNavigationSource,
@@ -2129,6 +2290,16 @@ assert.doesNotMatch(
   workspaceNavigationSource,
   /label: "Lexia"|label: "Site"/,
   "Expected navigation config to hide Lexia and Site from visible navigation."
+);
+
+const operationPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/operacao/page.tsx"),
+  "utf8"
+);
+assert.match(
+  operationPageSource,
+  /href: "\/processos\/monitoramentos"/,
+  "Expected operation shortcuts to open the canonical process monitoring route."
 );
 
 const workspaceShellSource = fs.readFileSync(

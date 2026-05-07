@@ -70,6 +70,7 @@ export const navSections: NavSection[] = [
         children: [
           { href: "/processos", label: "Lista" },
           { href: "/processos/ultimos-andamentos", label: "Ultimos andamentos" },
+          { href: "/processos/monitoramentos", label: "Monitoramentos" },
           { href: "/processos/lixeira", label: "Lixeira" }
         ]
       },
@@ -84,17 +85,6 @@ export const navSections: NavSection[] = [
           { href: "/diario-oficial/palavras-chave", label: "Palavras-chave" },
           { href: "/diario-oficial/advogados", label: "Advogados" },
           { href: "/diario-oficial/lixeira", label: "Lixeira" }
-        ]
-      },
-      {
-        href: "/andamentos",
-        label: "Andamentos",
-        shortLabel: "Andamentos",
-        icon: "updates",
-        description: "Monitoramento processual e leitura do que mudou nos casos.",
-        children: [
-          { href: "/andamentos/automaticos", label: "Automaticos" },
-          { href: "/andamentos/monitoramentos", label: "Monitoramentos" }
         ]
       },
       {

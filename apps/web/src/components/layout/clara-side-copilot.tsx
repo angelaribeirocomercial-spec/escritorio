@@ -100,14 +100,6 @@ const contextualFixtures = {
       "A triagem do Diario Oficial deve destacar urgencia, vinculo processual e encaminhamento operacional.",
     actions: ["Revisar publicacoes", "Abrir palavras-chave", "Gerar tarefa"]
   },
-  andamentos: {
-    eyebrow: "Contexto atual",
-    title: "Monitoramento processual continuo",
-    prompt: "Mostre os andamentos recentes que mudam prioridade ou exigem nova medida.",
-    conclusion:
-      "Os andamentos precisam conectar leitura juridica, risco e proxima acao dentro do fluxo operacional.",
-    actions: ["Abrir monitoramentos", "Ler andamentos automaticos", "Priorizar riscos"]
-  },
   site: {
     eyebrow: "Contexto atual",
     title: "Operacao institucional do site",
@@ -153,7 +145,7 @@ function getContextKey(pathname: string) {
   if (pathname.startsWith("/relatorios")) return "relatorios";
   if (pathname.startsWith("/estatisticas")) return "estatisticas";
   if (pathname.startsWith("/diario-oficial")) return "diarioOficial";
-  if (pathname.startsWith("/andamentos")) return "andamentos";
+  if (pathname.startsWith("/andamentos")) return "processos";
   if (pathname.startsWith("/site")) return "site";
   if (pathname.startsWith("/editor-de-texto")) return "editor";
   if (pathname.startsWith("/clientes")) return "pessoas";

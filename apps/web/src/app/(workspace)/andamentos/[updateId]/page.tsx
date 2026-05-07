@@ -58,9 +58,9 @@ export default async function ProceduralUpdateDetailPage({
           </Link>
           <Link
             className="detail-link-button px-4 py-3 text-sm font-semibold"
-            href="/andamentos"
+            href="/processos/ultimos-andamentos"
           >
-            Voltar para andamentos
+            Voltar para processos
           </Link>
         </div>
       </div>

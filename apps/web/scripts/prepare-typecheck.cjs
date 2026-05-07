@@ -6,7 +6,9 @@ const tsconfig = JSON.parse(fs.readFileSync(tsconfigPath, "utf8"));
 
 if (Array.isArray(tsconfig.include)) {
   tsconfig.include = tsconfig.include.filter(
-    (entry) => entry !== ".next/types/**/*.ts"
+    (entry) =>
+      entry !== ".next/types/**/*.ts" &&
+      entry !== ".next-dev/types/**/*.ts"
   );
 }
 
