@@ -733,8 +733,49 @@ export async function getBankingRevisionalWorkspace(params?: {
           targetReductionPercent: 27.8,
           basis:
             "Estimativa preliminar considerando exclusao de seguro embutido, encargos cumulativos e revisao do custo efetivo."
-        }
+      }
   );
+  const strategySummary = {
+    mainThesis: priorityTheses[0]?.title ?? analysis.suggestedThesis,
+    alternativeThesis: priorityTheses[1]?.title ?? productProfile.label,
+    riskLabel: getRiskLabel(analysis.proceduralRisk),
+    recommendedRequests: [
+      ...priorityTheses.slice(0, 2).map((item) => item.request),
+      ...objectiveProfile.requestFocus.slice(0, 2)
+    ],
+    actionType: objectiveProfile.label,
+    agreementSuggestion:
+      analysis.proceduralRisk === "high"
+        ? "Buscar acordo apenas com seguranca economica minima e conferencia da memoria revisional."
+        : "Negociar apenas apos validar a memoria de calculo e a coerencia da tese revisional.",
+    nextSteps: [
+      "Fechar a memoria de calculo revisional",
+      "Conferir prova documental faltante",
+      "Escolher a tese principal e a tese de apoio",
+      "Converter o resumo em minuta revisional"
+    ]
+  };
+  const reportSummary = {
+    clientLabel: client.fullName,
+    caseLabel: bankingCase.title,
+    bankLabel: bankingCase.bankName,
+    methodology:
+      "Comparativo entre taxa contratada, CET, encargos agregados, memoria de calculo e leitura documental assistida pela Clara.",
+    originalVsRevised: [
+      `Parcela contratada: ${calculationMemory.labels.contractedInstallment}`,
+      `Parcela cobrada: ${calculationMemory.labels.chargedInstallment}`,
+      `Parcela revisada: ${calculationMemory.labels.revisedInstallment}`,
+      `Excesso estimado: ${calculationMemory.labels.estimatedTotalExcess}`
+    ],
+    improperCharges: [
+      analysis.rateLabel,
+      analysis.cetLabel,
+      analysis.capitalizationLabel,
+      analysis.feesLabel
+    ],
+    conclusion:
+      "O laudo consolidado serve como base tecnica para revisao humana antes da peticao, sem substituir a validacao final do advogado."
+  };
 
   return {
     client,
@@ -762,6 +803,8 @@ export async function getBankingRevisionalWorkspace(params?: {
     documentReadiness,
     filingChecklist,
     filingPackage,
-    decisionSummary
+    decisionSummary,
+    strategySummary,
+    reportSummary
   };
 }

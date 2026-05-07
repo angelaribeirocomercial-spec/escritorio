@@ -1247,6 +1247,7 @@ export default async function ClaraPage({
   };
 
   const operational = operationalByTab[activeTab];
+  const revisionalWorkspaceResolved = revisionalWorkspace as NonNullable<typeof revisionalWorkspace>;
   const executedByTab: Record<
     TabId | "revisional",
     Partial<Record<string, { title: string; body: string[]; cta: { label: string; href: string } }>>
@@ -1263,6 +1264,23 @@ export default async function ClaraPage({
         cta: {
           label: "Abrir processo para revisar",
           href: `/processos/${selectedProcess.id}?clara=1&action=analisar-processo&document=${selectedDocument.id}&client=${selectedClient.id}`
+        }
+      },
+      "Analisar Caso com Clara": {
+        title: "Caso analisado com Clara",
+        body: [
+          `A Clara consolidou o dossie real de ${selectedCase.label} usando ${selectedDocument.label}, ${selectedProcess.label} e o contexto do cliente ${selectedClient.label}.`,
+          `Fontes e rastreio ficam ancorados em cliente, caso, documento e processo, sem descolar do fluxo juridico do caso.`,
+          activeNiche === "revisional" && revisionalWorkspaceResolved
+            ? revisionalWorkspaceResolved.decisionSummary
+            : clara.structuredCore.summary,
+          activeNiche === "revisional" && revisionalWorkspaceResolved
+            ? `Estrategia consolidada: ${revisionalWorkspaceResolved.strategySummary.mainThesis}.`
+            : "A Clara segue operando como camada contextual do caso, nao como superficie paralela."
+        ],
+        cta: {
+          label: "Abrir trilha do caso",
+          href: `/clara?tab=${activeTab}&client=${selectedClient.id}&case=${selectedCase.id}&process=${selectedProcess.id}&document=${selectedDocument.id}#clara-history`
         }
       },
       "Abrir prazo calculado": {
@@ -1614,6 +1632,8 @@ export default async function ClaraPage({
         ? "deadline"
         : selectedAction === "Analisar processo"
           ? "process"
+          : selectedAction === "Analisar Caso com Clara"
+            ? "filing-package"
           : selectedAction === "Gerar resumo executivo"
             ? "text-draft"
             : undefined
@@ -1631,6 +1651,8 @@ export default async function ClaraPage({
   const recordPiece =
     activeNiche === "revisional" && selectedAction === "Gerar minuta inicial revisional"
       ? "acao-revisional"
+      : activeTab === "analise" && selectedAction === "Analisar Caso com Clara"
+        ? "resumo-executivo"
       : activeTab === "analise" && selectedAction === "Gerar resumo executivo"
         ? "resumo-executivo"
         : activeTab === "intimacao" && selectedAction === "Gerar resposta a intimacao"
@@ -1805,32 +1827,32 @@ export default async function ClaraPage({
           {
             step: "01",
             title: "Triagem",
-            detail: revisionalWorkspace.analysis.executiveSummary,
-            href: `/analise-contrato?documentId=${revisionalWorkspace.selectedDocument.id}&client=${selectedClient.id}&process=${selectedProcess.id}&objetivo=${encodeURIComponent(revisionalWorkspace.objectiveProfile.label)}`
+            detail: revisionalWorkspaceResolved.analysis.executiveSummary,
+            href: `/analise-contrato?documentId=${revisionalWorkspaceResolved.selectedDocument.id}&client=${selectedClient.id}&process=${selectedProcess.id}&objetivo=${encodeURIComponent(revisionalWorkspaceResolved.objectiveProfile.label)}`
           },
           {
             step: "02",
             title: "Abusividades",
-            detail: revisionalWorkspace.analysis.abusivenessSignals[0] ?? "Abrir o documento para verificar as clausulas abusivas.",
+            detail: revisionalWorkspaceResolved.analysis.abusivenessSignals[0] ?? "Abrir o documento para verificar as clausulas abusivas.",
             href: `/documentos/${selectedDocument.id}`
           },
           {
             step: "03",
             title: "Estrategia",
-            detail: revisionalWorkspace.decisionSummary,
+            detail: revisionalWorkspaceResolved.decisionSummary,
             href: `/processos/${selectedProcess.id}?record_tab=revisional-package&client=${selectedClient.id}&document=${selectedDocument.id}${searchParams?.objetivo ? `&objetivo=${encodeURIComponent(searchParams.objetivo)}` : ""}`
           },
           {
             step: "04",
             title: "Prova e calculo",
-            detail: `${revisionalWorkspace.calculationMemory.basis} O botao de impressao fica na pagina de destino.`,
-            href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional&objetivo=${encodeURIComponent("Montar memoria de calculo")}&contractedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.contractedInstallment)}&chargedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.chargedInstallment)}&revisedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.revisedInstallment)}&estimatedTotalExcess=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.estimatedTotalExcess)}`
+            detail: `${revisionalWorkspaceResolved.calculationMemory.basis} O botao de impressao fica na pagina de destino.`,
+            href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional&objetivo=${encodeURIComponent("Montar memoria de calculo")}&contractedInstallment=${encodeURIComponent(revisionalWorkspaceResolved.calculationMemory.labels.contractedInstallment)}&chargedInstallment=${encodeURIComponent(revisionalWorkspaceResolved.calculationMemory.labels.chargedInstallment)}&revisedInstallment=${encodeURIComponent(revisionalWorkspaceResolved.calculationMemory.labels.revisedInstallment)}&estimatedTotalExcess=${encodeURIComponent(revisionalWorkspaceResolved.calculationMemory.labels.estimatedTotalExcess)}`
           },
           {
             step: "05",
             title: "Minuta inicial",
-            detail: revisionalWorkspace.filingPackage.summary,
-            href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional&objetivo=${encodeURIComponent(revisionalWorkspace.objectiveProfile.label)}&contractedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.contractedInstallment)}&chargedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.chargedInstallment)}&revisedInstallment=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.revisedInstallment)}&estimatedTotalExcess=${encodeURIComponent(revisionalWorkspace.calculationMemory.labels.estimatedTotalExcess)}`
+            detail: revisionalWorkspaceResolved.filingPackage.summary,
+            href: `/editor-de-texto/meus-textos?draft=1&case=${selectedCase.id}&process=${selectedProcess.id}&client=${selectedClient.id}&document=${selectedDocument.id}&piece=acao-revisional&objetivo=${encodeURIComponent(revisionalWorkspaceResolved.objectiveProfile.label)}&contractedInstallment=${encodeURIComponent(revisionalWorkspaceResolved.calculationMemory.labels.contractedInstallment)}&chargedInstallment=${encodeURIComponent(revisionalWorkspaceResolved.calculationMemory.labels.chargedInstallment)}&revisedInstallment=${encodeURIComponent(revisionalWorkspaceResolved.calculationMemory.labels.revisedInstallment)}&estimatedTotalExcess=${encodeURIComponent(revisionalWorkspaceResolved.calculationMemory.labels.estimatedTotalExcess)}`
           }
         ]
       : null;
@@ -2655,8 +2677,69 @@ export default async function ClaraPage({
               </Link>
             ))}
           </div>
+          <div className="mt-5 grid gap-4 xl:grid-cols-2">
+            <div className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-4">
+              <p className="workspace-kicker">Estrategia consolidada</p>
+              <p className="mt-2 text-sm leading-6 text-cyan-50">
+                {revisionalWorkspaceResolved.strategySummary.mainThesis}
+              </p>
+              <p className="mt-3 text-sm leading-6 text-cyan-50/90">
+                Tese alternativa: {revisionalWorkspaceResolved.strategySummary.alternativeThesis}
+              </p>
+              <p className="mt-3 text-sm leading-6 text-cyan-50/90">
+                Tipo de acao sugerida: {revisionalWorkspaceResolved.strategySummary.actionType}
+              </p>
+              <p className="mt-3 text-sm leading-6 text-cyan-50/90">
+                Risco processual: {revisionalWorkspaceResolved.strategySummary.riskLabel}
+              </p>
+              <div className="mt-3 space-y-2">
+                {revisionalWorkspaceResolved.strategySummary.recommendedRequests.map((request) => (
+                  <div
+                    key={request}
+                    className="rounded-[4px] border border-white/10 bg-black/20 px-3 py-2 text-sm text-cyan-50"
+                  >
+                    {request}
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-xs leading-6 text-cyan-50/80">
+                Sugestao de acordo: {revisionalWorkspaceResolved.strategySummary.agreementSuggestion}
+              </p>
+            </div>
+            <div className="rounded-[4px] border border-amber-300/20 bg-amber-300/10 p-4">
+              <p className="workspace-kicker">Laudo revisional</p>
+              <p className="mt-2 text-sm leading-6 text-amber-50">
+                Cliente: {revisionalWorkspaceResolved.reportSummary.clientLabel}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-amber-50">
+                Caso: {revisionalWorkspaceResolved.reportSummary.caseLabel}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-amber-50">
+                Banco: {revisionalWorkspaceResolved.reportSummary.bankLabel}
+              </p>
+              <p className="mt-3 text-sm leading-6 text-amber-50/90">
+                Metodologia: {revisionalWorkspaceResolved.reportSummary.methodology}
+              </p>
+              <div className="mt-3 space-y-2">
+                {revisionalWorkspaceResolved.reportSummary.originalVsRevised.map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-[4px] border border-white/10 bg-black/20 px-3 py-2 text-sm text-amber-50"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-sm leading-6 text-amber-50/90">
+                Encargos sensiveis: {revisionalWorkspaceResolved.reportSummary.improperCharges.join(" · ")}
+              </p>
+              <p className="mt-3 text-xs leading-6 text-amber-50/80">
+                {revisionalWorkspaceResolved.reportSummary.conclusion}
+              </p>
+            </div>
+          </div>
           <p className="mt-4 text-xs leading-6 text-slate-400">
-            Triagem, abusividades, estrategia, prova e minuta ja levam a paginas que contem o botao de imprimir.
+            Triagem, abusividades, estrategia, laudo, prova e minuta ja levam a paginas que contem o botao de imprimir.
           </p>
         </section>
       ) : null}

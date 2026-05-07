@@ -67,7 +67,7 @@ export async function uploadDocumentAction(formData: FormData) {
     file,
     documentType,
     category,
-    summary: summary || "Documento enviado pela interface e aguardando processamento.",
+    summary: summary || "Documento enviado pela interface e aguardando leitura OCR.",
     tags
   });
 

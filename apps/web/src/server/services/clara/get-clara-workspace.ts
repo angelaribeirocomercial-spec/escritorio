@@ -258,7 +258,7 @@ export async function getClaraWorkspace(params?: {
             { label: "Documento base", type: "document" },
             { label: "Cliente", type: "client" }
           ],
-          actions: ["Analisar processo", "Abrir prazo calculado", "Gerar resumo executivo"]
+          actions: ["Analisar processo", "Analisar Caso com Clara", "Abrir prazo calculado", "Gerar resumo executivo"]
         }
       },
       intimacao: {

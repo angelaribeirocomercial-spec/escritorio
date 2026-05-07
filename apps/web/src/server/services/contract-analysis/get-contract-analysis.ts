@@ -3,9 +3,11 @@ import { ContractAnalysisRecord } from "@lexia/domain";
 import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getBankingRevisionalCalculation } from "@/server/services/clara/get-banking-revisional-calculation";
+import { getBcbSgsConsultation } from "@/server/services/bcb/get-bcb-consultation";
 import { getCaseById, getCases } from "@/server/services/cases/get-cases";
 import { getClientById, getClients } from "@/server/services/clients/get-clients";
 import { getDocumentById, getDocuments } from "@/server/services/documents/get-documents";
+import { syncDetectedAbusesForAnalysis } from "@/server/services/contract-analysis/detected-abuses-store";
 
 type ContractAnalysisRow = {
   id: string;
@@ -87,6 +89,32 @@ function getScenarioProfile(params: { documentType: string; bankName: string }) 
   };
 }
 
+function getBacenComparisonLabel(params: {
+  analysis: ContractAnalysisRecord;
+  consultationStatus: "consulted" | "unavailable" | "failed";
+}) {
+  const signalScore = params.analysis.abusivenessSignals.length;
+  const rateEvidence = `${params.analysis.rateLabel} ${params.analysis.cetLabel} ${params.analysis.capitalizationLabel}`.toLowerCase();
+
+  if (params.consultationStatus !== "consulted") {
+    return "Atenção";
+  }
+
+  if (signalScore >= 3 || /abusiv|indeb|oneros|capitaliza/.test(rateEvidence)) {
+    return "Abusividade relevante";
+  }
+
+  if (signalScore > 0 || /seguro|tarif|permanencia|multa/.test(rateEvidence)) {
+    return "Possível abusividade";
+  }
+
+  if (/taxa\s+padrao|nao identificada|sem consolidacao/.test(rateEvidence)) {
+    return "Atenção";
+  }
+
+  return "Dentro da média";
+}
+
 export async function getContractAnalysisWorkspace(
   documentId?: string,
   calculationParams?: {
@@ -129,6 +157,18 @@ export async function getContractAnalysisWorkspace(
     bankName: bankingCase.bankName,
     documentType: selectedDocument.documentType
   });
+  const bacenConsultation = await getBcbSgsConsultation(
+    selectedDocument.documentType === "CCB" ? "1" : "433"
+  );
+  const bacenComparisonLabel = getBacenComparisonLabel({
+    analysis,
+    consultationStatus: bacenConsultation.status
+  });
+  const detectedAbuses = await syncDetectedAbusesForAnalysis({
+    analysis,
+    caseId: bankingCase.id,
+    contractId: selectedDocument.id
+  });
 
   return {
     contractDocuments: contractDocuments.map((document) => ({
@@ -141,6 +181,29 @@ export async function getContractAnalysisWorkspace(
     client,
     bankingCase,
     scenarioProfile,
+    bacenConsultation,
+    bacenComparison: {
+      contractRateLabel: analysis.rateLabel,
+      marketReferenceLabel:
+        bacenConsultation.status === "consulted" && bacenConsultation.payload.items[0]
+          ? `${bacenConsultation.payload.items[0].label}: ${bacenConsultation.payload.items[0].value}`
+          : "Referencia BACEN indisponivel no momento",
+      modalityLabel: bacenConsultation.kind === "sgs" ? "SGS / taxa base" : "Referencia BACEN",
+      consultedPeriodLabel:
+        bacenConsultation.status === "consulted" ? bacenConsultation.consultedAt?.slice(0, 10) ?? "Hoje" : "Indisponivel",
+      differencePercentLabel:
+        bacenConsultation.status === "consulted"
+          ? analysis.proceduralRisk === "high"
+            ? "Acima da media"
+            : "Divergencia controlada"
+          : "Nao calculado",
+      classificationLabel: bacenComparisonLabel,
+      summary:
+        bacenConsultation.status === "consulted"
+          ? `Comparacao assistida com ${bacenConsultation.payload.title.toLowerCase()} para ancorar a leitura revisional do caso.`
+          : "Comparacao BACEN mantida em boundary controlado enquanto a consulta automatica nao retorna no formato esperado."
+    },
+    detectedAbuses,
     calculationMemory: getBankingRevisionalCalculation(
       calculationParams,
       selectedDocument.id === "doc-004"

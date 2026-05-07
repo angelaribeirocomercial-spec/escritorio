@@ -345,8 +345,8 @@ export default async function ClientDetailPage({
 
   return (
     <WorkspacePage
-      description="Cockpit do cliente orientado pelo caso ativo, com contexto juridico, base documental e a peça mantida bloqueada ate o fechamento humano."
-      eyebrow="Clientes"
+      description="Dossie central do cliente orientado pelo caso ativo, com contexto juridico, base documental e a peça mantida bloqueada ate o fechamento humano."
+      eyebrow="Dossie do caso"
       metrics={metrics}
       title={client.fullName}
     >

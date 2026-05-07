@@ -26,6 +26,17 @@ function ToolButton({
   );
 }
 
+function aiStatusLabel(status: string) {
+  switch (status) {
+    case "analyzed":
+      return "Lido";
+    case "needs_review":
+      return "Revisao humana";
+    default:
+      return "Aguardando OCR";
+  }
+}
+
 export default async function MeusArquivosPage({
   searchParams
 }: {
@@ -136,7 +147,7 @@ export default async function MeusArquivosPage({
                       </p>
                     </div>
                     <span className="ml-4 shrink-0 text-[12px] text-slate-400">
-                      {document.aiStatus}
+                      {aiStatusLabel(document.aiStatus)}
                     </span>
                   </Link>
                 ))}

@@ -103,12 +103,12 @@ export async function uploadTenantDocument(
     summary: input.summary,
     page_count: 0,
     uploaded_at: uploadedAt,
-    preview_label: "Preview pendente de processamento.",
+    preview_label: "Aguardando leitura OCR e revisao humana.",
     storage_bucket: TENANT_DOCUMENT_BUCKET,
     storage_path: storagePath,
     storage_mime_type: mimeType,
     storage_size_bytes: input.file.size,
-    actions: input.actions ?? ["Classificar documento", "Acionar Clara"]
+    actions: input.actions ?? ["Ler com OCR", "Classificar documento", "Acionar Clara"]
   });
 
   if (insertError) {

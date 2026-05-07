@@ -294,7 +294,7 @@ export function ClientCockpitFrame({
       <section className="workspace-panel space-y-5 p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl space-y-2">
-            <p className="workspace-kicker">Clientes</p>
+            <p className="workspace-kicker">Dossie do caso</p>
             <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">{client.fullName}</h2>
             <p className="text-sm text-slate-400">
               {activeCase?.nicheLabel ?? "Sem caso ativo"} | Status: {activeCase?.status ?? "Pendente"} | Fase:{" "}
@@ -302,7 +302,7 @@ export function ClientCockpitFrame({
               {activeCase?.legalRiskLabel ?? "A definir"}
             </p>
             <p className="text-sm leading-7 text-slate-300">
-              {activeCase ? nextStepLabel : "Abra um novo atendimento para iniciar o cockpit do cliente."}
+              {activeCase ? nextStepLabel : "Abra um novo atendimento para iniciar o dossie central do cliente."}
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">

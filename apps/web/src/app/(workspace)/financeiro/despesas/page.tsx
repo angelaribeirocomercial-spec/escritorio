@@ -32,7 +32,7 @@ function BalancePanel({
     <div className="mj-model-panel overflow-hidden">
       <div className="grid gap-0 md:grid-cols-[1fr_14rem]">
         <div className="border-b px-4 py-4 md:border-b-0 md:border-r mj-model-gridline">
-          <p className="text-[15px] font-semibold text-slate-300">Saldo das contas</p>
+          <p className="text-[15px] font-semibold text-slate-300">Saldo das contas operacionais</p>
           <p className="mt-1 text-[13px] text-slate-400">* Lancamentos reais do tenant ativo</p>
           <div className="mt-4 flex items-center justify-between text-[14px]">
             <span className="text-slate-400">Conta Principal</span>
@@ -123,7 +123,7 @@ export default async function FinanceiroDespesasPage({
     <div className="mj-model-page space-y-4">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <p className="mj-model-title">Despesas</p>
+          <p className="mj-model-title">Despesas Operacionais</p>
           <p className="mj-model-subtitle">Exibindo {filteredExpenses.length} resultado(s)</p>
         </div>
         <div className="flex gap-2">

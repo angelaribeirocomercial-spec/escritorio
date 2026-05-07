@@ -18,7 +18,7 @@ export default function FinanceiroGraficosPage() {
     <div className="mj-model-page space-y-4">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <p className="mj-model-title">Graficos</p>
+          <p className="mj-model-title">Graficos Operacionais</p>
           <p className="mj-model-subtitle">
             {mode === "manual" ? "Modo manual ativo" : "Modo filtro ativo"}
           </p>

@@ -11,11 +11,11 @@ import { getDocumentById } from "@/server/services/documents/get-documents";
 function aiStatusLabel(status: string) {
   switch (status) {
     case "analyzed":
-      return "Analisado";
+      return "Lido";
     case "needs_review":
-      return "Revisao";
+      return "Revisao humana";
     default:
-      return "Nao analisado";
+      return "Aguardando OCR";
   }
 }
 
@@ -58,7 +58,7 @@ export default async function DocumentDetailPage({
 
   const metrics = [
     { label: "Paginas", value: `${document.pageCount}` },
-    { label: "IA", value: aiStatusLabel(document.aiStatus) },
+    { label: "Leitura OCR", value: aiStatusLabel(document.aiStatus) },
     { label: "Cliente", value: document.client.fullName },
     { label: "Arquivo", value: document.storageSizeBytes ? `${Math.ceil(document.storageSizeBytes / 1024)} KB` : "Pendente" }
   ];
@@ -121,6 +121,10 @@ export default async function DocumentDetailPage({
           <p className="text-sm font-semibold text-white">Metadata e contexto</p>
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="detail-subpanel p-4">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Leitura OCR</dt>
+              <dd className="mt-2 text-sm text-slate-200">{aiStatusLabel(document.aiStatus)}</dd>
+            </div>
+            <div className="detail-subpanel p-4">
               <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Categoria</dt>
               <dd className="mt-2 text-sm text-slate-200">{document.category}</dd>
             </div>
@@ -145,6 +149,14 @@ export default async function DocumentDetailPage({
             <div className="detail-subpanel p-4 sm:col-span-2">
               <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Resumo</dt>
               <dd className="mt-2 text-sm leading-6 text-slate-200">{document.summary}</dd>
+            </div>
+            <div className="detail-subpanel p-4 sm:col-span-2">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Revisao humana</dt>
+              <dd className="mt-2 text-sm leading-6 text-slate-200">
+                {document.aiStatus === "analyzed"
+                  ? "Documento lido e pronto para uso operacional."
+                  : "Documento aguardando leitura OCR ou conferencia humana antes do uso processual."}
+              </dd>
             </div>
             <div className="detail-subpanel p-4 sm:col-span-2">
               <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Storage</dt>
@@ -195,7 +207,7 @@ export default async function DocumentDetailPage({
         basis={[
           document.documentType,
           document.category,
-          document.aiStatus,
+          aiStatusLabel(document.aiStatus),
           document.client.fullName,
           document.bankingCase.title
         ]}

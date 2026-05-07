@@ -55,7 +55,7 @@ export default async function FinanceiroVencimentosPage({
     <div className="mj-model-page space-y-4">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <p className="mj-model-title">Resumo dos vencimentos</p>
+          <p className="mj-model-title">Resumo dos vencimentos operacionais</p>
           <p className="mj-model-subtitle">Exibindo {openEntries.length} resultado(s)</p>
         </div>
         <Link

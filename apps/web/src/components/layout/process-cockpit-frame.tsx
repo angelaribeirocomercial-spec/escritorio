@@ -203,12 +203,12 @@ export function ProcessCockpitFrame({
       <section className="detail-panel p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="workspace-kicker">Registro pos-distribuicao</p>
+            <p className="workspace-kicker">Dossie processual</p>
             <h3 className="mt-2 text-2xl font-semibold text-white">Dados oficiais do processo</h3>
           </div>
           <div className="max-w-xl text-sm leading-7 text-slate-300">
-            Quadro operacional montado com base oficial do processo. Esta superficie registra o processo ja nascido e
-            concentra apenas seu acompanhamento posterior.
+            Quadro operacional montado com base oficial do processo. Esta superficie acompanha o processo ja nascido
+            dentro do dossie central do caso e concentra apenas seu acompanhamento posterior.
           </div>
         </div>
 

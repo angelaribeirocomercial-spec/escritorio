@@ -73,7 +73,7 @@ export default async function FinanceiroTransferenciasPage({
     <div className="mj-model-page space-y-4">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <p className="mj-model-title">Transferencias</p>
+          <p className="mj-model-title">Transferencias Operacionais</p>
           <p className="mj-model-subtitle">Exibindo {filteredTransfers.length} resultado(s)</p>
         </div>
         <Link className="mj-model-button-green inline-flex items-center justify-center" href="/financeiro/transferencias/novo">
