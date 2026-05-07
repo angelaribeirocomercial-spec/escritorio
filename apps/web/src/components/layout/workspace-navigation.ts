@@ -48,13 +48,19 @@ export const navSections: NavSection[] = [
         description: "Advogada digital e porta inteligente do fluxo do caso."
       },
       {
+        href: "/pessoas/clientes",
+        label: "Clientes",
+        shortLabel: "Clientes",
+        icon: "people",
+        description: "Base de clientes e ponto de partida para abertura de casos."
+      },
+      {
         href: "/crm",
         label: "CRM",
         shortLabel: "CRM",
         icon: "people",
         description: "Entrada, relacionamento e passagem para cliente/caso.",
         children: [
-          { href: "/pessoas/clientes", label: "Clientes" },
           { href: "/crm/pipeline", label: "Pipeline" },
           { href: "/crm/contratos", label: "Contratos" },
           { href: "/crm/conversas", label: "Conversas" },

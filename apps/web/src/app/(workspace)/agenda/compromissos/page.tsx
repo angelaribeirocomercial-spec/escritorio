@@ -55,7 +55,6 @@ export default async function AgendaCompromissosPage({
     focus?: string;
     objetivo?: string;
     responsible?: string;
-    view?: string;
   };
 }) {
   let commitments: Awaited<ReturnType<typeof getAgendaCommitments>> = [];
@@ -104,27 +103,20 @@ export default async function AgendaCompromissosPage({
   const filteredCommitments = commitments.filter((commitment) =>
     selectedResponsible ? commitment.responsibleLabel === selectedResponsible : true
   );
-  const listMode = searchParams?.view === "list";
 
   return (
     <div className="mj-model-page space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="mj-model-title">Compromissos</p>
-          <p className="mj-model-subtitle">
-            Exibindo {filteredCommitments.length} resultado(s)
-            {listMode ? " | Modo lista ativo" : ""}
-          </p>
+          <p className="mj-model-subtitle">Exibindo {filteredCommitments.length} resultado(s)</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Link className="mj-model-button-gray inline-flex items-center justify-center" href="/configuracoes/integracoes">
-            Integrar com o Google Agenda
-          </Link>
           <Link
             className="mj-model-button-gray inline-flex items-center justify-center"
-            href="/agenda/compromissos?view=list"
+            href="/configuracoes/integracoes/google-agenda"
           >
-            Modo lista
+            Integrar com o Google Agenda
           </Link>
           <Link className="mj-model-button-green inline-flex items-center justify-center" href="/agenda/compromissos/novo">
             Adicionar
@@ -147,7 +139,6 @@ export default async function AgendaCompromissosPage({
               </option>
             ))}
           </select>
-          <input name="view" type="hidden" value="list" />
           <button className="mj-model-button-gray md:w-40" type="submit">
             Filtrar
           </button>

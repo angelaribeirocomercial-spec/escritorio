@@ -28,7 +28,7 @@ export function SimpleClientList({
             className="mj-model-button-green inline-flex items-center justify-center"
             href="/novo-atendimento-bancario"
           >
-            Novo atendimento bancario
+            Iniciar caso
           </Link>
         </div>
       </div>

@@ -24,7 +24,7 @@ export default async function ConfiguracoesIntegracoesPage() {
 
   return (
     <WorkspacePage
-      description="Estado operacional dos adapters oficiais e publicos preparados para a Clara."
+      description="Catalogo operacional das integracoes oficiais e fontes publicas hoje expostas pela Clara. Esta tela nao representa conectores de calendarios externos do workspace."
       eyebrow="Configuracoes"
       metrics={[
         { label: "Fontes", value: String(integrations.length) },
@@ -32,8 +32,22 @@ export default async function ConfiguracoesIntegracoesPage() {
         { label: "Preparadas", value: String(integrations.filter((item: any) => item.status === "not_consulted").length) },
         { label: "Foco atual", value: "Integracoes oficiais" }
       ]}
-      title="Integracoes da Clara"
+      title="Integracoes oficiais da Clara"
     >
+      <section className="workspace-soft-card rounded-[4px] border border-amber-200/20 bg-amber-300/[0.08] p-5">
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-amber-100">
+          Calendarios externos
+        </p>
+        <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-200">
+          Google Agenda e outros calendarios do workspace ainda nao possuem contrato real de autorizacao e sincronizacao nesta base. O acesso dedicado existe apenas para explicitar esse estado sem confundir com as fontes oficiais da Clara.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+          <Link className="detail-link-button px-3 py-2" href="/configuracoes/integracoes/google-agenda">
+            Abrir status do Google Agenda
+          </Link>
+        </div>
+      </section>
+
       {integrations.some((item) => item.sourceId === "bcb") ? (
         <section className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-100/80">

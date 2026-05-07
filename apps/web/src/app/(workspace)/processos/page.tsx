@@ -149,9 +149,6 @@ export default async function ProcessosPage({
           <p className="mj-model-subtitle">Exibindo {filteredProcesses.length} resultado(s)</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link className="mj-model-button-green inline-flex items-center justify-center" href="/novo-atendimento-bancario">
-            Iniciar caso
-          </Link>
           <Link className="mj-model-button-gray inline-flex items-center justify-center" href="/processos/importar-oab">
             Boundary OAB
           </Link>
