@@ -64,10 +64,11 @@ export default function FinanceiroGraficosPage() {
           </select>
         </div>
         <div>
-          <label className="mb-2 block text-[13px] text-slate-400">Conta</label>
+          <label className="mb-2 block text-[13px] text-slate-400">Conta operacional</label>
           <select className="mj-model-input w-full px-3 outline-none" name="conta">
             <option>Todas as contas</option>
             <option>Conta Principal</option>
+            <option>Caixa</option>
           </select>
         </div>
         <div>

@@ -123,7 +123,7 @@ const reportConfigs: Record<string, ReportConfig> = {
     filters: [
       { kind: "select", label: "Tipo de Relatorio", options: ["Manual"] },
       { kind: "select", label: "Relatorio", options: ["Planilha de receitas e despesas", "Planilha de despesas", "Planilha de receitas", "Extrato de receitas e despesas"] },
-      { kind: "select", label: "Conta", options: ["Todas as contas", "Conta Principal"] },
+      { kind: "select", label: "Conta", options: ["Todas as contas", "Conta Principal", "Caixa"] },
       { kind: "select", label: "Analise por", options: ["Data do movimento", "Data do pagamento"] },
       { kind: "select", label: "Situacao", options: ["Todas", "Somente em aberto", "Somente realizadas"] },
       { kind: "select", label: "Categoria", options: ["Todas", "Impostos", "Infra-estrutura", "Recebimentos", "Transferencias"] },
@@ -176,7 +176,7 @@ const reportConfigs: Record<string, ReportConfig> = {
       { kind: "select", label: "Advogado", options: ["Todos"] },
       { kind: "select", label: "Filtro", options: ["Mostrar apenas processos ativos", "Mostrar apenas processos suspensos", "Mostrar apenas processos baixados", "Mostrar todos os processos"] },
       { kind: "select", label: "Exibir", options: ["Exibir todas as informacoes", "Nao exibir informacoes confidenciais"] },
-      { kind: "select", label: "Conta", options: ["Todas", "Conta Principal"] },
+      { kind: "select", label: "Conta", options: ["Todas", "Conta Principal", "Caixa"] },
       { kind: "select", label: "Situacao", options: ["Tudo", "Somente valores em aberto", "Somente valores quitados"] },
       { kind: "select", label: "Periodo:", options: ["Todos os periodos", "Apenas deste mes", "Indicar o periodo"] },
       { kind: "input", label: "De:" },

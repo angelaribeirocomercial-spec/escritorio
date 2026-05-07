@@ -1,5 +1,6 @@
 import { createBankingIntakeAction } from "@/app/(workspace)/novo-atendimento-bancario/actions";
 import { WorkspacePage } from "@/components/layout/workspace-page";
+import { FormSubmitButton } from "@/components/forms/form-submit-button";
 
 const intakeFormAction = createBankingIntakeAction as unknown as string;
 
@@ -335,12 +336,9 @@ function NovoAtendimentoBancarioPageContent({
             </div>
           </div>
 
-          <button
-            className="mt-6 rounded-[4px] bg-[linear-gradient(90deg,#22c55e,#4ade80)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-soft transition hover:brightness-105"
-            type="submit"
-          >
+          <FormSubmitButton className="mt-6 rounded-[4px] bg-[linear-gradient(90deg,#22c55e,#4ade80)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-soft transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70">
             Iniciar caso
-          </button>
+          </FormSubmitButton>
           <p className="mt-3 text-xs leading-5 text-slate-400">
             Esta fase abre o caso em `triagem inicial`, registra pendencias e encaminha o restante da completude para o cockpit do cliente.
           </p>

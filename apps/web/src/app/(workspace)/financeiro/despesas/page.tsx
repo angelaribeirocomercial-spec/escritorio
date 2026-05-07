@@ -148,10 +148,11 @@ export default async function FinanceiroDespesasPage({
           </select>
         </div>
         <div>
-          <label className="mb-2 block text-[13px] text-slate-400">Contas</label>
+          <label className="mb-2 block text-[13px] text-slate-400">Conta operacional</label>
           <select className="mj-model-input w-full px-3 outline-none" defaultValue={selectedAccount} name="conta">
             <option value="all">Todas as contas</option>
             <option value="Conta Principal">Conta Principal</option>
+            <option value="Caixa">Caixa</option>
           </select>
         </div>
         <div>

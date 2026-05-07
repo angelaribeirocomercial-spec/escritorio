@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { FinancialEntryKind } from "@lexia/domain";
 
 import { createFinancialEntryAction } from "./actions";
+import { FormSubmitButton } from "@/components/forms/form-submit-button";
 
 const kindBySubpage: Record<string, FinancialEntryKind> = {
   despesas: "expense",
@@ -100,18 +101,23 @@ export default function NovoFinanceiroPage({
           />
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="mb-2 block text-[13px] text-slate-400">Conta</label>
+        <div>
+            <label className="mb-2 block text-[13px] text-slate-400">Conta operacional / caixa</label>
             <input
               className="mj-model-input w-full px-3 outline-none"
               defaultValue={searchParams?.accountLabel ?? "Conta Principal"}
+              list="financial-account-label-presets"
               name="accountLabel"
               placeholder="Conta Principal"
               type="text"
             />
             <p className="mt-2 text-[12px] leading-5 text-slate-500">
-              `Conta Principal` ainda funciona como rotulo operacional. Este slice nao modela caixa nem contas reais.
+              `Conta Principal` ainda funciona como rotulo operacional padrao. Use `Caixa` se quiser registrar o saldo em dinheiro vivo; este slice nao modela contas bancarias reais.
             </p>
+            <datalist id="financial-account-label-presets">
+              <option value="Conta Principal" />
+              <option value="Caixa" />
+            </datalist>
           </div>
           <div>
             <label className="mb-2 block text-[13px] text-slate-400">Contraparte</label>
@@ -175,9 +181,9 @@ export default function NovoFinanceiroPage({
           Este fluxo ainda nao faz conciliacao, saldo entre contas reais nem modelagem de caixa. Transferencias continuam como registro operacional simples.
         </div>
         <div className="flex justify-end">
-          <button className="mj-model-button-green" type="submit">
+          <FormSubmitButton className="mj-model-button-green disabled:cursor-not-allowed disabled:opacity-70" pendingLabel="Criando...">
             Criar lancamento
-          </button>
+          </FormSubmitButton>
         </div>
       </form>
     </div>

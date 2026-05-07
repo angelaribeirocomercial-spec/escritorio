@@ -14,7 +14,6 @@ const targetPathByKind: Record<FinancialEntryKind, string> = {
 
 type FinancialEntryFieldName =
   | "title"
-  | "accountLabel"
   | "amount"
   | "dueDate"
   | "categoryLabel";
@@ -31,7 +30,6 @@ function buildRedirectUrl(kind: FinancialEntryKind, formData: FormData, error?: 
     "caseId",
     "title",
     "description",
-    "accountLabel",
     "counterpartyLabel",
     "amount",
     "dueDate",
@@ -58,8 +56,6 @@ function buildMissingFieldError(field: FinancialEntryFieldName) {
   switch (field) {
     case "title":
       return "Campo obrigatorio: informe o titulo do lancamento.";
-    case "accountLabel":
-      return "Campo obrigatorio: informe a conta operacional do lancamento.";
     case "amount":
       return "Campo obrigatorio: informe o valor do lancamento.";
     case "dueDate":
@@ -138,7 +134,7 @@ export async function createFinancialEntryAction(formData: FormData) {
   const kind = String(formData.get("kind") ?? "expense") as FinancialEntryKind;
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
-  const accountLabel = String(formData.get("accountLabel") ?? "").trim();
+  const accountLabel = String(formData.get("accountLabel") ?? "").trim() || "Conta Principal";
   const counterpartyLabel = String(formData.get("counterpartyLabel") ?? "").trim();
   const amountRaw = String(formData.get("amount") ?? "").trim();
   const dueDate = String(formData.get("dueDate") ?? "").trim();
@@ -147,10 +143,6 @@ export async function createFinancialEntryAction(formData: FormData) {
 
   if (!title) {
     redirect(buildRedirectUrl(kind, formData, buildMissingFieldError("title")));
-  }
-
-  if (!accountLabel) {
-    redirect(buildRedirectUrl(kind, formData, buildMissingFieldError("accountLabel")));
   }
 
   if (!amountRaw) {
