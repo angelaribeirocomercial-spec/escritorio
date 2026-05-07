@@ -56,7 +56,7 @@ export function ClaraLandingHero({
           <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
             A Clara organiza o trabalho do escritorio por etapas objetivas: triagem,
             estrategia, intimacao, peca, jurisprudencia, acompanhamento e revisao.
-            Tudo fica rastreavel e pronto para a advogada humana validar.
+            Tudo fica rastreavel e pronto para revisao humana e validação.
           </p>
         </div>
 
