@@ -26,6 +26,8 @@ const CASE_STATUS_PRIORITY = {
   closed: 3
 } as const;
 
+const CONTRACT_ANALYSIS_DOCUMENT_TYPES = new Set(["Contrato bancario", "CCB"]);
+
 function serviceStatusLabel(status: string) {
   switch (status) {
     case "active":
@@ -176,6 +178,10 @@ function distributionDateLabel(
   );
 
   return distributionEvent?.occurredAt ?? "Nao registrada";
+}
+
+function isContractAnalysisDocument(documentType: string) {
+  return CONTRACT_ANALYSIS_DOCUMENT_TYPES.has(documentType);
 }
 
 export default async function ClientDetailPage({
@@ -343,6 +349,8 @@ export default async function ClientDetailPage({
       }
     : null;
   const primaryDocumentId = caseDocuments[0]?.id ?? null;
+  const contractAnalysisDocumentId =
+    caseDocuments.find((document) => isContractAnalysisDocument(document.documentType))?.id ?? null;
   const clientOverviewHref = `/pessoas/clientes/${client.id}${activeCase ? `?case=${activeCase.id}` : ""}`;
   const claraContextSearchParams = new URLSearchParams({ client: client.id });
 
@@ -365,11 +373,11 @@ export default async function ClientDetailPage({
       label: "Documentos",
       href: activeCase ? `/documentos/enviar-arquivos?caseId=${activeCase.id}` : "/documentos/meus-arquivos"
     },
-    ...(primaryDocumentId
+    ...(contractAnalysisDocumentId
       ? [
           {
             label: "Contrato",
-            href: `/analise-contrato?documentId=${primaryDocumentId}`
+            href: `/analise-contrato?documentId=${contractAnalysisDocumentId}`
           }
         ]
       : []),
@@ -378,14 +386,6 @@ export default async function ClientDetailPage({
           {
             label: "Financeiro Juridico",
             href: `/clara?tab=revisional&${claraContextQuery}`
-          },
-          {
-            label: "BACEN",
-            href: `/analise-contrato?documentId=${primaryDocumentId}#bacen`
-          },
-          {
-            label: "Abusividades",
-            href: `/analise-contrato?documentId=${primaryDocumentId}#abusividades`
           },
           {
             label: "Estrategia",
@@ -398,6 +398,18 @@ export default async function ClientDetailPage({
           {
             label: "Pecas",
             href: `/editor-de-texto/meus-textos?draft=1&case=${activeCase.id}${relatedProcess ? `&process=${relatedProcess.id}` : ""}&client=${client.id}&document=${primaryDocumentId}&piece=acao-revisional`
+          }
+        ]
+      : []),
+    ...(activeCase && contractAnalysisDocumentId
+      ? [
+          {
+            label: "BACEN",
+            href: `/analise-contrato?documentId=${contractAnalysisDocumentId}#bacen`
+          },
+          {
+            label: "Abusividades",
+            href: `/analise-contrato?documentId=${contractAnalysisDocumentId}#abusividades`
           }
         ]
       : []),

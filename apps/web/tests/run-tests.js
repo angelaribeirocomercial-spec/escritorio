@@ -1494,6 +1494,32 @@ assert.doesNotMatch(
   /mockClients|mockCases|mockDocuments|mockContractAnalyses/,
   "Expected contract analysis workspace to stop using primary mock context sources."
 );
+assert.match(
+  contractAnalysisSource,
+  /notFound\(\)/,
+  "Expected contract analysis workspace to degrade with a controlled not-found state instead of throwing a 500."
+);
+assert.match(
+  contractAnalysisSource,
+  /document\.caseId === requestedDocument\.caseId/,
+  "Expected contract analysis workspace to resolve a compatible contract only from the same case context."
+);
+assert.doesNotMatch(
+  contractAnalysisSource,
+  /document\.clientId === requestedDocument\.clientId/,
+  "Expected contract analysis workspace to avoid falling back to a different case from the same client."
+);
+
+assert.match(
+  clientCockpitSource,
+  /contractAnalysisDocumentId/,
+  "Expected the client cockpit to derive a dedicated compatible contract document for contract-analysis shortcuts."
+);
+assert.match(
+  clientCockpitSource,
+  /caseDocuments\.find\(\(document\) => isContractAnalysisDocument\(document\.documentType\)\)/,
+  "Expected the client cockpit to look for a compatible contract document instead of reusing the first case document."
+);
 
 const documentServiceSource = fs.readFileSync(
   path.join(__dirname, "..", "src/server/services/documents/get-documents.ts"),

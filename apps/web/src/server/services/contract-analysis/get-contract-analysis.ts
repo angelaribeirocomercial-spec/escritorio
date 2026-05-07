@@ -1,11 +1,12 @@
 import { ContractAnalysisRecord } from "@lexia/domain";
+import { notFound } from "next/navigation";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getBankingRevisionalCalculation } from "@/server/services/clara/get-banking-revisional-calculation";
 import { getBcbSgsConsultation } from "@/server/services/bcb/get-bcb-consultation";
-import { getCaseById, getCases } from "@/server/services/cases/get-cases";
-import { getClientById, getClients } from "@/server/services/clients/get-clients";
+import { getCaseById } from "@/server/services/cases/get-cases";
+import { getClientById } from "@/server/services/clients/get-clients";
 import { getDocumentById, getDocuments } from "@/server/services/documents/get-documents";
 import { syncDetectedAbusesForAnalysis } from "@/server/services/contract-analysis/detected-abuses-store";
 
@@ -64,6 +65,29 @@ const CONTRACT_ANALYSIS_SELECT = `
   suggested_requests,
   executive_summary
 `;
+
+const CONTRACT_ANALYSIS_DOCUMENT_TYPES = new Set(["Contrato bancario", "CCB"]);
+
+function isContractAnalysisDocument(documentType: string) {
+  return CONTRACT_ANALYSIS_DOCUMENT_TYPES.has(documentType);
+}
+
+function resolveCompatibleContractDocument(params: {
+  requestedDocument: Awaited<ReturnType<typeof getDocumentById>>;
+  contractDocuments: Awaited<ReturnType<typeof getDocuments>>;
+}) {
+  const { requestedDocument, contractDocuments } = params;
+
+  if (!requestedDocument) {
+    return contractDocuments[0] ?? null;
+  }
+
+  if (isContractAnalysisDocument(requestedDocument.documentType)) {
+    return contractDocuments.find((document) => document.id === requestedDocument.id) ?? requestedDocument;
+  }
+
+  return contractDocuments.find((document) => document.caseId === requestedDocument.caseId) ?? null;
+}
 
 function getScenarioProfile(params: { documentType: string; bankName: string }) {
   if (params.documentType === "CCB") {
@@ -127,30 +151,31 @@ export async function getContractAnalysisWorkspace(
 ) {
   const allDocuments = await getDocuments();
   const contractDocuments = allDocuments.filter((document) =>
-    ["Contrato bancario", "CCB"].includes(document.documentType)
+    isContractAnalysisDocument(document.documentType)
   );
+  const requestedDocument = documentId
+    ? allDocuments.find((document) => document.id === documentId) ??
+      (await getDocumentById(documentId))
+    : null;
+  const selectedDocument = resolveCompatibleContractDocument({
+    requestedDocument,
+    contractDocuments
+  });
 
-  if (!contractDocuments.length) {
-    throw new Error("No contract documents are available for the contract analysis workspace.");
+  if (!selectedDocument) {
+    notFound();
   }
-
-  const selectedDocument =
-    (documentId ? await getDocumentById(documentId) : null) ??
-    contractDocuments.find((document) => document.id === documentId) ??
-    contractDocuments[0];
 
   const analysis = await getContractAnalysisByDocumentId(selectedDocument.id);
   const client =
     selectedDocument.client ??
-    (await getClientById(selectedDocument.clientId)) ??
-    (await getClients())[0];
+    (await getClientById(selectedDocument.clientId));
   const bankingCase =
     selectedDocument.bankingCase ??
-    (await getCaseById(selectedDocument.caseId)) ??
-    (await getCases())[0];
+    (await getCaseById(selectedDocument.caseId));
 
   if (!analysis || !client || !bankingCase) {
-    throw new Error("Contract analysis workspace is missing linked context data.");
+    notFound();
   }
 
   const scenarioProfile = getScenarioProfile({
