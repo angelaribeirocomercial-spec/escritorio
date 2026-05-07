@@ -343,8 +343,24 @@ export default async function ClientDetailPage({
       }
     : null;
   const primaryDocumentId = caseDocuments[0]?.id ?? null;
+  const clientOverviewHref = `/pessoas/clientes/${client.id}${activeCase ? `?case=${activeCase.id}` : ""}`;
+  const claraContextSearchParams = new URLSearchParams({ client: client.id });
+
+  if (activeCase) {
+    claraContextSearchParams.set("case", activeCase.id);
+  }
+
+  if (relatedProcess) {
+    claraContextSearchParams.set("process", relatedProcess.id);
+  }
+
+  if (primaryDocumentId) {
+    claraContextSearchParams.set("document", primaryDocumentId);
+  }
+
+  const claraContextQuery = claraContextSearchParams.toString();
   const dossierTabs = [
-    { label: "Visao geral", href: `/pessoas/clientes/${client.id}` },
+    { label: "Visao geral", href: clientOverviewHref },
     {
       label: "Documentos",
       href: activeCase ? `/documentos/enviar-arquivos?caseId=${activeCase.id}` : "/documentos/meus-arquivos"
@@ -353,7 +369,7 @@ export default async function ClientDetailPage({
       ? [
           {
             label: "Contrato",
-            href: `/analise-contrato?documentId=${primaryDocumentId}&client=${client.id}${activeCase ? `&process=${activeCase.processNumber}&objetivo=${encodeURIComponent(activeCase.suggestedStrategy)}` : ""}`
+            href: `/analise-contrato?documentId=${primaryDocumentId}`
           }
         ]
       : []),
@@ -361,37 +377,37 @@ export default async function ClientDetailPage({
       ? [
           {
             label: "Financeiro Juridico",
-            href: `/clara?tab=revisional&client=${client.id}&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&document=${primaryDocumentId}`
+            href: `/clara?tab=revisional&${claraContextQuery}`
           },
           {
             label: "BACEN",
-            href: `/analise-contrato?documentId=${primaryDocumentId}&client=${client.id}${relatedProcess ? `&process=${relatedProcess.id}` : ""}#bacen`
+            href: `/analise-contrato?documentId=${primaryDocumentId}#bacen`
           },
           {
             label: "Abusividades",
-            href: `/analise-contrato?documentId=${primaryDocumentId}&client=${client.id}${relatedProcess ? `&process=${relatedProcess.id}` : ""}#abusividades`
+            href: `/analise-contrato?documentId=${primaryDocumentId}#abusividades`
           },
           {
             label: "Estrategia",
-            href: `/clara?tab=revisional&client=${client.id}&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&document=${primaryDocumentId}#clara-workbench`
+            href: `/clara?tab=revisional&${claraContextQuery}#clara-workbench`
           },
           {
             label: "Laudo",
-            href: `/clara?tab=revisional&client=${client.id}&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&document=${primaryDocumentId}#clara-execucao`
+            href: `/clara?tab=revisional&${claraContextQuery}#clara-execucao`
           },
           {
             label: "Pecas",
-            href: `/editor-de-texto/meus-textos?draft=1&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&client=${client.id}&document=${primaryDocumentId}&piece=acao-revisional`
+            href: `/editor-de-texto/meus-textos?draft=1&case=${activeCase.id}${relatedProcess ? `&process=${relatedProcess.id}` : ""}&client=${client.id}&document=${primaryDocumentId}&piece=acao-revisional`
           }
         ]
       : []),
     {
       label: "Timeline",
-      href: `/clara?tab=analise&client=${client.id}${activeCase ? `&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}` : ""}#clara-history`
+      href: `/clara?tab=analise&${claraContextQuery}#clara-history`
     },
     {
       label: "Clara",
-      href: `/clara?tab=analise&client=${client.id}${activeCase ? `&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&document=${primaryDocumentId ?? ""}` : ""}`
+      href: `/clara?tab=analise&${claraContextQuery}`
     }
   ];
   return (
