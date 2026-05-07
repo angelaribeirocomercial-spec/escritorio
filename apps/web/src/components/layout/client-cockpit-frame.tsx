@@ -126,10 +126,6 @@ type ClientCockpitFrameProps = {
     hubClara: string;
     prepareContext: string;
   };
-  dossierTabs: ReadonlyArray<{
-    label: string;
-    href: string;
-  }>;
 };
 
 type PanelKey = "documents" | "case" | "pieces" | "clara" | "workflow" | "timeline";
@@ -190,8 +186,7 @@ export function ClientCockpitFrame({
   normalizedClientIaContext,
   normalizedTimeline,
   clientCaseCount,
-  actionLinks,
-  dossierTabs
+  actionLinks
 }: ClientCockpitFrameProps) {
   const [activePanel, setActivePanel] = useState<PanelKey | null>(activeCase ? "case" : null);
 
@@ -329,55 +324,6 @@ export function ClientCockpitFrame({
             <DeleteClientButton clientId={client.id} clientName={client.fullName} caseCount={clientCaseCount} />
           </div>
         </div>
-
-        <div className="rounded-[4px] border border-white/10 bg-white/[0.03] p-3">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="workspace-kicker">Abas do dossie</p>
-            <span className="text-xs uppercase tracking-[0.18em] text-slate-500">
-              Cliente · caso · contrato · Clara
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {dossierTabs.map((tab) => (
-              <Link
-                key={tab.label}
-                className="rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-300/30 hover:bg-cyan-300/10 hover:text-cyan-50"
-                href={tab.href}
-              >
-                {tab.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {cards.map((card) => {
-            const active = activePanel === card.key;
-
-            return (
-              <button
-                key={card.key}
-                className={`workspace-soft-card rounded-[4px] border p-4 text-left transition hover:bg-white/[0.06] ${panelTone(
-                  active
-                )}`}
-                onClick={() => setActivePanel(active ? null : card.key)}
-                type="button"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${card.tone}`}>{card.title}</p>
-                    <p className="mt-2 text-sm font-semibold text-white">{card.summary}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">{card.detail}</p>
-                  </div>
-                  <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-slate-300">
-                    {active ? "Aberto" : "Abrir"}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
         <div
           className="flex flex-wrap gap-2 rounded-[4px] border border-white/10 bg-white/[0.03] p-2"
           role="tablist"
@@ -400,7 +346,6 @@ export function ClientCockpitFrame({
             );
           })}
         </div>
-
         {activePanel ? (
           <section className="detail-panel p-6">
             {activePanel === "documents" ? (
@@ -815,3 +760,4 @@ export function ClientCockpitFrame({
     </section>
   );
 }
+
