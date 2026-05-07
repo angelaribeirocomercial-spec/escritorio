@@ -18,8 +18,6 @@ export default function AgendaGoogleAgendaPage() {
       title="Google Agenda"
     >
       <WorkspaceStatePanel
-        actionHref="/agenda/compromissos"
-        actionLabel="Voltar para compromissos"
         description="O produto ainda nao possui contrato server-side para autorizar contas Google, salvar tokens por tenant ou sincronizar compromissos com auditoria. Por isso, esta tela assume o estado real: a integracao ainda nao esta disponivel nesta area do workspace."
         title="Integracao ainda nao disponivel"
         tone="warning"
