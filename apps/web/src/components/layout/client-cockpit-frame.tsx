@@ -117,6 +117,10 @@ type ClientCockpitFrameProps = {
   normalizedClientIaContext: string;
   normalizedTimeline: ReadonlyArray<string>;
   clientCaseCount: number;
+  dossierTabs: ReadonlyArray<{
+    label: string;
+    href: string;
+  }>;
   actionLinks: {
     attachDocuments?: string;
     continueClara: string;
@@ -186,6 +190,7 @@ export function ClientCockpitFrame({
   normalizedClientIaContext,
   normalizedTimeline,
   clientCaseCount,
+  dossierTabs,
   actionLinks
 }: ClientCockpitFrameProps) {
   const [activePanel, setActivePanel] = useState<PanelKey | null>(activeCase ? "case" : null);
@@ -324,6 +329,26 @@ export function ClientCockpitFrame({
             <DeleteClientButton clientId={client.id} clientName={client.fullName} caseCount={clientCaseCount} />
           </div>
         </div>
+
+        {dossierTabs.length ? (
+          <div className="rounded-[4px] border border-white/10 bg-white/[0.03] p-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="workspace-kicker">Atalhos do dossie</p>
+              <span className="text-xs uppercase tracking-[0.18em] text-slate-500">Cliente · caso · contrato · Clara</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {dossierTabs.map((tab) => (
+                <Link
+                  key={tab.label}
+                  className="rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-300/30 hover:bg-cyan-300/10 hover:text-cyan-50"
+                  href={tab.href}
+                >
+                  {tab.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <div
           className="flex flex-wrap gap-2 rounded-[4px] border border-white/10 bg-white/[0.03] p-2"
           role="tablist"

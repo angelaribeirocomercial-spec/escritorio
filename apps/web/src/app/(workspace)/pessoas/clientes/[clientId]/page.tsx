@@ -342,6 +342,58 @@ export default async function ClientDetailPage({
         readiness: canonicalWorkflow.readiness
       }
     : null;
+  const primaryDocumentId = caseDocuments[0]?.id ?? null;
+  const dossierTabs = [
+    { label: "Visao geral", href: `/pessoas/clientes/${client.id}` },
+    {
+      label: "Documentos",
+      href: activeCase ? `/documentos/enviar-arquivos?caseId=${activeCase.id}` : "/documentos/meus-arquivos"
+    },
+    ...(primaryDocumentId
+      ? [
+          {
+            label: "Contrato",
+            href: `/analise-contrato?documentId=${primaryDocumentId}&client=${client.id}${activeCase ? `&process=${activeCase.processNumber}&objetivo=${encodeURIComponent(activeCase.suggestedStrategy)}` : ""}`
+          }
+        ]
+      : []),
+    ...(activeCase && primaryDocumentId
+      ? [
+          {
+            label: "Financeiro Juridico",
+            href: `/clara?tab=revisional&client=${client.id}&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&document=${primaryDocumentId}`
+          },
+          {
+            label: "BACEN",
+            href: `/analise-contrato?documentId=${primaryDocumentId}&client=${client.id}${relatedProcess ? `&process=${relatedProcess.id}` : ""}#bacen`
+          },
+          {
+            label: "Abusividades",
+            href: `/analise-contrato?documentId=${primaryDocumentId}&client=${client.id}${relatedProcess ? `&process=${relatedProcess.id}` : ""}#abusividades`
+          },
+          {
+            label: "Estrategia",
+            href: `/clara?tab=revisional&client=${client.id}&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&document=${primaryDocumentId}#clara-workbench`
+          },
+          {
+            label: "Laudo",
+            href: `/clara?tab=revisional&client=${client.id}&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&document=${primaryDocumentId}#clara-execucao`
+          },
+          {
+            label: "Pecas",
+            href: `/editor-de-texto/meus-textos?draft=1&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&client=${client.id}&document=${primaryDocumentId}&piece=acao-revisional`
+          }
+        ]
+      : []),
+    {
+      label: "Timeline",
+      href: `/clara?tab=analise&client=${client.id}${activeCase ? `&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}` : ""}#clara-history`
+    },
+    {
+      label: "Clara",
+      href: `/clara?tab=analise&client=${client.id}${activeCase ? `&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&document=${primaryDocumentId ?? ""}` : ""}`
+    }
+  ];
   return (
     <WorkspacePage
       description="Dossie central do cliente orientado pelo caso ativo, com contexto juridico, base documental e a peça mantida bloqueada ate o fechamento humano."
@@ -385,6 +437,7 @@ export default async function ClientDetailPage({
         normalizedClientIaContext={normalizedClientIaContext}
         normalizedTimeline={normalizedTimeline}
         clientCaseCount={clientCases.length}
+        dossierTabs={dossierTabs}
         relatedClaraRecordsCount={relatedClaraRecords.length}
         relatedProcess={
           relatedProcess
