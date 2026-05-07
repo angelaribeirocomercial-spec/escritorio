@@ -81,6 +81,18 @@ export const navSections: NavSection[] = [
         ]
       },
       {
+        href: "/agenda",
+        label: "Agenda",
+        shortLabel: "Agenda",
+        icon: "agenda",
+        description: "Compromissos, tarefas e prazos como execucao diaria do escritorio.",
+        children: [
+          { href: "/agenda/compromissos", label: "Compromissos" },
+          { href: "/agenda/tarefas", label: "Tarefas" },
+          { href: "/agenda/prazos", label: "Prazos" }
+        ]
+      },
+      {
         href: "/diario-oficial",
         label: "Diario oficial",
         shortLabel: "Diario",
@@ -91,18 +103,6 @@ export const navSections: NavSection[] = [
           { href: "/diario-oficial/palavras-chave", label: "Palavras-chave" },
           { href: "/diario-oficial/advogados", label: "Advogados" },
           { href: "/diario-oficial/lixeira", label: "Lixeira" }
-        ]
-      },
-      {
-        href: "/agenda",
-        label: "Agenda",
-        shortLabel: "Agenda",
-        icon: "agenda",
-        description: "Compromissos, tarefas e prazos como execucao diaria do escritorio.",
-        children: [
-          { href: "/agenda/compromissos", label: "Compromissos" },
-          { href: "/agenda/tarefas", label: "Tarefas" },
-          { href: "/agenda/prazos", label: "Prazos" }
         ]
       },
       {
