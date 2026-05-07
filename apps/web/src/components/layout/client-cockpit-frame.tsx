@@ -126,9 +126,22 @@ type ClientCockpitFrameProps = {
     hubClara: string;
     prepareContext: string;
   };
+  dossierTabs: ReadonlyArray<{
+    label: string;
+    href: string;
+  }>;
 };
 
 type PanelKey = "documents" | "case" | "pieces" | "clara" | "workflow" | "timeline";
+
+const panelLabels: Record<PanelKey, string> = {
+  documents: "Documentos",
+  case: "Visao Geral",
+  pieces: "Pecas",
+  clara: "Clara IA",
+  workflow: "Workflow",
+  timeline: "Timeline"
+};
 
 function panelTone(active: boolean) {
   return active
@@ -177,7 +190,8 @@ export function ClientCockpitFrame({
   normalizedClientIaContext,
   normalizedTimeline,
   clientCaseCount,
-  actionLinks
+  actionLinks,
+  dossierTabs
 }: ClientCockpitFrameProps) {
   const [activePanel, setActivePanel] = useState<PanelKey | null>(activeCase ? "case" : null);
 
@@ -316,6 +330,26 @@ export function ClientCockpitFrame({
           </div>
         </div>
 
+        <div className="rounded-[4px] border border-white/10 bg-white/[0.03] p-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="workspace-kicker">Abas do dossie</p>
+            <span className="text-xs uppercase tracking-[0.18em] text-slate-500">
+              Cliente · caso · contrato · Clara
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {dossierTabs.map((tab) => (
+              <Link
+                key={tab.label}
+                className="rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-300/30 hover:bg-cyan-300/10 hover:text-cyan-50"
+                href={tab.href}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {cards.map((card) => {
             const active = activePanel === card.key;
@@ -339,6 +373,29 @@ export function ClientCockpitFrame({
                     {active ? "Aberto" : "Abrir"}
                   </span>
                 </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div
+          className="flex flex-wrap gap-2 rounded-[4px] border border-white/10 bg-white/[0.03] p-2"
+          role="tablist"
+          aria-label="Abas do dossie do caso"
+        >
+          {cards.map((card) => {
+            const active = activePanel === card.key;
+
+            return (
+              <button
+                key={`tab-${card.key}`}
+                aria-selected={active}
+                className={`rounded-[4px] border px-4 py-2 text-sm font-semibold transition ${panelTone(active)}`}
+                onClick={() => setActivePanel(active ? null : card.key)}
+                role="tab"
+                type="button"
+              >
+                {panelLabels[card.key]}
               </button>
             );
           })}

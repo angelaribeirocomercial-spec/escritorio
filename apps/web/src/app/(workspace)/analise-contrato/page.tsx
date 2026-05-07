@@ -14,6 +14,15 @@ function proceduralRiskLabel(risk: string) {
   }
 }
 
+const dossierTabs = [
+  { label: "Visao geral", href: "#resumo" },
+  { label: "BACEN", href: "#bacen" },
+  { label: "Abusividades", href: "#abusividades" },
+  { label: "Estrategia", href: "#estrategia" },
+  { label: "Laudo", href: "#laudo" },
+  { label: "Pecas", href: "#pecas" }
+] as const;
+
 function severityLabel(severity: "low" | "medium" | "high") {
   switch (severity) {
     case "low":
@@ -59,7 +68,21 @@ export default async function ContractAnalysisPage({
       metrics={metrics}
       title="Console premium de analise contratual bancaria"
     >
-      <section className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
+      <section className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.92),rgba(14,24,42,0.82))] p-4 shadow-soft">
+        <div className="flex flex-wrap items-center gap-2">
+          {dossierTabs.map((tab) => (
+            <Link
+              key={tab.href}
+              className="rounded-[16px] border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-300/30 hover:bg-cyan-300/10 hover:text-cyan-50"
+              href={tab.href}
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section id="resumo" className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <p className="text-sm font-semibold text-white">Contrato em foco</p>
@@ -199,7 +222,7 @@ export default async function ContractAnalysisPage({
         </article>
       </section>
 
-      <section className="rounded-[30px] border border-cyan-300/15 bg-[linear-gradient(180deg,rgba(8,18,32,0.95),rgba(10,34,50,0.82))] p-6 shadow-soft">
+      <section id="bacen" className="rounded-[30px] border border-cyan-300/15 bg-[linear-gradient(180deg,rgba(8,18,32,0.95),rgba(10,34,50,0.82))] p-6 shadow-soft">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold text-white">BACEN</p>
@@ -238,7 +261,7 @@ export default async function ContractAnalysisPage({
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+      <section id="abusividades" className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <article className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
           <p className="text-sm font-semibold text-white">Clausulas sensiveis</p>
           <div className="mt-5 space-y-3">
@@ -303,7 +326,7 @@ export default async function ContractAnalysisPage({
         </article>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+      <section id="estrategia" className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <article className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
           <p className="text-sm font-semibold text-white">Contexto do caso</p>
           <div className="mt-5 rounded-[28px] border border-white/10 bg-black/20 p-5 text-sm leading-7 text-slate-300">
@@ -341,7 +364,7 @@ export default async function ContractAnalysisPage({
         </article>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.94fr_1.06fr]">
+      <section id="laudo" className="grid gap-4 xl:grid-cols-[0.94fr_1.06fr]">
         <article className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
           <p className="text-sm font-semibold text-white">Checklist minimo da revisional</p>
           <div className="mt-5 space-y-3">
@@ -504,7 +527,7 @@ export default async function ContractAnalysisPage({
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.98fr_1.02fr]">
+      <section id="pecas" className="grid gap-4 xl:grid-cols-[0.98fr_1.02fr]">
         <article className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
           <p className="text-sm font-semibold text-white">Fundamentos juridicos sugeridos</p>
           <div className="mt-5 space-y-3">

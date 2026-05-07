@@ -342,6 +342,42 @@ export default async function ClientDetailPage({
         readiness: canonicalWorkflow.readiness
       }
     : null;
+  const primaryDocumentId = caseDocuments[0]?.id ?? null;
+  const dossierTabs = [
+    { label: "Visao geral", href: "#client-summary" },
+    { label: "Documentos", href: "#client-documents" },
+    ...(primaryDocumentId ? [{ label: "Contrato", href: `/analise-contrato?documentId=${primaryDocumentId}&client=${client.id}${activeCase ? `&process=${activeCase.processNumber}&objetivo=${encodeURIComponent(activeCase.suggestedStrategy)}` : ""}` }] : []),
+    ...(activeCase && primaryDocumentId
+      ? [
+          {
+            label: "Financeiro Juridico",
+            href: `/clara?tab=revisional&client=${client.id}&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&document=${primaryDocumentId}`
+          },
+          {
+            label: "BACEN",
+            href: `/analise-contrato?documentId=${primaryDocumentId}&client=${client.id}${relatedProcess ? `&process=${relatedProcess.id}` : ""}#bacen`
+          },
+          {
+            label: "Abusividades",
+            href: `/analise-contrato?documentId=${primaryDocumentId}&client=${client.id}${relatedProcess ? `&process=${relatedProcess.id}` : ""}#abusividades`
+          },
+          {
+            label: "Estrategia",
+            href: `/clara?tab=revisional&client=${client.id}&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&document=${primaryDocumentId}#clara-workbench`
+          },
+          {
+            label: "Laudo",
+            href: `/clara?tab=revisional&client=${client.id}&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&document=${primaryDocumentId}#clara-execucao`
+          },
+          {
+            label: "Pecas",
+            href: `/editor-de-texto/meus-textos?draft=1&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&client=${client.id}&document=${primaryDocumentId}&piece=acao-revisional`
+          }
+        ]
+      : []),
+    { label: "Timeline", href: "#client-timeline" },
+    { label: "Clara", href: `/clara?tab=analise&client=${client.id}${activeCase ? `&case=${activeCase.id}&process=${relatedProcess?.id ?? activeCase.id}&document=${primaryDocumentId ?? ""}` : ""}` }
+  ];
 
   return (
     <WorkspacePage
@@ -419,6 +455,7 @@ export default async function ClientDetailPage({
             : null
         }
         workflow={cockpitFrameWorkflow}
+        dossierTabs={dossierTabs}
       />
     </WorkspacePage>
   );
