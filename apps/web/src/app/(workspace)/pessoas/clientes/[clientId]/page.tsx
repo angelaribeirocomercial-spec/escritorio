@@ -276,7 +276,7 @@ export default async function ClientDetailPage({
   });
   const nextStepLabel = activeCase
     ? normalizeVisibleCopy(nextTask?.lexiaNextStep ?? workflow?.nextStep ?? activeCase.suggestedStrategy)
-    : "Abrir o primeiro caso bancario deste cliente pela entrada de Novo atendimento bancario.";
+    : "Abrir o primeiro caso bancario deste cliente pela entrada de Iniciar caso.";
   const generatedDocuments = activeCase
     ? [
         {

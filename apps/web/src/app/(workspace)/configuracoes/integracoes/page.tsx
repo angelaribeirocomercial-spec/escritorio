@@ -42,7 +42,7 @@ export default async function ConfiguracoesIntegracoesPage() {
           Google Agenda e outros calendarios do workspace ainda nao possuem contrato real de autorizacao e sincronizacao nesta base. O acesso dedicado existe apenas para explicitar esse estado sem confundir com as fontes oficiais da Clara.
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-          <Link className="detail-link-button px-3 py-2" href="/configuracoes/integracoes/google-agenda">
+          <Link className="detail-link-button px-3 py-2" href="/agenda/google-agenda">
             Abrir status do Google Agenda
           </Link>
         </div>

@@ -114,7 +114,7 @@ export default async function AgendaCompromissosPage({
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Link
             className="mj-model-button-gray inline-flex items-center justify-center"
-            href="/configuracoes/integracoes/google-agenda"
+            href="/agenda/google-agenda"
           >
             Integrar com o Google Agenda
           </Link>
