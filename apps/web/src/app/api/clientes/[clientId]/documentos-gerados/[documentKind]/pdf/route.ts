@@ -4,8 +4,10 @@ import { getBankingNicheLabel } from "@lexia/domain";
 
 import { getCases } from "@/server/services/cases/get-cases";
 import { getClientById } from "@/server/services/clients/get-clients";
+import { getContractAnalysisWorkspace } from "@/server/services/contract-analysis/get-contract-analysis";
+import { getDocumentsByCaseId } from "@/server/services/documents/get-documents";
 
-type DocumentKind = "peticao-inicial" | "procuracao" | "contrato-honorarios";
+type DocumentKind = "peticao-inicial" | "procuracao" | "contrato-honorarios" | "laudo" | "peticoes";
 
 const PDF_PAGE_WIDTH = 595.28;
 const PDF_PAGE_HEIGHT = 841.89;
@@ -263,8 +265,58 @@ function buildDocumentLines(input: {
   nicheLabel: string;
   mainThesis: string;
   suggestedStrategy: string;
+  executiveSummary?: string;
+  contractRateLabel?: string;
+  marketReferenceLabel?: string;
+  differencePercentLabel?: string;
+  laudoSummary?: string;
+  peticoesSummary?: string;
 }) {
   switch (input.kind) {
+    case "laudo":
+      return [
+        "LAUDO TÉCNICO DO CASO",
+        "",
+        `Cliente: ${input.clientName}.`,
+        `Caso: ${input.caseTitle}.`,
+        `Banco: ${input.bankName}.`,
+        `Contrato detectado: ${input.nicheLabel}.`,
+        "",
+        "O sistema: OCR, BACEN, cálculos e análises consolidados para revisão humana.",
+        "",
+        `Taxa do contrato: ${requiredField(input.contractRateLabel, "taxa contratual")}.`,
+        `Taxa média BACEN: ${requiredField(input.marketReferenceLabel, "taxa média BACEN")}.`,
+        `Diferença: ${requiredField(input.differencePercentLabel, "diferença percentual")}.`,
+        "",
+        "Resumo técnico:",
+        requiredField(input.laudoSummary ?? input.executiveSummary, "resumo técnico do laudo"),
+        "",
+        "Status documental: Gerado para revisão humana e exportação em PDF."
+      ];
+    case "peticoes":
+      return [
+        "PETIÇÃO INICIAL",
+        "",
+        `${input.clientName}, CPF ${requiredField(input.clientDocumentId, "CPF da parte autora")}, residente em ${requiredField(input.clientAddress, "endereço da parte autora")}, por seus advogados, propõe a ação revisional em face de ${input.bankName}.`,
+        "",
+        "I - FATOS",
+        requiredField(input.peticoesSummary ?? input.executiveSummary, "fatos do caso"),
+        "",
+        "II - FUNDAMENTOS",
+        `Taxa contratual: ${requiredField(input.contractRateLabel, "taxa contratual")}.`,
+        `Taxa média BACEN: ${requiredField(input.marketReferenceLabel, "taxa média BACEN")}.`,
+        `Diferença: ${requiredField(input.differencePercentLabel, "diferença percentual")}.`,
+        `Tese indicada: ${requiredField(input.suggestedStrategy, "tese sugerida")}.`,
+        "",
+        "III - PEDIDOS",
+        "- revisão das cláusulas abusivas;",
+        "- recálculo do saldo devedor;",
+        "- repetição de indébito, se cabível;",
+        "- tutela de urgência, quando houver suporte fático;",
+        "- demais providências necessárias ao caso.",
+        "",
+        "Status documental: Gerado para revisão humana e exportação em PDF."
+      ];
     case "procuracao":
       return [
         "PROCURAÇÃO AD JUDICIA ET EXTRA",
@@ -344,7 +396,7 @@ export async function GET(
 ) {
   const { clientId, documentKind } = await context.params;
 
-  if (!["peticao-inicial", "procuracao", "contrato-honorarios"].includes(documentKind)) {
+  if (!["peticao-inicial", "procuracao", "contrato-honorarios", "laudo", "peticoes"].includes(documentKind)) {
     return NextResponse.json({ ok: false, error: "Documento gerado desconhecido." }, { status: 404 });
   }
 
@@ -361,6 +413,10 @@ export async function GET(
     return NextResponse.json({ ok: false, error: `Caso do cliente ${clientId} nao encontrado.` }, { status: 404 });
   }
 
+  const caseDocuments = await getDocumentsByCaseId(activeCase.id);
+  const contractDocument = caseDocuments.find((document) => ["Contrato bancario", "CCB"].includes(document.documentType));
+  const contractAnalysis = contractDocument ? await getContractAnalysisWorkspace(contractDocument.id) : null;
+
   const lines = buildDocumentLines({
     kind: documentKind as DocumentKind,
     clientName: client.fullName,
@@ -373,14 +429,24 @@ export async function GET(
     processNumber: activeCase.processNumber,
     nicheLabel: getBankingNicheLabel(activeCase.niche),
     mainThesis: activeCase.mainThesis,
-    suggestedStrategy: activeCase.suggestedStrategy
+    suggestedStrategy: activeCase.suggestedStrategy,
+    executiveSummary: contractAnalysis?.analysis.executiveSummary,
+    contractRateLabel: contractAnalysis?.bacenComparison.contractRateLabel,
+    marketReferenceLabel: contractAnalysis?.bacenComparison.marketReferenceLabel,
+    differencePercentLabel: contractAnalysis?.bacenComparison.differencePercentLabel,
+    laudoSummary: contractAnalysis?.caseDossier.laudo.summary,
+    peticoesSummary: contractAnalysis?.caseDossier.peticoes.summary
   });
   const documentTitle =
     documentKind === "procuracao"
       ? "Procuracao em revisao humana"
       : documentKind === "contrato-honorarios"
         ? "Contrato de honorarios em revisao humana"
-        : "Peticao inicial em revisao humana";
+        : documentKind === "laudo"
+          ? "Laudo juridico em revisao humana"
+          : documentKind === "peticoes"
+            ? "Peticao inicial automatizada em revisao humana"
+            : "Peticao inicial em revisao humana";
   const pdf = buildPdfDocument(
     documentTitle,
     "Template juridico estruturado com validacao humana obrigatoria",

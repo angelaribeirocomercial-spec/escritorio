@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getBankingNicheLabel } from "@lexia/domain";
 import { WorkspaceStatePanel } from "@lexia/ui";
 
-import { ClientCockpitFrame } from "@/components/layout/client-cockpit-frame";
+import { ClientCockpitFrame } from "@/components/layout/client-dossier-frame";
 import { WorkspacePage } from "@/components/layout/workspace-page";
 import {
   normalizeVisibleCopy,
@@ -15,6 +15,7 @@ import { getContractAnalysisWorkspace } from "@/server/services/contract-analysi
 import { getBankingCaseWorkflow } from "@/server/services/cases/get-banking-case-workflow";
 import { getCases } from "@/server/services/cases/get-cases";
 import { getClientById } from "@/server/services/clients/get-clients";
+import { getDocumentFileSignedUrl } from "@/server/services/documents/get-document-file-url";
 import { getDocumentsByCaseId } from "@/server/services/documents/get-documents";
 import { getProcessByCaseId } from "@/server/services/processes/get-processes";
 import { getProceduralUpdatesByProcessId } from "@/server/services/procedural-updates/get-procedural-updates";
@@ -311,6 +312,19 @@ export default async function ClientDetailPage({
   const contractAnalysisWorkspace = contractAnalysisDocumentId
     ? await getContractAnalysisWorkspace(contractAnalysisDocumentId)
     : null;
+  const caseDocumentsForFrame = await Promise.all(
+    caseDocuments.map(async (document) => ({
+      id: document.id,
+      documentType: document.documentType,
+      fileName: document.fileName,
+      summary: document.summary,
+      detailHref: `/documentos/${document.id}`,
+      pdfHref: await getDocumentFileSignedUrl({
+        bucket: document.storageBucket,
+        path: document.storagePath
+      })
+    }))
+  );
   const metrics = [
     {
       label: "Caso Ativo",
@@ -380,7 +394,7 @@ export default async function ClientDetailPage({
           continueClara: "clara"
         }}
         activeCase={cockpitFrameActiveCase}
-        caseDocuments={caseDocuments}
+        caseDocuments={caseDocumentsForFrame}
         generatedDocuments={generatedDocuments}
         client={{
           id: client.id,
