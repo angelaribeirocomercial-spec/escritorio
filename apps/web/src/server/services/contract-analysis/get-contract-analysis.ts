@@ -28,6 +28,21 @@ type ContractAnalysisRow = {
   executive_summary: string;
 };
 
+type ContractAnalysisDossier = {
+  clara: {
+    summary: string;
+    focusPoints: string[];
+  };
+  laudo: {
+    summary: string;
+    sources: string[];
+  };
+  peticoes: {
+    summary: string;
+    sources: string[];
+  };
+};
+
 function mapContractAnalysisRow(row: ContractAnalysisRow): ContractAnalysisRecord {
   return {
     id: row.id,
@@ -113,6 +128,54 @@ function getScenarioProfile(params: { documentType: string; bankName: string }) 
   };
 }
 
+function getCaseDossier(params: {
+  selectedDocument: {
+    documentType: string;
+    fileName: string;
+  };
+  client: {
+    fullName: string;
+  };
+  bankingCase: {
+    id: string;
+    title: string;
+  };
+  analysis: ContractAnalysisRecord;
+  bacenComparisonLabel: string;
+  calculationMemory: ReturnType<typeof getBankingRevisionalCalculation>;
+  detectedAbuses: {
+    length: number;
+  };
+}) {
+  const { selectedDocument, client, bankingCase, analysis, bacenComparisonLabel, calculationMemory, detectedAbuses } =
+    params;
+
+  return {
+    clara: {
+      summary:
+        `Clara vive no contexto do caso ${bankingCase.title} e sintetiza o contrato ${selectedDocument.documentType} de ${client.fullName}, ` +
+        `as parcelas contratada e cobrada, a leitura BACEN (${bacenComparisonLabel}) e os sinais de abusividade já consolidados.`,
+      focusPoints: [
+        `Contrato em foco: ${selectedDocument.fileName}`,
+        `Parcelas: ${calculationMemory.labels.contractedInstallment} contra ${calculationMemory.labels.chargedInstallment}`,
+        `BACEN: ${bacenComparisonLabel}`,
+        `Abusividades detectadas: ${detectedAbuses.length} sinais`,
+        `Tese de trabalho: ${analysis.suggestedThesis}`
+      ]
+    },
+    laudo: {
+      summary:
+        "Laudo gerado automaticamente a partir de OCR, BACEN, cálculos e análises para consolidar a leitura técnica do contrato.",
+      sources: ["OCR", "BACEN", "cálculos", "análises"]
+    },
+    peticoes: {
+      summary:
+        "Petições geradas automaticamente a partir de cliente, contrato, abusividades, BACEN, cálculos e tese para manter a peça ancorada no dossiê do caso.",
+      sources: ["cliente", "contrato", "abusividades", "BACEN", "cálculos", "tese"]
+    }
+  } satisfies ContractAnalysisDossier;
+}
+
 function getBacenComparisonLabel(params: {
   analysis: ContractAnalysisRecord;
   consultationStatus: "consulted" | "unavailable" | "failed";
@@ -194,6 +257,37 @@ export async function getContractAnalysisWorkspace(
     caseId: bankingCase.id,
     contractId: selectedDocument.id
   });
+  const calculationMemory = getBankingRevisionalCalculation(
+    calculationParams,
+    selectedDocument.id === "doc-004"
+      ? {
+          financedAmount: 248000,
+          installmentCount: 21,
+          contractedInstallment: 8420,
+          chargedInstallment: 10185,
+          targetReductionPercent: 21.8,
+          basis:
+            "Estimativa preliminar com expurgo de capitalizacao mensal e de custos agregados de baixa transparencia."
+        }
+      : {
+          financedAmount: 68400,
+          installmentCount: 29,
+          contractedInstallment: 1842,
+          chargedInstallment: 2214,
+          targetReductionPercent: 27.8,
+          basis:
+            "Estimativa preliminar com exclusao de seguro embutido, readequacao do CET e afastamento de encargos cumulativos."
+        }
+  );
+  const caseDossier = getCaseDossier({
+    selectedDocument,
+    client,
+    bankingCase,
+    analysis,
+    bacenComparisonLabel,
+    calculationMemory,
+    detectedAbuses
+  });
 
   return {
     contractDocuments: contractDocuments.map((document) => ({
@@ -229,28 +323,7 @@ export async function getContractAnalysisWorkspace(
           : "Comparacao BACEN mantida em boundary controlado enquanto a consulta automatica nao retorna no formato esperado."
     },
     detectedAbuses,
-    calculationMemory: getBankingRevisionalCalculation(
-      calculationParams,
-      selectedDocument.id === "doc-004"
-        ? {
-            financedAmount: 248000,
-            installmentCount: 21,
-            contractedInstallment: 8420,
-            chargedInstallment: 10185,
-            targetReductionPercent: 21.8,
-            basis:
-              "Estimativa preliminar com expurgo de capitalizacao mensal e de custos agregados de baixa transparencia."
-          }
-        : {
-            financedAmount: 68400,
-            installmentCount: 29,
-            contractedInstallment: 1842,
-            chargedInstallment: 2214,
-            targetReductionPercent: 27.8,
-            basis:
-              "Estimativa preliminar com exclusao de seguro embutido, readequacao do CET e afastamento de encargos cumulativos."
-          }
-    ),
+    calculationMemory,
     revisionalChecklist: [
       "Contrato principal com clausulas legiveis e identificacao do produto bancario",
       "Historico de parcelas pagas, vencidas e renegociadas",
@@ -296,7 +369,8 @@ export async function getContractAnalysisWorkspace(
       "Impacto no valor das parcelas e no saldo",
       "Tutela para limitar cobranca ou readequar a parcela",
       "Pedidos revisionais e eventual repeticao de indebito"
-    ]
+    ],
+    caseDossier
   };
 }
 

@@ -11,6 +11,7 @@ import {
 import {
   listClaraRecords
 } from "@/server/services/clara/clara-record-store";
+import { getContractAnalysisWorkspace } from "@/server/services/contract-analysis/get-contract-analysis";
 import { getBankingCaseWorkflow } from "@/server/services/cases/get-banking-case-workflow";
 import { getCases } from "@/server/services/cases/get-cases";
 import { getClientById } from "@/server/services/clients/get-clients";
@@ -305,6 +306,11 @@ export default async function ClientDetailPage({
   const normalizedClientIaContext = normalizeVisibleCopy(client.iaContext);
   const normalizedTimeline = normalizeVisibleCopyList(client.timeline);
   const normalizedCaseInsights = normalizeVisibleCopyList(activeCase?.lexiaInsights ?? []);
+  const contractAnalysisDocumentId =
+    caseDocuments.find((document) => isContractAnalysisDocument(document.documentType))?.id ?? null;
+  const contractAnalysisWorkspace = contractAnalysisDocumentId
+    ? await getContractAnalysisWorkspace(contractAnalysisDocumentId)
+    : null;
   const metrics = [
     {
       label: "Caso Ativo",
@@ -319,6 +325,10 @@ export default async function ClientDetailPage({
       value: canonicalWorkflow?.completionLabel ?? workflow?.completionLabel ?? `${client.documentsSent} enviados`
     },
     {
+      label: "Contrato",
+      value: contractAnalysisDocumentId ? "Compativel" : "Pendente"
+    },
+    {
       label: "Proximo passo",
       value: nextTask ? "Com tarefa aberta" : "A definir"
     }
@@ -328,6 +338,7 @@ export default async function ClientDetailPage({
     ? {
         id: activeCase.id,
         title: activeCase.title,
+        claimType: activeCase.claimType,
         nicheLabel: getBankingNicheLabel(activeCase.niche),
         status: activeCase.status,
         stage: workflow?.phaseLabel ?? activeCase.stage,
@@ -348,80 +359,14 @@ export default async function ClientDetailPage({
         readiness: canonicalWorkflow.readiness
       }
     : null;
-  const primaryDocumentId = caseDocuments[0]?.id ?? null;
-  const contractAnalysisDocumentId =
-    caseDocuments.find((document) => isContractAnalysisDocument(document.documentType))?.id ?? null;
-  const clientOverviewHref = `/pessoas/clientes/${client.id}${activeCase ? `?case=${activeCase.id}` : ""}`;
-  const claraContextSearchParams = new URLSearchParams({ client: client.id });
-
-  if (activeCase) {
-    claraContextSearchParams.set("case", activeCase.id);
-  }
-
-  if (relatedProcess) {
-    claraContextSearchParams.set("process", relatedProcess.id);
-  }
-
-  if (primaryDocumentId) {
-    claraContextSearchParams.set("document", primaryDocumentId);
-  }
-
-  const claraContextQuery = claraContextSearchParams.toString();
   const dossierTabs = [
-    { label: "Visao geral", href: clientOverviewHref },
-    {
-      label: "Documentos",
-      href: activeCase ? `/documentos/enviar-arquivos?caseId=${activeCase.id}` : "/documentos/meus-arquivos"
-    },
-    ...(contractAnalysisDocumentId
-      ? [
-          {
-            label: "Contrato",
-            href: `/analise-contrato?documentId=${contractAnalysisDocumentId}`
-          }
-        ]
-      : []),
-    ...(activeCase && primaryDocumentId
-      ? [
-          {
-            label: "Financeiro Juridico",
-            href: `/clara?tab=revisional&${claraContextQuery}`
-          },
-          {
-            label: "Estrategia",
-            href: `/clara?tab=revisional&${claraContextQuery}#clara-workbench`
-          },
-          {
-            label: "Laudo",
-            href: `/clara?tab=revisional&${claraContextQuery}#clara-execucao`
-          },
-          {
-            label: "Pecas",
-            href: `/editor-de-texto/meus-textos?draft=1&case=${activeCase.id}${relatedProcess ? `&process=${relatedProcess.id}` : ""}&client=${client.id}&document=${primaryDocumentId}&piece=acao-revisional`
-          }
-        ]
-      : []),
-    ...(activeCase && contractAnalysisDocumentId
-      ? [
-          {
-            label: "BACEN",
-            href: `/analise-contrato?documentId=${contractAnalysisDocumentId}#bacen`
-          },
-          {
-            label: "Abusividades",
-            href: `/analise-contrato?documentId=${contractAnalysisDocumentId}#abusividades`
-          }
-        ]
-      : []),
-    {
-      label: "Timeline",
-      href: `/clara?tab=analise&${claraContextQuery}#clara-history`
-    },
-    {
-      label: "Clara",
-      href: `/clara?tab=analise&${claraContextQuery}`
-    }
-  ];
+    { key: "documentos", label: "Documentos" },
+    { key: "financeiro", label: "Financeiro" },
+    { key: "estrategico", label: "Estratégico" },
+    { key: "laudo", label: "Laudo" },
+    { key: "peticoes", label: "Petições" },
+    { key: "clara", label: "Clara" }
+  ] as const;
   return (
     <WorkspacePage
       description="Dossie central do cliente orientado pelo caso ativo, com contexto juridico, base documental e a peça mantida bloqueada ate o fechamento humano."
@@ -431,17 +376,8 @@ export default async function ClientDetailPage({
     >
       <ClientCockpitFrame
         actionLinks={{
-          attachDocuments: activeCase ? `/documentos/enviar-arquivos?caseId=${activeCase.id}` : undefined,
-          openDistributionHandoff: activeCase
-            ? `/editor-de-texto/distribuicao?handoff=1&client=${params.clientId}&case=${activeCase.id}&process=${activeCase.processNumber}`
-            : undefined,
-          continueClara: `/clara?tab=proximos-passos&client=${params.clientId}${activeCase ? `&case=${activeCase.id}` : ""}#clara-workbench`,
-          backToClients: "/pessoas/clientes",
-          openEditor: activeCase
-            ? `/editor-de-texto/meus-textos?draft=1&case=${activeCase.id}&client=${params.clientId}&piece=peticao-inicial`
-            : "/editor-de-texto/meus-textos",
-          hubClara: "/clara",
-          prepareContext: `/clara?tab=proximos-passos&client=${params.clientId}${activeCase ? `&case=${activeCase.id}` : ""}#clara-workbench`
+          attachDocuments: "documentos",
+          continueClara: "clara"
         }}
         activeCase={cockpitFrameActiveCase}
         caseDocuments={caseDocuments}
@@ -451,6 +387,7 @@ export default async function ClientDetailPage({
           fullName: client.fullName,
           documentId: client.documentId,
           bankName: client.bankName,
+          legalViabilityScore: client.legalViabilityScore,
           leadSource: client.leadSource,
           serviceStatusLabel: serviceStatusLabel(client.serviceStatus),
           address: client.address,
@@ -466,6 +403,22 @@ export default async function ClientDetailPage({
         normalizedTimeline={normalizedTimeline}
         clientCaseCount={clientCases.length}
         dossierTabs={dossierTabs}
+        contractAnalysis={
+          contractAnalysisWorkspace
+            ? {
+                analysis: contractAnalysisWorkspace.analysis,
+                bacenComparison: contractAnalysisWorkspace.bacenComparison,
+                calculationMemory: contractAnalysisWorkspace.calculationMemory,
+                detectedAbuses: contractAnalysisWorkspace.detectedAbuses,
+                caseDossier: contractAnalysisWorkspace.caseDossier,
+                revisionalChecklist: contractAnalysisWorkspace.revisionalChecklist,
+                thesisFrames: contractAnalysisWorkspace.thesisFrames,
+                revisionalRequests: contractAnalysisWorkspace.revisionalRequests,
+                proofStrategy: contractAnalysisWorkspace.proofStrategy,
+                revisionalStructure: contractAnalysisWorkspace.revisionalStructure
+              }
+            : null
+        }
         relatedClaraRecordsCount={relatedClaraRecords.length}
         relatedProcess={
           relatedProcess

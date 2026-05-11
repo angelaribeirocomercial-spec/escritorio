@@ -18,9 +18,9 @@ const dossierTabs = [
   { label: "Visao geral", href: "#resumo" },
   { label: "BACEN", href: "#bacen" },
   { label: "Abusividades", href: "#abusividades" },
-  { label: "Estrategia", href: "#estrategia" },
+  { label: "Clara", href: "#clara" },
   { label: "Laudo", href: "#laudo" },
-  { label: "Pecas", href: "#pecas" }
+  { label: "Peticoes", href: "#peticoes" }
 ] as const;
 
 function severityLabel(severity: "low" | "medium" | "high") {
@@ -63,7 +63,7 @@ export default async function ContractAnalysisPage({
 
   return (
     <WorkspacePage
-      description="Tela flagship de leitura contratual da Clara, com abusividade, tese sugerida, risco e pedidos estruturados para Direito Bancario."
+      description="Tela flagship do dossie local do caso, com Clara, BACEN, calculos, laudo e peticoes estruturadas para Direito Bancario."
       eyebrow="Analise de Contrato"
       metrics={metrics}
       title="Console premium de analise contratual bancaria"
@@ -326,9 +326,9 @@ export default async function ContractAnalysisPage({
         </article>
       </section>
 
-      <section id="estrategia" className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+      <section id="clara" className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <article className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
-          <p className="text-sm font-semibold text-white">Contexto do caso</p>
+          <p className="text-sm font-semibold text-white">Clara no contexto do caso</p>
           <div className="mt-5 rounded-[28px] border border-white/10 bg-black/20 p-5 text-sm leading-7 text-slate-300">
             <p>
               Cliente relacionado: <span className="font-semibold text-white">{workspace.client.fullName}</span>
@@ -337,6 +337,17 @@ export default async function ContractAnalysisPage({
               Caso vinculado: <span className="font-semibold text-white">{workspace.bankingCase.title}</span>
             </p>
             <p className="mt-3">Estrategia atual: {workspace.bankingCase.suggestedStrategy}</p>
+            <p className="mt-3 text-slate-200">{workspace.caseDossier.clara.summary}</p>
+            <div className="mt-4 grid gap-2 md:grid-cols-2">
+              {workspace.caseDossier.clara.focusPoints.map((item) => (
+                <div
+                  key={item}
+                  className="rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-200"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
           </div>
         </article>
 
@@ -366,7 +377,21 @@ export default async function ContractAnalysisPage({
 
       <section id="laudo" className="grid gap-4 xl:grid-cols-[0.94fr_1.06fr]">
         <article className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
-          <p className="text-sm font-semibold text-white">Checklist minimo da revisional</p>
+          <p className="text-sm font-semibold text-white">Laudo automatizado</p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">{workspace.caseDossier.laudo.summary}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {workspace.caseDossier.laudo.sources.map((source) => (
+              <span
+                key={source}
+                className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100"
+              >
+                {source}
+              </span>
+            ))}
+          </div>
+          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Checklist minimo da revisional
+          </p>
           <div className="mt-5 space-y-3">
             {workspace.revisionalChecklist.map((item) => (
               <div
@@ -527,9 +552,23 @@ export default async function ContractAnalysisPage({
         </div>
       </section>
 
-      <section id="pecas" className="grid gap-4 xl:grid-cols-[0.98fr_1.02fr]">
+      <section id="peticoes" className="grid gap-4 xl:grid-cols-[0.98fr_1.02fr]">
         <article className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
-          <p className="text-sm font-semibold text-white">Fundamentos juridicos sugeridos</p>
+          <p className="text-sm font-semibold text-white">Peticoes automatizadas</p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">{workspace.caseDossier.peticoes.summary}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {workspace.caseDossier.peticoes.sources.map((source) => (
+              <span
+                key={source}
+                className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-100"
+              >
+                {source}
+              </span>
+            ))}
+          </div>
+          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Fundamentos juridicos sugeridos
+          </p>
           <div className="mt-5 space-y-3">
             {workspace.thesisFrames.map((item) => (
               <div key={item.title} className="rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-4">
