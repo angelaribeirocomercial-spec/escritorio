@@ -354,7 +354,7 @@ export default async function ClientDetailPage({
     : null;
   const dossierTabs = [
     { key: "documentos", label: "Documentos" },
-    { key: "financeiro", label: "Financeiro" },
+    { key: "financeiro", label: "Cálculos" },
     { key: "estrategico", label: "Estratégico" },
     { key: "laudo", label: "Laudo" },
     { key: "peticoes", label: "Petições" },

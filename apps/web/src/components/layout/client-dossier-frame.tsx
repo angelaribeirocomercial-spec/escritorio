@@ -327,6 +327,13 @@ export function ClientCockpitFrame({
   const activeCaseTitle = activeCase?.title ?? "Sem caso ativo";
   const activeCaseClaim = activeCase?.claimType ?? activeCase?.title ?? "A definir";
   const activeCaseRisk = activeCase?.legalRiskLabel ?? "A definir";
+  const dossierHeaderCards = [
+    { label: "Banco", value: client.bankName || "Não informado" },
+    { label: "Tipo de ação", value: activeCaseClaim },
+    { label: "Risco", value: activeCaseRisk },
+    { label: "Chance de êxito", value: chanceOfSuccessLabel },
+    { label: "Abusividade", value: abusivenessLabel }
+  ];
 
   return (
     <section className="space-y-6">
@@ -334,22 +341,13 @@ export function ClientCockpitFrame({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-4xl space-y-4">
             <p className="workspace-kicker">Dossiê do caso</p>
-            <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-[4px] border border-white/8 bg-white/[0.02] px-4 py-3 text-sm text-slate-300">
-              <span>
-                <span className="font-semibold text-white">Banco:</span> {client.bankName || "Não informado"}
-              </span>
-              <span>
-                <span className="font-semibold text-white">Tipo de ação:</span> {activeCaseClaim}
-              </span>
-              <span>
-                <span className="font-semibold text-white">Risco:</span> {activeCaseRisk}
-              </span>
-              <span>
-                <span className="font-semibold text-white">Chance de êxito:</span> {chanceOfSuccessLabel}
-              </span>
-              <span>
-                <span className="font-semibold text-white">Abusividade:</span> {abusivenessLabel}
-              </span>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              {dossierHeaderCards.map((card) => (
+                <div key={card.label} className="detail-link-button flex min-h-[74px] min-w-0 flex-col justify-between px-4 py-3">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{card.label}</span>
+                  <span className="break-words text-sm font-semibold leading-5 text-white">{card.value}</span>
+                </div>
+              ))}
             </div>
             <p className="text-sm leading-7 text-slate-300">{activeCase ? nextStepLabel : "Abra um novo atendimento para iniciar o dossiê central do cliente."}</p>
           </div>
@@ -365,7 +363,7 @@ export function ClientCockpitFrame({
         </div>
 
         <div className="border-b border-white/10">
-          <div className="flex min-w-max gap-2 overflow-x-auto" role="tablist" aria-label="Abas do dossiê do caso">
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Abas do dossiê do caso">
             {dossierTabs.map((tab) => {
               const active = activePanel === tab.key;
 
@@ -496,7 +494,7 @@ export function ClientCockpitFrame({
             <div className="space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="workspace-kicker">Financeiro</p>
+                  <p className="workspace-kicker">Cálculos</p>
                   <h3 className="mt-2 text-2xl font-semibold text-white">{activeCaseTitle}</h3>
                 </div>
                 <div className="detail-soft-row px-4 py-3 text-sm text-slate-300">
@@ -559,7 +557,7 @@ export function ClientCockpitFrame({
               ) : null}
 
               <div className="detail-subpanel p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Escopo do financeiro</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Escopo dos cálculos</p>
                 <div className="mt-4 grid gap-2 md:grid-cols-3 xl:grid-cols-5">
                   {financeCoverageLabels.map((label) => (
                     <div key={label} className="detail-soft-row px-3 py-2 text-xs font-semibold text-slate-200">
