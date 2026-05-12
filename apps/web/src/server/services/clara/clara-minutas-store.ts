@@ -120,6 +120,37 @@ function asTextDraftPayload(value: unknown): TextDraftPayload | null {
   return payload;
 }
 
+function inferPieceLabelFromText(input: string) {
+  const normalized = input
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (normalized.includes("procuracao")) {
+    return "procuracao";
+  }
+
+  if (normalized.includes("contrato de honorarios") || normalized.includes("honorarios")) {
+    return "contrato-honorarios";
+  }
+
+  if (normalized.includes("acao revisional") || normalized.includes("revisional")) {
+    return "acao-revisional";
+  }
+
+  return "peticao-inicial";
+}
+
+function inferCaseLabelFromTitle(title: string) {
+  const separatorIndex = title.indexOf(" - ");
+
+  if (separatorIndex > 0) {
+    return title.slice(0, separatorIndex).trim();
+  }
+
+  return title.trim();
+}
+
 function mapWorkflowStatusToMinutaStatus(
   workflowStatus: ClaraRecordWorkflowStatus
 ): ClaraTextDraftStatus {
@@ -397,13 +428,13 @@ export async function getClaraMinuta(recordId: string): Promise<ClaraTextDraftRe
         recordId: data.id,
         statusLabel: data.status,
         stageLabel: data.status,
-        pieceLabel: data.title,
-        caseLabel: data.title,
+        pieceLabel: inferPieceLabelFromText(`${data.title} ${data.summary ?? ""} ${data.body ?? ""}`),
+        caseLabel: inferCaseLabelFromTitle(data.title),
         bankLabel: "",
         processLabel: "",
         documentLabel: data.summary || data.title,
         sections: data.body ? data.body.split("\n").filter(Boolean) : [],
-        preview: data.summary || data.body,
+        preview: data.summary || data.body || data.title,
         revisionalMemory: null
       } as TextDraftPayload
     }

@@ -192,10 +192,12 @@ function buildTextDraftEditorHref(input: {
   documentId: string;
   piece: "acao-revisional" | "peticao-inicial" | "procuracao" | "contrato-honorarios";
   objective: string;
+  niche: string;
   processId?: string | null;
 }) {
   const searchParams = new URLSearchParams();
   searchParams.set("draft", "1");
+  searchParams.set("niche", input.niche);
   searchParams.set("client", input.clientId);
   searchParams.set("case", input.caseId);
   searchParams.set("document", input.documentId);
@@ -324,6 +326,7 @@ export default async function ClientDetailPage({
               caseId: activeCase.id,
               documentId: activeCaseDraftDocumentId,
               piece: "procuracao",
+              niche: activeCase.niche,
               objective: "Preparar procuracao",
               processId: relatedProcess?.id ?? null
             }),
@@ -339,6 +342,7 @@ export default async function ClientDetailPage({
               caseId: activeCase.id,
               documentId: activeCaseDraftDocumentId,
               piece: "contrato-honorarios",
+              niche: activeCase.niche,
               objective: "Preparar contrato de honorarios",
               processId: relatedProcess?.id ?? null
             }),
@@ -348,14 +352,15 @@ export default async function ClientDetailPage({
       : [];
   const petitionDraftHref =
     activeCase && activeCaseDraftDocumentId
-      ? buildTextDraftEditorHref({
-          clientId: client.id,
-          caseId: activeCase.id,
-          documentId: activeCaseDraftDocumentId,
-          piece: activeCase.niche === "revisional" ? "acao-revisional" : "peticao-inicial",
-          objective: "Preparar acao revisional",
-          processId: relatedProcess?.id ?? null
-        })
+          ? buildTextDraftEditorHref({
+              clientId: client.id,
+              caseId: activeCase.id,
+              documentId: activeCaseDraftDocumentId,
+              piece: activeCase.niche === "revisional" ? "acao-revisional" : "peticao-inicial",
+              niche: activeCase.niche,
+              objective: "Preparar acao revisional",
+              processId: relatedProcess?.id ?? null
+            })
       : null;
   const caseDocumentsForFrame = await Promise.all(
     caseDocuments.map(async (document) => ({

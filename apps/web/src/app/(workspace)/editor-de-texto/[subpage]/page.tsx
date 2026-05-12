@@ -5,6 +5,7 @@ import { WorkspaceStatePanel } from "@lexia/ui";
 import { BANKING_NICHES, getBankingNicheLabel, type BankingNiche } from "@lexia/domain";
 
 import {
+  createClaraRecord,
   getClaraRecord,
   getClaraRecordDisplay,
   listClaraRecords,
@@ -25,7 +26,6 @@ import { getCases } from "@/server/services/cases/get-cases";
 import { getDocuments } from "@/server/services/documents/get-documents";
 import { getProcesses } from "@/server/services/processes/get-processes";
 import {
-  commitClaraExecutionAction,
   updateClaraRecordContentAction,
   updateClaraReviewNoteAction,
   updateClaraWorkflowStatusAction
@@ -54,6 +54,7 @@ type CanonicalModel = {
 function buildDraftCreationTargetPath(searchParams?: {
   draft?: string;
   created?: string;
+  niche?: string;
   client?: string;
   case?: string;
   document?: string;
@@ -74,6 +75,7 @@ function buildDraftCreationTargetPath(searchParams?: {
 
   const pairs: Array<[string, string | undefined]> = [
     ["created", searchParams.created],
+    ["niche", searchParams.niche],
     ["client", searchParams.client],
     ["case", searchParams.case],
     ["document", searchParams.document],
@@ -114,6 +116,47 @@ function getDraftSourceAction(pieceLabel: string) {
     default:
       return "Registrar minuta revisional";
   }
+}
+
+function buildDraftReturnPath(params: {
+  searchParams?: {
+    draft?: string;
+    created?: string;
+    niche?: string;
+    client?: string;
+    case?: string;
+    document?: string;
+    process?: string;
+    piece?: string;
+    objetivo?: string;
+    revisedInstallment?: string;
+    estimatedTotalExcess?: string;
+    chargedInstallment?: string;
+    contractedInstallment?: string;
+  };
+  pieceLabel: string;
+  caseId: string;
+  documentId: string;
+  objective?: string;
+  niche?: BankingNiche | null;
+}) {
+  if (params.niche && isDistributionEligiblePiece(params.pieceLabel)) {
+    return buildDistributionTargetPath({
+      niche: params.niche,
+      caseId: params.caseId,
+      documentId: params.documentId,
+      pieceLabel: params.pieceLabel,
+      objective: params.objective
+    });
+  }
+
+  return buildDraftCreationTargetPath({
+    ...params.searchParams,
+    case: params.caseId,
+    document: params.documentId,
+    piece: params.pieceLabel,
+    objetivo: params.objective
+  });
 }
 
 function findExistingDraftRecord(
@@ -410,18 +453,19 @@ function DistributionPage({
 function ClaraDraftPanel({
   draftArtifact,
   claraDisplay,
-  claraRecord
+  claraRecord,
+  returnPath
 }: {
   draftArtifact: Awaited<ReturnType<typeof getClaraTextDraftArtifact>>;
   claraDisplay: ReturnType<typeof getClaraRecordDisplay> | null;
   claraRecord: ClaraRecord | null;
+  returnPath: string;
 }) {
   const revisionalDraftBlocks = buildRevisionalDraftBlocks(draftArtifact);
   const isDistributionPiece = isDistributionEligiblePiece(draftArtifact.pieceLabel);
   const workflowStatusFormAction = updateClaraWorkflowStatusAction as unknown as string;
   const contentFormAction = updateClaraRecordContentAction as unknown as string;
   const reviewNoteFormAction = updateClaraReviewNoteAction as unknown as string;
-  const returnPath = `/editor-de-texto/meus-textos?record=${encodeURIComponent(claraRecord?.id ?? "")}`;
 
   return (
     <section className="mj-model-panel px-4 py-4">
@@ -436,6 +480,72 @@ function ClaraDraftPanel({
       <p className="mt-3 text-[13px] text-slate-400">
         Tipo de peca: {draftArtifact.pieceLabel} · Caso: {draftArtifact.caseLabel} · Documento base: {draftArtifact.documentLabel}
       </p>
+      {claraRecord ? (
+        <div className="mt-4 space-y-4 rounded-[4px] border bg-black/10 px-4 py-4 mj-model-gridline">
+          <form action={contentFormAction as unknown as string} className="space-y-3">
+            <input type="hidden" name="recordId" value={claraRecord.id} />
+            <input type="hidden" name="returnPath" value={returnPath} />
+            <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+              Revisao e edicao da minuta
+            </p>
+            <input
+              className="mj-model-input w-full px-3 py-2"
+              defaultValue={claraDisplay?.title ?? buildTextDraftDefaultTitle(draftArtifact)}
+              name="editedTitle"
+              placeholder="Titulo da minuta"
+            />
+            <textarea
+              className="mj-model-input min-h-[20rem] w-full px-3 py-2"
+              autoFocus
+              defaultValue={claraDisplay?.detail ?? buildTextDraftDefaultBody(draftArtifact)}
+              name="editedDetail"
+              placeholder="Revise e edite a redacao principal da minuta"
+            />
+            <button className="mj-model-button-green" type="submit">
+              Salvar versao revisada
+            </button>
+          </form>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <form action={workflowStatusFormAction as unknown as string} className="space-y-3">
+              <input type="hidden" name="recordId" value={claraRecord.id} />
+              <input type="hidden" name="returnPath" value={returnPath} />
+              <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+                Status documental
+              </p>
+              <select
+                className="mj-model-input w-full px-3 py-2"
+                defaultValue={claraRecord.workflowStatus}
+                name="workflowStatus"
+              >
+                <option value="created">Gerado</option>
+                <option value="reviewed">Em revisao</option>
+                <option value="completed">Aprovado</option>
+              </select>
+              <button className="mj-model-button-green" type="submit">
+                Atualizar status
+              </button>
+            </form>
+
+            <form action={reviewNoteFormAction as unknown as string} className="space-y-3">
+              <input type="hidden" name="recordId" value={claraRecord.id} />
+              <input type="hidden" name="returnPath" value={returnPath} />
+              <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+                Observacao da revisao humana
+              </p>
+              <textarea
+                className="mj-model-input min-h-[7rem] w-full px-3 py-2"
+                defaultValue={claraRecord.reviewNote ?? ""}
+                name="reviewNote"
+                placeholder="Registrar pendencias, ajustes ou aprovacao final"
+              />
+              <button className="mj-model-button-gray" type="submit">
+                Salvar observacao
+              </button>
+            </form>
+          </div>
+        </div>
+      ) : null}
       <div className="mt-4 rounded-[4px] border bg-white/[0.03] px-4 py-4 text-[14px] mj-model-gridline">
         <p className="text-slate-200">{claraDisplay?.detail}</p>
         <ul className="mt-3 space-y-1 text-[13px] text-slate-400">
@@ -594,71 +704,6 @@ function ClaraDraftPanel({
           <p className="mt-3 text-[13px] text-slate-400">Revisao humana: {claraDisplay.reviewNote}</p>
         ) : null}
         {claraRecord ? (
-          <div className="mt-4 space-y-4 rounded-[4px] border bg-black/10 px-4 py-4 mj-model-gridline">
-            <form action={contentFormAction as unknown as string} className="space-y-3">
-              <input type="hidden" name="recordId" value={claraRecord.id} />
-              <input type="hidden" name="returnPath" value={returnPath} />
-              <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-300">
-                Revisao e edicao da minuta
-              </p>
-              <input
-                className="mj-model-input w-full px-3 py-2"
-                defaultValue={claraDisplay?.title ?? buildTextDraftDefaultTitle(draftArtifact)}
-                name="editedTitle"
-                placeholder="Titulo da minuta"
-              />
-              <textarea
-                className="mj-model-input min-h-[16rem] w-full px-3 py-2"
-                defaultValue={claraDisplay?.detail ?? buildTextDraftDefaultBody(draftArtifact)}
-                name="editedDetail"
-                placeholder="Revise e edite a redacao principal da minuta"
-              />
-              <button className="mj-model-button-green" type="submit">
-                Salvar versao revisada
-              </button>
-            </form>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <form action={workflowStatusFormAction as unknown as string} className="space-y-3">
-                <input type="hidden" name="recordId" value={claraRecord.id} />
-                <input type="hidden" name="returnPath" value={returnPath} />
-                <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-300">
-                  Status documental
-                </p>
-                <select
-                  className="mj-model-input w-full px-3 py-2"
-                  defaultValue={claraRecord.workflowStatus}
-                  name="workflowStatus"
-                >
-                  <option value="created">Gerado</option>
-                  <option value="reviewed">Em revisao</option>
-                  <option value="completed">Aprovado</option>
-                </select>
-                <button className="mj-model-button-green" type="submit">
-                  Atualizar status
-                </button>
-              </form>
-
-              <form action={reviewNoteFormAction as unknown as string} className="space-y-3">
-                <input type="hidden" name="recordId" value={claraRecord.id} />
-                <input type="hidden" name="returnPath" value={returnPath} />
-                <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-300">
-                  Observacao da revisao humana
-                </p>
-                <textarea
-                  className="mj-model-input min-h-[7rem] w-full px-3 py-2"
-                  defaultValue={claraRecord.reviewNote ?? ""}
-                  name="reviewNote"
-                  placeholder="Registrar pendencias, ajustes ou aprovacao final"
-                />
-                <button className="mj-model-button-gray" type="submit">
-                  Salvar observacao
-                </button>
-              </form>
-            </div>
-          </div>
-        ) : null}
-        {claraRecord ? (
           <ClaraMinutaActions recordId={claraRecord.id} showDistributionAction={isDistributionPiece} />
         ) : null}
       </div>
@@ -670,62 +715,33 @@ function MeusTextosInner({
   draftArtifact,
   claraDisplay,
   claraRecord,
-  draftCreationTargetPath,
+  returnPath,
   textDraftRecords
 }: {
   draftArtifact: Awaited<ReturnType<typeof getClaraTextDraftArtifact>> | null;
   claraDisplay: ReturnType<typeof getClaraRecordDisplay> | null;
   claraRecord: ClaraRecord | null;
-  draftCreationTargetPath: string | null;
+  returnPath: string;
   textDraftRecords: ClaraTextDraftRecord[];
 }) {
-  const draftCreationSearchParams = draftCreationTargetPath
-    ? new URL(draftCreationTargetPath, "http://localhost").searchParams
-    : null;
-  const draftSourceAction = draftArtifact ? getDraftSourceAction(draftArtifact.pieceLabel) : "Registrar minuta revisional";
-
   return (
     <div className="mj-model-page space-y-4">
       <div className="flex items-start justify-between">
         <div>
           <p className="mj-model-title">Meus textos</p>
-          <p className="mj-model-subtitle">Exibindo {textDraftRecords.length} resultado(s)</p>
+          <p className="mj-model-subtitle">
+            {draftArtifact ? "Minuta aberta para revisao e edicao." : `Exibindo ${textDraftRecords.length} resultado(s)`}
+          </p>
         </div>
-        <span className="rounded-[2px] border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-[13px] font-semibold text-cyan-100">
-          Minuta assistida
-        </span>
       </div>
 
-      {draftArtifact && !claraRecord && draftCreationTargetPath ? (
-        <section className="mj-model-panel px-4 py-4">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-cyan-100">
-                Minuta assistida pronta
-              </p>
-              <p className="mt-2 text-[13px] leading-6 text-slate-300">
-                Registre esta minuta para gravar a versao real no ERP e liberar o fluxo de revisao, exportacao e status documental.
-              </p>
-            </div>
-            {
-              // @ts-expect-error Next server action form binding
-              <form action={commitClaraExecutionAction} className="flex flex-wrap items-center gap-3">
-              <input name="targetPath" type="hidden" value={draftCreationTargetPath} />
-              <input name="recordKind" type="hidden" value="text-draft" />
-              <input name="sourceAction" type="hidden" value={draftSourceAction} />
-              <input name="client" type="hidden" value={draftCreationSearchParams?.get("client") ?? ""} />
-              <input name="case" type="hidden" value={draftCreationSearchParams?.get("case") ?? ""} />
-              <input name="document" type="hidden" value={draftCreationSearchParams?.get("document") ?? ""} />
-              <input name="process" type="hidden" value={draftCreationSearchParams?.get("process") ?? ""} />
-              <input name="piece" type="hidden" value={draftCreationSearchParams?.get("piece") ?? ""} />
-              <input name="objective" type="hidden" value={draftCreationSearchParams?.get("objetivo") ?? ""} />
-              <button className="mj-model-button-green mt-3 md:mt-0" type="submit">
-                Registrar minuta na Clara
-              </button>
-              </form>
-            }
-          </div>
-        </section>
+      {draftArtifact ? (
+        <ClaraDraftPanel
+          claraDisplay={claraDisplay}
+          claraRecord={claraRecord?.kind === "text-draft" ? claraRecord : null}
+          draftArtifact={draftArtifact}
+          returnPath={returnPath}
+        />
       ) : null}
 
       <section className="rounded-[4px] border border-white/5 bg-black/10 px-4 py-4">
@@ -776,14 +792,6 @@ function MeusTextosInner({
           <p className="mj-model-empty">Nenhum texto da Clara foi registrado ainda.</p>
         </div>
       )}
-
-      {draftArtifact ? (
-        <ClaraDraftPanel
-          claraDisplay={claraDisplay}
-          claraRecord={claraRecord?.kind === "text-draft" ? claraRecord : null}
-          draftArtifact={draftArtifact}
-        />
-      ) : null}
     </div>
   );
 }
@@ -864,9 +872,9 @@ export default async function EditorSubpage({
   searchParams?: {
     draft?: string;
     created?: string;
+    niche?: string;
     client?: string;
     record?: string;
-    niche?: string;
     case?: string;
     process?: string;
     document?: string;
@@ -899,10 +907,32 @@ export default async function EditorSubpage({
       })
     : null;
   const matchedDraftRecord = findExistingDraftRecord(textDraftRecords, resolvedDraftArtifact);
-  const claraRecord =
+  let claraRecord =
     matchedDraftRecord ??
     (await getClaraMinuta(searchParams?.record ?? "")) ??
     (await getClaraRecord(searchParams?.record));
+  if (resolvedDraftArtifact && !claraRecord && searchParams?.draft === "1") {
+    const draftCreationTargetPath = buildDraftCreationTargetPath(searchParams);
+
+    if (draftCreationTargetPath) {
+      claraRecord = await createClaraRecord({
+        kind: "text-draft",
+        sourceAction: getDraftSourceAction(resolvedDraftArtifact.pieceLabel),
+        targetPath: draftCreationTargetPath,
+        clientId: searchParams.client,
+        caseId: resolvedDraftArtifact.caseId,
+        documentId: resolvedDraftArtifact.documentId,
+        processId: searchParams.process,
+        piece: resolvedDraftArtifact.pieceLabel,
+        objective: searchParams.objetivo
+      });
+    }
+  }
+  const currentDraftRecord = claraRecord?.kind === "text-draft" ? (claraRecord as ClaraTextDraftRecord) : null;
+  const visibleTextDraftRecords: ClaraTextDraftRecord[] =
+    currentDraftRecord && !textDraftRecords.some((record) => record.id === currentDraftRecord.id)
+      ? [currentDraftRecord, ...textDraftRecords]
+      : textDraftRecords;
   const draftArtifact =
     claraRecord?.kind === "text-draft"
       ? (claraRecord.payload as Awaited<ReturnType<typeof getClaraTextDraftArtifact>>)
@@ -910,9 +940,19 @@ export default async function EditorSubpage({
   const claraDisplay = draftArtifact
     ? getClaraRecordDisplay(claraRecord, "Rascunho preparado pela Clara", draftArtifact.preview)
     : null;
-  const draftCreationTargetPath = draftArtifact && !claraRecord ? buildDraftCreationTargetPath(searchParams) : null;
-  const canonicalModels = await buildCanonicalModels(textDraftRecords);
+  const canonicalModels = await buildCanonicalModels(visibleTextDraftRecords);
   const selectedNiche = isBankingNiche(searchParams?.niche) ? searchParams.niche : null;
+  const draftReturnPath =
+    draftArtifact && claraRecord
+      ? buildDraftReturnPath({
+          searchParams,
+          pieceLabel: draftArtifact.pieceLabel,
+          caseId: draftArtifact.caseId,
+          documentId: draftArtifact.documentId,
+          objective: searchParams?.objetivo,
+          niche: selectedNiche
+        })
+      : buildDraftCreationTargetPath(searchParams);
   const distributionProcesses =
     params.subpage === "distribuicao" ? await getProcesses() : [];
 
@@ -922,8 +962,8 @@ export default async function EditorSubpage({
         claraDisplay={claraDisplay}
         claraRecord={claraRecord?.kind === "text-draft" ? claraRecord : null}
         draftArtifact={draftArtifact}
-        draftCreationTargetPath={draftCreationTargetPath}
-        textDraftRecords={textDraftRecords}
+        returnPath={draftReturnPath ?? "/editor-de-texto/meus-textos"}
+        textDraftRecords={visibleTextDraftRecords}
       />
     );
   }
