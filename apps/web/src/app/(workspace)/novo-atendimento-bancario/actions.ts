@@ -12,6 +12,7 @@ import {
   buildBankingCaseOperationalTaskState,
   buildPersistedBankingCaseLifecycle
 } from "@/server/services/cases/get-banking-case-workflow";
+import { getClientById } from "@/server/services/clients/get-clients";
 import {
   TENANT_DOCUMENT_BUCKET,
   uploadTenantDocument
@@ -374,13 +375,23 @@ export async function createBankingIntakeAction(formData: FormData) {
   const objective = readText(formData, "objective");
   const contractNumber = readText(formData, "contractNumber");
   const notes = readText(formData, "notes");
+  const existingClientId = readText(formData, "existingClientId");
+  const existingClient = existingClientId ? await getClientById(existingClientId).catch(() => null) : null;
   const personalDocumentFile = readFile(formData, "personalDocumentFile");
+  const resolvedFullName = fullName || existingClient?.fullName || "";
+  const resolvedDocumentId = documentId || existingClient?.documentId || "";
+  const resolvedEmail = email || existingClient?.email || "";
+  const resolvedPhone = phone || existingClient?.phone || "";
+  const resolvedWhatsapp = whatsapp || existingClient?.whatsapp || "";
+  const resolvedAddress = address || existingClient?.address || "";
+  const resolvedLeadSource = leadSource || existingClient?.leadSource || "";
+  const resolvedBankName = bankName || existingClient?.bankName || "";
 
-  if (!fullName || !phone || !address) {
+  if (!existingClient && (!fullName || !phone || !address)) {
     redirect(buildValidationRedirect("Preencha nome, endereco e telefone antes de iniciar o caso."));
   }
 
-  if (!personalDocumentFile) {
+  if (!existingClient && !personalDocumentFile) {
     redirect(buildValidationRedirect("Anexe o documento pessoal do cliente para abrir a triagem inicial."));
   }
 
@@ -390,7 +401,7 @@ export async function createBankingIntakeAction(formData: FormData) {
 
   const niche: BankingNiche = nicheValue && isBankingNiche(nicheValue) ? nicheValue : "triagem-inicial";
   const requiredDocumentSlots = getRequiredDocumentSlots(MINIMUM_REQUIRED_DOCUMENT_SLOT_KEYS);
-  const missingRequiredFields = requiredDocumentSlots.filter((slot) => !readFile(formData, slot.field));
+  const missingRequiredFields = existingClient ? [] : requiredDocumentSlots.filter((slot) => !readFile(formData, slot.field));
 
   if (missingRequiredFields.length > 0) {
     redirect(
@@ -408,15 +419,16 @@ export async function createBankingIntakeAction(formData: FormData) {
     );
   }
 
-  const clientId = `cl-${randomUUID()}`;
+  const clientId = existingClient?.id ?? `cl-${randomUUID()}`;
   const caseId = `case-${randomUUID()}`;
-  const caseTitle = buildCaseTitle(niche, bankName);
+  const caseTitle = buildCaseTitle(niche, resolvedBankName);
   const caseStage = buildStage(niche);
   const mainThesis = buildMainThesis(niche, objective);
   const suggestedStrategy = buildSuggestedStrategy(niche, objective);
   const processNumber = `pendente-distribuicao-${Date.now()}`;
-  const clientTimeline = buildInitialTimeline(fullName, niche);
+  const clientTimeline = existingClient ? existingClient.timeline : buildInitialTimeline(resolvedFullName, niche);
   const linkedCaseSummary = [
+    ...(existingClient?.linkedCases ?? []),
     {
       id: caseId,
       title: caseTitle,
@@ -429,31 +441,33 @@ export async function createBankingIntakeAction(formData: FormData) {
 
   const supabase = getSupabaseAdminClient();
 
-  const { error: clientError } = await supabase.from("clients").insert({
-    id: clientId,
-    tenant_id: session.workspace.tenant.id,
-    full_name: fullName,
-    document_id: documentId || null,
-    email: email || null,
-    phone,
-    whatsapp: whatsapp || null,
-    address,
-    lead_source: leadSource || null,
-    bank_name: bankName || null,
-    service_status: "triage",
-    signed_contract: false,
-    legal_viability_score: 8,
-    fees_label: null,
-    documents_sent: 0,
-    notes: notes || "Cliente criado pela triagem inicial do atendimento bancario.",
-    ia_context: buildClientContext(bankName, niche, objective),
-    linked_cases: linkedCaseSummary,
-    linked_documents: [],
-    timeline: clientTimeline
-  });
+  if (!existingClient) {
+    const { error: clientError } = await supabase.from("clients").insert({
+      id: clientId,
+      tenant_id: session.workspace.tenant.id,
+      full_name: fullName,
+      document_id: documentId || null,
+      email: email || null,
+      phone,
+      whatsapp: whatsapp || null,
+      address,
+      lead_source: leadSource || null,
+      bank_name: bankName || null,
+      service_status: "triage",
+      signed_contract: false,
+      legal_viability_score: 8,
+      fees_label: null,
+      documents_sent: 0,
+      notes: notes || "Cliente criado pela triagem inicial do atendimento bancario.",
+      ia_context: buildClientContext(bankName, niche, objective),
+      linked_cases: linkedCaseSummary,
+      linked_documents: [],
+      timeline: clientTimeline
+    });
 
-  if (clientError) {
-    redirect(buildValidationRedirect(`Nao foi possivel criar o cliente: ${clientError.message}`));
+    if (clientError) {
+      redirect(buildValidationRedirect(`Nao foi possivel criar o cliente: ${clientError.message}`));
+    }
   }
 
   const initialLifecycle = buildPersistedBankingCaseLifecycle({
@@ -576,12 +590,27 @@ export async function createBankingIntakeAction(formData: FormData) {
       `${taskIds.length} tarefa(s) inicial(is) criada(s) para o workflow do nicho.`
     ];
 
+    const nextLinkedDocuments = existingClient
+      ? Array.from(new Set([...(existingClient.linkedDocuments ?? []), ...uploadedDocumentIds]))
+      : uploadedDocumentIds;
+
     const { error: updateClientError } = await supabase
       .from("clients")
       .update({
-        linked_documents: uploadedDocumentIds,
-        documents_sent: uploadedDocumentIds.length,
-        service_status: "triage",
+        full_name: resolvedFullName,
+        document_id: resolvedDocumentId || null,
+        email: resolvedEmail || null,
+        phone: resolvedPhone,
+        whatsapp: resolvedWhatsapp || null,
+        address: resolvedAddress,
+        lead_source: resolvedLeadSource || null,
+        bank_name: resolvedBankName || null,
+        service_status: existingClient ? existingClient.serviceStatus : "triage",
+        documents_sent: Math.max(existingClient?.documentsSent ?? 0, nextLinkedDocuments.length),
+        notes: notes || existingClient?.notes || "Cliente atualizado pela entrada bancaria.",
+        ia_context: buildClientContext(resolvedBankName, niche, objective),
+        linked_cases: linkedCaseSummary,
+        linked_documents: nextLinkedDocuments,
         timeline
       })
       .eq("tenant_id", session.workspace.tenant.id)
@@ -599,7 +628,9 @@ export async function createBankingIntakeAction(formData: FormData) {
       await supabase.storage.from(TENANT_DOCUMENT_BUCKET).remove(uploadedStoragePaths);
     }
     await supabase.from("cases").delete().eq("tenant_id", session.workspace.tenant.id).eq("id", caseId);
-    await supabase.from("clients").delete().eq("tenant_id", session.workspace.tenant.id).eq("id", clientId);
+    if (!existingClient) {
+      await supabase.from("clients").delete().eq("tenant_id", session.workspace.tenant.id).eq("id", clientId);
+    }
 
     redirect(
       buildValidationRedirect(

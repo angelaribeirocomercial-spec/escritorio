@@ -325,28 +325,7 @@ export default async function ClientDetailPage({
       })
     }))
   );
-  const metrics = [
-    {
-      label: "Caso Ativo",
-      value: activeCase ? "Resolvido" : "Pendente"
-    },
-    {
-      label: "Nicho",
-      value: activeCase ? getBankingNicheLabel(activeCase.niche) : "Nao iniciado"
-    },
-    {
-      label: "Documentos",
-      value: canonicalWorkflow?.completionLabel ?? workflow?.completionLabel ?? `${client.documentsSent} enviados`
-    },
-    {
-      label: "Contrato",
-      value: contractAnalysisDocumentId ? "Compativel" : "Pendente"
-    },
-    {
-      label: "Proximo passo",
-      value: nextTask ? "Com tarefa aberta" : "A definir"
-    }
-  ];
+  const metrics: Array<{ label: string; value: string }> = [];
 
   const cockpitFrameActiveCase = activeCase
     ? {

@@ -334,7 +334,6 @@ export function ClientCockpitFrame({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-4xl space-y-4">
             <p className="workspace-kicker">Dossiê do caso</p>
-            <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">{client.fullName}</h2>
             <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-[4px] border border-white/8 bg-white/[0.02] px-4 py-3 text-sm text-slate-300">
               <span>
                 <span className="font-semibold text-white">Banco:</span> {client.bankName || "Não informado"}
@@ -355,6 +354,12 @@ export function ClientCockpitFrame({
             <p className="text-sm leading-7 text-slate-300">{activeCase ? nextStepLabel : "Abra um novo atendimento para iniciar o dossiê central do cliente."}</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
+            <Link
+              className="detail-link-button px-3 py-2 text-xs font-semibold"
+              href={`/novo-atendimento-bancario?clientId=${client.id}`}
+            >
+              Novo caso
+            </Link>
             <DeleteClientButton clientId={client.id} clientName={client.fullName} caseCount={clientCaseCount} />
           </div>
         </div>

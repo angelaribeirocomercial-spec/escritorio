@@ -38,16 +38,18 @@ export function WorkspacePage({
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => (
-          <article key={metric.label} className="workspace-panel min-w-0 p-5">
-            <p className="workspace-muted text-sm font-medium">{metric.label}</p>
-            <p className="mt-4 break-words text-2xl font-semibold leading-tight tracking-tight text-white">
-              {metric.value}
-            </p>
-          </article>
-        ))}
-      </section>
+      {metrics.length ? (
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {metrics.map((metric) => (
+            <article key={metric.label} className="workspace-panel min-w-0 p-5">
+              <p className="workspace-muted text-sm font-medium">{metric.label}</p>
+              <p className="mt-4 break-words text-2xl font-semibold leading-tight tracking-tight text-white">
+                {metric.value}
+              </p>
+            </article>
+          ))}
+        </section>
+      ) : null}
 
       {children}
     </div>

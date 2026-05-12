@@ -51,12 +51,17 @@ export function DeleteClientButton({ clientId, clientName, caseCount }: DeleteCl
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <button className="detail-danger-button px-4 py-3 text-sm font-semibold" disabled={isDeleting} type="button" onClick={handleDelete}>
+    <div className="flex flex-col gap-1.5">
+      <button
+        className="detail-danger-button inline-flex items-center justify-center px-3 py-2 text-xs font-semibold"
+        disabled={isDeleting}
+        type="button"
+        onClick={handleDelete}
+      >
         {isDeleting ? "Excluindo..." : "Excluir cliente"}
       </button>
-      <p className="text-[11px] leading-5 text-red-100/80">
-        Remove cliente, casos, documentos, tarefas, leads e fluxos derivados do tenant ativo.
+      <p className="max-w-[16rem] text-[10px] leading-4 text-red-100/75">
+        Remove cliente, casos, documentos, tarefas, leads e fluxos derivados.
       </p>
       {error ? <p className="text-[11px] leading-5 text-red-100">{error}</p> : null}
     </div>
