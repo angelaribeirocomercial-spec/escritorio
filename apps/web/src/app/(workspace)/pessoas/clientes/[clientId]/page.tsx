@@ -186,6 +186,29 @@ function isContractAnalysisDocument(documentType: string) {
   return CONTRACT_ANALYSIS_DOCUMENT_TYPES.has(documentType);
 }
 
+function buildTextDraftEditorHref(input: {
+  clientId: string;
+  caseId: string;
+  documentId: string;
+  piece: "acao-revisional" | "peticao-inicial" | "procuracao" | "contrato-honorarios";
+  objective: string;
+  processId?: string | null;
+}) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("draft", "1");
+  searchParams.set("client", input.clientId);
+  searchParams.set("case", input.caseId);
+  searchParams.set("document", input.documentId);
+  searchParams.set("piece", input.piece);
+  searchParams.set("objetivo", input.objective);
+
+  if (input.processId) {
+    searchParams.set("process", input.processId);
+  }
+
+  return `/editor-de-texto/meus-textos?${searchParams.toString()}`;
+}
+
 export default async function ClientDetailPage({
   params,
   searchParams
@@ -279,32 +302,61 @@ export default async function ClientDetailPage({
   const nextStepLabel = activeCase
     ? normalizeVisibleCopy(nextTask?.lexiaNextStep ?? workflow?.nextStep ?? activeCase.suggestedStrategy)
     : "Abrir o primeiro caso bancario deste cliente pela entrada de Iniciar caso.";
-  const generatedDocuments = activeCase
-    ? [
-        {
-          kind: "procuracao" as const,
-          label: "Gerar procuracao",
-          detail: "Gera a procuracao com os dados consolidados do cliente e do caso para revisao humana.",
-          href: `/api/clientes/${client.id}/documentos-gerados/procuracao/pdf?caseId=${activeCase.id}`,
-          statusLabel: "Gerar PDF"
-        },
-        {
-          kind: "contrato-honorarios" as const,
-          label: "Gerar contrato de honorarios",
-          detail: "Gera o contrato de honorarios com os dados consolidados do cliente e do caso para revisao humana.",
-          href: `/api/clientes/${client.id}/documentos-gerados/contrato-honorarios/pdf?caseId=${activeCase.id}`,
-          statusLabel: "Gerar PDF"
-        }
-      ]
-    : [];
   const normalizedClientIaContext = normalizeVisibleCopy(client.iaContext);
   const normalizedTimeline = normalizeVisibleCopyList(client.timeline);
   const normalizedCaseInsights = normalizeVisibleCopyList(activeCase?.lexiaInsights ?? []);
   const contractAnalysisDocumentId =
     caseDocuments.find((document) => isContractAnalysisDocument(document.documentType))?.id ?? null;
+  const activeCaseDraftDocumentId = contractAnalysisDocumentId ?? caseDocuments[0]?.id ?? null;
   const contractAnalysisWorkspace = contractAnalysisDocumentId
     ? await getContractAnalysisWorkspace(contractAnalysisDocumentId)
     : null;
+  const generatedDocuments =
+    activeCase && activeCaseDraftDocumentId
+      ? [
+          {
+            kind: "procuracao" as const,
+            label: "Gerar procuracao",
+            detail:
+              "Abre a minuta de procuracao para revisar, editar e depois gerar PDF para impressao.",
+            href: buildTextDraftEditorHref({
+              clientId: client.id,
+              caseId: activeCase.id,
+              documentId: activeCaseDraftDocumentId,
+              piece: "procuracao",
+              objective: "Preparar procuracao",
+              processId: relatedProcess?.id ?? null
+            }),
+            statusLabel: "Abrir para revisar"
+          },
+          {
+            kind: "contrato-honorarios" as const,
+            label: "Gerar contrato de honorarios",
+            detail:
+              "Abre a minuta do contrato de honorarios para revisar, editar e depois gerar PDF para impressao.",
+            href: buildTextDraftEditorHref({
+              clientId: client.id,
+              caseId: activeCase.id,
+              documentId: activeCaseDraftDocumentId,
+              piece: "contrato-honorarios",
+              objective: "Preparar contrato de honorarios",
+              processId: relatedProcess?.id ?? null
+            }),
+            statusLabel: "Abrir para revisar"
+          }
+        ]
+      : [];
+  const petitionDraftHref =
+    activeCase && activeCaseDraftDocumentId
+      ? buildTextDraftEditorHref({
+          clientId: client.id,
+          caseId: activeCase.id,
+          documentId: activeCaseDraftDocumentId,
+          piece: activeCase.niche === "revisional" ? "acao-revisional" : "peticao-inicial",
+          objective: "Preparar acao revisional",
+          processId: relatedProcess?.id ?? null
+        })
+      : null;
   const caseDocumentsForFrame = await Promise.all(
     caseDocuments.map(async (document) => ({
       id: document.id,
@@ -368,6 +420,7 @@ export default async function ClientDetailPage({
         activeCase={cockpitFrameActiveCase}
         caseDocuments={caseDocumentsForFrame}
         generatedDocuments={generatedDocuments}
+        petitionDraftHref={petitionDraftHref}
         client={{
           id: client.id,
           fullName: client.fullName,

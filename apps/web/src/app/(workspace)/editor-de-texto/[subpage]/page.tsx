@@ -16,20 +16,21 @@ import {
   type ClaraTextDraftRecord
 } from "@/server/services/clara/clara-minutas-store";
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
+import {
+  buildRevisionalDraftBlocks,
+  buildTextDraftDefaultBody,
+  buildTextDraftDefaultTitle
+} from "@/server/services/clara/clara-text-draft-renderer";
 import { getCases } from "@/server/services/cases/get-cases";
 import { getDocuments } from "@/server/services/documents/get-documents";
 import { getProcesses } from "@/server/services/processes/get-processes";
 import {
   commitClaraExecutionAction,
+  updateClaraRecordContentAction,
   updateClaraReviewNoteAction,
   updateClaraWorkflowStatusAction
 } from "@/app/(workspace)/clara/actions";
 import { ClaraMinutaActions } from "@/components/layout/clara-minuta-actions";
-
-type RevisionalDraftBlock = {
-  title: string;
-  body: string[];
-};
 
 type TextDraftPayload = Awaited<ReturnType<typeof getClaraTextDraftArtifact>>;
 
@@ -53,6 +54,7 @@ type CanonicalModel = {
 function buildDraftCreationTargetPath(searchParams?: {
   draft?: string;
   created?: string;
+  client?: string;
   case?: string;
   document?: string;
   process?: string;
@@ -72,6 +74,7 @@ function buildDraftCreationTargetPath(searchParams?: {
 
   const pairs: Array<[string, string | undefined]> = [
     ["created", searchParams.created],
+    ["client", searchParams.client],
     ["case", searchParams.case],
     ["document", searchParams.document],
     ["process", searchParams.process],
@@ -94,6 +97,48 @@ function buildDraftCreationTargetPath(searchParams?: {
 
 function isBankingNiche(value?: string): value is BankingNiche {
   return Boolean(value) && BANKING_NICHES.some((entry) => entry.value === value);
+}
+
+function isDistributionEligiblePiece(pieceLabel: string) {
+  return pieceLabel === "acao-revisional" || pieceLabel === "peticao-inicial";
+}
+
+function getDraftSourceAction(pieceLabel: string) {
+  switch (pieceLabel) {
+    case "procuracao":
+      return "Registrar minuta de procuracao";
+    case "contrato-honorarios":
+      return "Registrar minuta de contrato de honorarios";
+    case "peticao-inicial":
+      return "Registrar minuta de peticao inicial";
+    default:
+      return "Registrar minuta revisional";
+  }
+}
+
+function findExistingDraftRecord(
+  records: ClaraTextDraftRecord[],
+  artifact: Awaited<ReturnType<typeof getClaraTextDraftArtifact>> | null
+) {
+  if (!artifact) {
+    return null;
+  }
+
+  const matchingRecords = records.filter((record) => {
+    const payload = record.payload as TextDraftPayload;
+    return (
+      payload.recordId === artifact.recordId ||
+      (payload.caseId === artifact.caseId &&
+        payload.documentId === artifact.documentId &&
+        payload.pieceLabel === artifact.pieceLabel)
+    );
+  });
+
+  return (
+    matchingRecords.sort((left, right) => {
+      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+    })[0] ?? null
+  );
 }
 
 function buildDistributionTargetPath(params: {
@@ -156,18 +201,20 @@ async function buildCanonicalModels(
             contractedInstallment: "R$ 1.842,00"
           })
         : null;
-      const recordId = firstDocument ? `TXT-${bankingCase.id.toUpperCase()}-${firstDocument.id.toUpperCase()}` : null;
-      const matchingDraft = recordId
-        ? textDraftRecords.find((record) => record.id.toUpperCase() === recordId.toUpperCase())
-        : null;
       const draftArtifact = firstDocument
         ? await getClaraTextDraftArtifact({
             caseId: bankingCase.id,
             documentId: firstDocument.id,
             piece: pieceLabel,
             objective: "Preparar acao revisional",
-            committed: Boolean(matchingDraft)
+            committed: false
           })
+        : null;
+      const matchingDraft = draftArtifact
+        ? textDraftRecords.find((record) => {
+            const payload = record.payload as TextDraftPayload;
+            return payload.recordId === draftArtifact.recordId;
+          }) ?? null
         : null;
 
       return {
@@ -208,7 +255,10 @@ function DistributionPage({
   const selectedModel = selectedNiche
     ? models.find((model) => model.niche === selectedNiche) ?? models[0] ?? null
     : models[0] ?? null;
-  const processLabel = draftArtifact?.processLabel ?? selectedModel?.processLabel ?? null;
+  const processLabel =
+    draftArtifact ? draftArtifact.processLabel : selectedModel?.processLabel ?? null;
+  const bankLabel =
+    draftArtifact ? draftArtifact.bankLabel : selectedModel?.bankLabel ?? "Banco pendente";
   const referencedProcess = processLabel
     ? processes.find((processItem) => processItem.processNumber === processLabel) ?? null
     : null;
@@ -216,9 +266,9 @@ function DistributionPage({
   const processDetailLabel = referencedProcess
     ? `${referencedProcess.client.fullName} | ${referencedProcess.tribunal} | ${referencedProcess.courtDistrict}`
     : selectedModel
-      ? `${selectedModel.clientName} | ${selectedModel.bankLabel}`
+      ? `${selectedModel.clientName} | ${bankLabel}`
       : "Aguardando referencia oficial do processo";
-  const clientLabel = draftArtifact?.caseLabel ?? selectedModel?.clientName ?? "Caso sem referencia";
+  const clientLabel = draftArtifact?.clientLabel ?? selectedModel?.clientName ?? "Cliente sem referencia";
   const officialSystemHref = "https://pje.tjmg.jus.br/pje/";
   const dataJudHref = referencedProcess ? `/processos/${encodeURIComponent(referencedProcess.id)}/datajud` : "/processos";
   const oabHref = referencedProcess
@@ -357,87 +407,6 @@ function DistributionPage({
   );
 }
 
-function buildRevisionalDraftBlocks(
-  draftArtifact: Awaited<ReturnType<typeof getClaraTextDraftArtifact>>
-): RevisionalDraftBlock[] | null {
-  if (!draftArtifact.revisionalMemory) {
-    return null;
-  }
-
-  const processNumber = draftArtifact.processLabel;
-  const bankName = draftArtifact.bankLabel;
-  const scenarioLabel = draftArtifact.revisionalMemory.scenarioLabel;
-  const objectiveLabel = draftArtifact.revisionalMemory.objectiveLabel;
-  const urgencyLabel = draftArtifact.revisionalMemory.urgencyLabel;
-  const isCcbScenario = scenarioLabel.toLowerCase().includes("ccb");
-  const hasNegativationUrgency = urgencyLabel.toLowerCase().includes("negativacao");
-  const isCalculationObjective = objectiveLabel === "Montar memoria de calculo";
-  const isFullActionObjective = objectiveLabel === "Preparar acao revisional";
-  const priorityThesisTitles = draftArtifact.revisionalMemory.priorityTheses.map((item) => item.title);
-
-  return [
-    {
-      title: "Dos fatos",
-      body: [
-        `Trata-se de minuta inicial para acao revisional de contrato bancario vinculada ao caso "${draftArtifact.caseLabel}", relacionada ao documento-base "${draftArtifact.documentLabel}" e ao processo de referencia ${processNumber}.`,
-        hasNegativationUrgency
-          ? "A parte autora relata agravamento progressivo do custo contratual, acompanhado de pressao concreta de restricao crediticia, o que torna imediata a intervencao judicial para impedir dano continuado."
-          : `A parte autora relata agravamento progressivo do custo contratual, com cobranca acima do patamar inicialmente compreendido e impacto direto sobre sua capacidade de adimplemento regular.`
-      ]
-    },
-    {
-      title: "Da relacao contratual",
-      body: [
-        isCcbScenario
-          ? `A relacao juridica mantida com ${bankName} decorre de operacao bancaria formalizada em ccb, exigindo controle judicial sobre a engenharia financeira do titulo, a transparencia do custo efetivo e o equilibrio material da cobranca.`
-          : `A relacao juridica mantida com ${bankName} esta submetida ao regime protetivo do consumidor, impondo controle de transparencia, boa-fe objetiva e equilibrio material das clausulas remuneratorias e acessorias.`,
-        `A leitura juridico-economica consolidada pela Clara aponta como tese central a ${draftArtifact.revisionalMemory.thesis.toLowerCase()}, diante de cobranca superior ao patamar contratualmente esperado e de clausulas com potencial de abusividade frente ao consumidor.`,
-        `O enquadramento atual do caso foi tratado como ${draftArtifact.revisionalMemory.scenarioLabel.toLowerCase()}, com objetivo operacional de ${draftArtifact.revisionalMemory.objectiveLabel.toLowerCase()} e ${draftArtifact.revisionalMemory.urgencyLabel.toLowerCase()}, o que orienta a selecao dos fundamentos e dos pedidos revisionais prioritarios.`
-      ]
-    },
-    {
-      title: "Das abusividades identificadas",
-      body: [
-        `A narrativa revisional deve destacar a incidencia de encargos potencialmente excessivos, capitalizacao e composicao financeira aptas a produzir desequilibrio contratual e onerosidade excessiva.`,
-        `No estado atual da leitura, a Clara sugere sustentar especialmente: ${draftArtifact.revisionalMemory.legalGrounds.join("; ")}.`,
-        priorityThesisTitles.length
-          ? `Como linha mestra da inicial, recomenda-se abrir a fundamentacao com ${priorityThesisTitles.join("; ")}, em ordem de prioridade compativel com a prova ja indicada.`
-          : "A ordem final das teses deve seguir a combinacao entre abusividade contratual, memoria economica e urgencia comprovada."
-      ]
-    },
-    {
-      title: "Da memoria de calculo revisional",
-      body: [
-        `No plano economico inicial, a parcela contratada foi identificada em ${draftArtifact.revisionalMemory.contractedInstallment}, ao passo que a parcela atualmente exigida alcanca ${draftArtifact.revisionalMemory.chargedInstallment}.`,
-        isCalculationObjective
-          ? `Como o objetivo central do fluxo e consolidar a memoria de calculo, a narrativa deve privilegiar o comparativo economico entre parcela revisada em ${draftArtifact.revisionalMemory.revisedInstallment} e excesso estimado de ${draftArtifact.revisionalMemory.estimatedTotalExcess}, com indicacao clara da metodologia de recalcule.`
-          : `Pela memoria revisional preliminar, a parcela readequada seria de ${draftArtifact.revisionalMemory.revisedInstallment}, com excesso estimado de ${draftArtifact.revisionalMemory.estimatedTotalExcess}, sujeito a refinamento por pericia ou planilha detalhada.`,
-        `Para sustentar essa frente, a Clara considera como prova critica: ${draftArtifact.revisionalMemory.evidenceFocus.join("; ")}.`
-      ]
-    },
-    {
-      title: "Da tutela de urgencia",
-      body: [
-        hasNegativationUrgency
-          ? "A tutela de urgencia deve priorizar a suspensao imediata da negativacao ou da ameaca de restricao, demonstrando que a manutencao da medida gera dano operacional e reputacional superior ao risco processual da reversibilidade."
-          : `A depender da prova documental final, a minuta comporta pedido de tutela para conter cobranca excessiva, impedir agravamento do debito e resguardar a parte autora contra medidas restritivas enquanto se discute a legalidade das clausulas.`,
-        isFullActionObjective
-          ? "Como o objetivo operacional atual e preparar a acao revisional completa, a urgencia deve ser apresentada como instrumento de estabilizacao contratual desde o ajuizamento, inclusive para autorizar pagamento do valor incontroverso."
-          : `O fundamento de urgencia deve ser construido sobre o risco de dano financeiro continuado e sobre a plausibilidade tecnica da revisao ja indicada pela leitura contratual preliminar.`
-      ]
-    },
-    {
-      title: "Dos pedidos",
-      body: [
-        `Em sede de pedidos, a minuta ja considera como eixo revisional: ${draftArtifact.revisionalMemory.requests.join("; ")}.`,
-        isFullActionObjective
-          ? "A versao final deve individualizar pedidos principais, tutela, pedidos sucessivos e repeticao de indebito de modo articulado, ja em formato de inicial pronta para protocolo."
-          : "A versao final ainda deve individualizar provas, definir pedidos sucessivos e ajustar a estrategia de repeticao de indebito, compensacao e encargos conforme a documentacao completa do contrato."
-      ]
-    }
-  ];
-}
-
 function ClaraDraftPanel({
   draftArtifact,
   claraDisplay,
@@ -448,8 +417,11 @@ function ClaraDraftPanel({
   claraRecord: ClaraRecord | null;
 }) {
   const revisionalDraftBlocks = buildRevisionalDraftBlocks(draftArtifact);
+  const isDistributionPiece = isDistributionEligiblePiece(draftArtifact.pieceLabel);
   const workflowStatusFormAction = updateClaraWorkflowStatusAction as unknown as string;
+  const contentFormAction = updateClaraRecordContentAction as unknown as string;
   const reviewNoteFormAction = updateClaraReviewNoteAction as unknown as string;
+  const returnPath = `/editor-de-texto/meus-textos?record=${encodeURIComponent(claraRecord?.id ?? "")}`;
 
   return (
     <section className="mj-model-panel px-4 py-4">
@@ -622,46 +594,73 @@ function ClaraDraftPanel({
           <p className="mt-3 text-[13px] text-slate-400">Revisao humana: {claraDisplay.reviewNote}</p>
         ) : null}
         {claraRecord ? (
-          <div className="mt-4 grid gap-4 rounded-[4px] border bg-black/10 px-4 py-4 mj-model-gridline lg:grid-cols-2">
-            <form action={workflowStatusFormAction as unknown as string} className="space-y-3">
+          <div className="mt-4 space-y-4 rounded-[4px] border bg-black/10 px-4 py-4 mj-model-gridline">
+            <form action={contentFormAction as unknown as string} className="space-y-3">
               <input type="hidden" name="recordId" value={claraRecord.id} />
-              <input type="hidden" name="returnPath" value="/editor-de-texto/meus-textos" />
+              <input type="hidden" name="returnPath" value={returnPath} />
               <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-300">
-                Status documental
+                Revisao e edicao da minuta
               </p>
-              <select
+              <input
                 className="mj-model-input w-full px-3 py-2"
-                defaultValue={claraRecord.workflowStatus}
-                name="workflowStatus"
-              >
-                <option value="created">Gerado</option>
-                <option value="reviewed">Em revisao</option>
-                <option value="completed">Aprovado</option>
-              </select>
+                defaultValue={claraDisplay?.title ?? buildTextDraftDefaultTitle(draftArtifact)}
+                name="editedTitle"
+                placeholder="Titulo da minuta"
+              />
+              <textarea
+                className="mj-model-input min-h-[16rem] w-full px-3 py-2"
+                defaultValue={claraDisplay?.detail ?? buildTextDraftDefaultBody(draftArtifact)}
+                name="editedDetail"
+                placeholder="Revise e edite a redacao principal da minuta"
+              />
               <button className="mj-model-button-green" type="submit">
-                Atualizar status
+                Salvar versao revisada
               </button>
             </form>
 
-            <form action={reviewNoteFormAction as unknown as string} className="space-y-3">
-              <input type="hidden" name="recordId" value={claraRecord.id} />
-              <input type="hidden" name="returnPath" value="/editor-de-texto/meus-textos" />
-              <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-300">
-                Observacao da revisao humana
-              </p>
-              <textarea
-                className="mj-model-input min-h-[7rem] w-full px-3 py-2"
-                defaultValue={claraRecord.reviewNote ?? ""}
-                name="reviewNote"
-                placeholder="Registrar pendencias, ajustes ou aprovacao final"
-              />
-              <button className="mj-model-button-gray" type="submit">
-                Salvar observacao
-              </button>
-            </form>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <form action={workflowStatusFormAction as unknown as string} className="space-y-3">
+                <input type="hidden" name="recordId" value={claraRecord.id} />
+                <input type="hidden" name="returnPath" value={returnPath} />
+                <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+                  Status documental
+                </p>
+                <select
+                  className="mj-model-input w-full px-3 py-2"
+                  defaultValue={claraRecord.workflowStatus}
+                  name="workflowStatus"
+                >
+                  <option value="created">Gerado</option>
+                  <option value="reviewed">Em revisao</option>
+                  <option value="completed">Aprovado</option>
+                </select>
+                <button className="mj-model-button-green" type="submit">
+                  Atualizar status
+                </button>
+              </form>
+
+              <form action={reviewNoteFormAction as unknown as string} className="space-y-3">
+                <input type="hidden" name="recordId" value={claraRecord.id} />
+                <input type="hidden" name="returnPath" value={returnPath} />
+                <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+                  Observacao da revisao humana
+                </p>
+                <textarea
+                  className="mj-model-input min-h-[7rem] w-full px-3 py-2"
+                  defaultValue={claraRecord.reviewNote ?? ""}
+                  name="reviewNote"
+                  placeholder="Registrar pendencias, ajustes ou aprovacao final"
+                />
+                <button className="mj-model-button-gray" type="submit">
+                  Salvar observacao
+                </button>
+              </form>
+            </div>
           </div>
         ) : null}
-        {claraRecord ? <ClaraMinutaActions recordId={claraRecord.id} /> : null}
+        {claraRecord ? (
+          <ClaraMinutaActions recordId={claraRecord.id} showDistributionAction={isDistributionPiece} />
+        ) : null}
       </div>
     </section>
   );
@@ -683,6 +682,7 @@ function MeusTextosInner({
   const draftCreationSearchParams = draftCreationTargetPath
     ? new URL(draftCreationTargetPath, "http://localhost").searchParams
     : null;
+  const draftSourceAction = draftArtifact ? getDraftSourceAction(draftArtifact.pieceLabel) : "Registrar minuta revisional";
 
   return (
     <div className="mj-model-page space-y-4">
@@ -691,14 +691,9 @@ function MeusTextosInner({
           <p className="mj-model-title">Meus textos</p>
           <p className="mj-model-subtitle">Exibindo {textDraftRecords.length} resultado(s)</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link className="mj-model-button-gray" href="/editor-de-texto/distribuicao">
-            Abrir handoff de distribuicao
-          </Link>
-          <span className="rounded-[2px] border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-[13px] font-semibold text-cyan-100">
-            Minuta assistida
-          </span>
-        </div>
+        <span className="rounded-[2px] border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-[13px] font-semibold text-cyan-100">
+          Minuta assistida
+        </span>
       </div>
 
       {draftArtifact && !claraRecord && draftCreationTargetPath ? (
@@ -717,7 +712,7 @@ function MeusTextosInner({
               <form action={commitClaraExecutionAction} className="flex flex-wrap items-center gap-3">
               <input name="targetPath" type="hidden" value={draftCreationTargetPath} />
               <input name="recordKind" type="hidden" value="text-draft" />
-              <input name="sourceAction" type="hidden" value="Registrar minuta revisional" />
+              <input name="sourceAction" type="hidden" value={draftSourceAction} />
               <input name="client" type="hidden" value={draftCreationSearchParams?.get("client") ?? ""} />
               <input name="case" type="hidden" value={draftCreationSearchParams?.get("case") ?? ""} />
               <input name="document" type="hidden" value={draftCreationSearchParams?.get("document") ?? ""} />
@@ -755,7 +750,12 @@ function MeusTextosInner({
                 style={{ borderTop: index === 0 ? "none" : "1px solid var(--surface-border)" }}
               >
                 <div>
-                  <p className="font-semibold text-slate-100">{payload.caseLabel}</p>
+                  <Link
+                    className="font-semibold text-slate-100 transition hover:text-cyan-100"
+                    href={`/editor-de-texto/meus-textos?record=${encodeURIComponent(record.id)}`}
+                  >
+                    {payload.caseLabel}
+                  </Link>
                   <p className="mt-1 text-slate-400">
                     {payload.pieceLabel} | {payload.documentLabel}
                   </p>
@@ -864,6 +864,7 @@ export default async function EditorSubpage({
   searchParams?: {
     draft?: string;
     created?: string;
+    client?: string;
     record?: string;
     niche?: string;
     case?: string;
@@ -884,23 +885,28 @@ export default async function EditorSubpage({
     persistedTextDraftRecords.length > 0
       ? persistedTextDraftRecords
       : (legacyTextDraftRecords as ClaraTextDraftRecord[]);
-  const claraRecord = (await getClaraMinuta(searchParams?.record ?? "")) ?? (await getClaraRecord(searchParams?.record));
+  const resolvedDraftArtifact = searchParams?.draft
+    ? await getClaraTextDraftArtifact({
+        caseId: searchParams.case,
+        committed: searchParams.created === "1",
+        documentId: searchParams.document,
+        piece: searchParams.piece,
+        objective: searchParams.objetivo,
+        revisedInstallment: searchParams.revisedInstallment,
+        estimatedTotalExcess: searchParams.estimatedTotalExcess,
+        chargedInstallment: searchParams.chargedInstallment,
+        contractedInstallment: searchParams.contractedInstallment
+      })
+    : null;
+  const matchedDraftRecord = findExistingDraftRecord(textDraftRecords, resolvedDraftArtifact);
+  const claraRecord =
+    matchedDraftRecord ??
+    (await getClaraMinuta(searchParams?.record ?? "")) ??
+    (await getClaraRecord(searchParams?.record));
   const draftArtifact =
     claraRecord?.kind === "text-draft"
       ? (claraRecord.payload as Awaited<ReturnType<typeof getClaraTextDraftArtifact>>)
-      : searchParams?.draft
-        ? await getClaraTextDraftArtifact({
-            caseId: searchParams.case,
-            committed: searchParams.created === "1",
-            documentId: searchParams.document,
-            piece: searchParams.piece,
-            objective: searchParams.objetivo,
-            revisedInstallment: searchParams.revisedInstallment,
-            estimatedTotalExcess: searchParams.estimatedTotalExcess,
-            chargedInstallment: searchParams.chargedInstallment,
-            contractedInstallment: searchParams.contractedInstallment
-          })
-        : null;
+      : resolvedDraftArtifact;
   const claraDisplay = draftArtifact
     ? getClaraRecordDisplay(claraRecord, "Rascunho preparado pela Clara", draftArtifact.preview)
     : null;

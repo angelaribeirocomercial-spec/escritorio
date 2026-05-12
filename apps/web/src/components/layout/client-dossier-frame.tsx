@@ -187,6 +187,7 @@ type ClientCockpitFrameProps = {
   } | null;
   caseDocuments: ReadonlyArray<ClientCockpitDocument>;
   generatedDocuments: ReadonlyArray<ClientCockpitGeneratedDocument>;
+  petitionDraftHref: string | null;
   nextStepLabel: string;
   nextTaskTitle: string | null;
   relatedClaraRecordsCount: number;
@@ -244,6 +245,7 @@ export function ClientCockpitFrame({
   workflow,
   caseDocuments,
   generatedDocuments,
+  petitionDraftHref,
   nextStepLabel,
   nextTaskTitle,
   relatedClaraRecordsCount,
@@ -308,7 +310,6 @@ export function ClientCockpitFrame({
     "Superendividamento"
   ];
   const laudoPdfHref = activeCase ? `/api/clientes/${client.id}/documentos-gerados/laudo/pdf?caseId=${activeCase.id}` : null;
-  const peticoesPdfHref = activeCase ? `/api/clientes/${client.id}/documentos-gerados/peticoes/pdf?caseId=${activeCase.id}` : null;
 
   const generatedDocumentsContent = generatedDocuments.length ? (
     <div className="mt-4 grid gap-3 lg:grid-cols-2">
@@ -651,10 +652,10 @@ export function ClientCockpitFrame({
                   <h3 className="mt-2 text-2xl font-semibold text-white">Peça automática do caso</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {peticoesPdfHref ? (
-                    <a className="detail-link-button px-4 py-3 text-sm font-semibold" href={peticoesPdfHref} target="_blank" rel="noreferrer">
-                      Gerar petição
-                    </a>
+                  {petitionDraftHref ? (
+                    <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={petitionDraftHref}>
+                      Abrir petição para revisar
+                    </Link>
                   ) : null}
                 </div>
               </div>
@@ -667,6 +668,10 @@ export function ClientCockpitFrame({
                   <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">Pedidos: calibrados conforme o nicho e o risco processual.</div>
                   <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">Tutela e repetição de indébito: incluídas quando cabíveis.</div>
                 </div>
+                <p className="mt-4 text-sm leading-7 text-slate-300">
+                  A minuta abre em superfície de revisão antes da exportação. Depois da aprovação, use o handoff de
+                  distribuição para seguir ao fluxo que vira processo.
+                </p>
                 {nextTaskTitle ? (
                   <p className="mt-4 text-sm leading-7 text-slate-300">
                     Próxima tarefa humana: <span className="font-semibold text-white">{nextTaskTitle}</span>

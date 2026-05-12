@@ -554,8 +554,8 @@ assert.match(
 );
 assert.match(
   claraMinutaActionsSource,
-  /Abrir DOCX/,
-  "Expected Clara minuta actions to expose DOCX distribution."
+  /Baixar texto base/,
+  "Expected Clara minuta actions to expose plain-text export instead of promising a DOCX file."
 );
 assert.match(
   claraMinutaActionsSource,

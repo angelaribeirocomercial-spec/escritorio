@@ -740,6 +740,66 @@ function buildDraftRecordContext(input: {
   });
 }
 
+function resolveTextDraftUniqueKey(input: {
+  caseId?: string;
+  documentId?: string;
+  piece?: string;
+}) {
+  if (!input.caseId || !input.documentId || !input.piece) {
+    return null;
+  }
+
+  return `${input.caseId}::${input.documentId}::${input.piece}`;
+}
+
+function getTextDraftUniqueKeyFromEnvelope(entry: ClaraStoredEnvelope) {
+  if (entry.record.kind !== "text-draft") {
+    return null;
+  }
+
+  const payloadCandidate = entry.record.payload as Partial<{
+    caseId: string;
+    documentId: string;
+    pieceLabel: string;
+  }>;
+
+  return (
+    resolveTextDraftUniqueKey({
+      caseId: entry.context.caseId ?? payloadCandidate.caseId,
+      documentId: entry.context.documentId ?? payloadCandidate.documentId,
+      piece: entry.context.piece ?? payloadCandidate.pieceLabel
+    }) ?? null
+  );
+}
+
+function buildStableTextDraftRecordId(payload: ClaraRecordPayload) {
+  const recordIdCandidate = (payload as Partial<{ recordId: string }>).recordId;
+
+  if (!recordIdCandidate) {
+    return buildRecordId("text-draft");
+  }
+
+  return `clara-text-draft-${recordIdCandidate.toLowerCase()}`;
+}
+
+async function findExistingTextDraftRecord(input: {
+  caseId?: string;
+  documentId?: string;
+  piece?: string;
+}) {
+  const uniqueKey = resolveTextDraftUniqueKey(input);
+
+  if (!uniqueKey) {
+    return null;
+  }
+
+  const entries = await readPersistentRecords();
+
+  return (
+    entries.find((entry) => getTextDraftUniqueKeyFromEnvelope(entry) === uniqueKey)?.record ?? null
+  );
+}
+
 export async function createClaraRecord(input: {
   kind: ClaraRecordKind;
   sourceAction: string;
@@ -755,6 +815,18 @@ export async function createClaraRecord(input: {
   focus?: string;
   objective?: string;
 }) {
+  if (input.kind === "text-draft") {
+    const existingRecord = await findExistingTextDraftRecord({
+      caseId: input.caseId,
+      documentId: input.documentId,
+      piece: input.piece ?? readDraftParamsFromTargetPath(input.targetPath).piece
+    });
+
+    if (existingRecord) {
+      return existingRecord;
+    }
+  }
+
   let payload: ClaraRecordPayload;
 
   switch (input.kind) {
@@ -830,7 +902,7 @@ export async function createClaraRecord(input: {
   const context = buildDraftRecordContext(input);
   const now = new Date().toISOString();
   const record: ClaraRecord = normalizeRecord({
-    id: buildRecordId(input.kind),
+    id: input.kind === "text-draft" ? buildStableTextDraftRecordId(payload) : buildRecordId(input.kind),
     kind: input.kind,
     createdAt: now,
     updatedAt: now,
@@ -1004,6 +1076,20 @@ export async function updateClaraRecordContent(input: {
   });
 
   await writePersistentRecord(updatedRecord, entry.context);
+
+  if (updatedRecord.kind === "text-draft") {
+    try {
+      await syncClaraTextDraftRecord({
+        record: updatedRecord as unknown as ClaraTextDraftRecord,
+        context: entry.context,
+        createVersion: true
+      });
+    } catch (error) {
+      console.warn(
+        error instanceof Error ? error.message : "Falha ao sincronizar conteudo da minuta da Clara no Supabase."
+      );
+    }
+  }
 
   return updatedRecord;
 }

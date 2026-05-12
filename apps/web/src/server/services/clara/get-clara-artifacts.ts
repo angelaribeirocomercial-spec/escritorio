@@ -1,7 +1,11 @@
 import { getCaseById, getCases } from "@/server/services/cases/get-cases";
 import { getClientById, getClients } from "@/server/services/clients/get-clients";
 import { getBankingRevisionalWorkspace } from "@/server/services/clara/get-banking-revisional-workspace";
-import { getDocumentById, getDocuments } from "@/server/services/documents/get-documents";
+import {
+  getDocumentById,
+  getDocuments,
+  getDocumentsByCaseId
+} from "@/server/services/documents/get-documents";
 import { getProcessById, getProcesses } from "@/server/services/processes/get-processes";
 import { getTaskById, getTasks } from "@/server/services/tasks/get-tasks";
 
@@ -37,6 +41,31 @@ async function findDocument(documentId?: string | null, fallbackIndex = 0) {
 
   const documents = await getDocuments();
   return documents[fallbackIndex] ?? documents[0];
+}
+
+async function findCaseDocument(params: {
+  caseId?: string | null;
+  documentId?: string | null;
+}) {
+  if (params.documentId) {
+    const document = await getDocumentById(params.documentId);
+
+    if (document && (!params.caseId || document.caseId === params.caseId)) {
+      return document;
+    }
+  }
+
+  if (params.caseId) {
+    const caseDocuments = await getDocumentsByCaseId(params.caseId);
+
+    if (caseDocuments.length > 0) {
+      return caseDocuments[0];
+    }
+
+    return null;
+  }
+
+  return findDocument(params.documentId);
 }
 
 async function findTask(taskId?: string | null) {
@@ -141,6 +170,25 @@ function getRevisionalUrgency(caseTitle: string, objectiveLabel: string) {
       "impedimento de agravamento artificial da mora"
     ]
   };
+}
+
+function normalizeTextDraftPieceKey(pieceLabel: string) {
+  return pieceLabel
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toUpperCase();
+}
+
+function buildTextDraftArtifactId(input: {
+  caseId: string;
+  documentId: string;
+  pieceLabel: string;
+}) {
+  return `TXT-${input.caseId.toUpperCase()}-${input.documentId.toUpperCase()}-${normalizeTextDraftPieceKey(
+    input.pieceLabel
+  )}`;
 }
 
 export async function getClaraProcessArtifact(
@@ -359,7 +407,16 @@ export async function getClaraTextDraftArtifact(params: {
   const isRevisionalPiece = pieceLabel === "acao-revisional";
   const objectiveLabel = params.objective ?? "Revisar clausulas e parcelas";
   const bankingCase = await findCase(params.caseId);
-  const document = await findDocument(params.documentId);
+  const client = await findClient(bankingCase.clientId);
+  const document = await findCaseDocument({
+    caseId: bankingCase.id,
+    documentId: params.documentId
+  });
+
+  if (!document) {
+    throw new Error(`No document available for case ${bankingCase.id} to build Clara text draft.`);
+  }
+
   const revisionalWorkspace = isRevisionalPiece
     ? await getBankingRevisionalWorkspace({
         clientId: bankingCase.clientId,
@@ -373,32 +430,61 @@ export async function getClaraTextDraftArtifact(params: {
     bankingCase.bankName
   );
   const revisionalUrgency = getRevisionalUrgency(bankingCase.title, objectiveLabel);
+  const procuracaoPreview = `${client.fullName} outorga procuracao para representacao no caso "${bankingCase.title}", com poderes ajustados para conferencia humana antes da impressao e assinatura.`;
+  const contratoHonorariosPreview = `Minuta de contrato de honorarios preparada para ${client.fullName}, vinculada ao caso "${bankingCase.title}", com clausulas-base, qualificacao das partes e campos financeiros sujeitos a revisao final.`;
 
   return {
-    recordId: `TXT-${bankingCase.id.toUpperCase()}-${document.id.toUpperCase()}`,
+    recordId: buildTextDraftArtifactId({
+      caseId: bankingCase.id,
+      documentId: document.id,
+      pieceLabel
+    }),
     statusLabel: params.committed ? "Minuta criada" : "Minuta iniciada",
     stageLabel: params.committed ? "Disponivel no editor" : "Rascunho em preparacao",
+    clientLabel: client.fullName,
+    caseId: bankingCase.id,
+    documentId: document.id,
     pieceLabel,
     caseLabel: bankingCase.title,
     bankLabel: bankingCase.bankName,
     processLabel: bankingCase.processNumber,
     documentLabel: document.fileName,
-    sections: isRevisionalPiece
-      ? [
-          "Sintese contratual e historico das parcelas",
-          "Clausulas abusivas, CET, capitalizacao e encargos discutidos",
-          "Memoria de calculo revisional e impacto economico",
-          "Tutela para conter cobranca excessiva e readequar a parcela",
-          "Pedidos revisionais e repeticao de indebito, se cabivel"
-        ]
-      : [
-          "Sintese fatica e bancaria do caso",
-          "Fundamentos de abusividade e desequilibrio contratual",
-          "Pedidos, tutela e estrategia probatoria"
-        ],
-    preview: isRevisionalPiece
-      ? "Estrutura inicial revisional preparada pela Clara com foco em clausulas abusivas, readequacao de parcelas, memoria de calculo e tutela para conter cobranca excessiva."
-      : "Estrutura inicial sugerida pela Clara pronta para evolucao em minuta assistida com foco em direito bancario.",
+    sections:
+      pieceLabel === "procuracao"
+        ? [
+            "Qualificacao do outorgante e referencia do caso",
+            "Poderes gerais e especificos para representacao judicial",
+            "Faculdades para firmar termos, receber citacao e acompanhar atos",
+            "Campos finais de local, data e assinatura para conferencia humana"
+          ]
+        : pieceLabel === "contrato-honorarios"
+          ? [
+              "Qualificacao das partes e objeto contratual",
+              "Escopo dos servicos juridicos e limites de atuacao",
+              "Honorarios, despesas e condicoes de pagamento",
+              "Clausulas de vigencia, rescicao e assinatura"
+            ]
+          : isRevisionalPiece
+            ? [
+                "Sintese contratual e historico das parcelas",
+                "Clausulas abusivas, CET, capitalizacao e encargos discutidos",
+                "Memoria de calculo revisional e impacto economico",
+                "Tutela para conter cobranca excessiva e readequar a parcela",
+                "Pedidos revisionais e repeticao de indebito, se cabivel"
+              ]
+            : [
+                "Sintese fatica e bancaria do caso",
+                "Fundamentos de abusividade e desequilibrio contratual",
+                "Pedidos, tutela e estrategia probatoria"
+              ],
+    preview:
+      pieceLabel === "procuracao"
+        ? procuracaoPreview
+        : pieceLabel === "contrato-honorarios"
+          ? contratoHonorariosPreview
+          : isRevisionalPiece
+            ? "Estrutura inicial revisional preparada pela Clara com foco em clausulas abusivas, readequacao de parcelas, memoria de calculo e tutela para conter cobranca excessiva."
+            : "Estrutura inicial sugerida pela Clara pronta para evolucao em minuta assistida com foco em direito bancario.",
     revisionalMemory: isRevisionalPiece
       ? {
           contractedInstallment: params.contractedInstallment ?? "R$ 1.842,00",

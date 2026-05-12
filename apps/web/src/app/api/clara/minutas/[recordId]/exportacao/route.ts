@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { mapClaraApiError } from "@/app/api/clara/_shared";
 import { getClaraRecord } from "@/server/services/clara/clara-record-store";
 import { getClaraMinuta } from "@/server/services/clara/clara-minutas-store";
+import {
+  buildTextDraftDefaultBody,
+  buildTextDraftDefaultTitle,
+  buildTextDraftExportLines
+} from "@/server/services/clara/clara-text-draft-renderer";
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
 
 type TextDraftPayload = Awaited<ReturnType<typeof getClaraTextDraftArtifact>>;
@@ -216,43 +221,14 @@ export async function GET(
     }
 
     const payload = record.payload as TextDraftPayload;
+    const editedTitle = record.editedTitle?.trim() || buildTextDraftDefaultTitle(payload);
+    const editedDetail = record.editedDetail?.trim() || buildTextDraftDefaultBody(payload);
 
     const url = new URL(request.url);
-    const format = url.searchParams.get("format") ?? "docx";
+    const format = url.searchParams.get("format") ?? "txt";
     const editorHref = `/editor-de-texto/meus-textos?record=${record.id}`;
-    const baseName = `${payload.caseLabel} - ${payload.pieceLabel}`.replace(/\s+/g, " ").trim();
-    const exportLines = [
-      `Caso: ${payload.caseLabel}`,
-      `Peca: ${payload.pieceLabel}`,
-      `Documento base: ${payload.documentLabel}`,
-      `Processo: ${payload.processLabel || "Nao informado"}`,
-      `Banco: ${payload.bankLabel || "Nao informado"}`,
-      `Status: ${payload.statusLabel} | Etapa: ${payload.stageLabel}`,
-      "",
-      `Resumo: ${payload.preview}`,
-      "",
-      "Secoes da minuta:"
-    ];
-
-    for (const [index, section] of payload.sections.entries()) {
-      exportLines.push(`${index + 1}. ${section}`);
-    }
-
-    if (payload.revisionalMemory) {
-      exportLines.push("");
-      exportLines.push("Memoria revisional:");
-      exportLines.push(`Parcela contratada: ${payload.revisionalMemory.contractedInstallment}`);
-      exportLines.push(`Parcela cobrada: ${payload.revisionalMemory.chargedInstallment}`);
-      exportLines.push(`Parcela revisada: ${payload.revisionalMemory.revisedInstallment}`);
-      exportLines.push(`Excesso estimado: ${payload.revisionalMemory.estimatedTotalExcess}`);
-      exportLines.push(`Tese central: ${payload.revisionalMemory.thesis}`);
-      exportLines.push(
-        `Objetivo: ${payload.revisionalMemory.objectiveLabel} | Urgencia: ${payload.revisionalMemory.urgencyLabel}`
-      );
-    }
-
-    exportLines.push("");
-    exportLines.push("Documento gerado para demonstracao interna com dados simulados.");
+    const baseName = editedTitle.replace(/\s+/g, " ").trim();
+    const exportLines = buildTextDraftExportLines(payload, editedDetail);
 
     if (format === "pdf") {
       const pdfBytes = buildPdfDocument(
@@ -268,26 +244,44 @@ export async function GET(
       });
     }
 
-    return NextResponse.json({
-      ok: true,
-      data: {
-        recordId: record.id,
-        format,
-        printable: true,
-        editorHref,
-        exports: {
-          docx: {
-            fileName: `${baseName}.docx`,
-            available: true
+    if (format === "txt" || format === "docx") {
+      return new NextResponse(exportLines.join("\n"), {
+        headers: {
+          "Cache-Control": "no-store",
+          "Content-Disposition": `attachment; filename="${baseName}.txt"`,
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Clara-Editor-Href": editorHref
+        }
+      });
+    }
+
+    return NextResponse.json(
+      {
+        ok: true,
+        data: {
+          recordId: record.id,
+          format,
+          printable: true,
+          editorHref,
+          exports: {
+            txt: {
+              fileName: `${baseName}.txt`,
+              available: true
+            },
+            pdf: {
+              fileName: `${baseName}.pdf`,
+              available: true
+            }
           },
-          pdf: {
-            fileName: `${baseName}.pdf`,
-            available: true
-          }
-        },
-        summary: `Exportacao controlada da minuta ${record.id} pronta para DOCX, PDF e impressao.`
+          summary: `Exportacao controlada da minuta ${record.id} pronta para texto base, PDF e impressao.`
+        }
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store"
+        }
       }
-    });
+    );
   } catch (error) {
     return mapClaraApiError(error);
   }

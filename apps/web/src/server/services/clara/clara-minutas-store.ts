@@ -1,6 +1,10 @@
 import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getClaraTextDraftArtifact } from "@/server/services/clara/get-clara-artifacts";
+import {
+  buildTextDraftDefaultBody,
+  buildTextDraftDefaultTitle
+} from "@/server/services/clara/clara-text-draft-renderer";
 import type {
   ClaraRecordHistoryEntry,
   ClaraRecordWorkflowStatus
@@ -148,14 +152,13 @@ function buildContentFromPayload(
   payload: TextDraftPayload,
   record: Pick<ClaraTextDraftRecord, "editedTitle" | "editedDetail">
 ) {
-  const sections = payload.sections.join("\n");
-  const detail = record.editedDetail?.trim() || payload.preview;
-  const title = record.editedTitle?.trim() || `${payload.caseLabel} - ${payload.pieceLabel}`;
+  const detail = record.editedDetail?.trim() || buildTextDraftDefaultBody(payload);
+  const title = record.editedTitle?.trim() || buildTextDraftDefaultTitle(payload);
 
   return {
     title,
-    body: [detail, sections].filter(Boolean).join("\n\n"),
-    summary: payload.preview
+    body: detail,
+    summary: detail
   };
 }
 
