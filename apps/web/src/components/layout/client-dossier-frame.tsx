@@ -109,7 +109,7 @@ type ClientCockpitDocument = {
 };
 
 type ClientCockpitGeneratedDocument = {
-  kind: "peticao-inicial" | "procuracao" | "contrato-honorarios";
+  kind: "procuracao" | "contrato-honorarios";
   label: string;
   detail: string;
   href: string;
@@ -311,11 +311,19 @@ export function ClientCockpitFrame({
   const peticoesPdfHref = activeCase ? `/api/clientes/${client.id}/documentos-gerados/peticoes/pdf?caseId=${activeCase.id}` : null;
 
   const generatedDocumentsContent = generatedDocuments.length ? (
-    <div className="mt-4 flex flex-wrap gap-3">
+    <div className="mt-4 grid gap-3 lg:grid-cols-2">
       {generatedDocuments.map((document) => (
-        <Link key={document.kind} className="detail-link-button px-4 py-3 text-sm font-semibold" href={document.href}>
-          {document.label}
-        </Link>
+        <div key={document.kind} className="detail-soft-row flex flex-col gap-3 px-4 py-4 text-sm text-slate-300">
+          <div className="space-y-1">
+            <p className="font-semibold text-white">{document.label}</p>
+            <p className="leading-6 text-slate-300">{document.detail}</p>
+          </div>
+          <div>
+            <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={document.href}>
+              {document.statusLabel}
+            </Link>
+          </div>
+        </div>
       ))}
     </div>
   ) : (
@@ -427,7 +435,17 @@ export function ClientCockpitFrame({
                         className="detail-soft-row flex flex-col gap-3 px-4 py-4 text-sm text-slate-300 lg:flex-row lg:items-start lg:justify-between"
                       >
                         <div className="min-w-0 space-y-1">
-                          <p className="font-semibold text-white">{document.documentType}</p>
+                          <div className="flex items-start gap-3">
+                            <span
+                              aria-hidden="true"
+                              className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-emerald-300/40 bg-emerald-300/15 text-emerald-200"
+                            >
+                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 16 16">
+                                <path d="M3.5 8.5 6.5 11.5 12.5 4.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+                              </svg>
+                            </span>
+                            <p className="font-semibold text-white">{document.documentType}</p>
+                          </div>
                           <p className="text-slate-400">{document.fileName}</p>
                           <p className="leading-6">{document.summary}</p>
                         </div>
@@ -470,21 +488,6 @@ export function ClientCockpitFrame({
                   </div>
                 </div>
               </div>
-
-              {workflow ? (
-                <div className="grid gap-3">
-                  {workflow.requiredDocuments.map((label) => {
-                    const missing = workflow.missingDocuments.includes(label);
-
-                    return (
-                      <div key={label} className="detail-soft-row flex items-center justify-between gap-3 px-4 py-4 text-sm text-slate-300">
-                        <span>{label}</span>
-                        <span className={missing ? "text-amber-200" : "text-emerald-200"}>{missing ? "Pendente" : "Recebido"}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : null}
 
               {generatedDocumentsContent}
             </div>

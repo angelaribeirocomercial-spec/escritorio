@@ -282,25 +282,18 @@ export default async function ClientDetailPage({
   const generatedDocuments = activeCase
     ? [
         {
-          kind: "peticao-inicial" as const,
-          label: "Gerar modelo PDF da peticao inicial",
-          detail: `Rascunho interno do caso ${activeCase.title}, gerado sob demanda para revisao humana.`,
-          href: `/api/clientes/${client.id}/documentos-gerados/peticao-inicial/pdf?caseId=${activeCase.id}`,
-          statusLabel: "Abrir modelo"
-        },
-        {
           kind: "procuracao" as const,
-          label: "Gerar modelo PDF da procuracao",
-          detail: `Rascunho interno de representacao vinculado ao caso ${activeCase.processNumber}.`,
+          label: "Gerar procuracao",
+          detail: "Gera a procuracao com os dados consolidados do cliente e do caso para revisao humana.",
           href: `/api/clientes/${client.id}/documentos-gerados/procuracao/pdf?caseId=${activeCase.id}`,
-          statusLabel: "Abrir modelo"
+          statusLabel: "Gerar PDF"
         },
         {
           kind: "contrato-honorarios" as const,
-          label: "Gerar modelo PDF do contrato de honorarios",
-          detail: `Rascunho interno de honorarios do fluxo ${getBankingNicheLabel(activeCase.niche).toLowerCase()}.`,
+          label: "Gerar contrato de honorarios",
+          detail: "Gera o contrato de honorarios com os dados consolidados do cliente e do caso para revisao humana.",
           href: `/api/clientes/${client.id}/documentos-gerados/contrato-honorarios/pdf?caseId=${activeCase.id}`,
-          statusLabel: "Abrir modelo"
+          statusLabel: "Gerar PDF"
         }
       ]
     : [];
