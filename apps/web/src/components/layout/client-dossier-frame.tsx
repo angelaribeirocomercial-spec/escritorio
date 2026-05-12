@@ -42,6 +42,52 @@ type ClientCockpitContractAnalysis = {
     consultedPeriodLabel: string;
     differencePercentLabel: string;
   };
+  caseCalculations: {
+    scenarioDetected: {
+      label: string;
+      summary: string;
+    };
+    activatedCalculations: ReadonlyArray<{
+      id: string;
+      label: string;
+      reason: string;
+      priority: 1 | 2;
+    }>;
+    availableCalculations: ReadonlyArray<{
+      id: string;
+      label: string;
+      enabled: boolean;
+      reason: string;
+      priority: 1 | 2;
+    }>;
+    inputData: ReadonlyArray<{
+      label: string;
+      value: string;
+    }>;
+    memory: {
+      summary: string;
+      highlights: ReadonlyArray<string>;
+      legalImpactSuggestions: ReadonlyArray<string>;
+    };
+    results: ReadonlyArray<{
+      id: string;
+      label: string;
+      resultLabel: string;
+      detail: string;
+      legalImpact: string;
+    }>;
+  };
+  bacenDossier: {
+    contractDetectedLabel: string;
+    referenceDateLabel: string;
+    contractRateLabel: string;
+    marketRateLabel: string;
+    marketRateSourceLabel: string;
+    modalityLabel: string;
+    comparisonSummary: string;
+    differenceLabel: string;
+    legalAlert: string;
+  };
   calculationMemory: {
     labels: {
       financedAmount: string;
@@ -153,7 +199,7 @@ type ClientCockpitRelatedProcess = {
   linkedUpdates: ReadonlyArray<ClientCockpitProcessUpdate>;
 };
 
-type DossierTabKey = "documentos" | "financeiro" | "estrategico" | "laudo" | "peticoes" | "clara";
+type DossierTabKey = "documentos" | "financeiro" | "bacen" | "estrategico" | "laudo" | "peticoes" | "clara";
 
 type ClientCockpitDossierTab = {
   key: DossierTabKey;
@@ -204,22 +250,6 @@ type ClientCockpitFrameProps = {
   };
 };
 
-function statusTone(state: "ready" | "blocked" | "done" | "current" | "pending" | "received" | "missing") {
-  switch (state) {
-    case "ready":
-    case "done":
-    case "received":
-      return "text-emerald-200";
-    case "current":
-      return "text-cyan-100";
-    case "blocked":
-    case "missing":
-      return "text-amber-200";
-    default:
-      return "text-slate-300";
-  }
-}
-
 function criticalityTone(criticality: "low" | "medium" | "high") {
   switch (criticality) {
     case "high":
@@ -248,67 +278,43 @@ export function ClientCockpitFrame({
   petitionDraftHref,
   nextStepLabel,
   nextTaskTitle,
-  relatedClaraRecordsCount,
   relatedProcess,
   normalizedCaseInsights,
   normalizedClientIaContext,
   normalizedTimeline,
   clientCaseCount,
   dossierTabs,
-  contractAnalysis,
-  actionLinks
+  contractAnalysis
 }: ClientCockpitFrameProps) {
   const [activePanel, setActivePanel] = useState<DossierTabKey>(dossierTabs[0]?.key ?? "documentos");
-  const attachDocumentsTab = actionLinks.attachDocuments;
 
   const documentsRequired = workflow?.requiredDocuments.length ?? 0;
   const documentsReceived = caseDocuments.length;
   const documentsMissing = workflow?.missingDocuments.length ?? 0;
-  const workflowProgress = workflow
-    ? `${workflow.steps.filter((step) => step.state === "done").length}/${workflow.steps.length}`
-    : "0/0";
-  const workflowCurrentStep =
-    workflow?.steps.find((step) => step.state === "current")?.title ?? workflow?.phaseLabel ?? "Sem workflow";
-  const chanceOfSuccessLabel =
-    client.legalViabilityScore > 0 ? `${client.legalViabilityScore}%` : "Não calculada";
+  const chanceOfSuccessLabel = client.legalViabilityScore > 0 ? `${client.legalViabilityScore}%` : "Nao calculada";
+  const activeCaseTitle = activeCase?.title ?? "Sem caso ativo";
+  const activeCaseClaim = activeCase?.claimType ?? activeCase?.title ?? "A definir";
+  const activeCaseRisk = activeCase?.legalRiskLabel ?? "A definir";
   const abusivenessLabel =
     contractAnalysis?.bacenComparison.classificationLabel ??
     (contractAnalysis ? `${contractAnalysis.analysis.abusivenessSignals.length} sinal(is)` : "A definir");
   const comparison = contractAnalysis?.bacenComparison;
-  const calibration = contractAnalysis?.calculationMemory;
+  const caseCalculations = contractAnalysis?.caseCalculations;
+  const bacenDossier = contractAnalysis?.bacenDossier;
   const strategicSummary =
-    contractAnalysis?.analysis.executiveSummary ?? activeCase?.mainThesis ?? "Resumo executivo indisponível";
+    contractAnalysis?.analysis.executiveSummary ?? activeCase?.mainThesis ?? "Resumo executivo indisponivel";
   const strategicThesis = contractAnalysis?.analysis.suggestedThesis ?? activeCase?.suggestedStrategy ?? "A definir";
   const strategicRisk = contractAnalysis?.analysis.proceduralRisk ?? "medium";
-  const claraStatus = relatedClaraRecordsCount > 0 ? "Pronta" : activeCase ? "Pendente" : "Bloqueada";
   const claraResponse =
     contractAnalysis?.caseDossier.clara.summary ??
     normalizedClientIaContext ??
-    "A Clara ainda não consolidou um resumo contextual para este caso.";
+    "A Clara ainda nao consolidou um resumo contextual para este caso.";
   const claraFocusPoints = contractAnalysis?.caseDossier.clara.focusPoints ?? [];
-  const laudoSummary =
-    contractAnalysis?.caseDossier.laudo.summary ?? "Laudo automático indisponível no momento.";
+  const laudoSummary = contractAnalysis?.caseDossier.laudo.summary ?? "Laudo automatico indisponivel no momento.";
   const laudoSources = contractAnalysis?.caseDossier.laudo.sources ?? [];
   const peticoesSummary =
-    contractAnalysis?.caseDossier.peticoes.summary ?? "Petições automáticas indisponíveis no momento.";
+    contractAnalysis?.caseDossier.peticoes.summary ?? "Peticoes automaticas indisponiveis no momento.";
   const peticoesSources = contractAnalysis?.caseDossier.peticoes.sources ?? [];
-  const financeCoverageLabels = [
-    "Juros abusivos",
-    "Price",
-    "SAC",
-    "Saldo devedor",
-    "BACEN",
-    "Repetição de indébito",
-    "Liquidação antecipada",
-    "Consignado / RMC / RCC",
-    "Evolução da dívida",
-    "Correção monetária",
-    "Danos materiais",
-    "Danos morais",
-    "Cenários",
-    "CET",
-    "Superendividamento"
-  ];
   const laudoPdfHref = activeCase ? `/api/clientes/${client.id}/documentos-gerados/laudo/pdf?caseId=${activeCase.id}` : null;
 
   const generatedDocumentsContent = generatedDocuments.length ? (
@@ -333,14 +339,11 @@ export function ClientCockpitFrame({
     </div>
   );
 
-  const activeCaseTitle = activeCase?.title ?? "Sem caso ativo";
-  const activeCaseClaim = activeCase?.claimType ?? activeCase?.title ?? "A definir";
-  const activeCaseRisk = activeCase?.legalRiskLabel ?? "A definir";
   const dossierHeaderCards = [
-    { label: "Banco", value: client.bankName || "Não informado" },
-    { label: "Tipo de ação", value: activeCaseClaim },
+    { label: "Banco", value: client.bankName || "Nao informado" },
+    { label: "Tipo de acao", value: activeCaseClaim },
     { label: "Risco", value: activeCaseRisk },
-    { label: "Chance de êxito", value: chanceOfSuccessLabel },
+    { label: "Chance de exito", value: chanceOfSuccessLabel },
     { label: "Abusividade", value: abusivenessLabel }
   ];
 
@@ -349,7 +352,7 @@ export function ClientCockpitFrame({
       <section className="workspace-panel space-y-5 p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-4xl space-y-4">
-            <p className="workspace-kicker">Dossiê do caso</p>
+            <p className="workspace-kicker">Dossie do caso</p>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
               {dossierHeaderCards.map((card) => (
                 <div key={card.label} className="detail-link-button flex min-h-[74px] min-w-0 flex-col justify-between px-4 py-3">
@@ -358,13 +361,12 @@ export function ClientCockpitFrame({
                 </div>
               ))}
             </div>
-            <p className="text-sm leading-7 text-slate-300">{activeCase ? nextStepLabel : "Abra um novo atendimento para iniciar o dossiê central do cliente."}</p>
+            <p className="text-sm leading-7 text-slate-300">
+              {activeCase ? nextStepLabel : "Abra um novo atendimento para iniciar o dossie central do cliente."}
+            </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-            <Link
-              className="detail-link-button px-3 py-2 text-xs font-semibold"
-              href={`/novo-atendimento-bancario?clientId=${client.id}`}
-            >
+            <Link className="detail-link-button px-3 py-2 text-xs font-semibold" href={`/novo-atendimento-bancario?clientId=${client.id}`}>
               Novo caso
             </Link>
             <DeleteClientButton clientId={client.id} clientName={client.fullName} caseCount={clientCaseCount} />
@@ -372,7 +374,7 @@ export function ClientCockpitFrame({
         </div>
 
         <div className="border-b border-white/10">
-          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Abas do dossiê do caso">
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Abas do dossie do caso">
             {dossierTabs.map((tab) => {
               const active = activePanel === tab.key;
 
@@ -431,10 +433,7 @@ export function ClientCockpitFrame({
                 {caseDocuments.length ? (
                   <div className="mt-4 grid gap-3">
                     {caseDocuments.map((document) => (
-                      <div
-                        key={document.id}
-                        className="detail-soft-row flex flex-col gap-3 px-4 py-4 text-sm text-slate-300 lg:flex-row lg:items-start lg:justify-between"
-                      >
+                      <div key={document.id} className="detail-soft-row flex flex-col gap-3 px-4 py-4 text-sm text-slate-300 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0 space-y-1">
                           <div className="flex items-start gap-3">
                             <span
@@ -455,12 +454,7 @@ export function ClientCockpitFrame({
                             Abrir detalhe
                           </Link>
                           {document.pdfHref ? (
-                            <a
-                              className="detail-link-button px-3 py-2 text-xs font-semibold"
-                              href={document.pdfHref}
-                              rel="noreferrer"
-                              target="_blank"
-                            >
+                            <a className="detail-link-button px-3 py-2 text-xs font-semibold" href={document.pdfHref} rel="noreferrer" target="_blank">
                               Abrir PDF
                             </a>
                           ) : null}
@@ -476,16 +470,10 @@ export function ClientCockpitFrame({
 
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                    Campos faltantes:{" "}
-                    <span className="font-semibold text-white">
-                      {workflow?.missingDocuments.length ? workflow.missingDocuments.join(" | ") : "Nenhum"}
-                    </span>
+                    Campos faltantes: <span className="font-semibold text-white">{workflow?.missingDocuments.length ? workflow.missingDocuments.join(" | ") : "Nenhum"}</span>
                   </div>
                   <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                    Inserção:{" "}
-                    <span className="font-semibold text-white">
-                      {activeCase ? "Fluxo de upload vinculado ao caso" : "Fluxo de upload indisponível"}
-                    </span>
+                    Insercao: <span className="font-semibold text-white">{activeCase ? "Fluxo de upload vinculado ao caso" : "Fluxo de upload indisponivel"}</span>
                   </div>
                 </div>
               </div>
@@ -498,7 +486,7 @@ export function ClientCockpitFrame({
             <div className="space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="workspace-kicker">Cálculos</p>
+                  <p className="workspace-kicker">Calculos</p>
                   <h3 className="mt-2 text-2xl font-semibold text-white">{activeCaseTitle}</h3>
                 </div>
                 <div className="detail-soft-row px-4 py-3 text-sm text-slate-300">
@@ -507,65 +495,93 @@ export function ClientCockpitFrame({
               </div>
 
               <div className="detail-subpanel p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Contrato detectado</p>
-                <div className="mt-4 space-y-2 text-sm leading-7 text-slate-200">
-                  <p>
-                    Contrato detectado: <span className="font-semibold text-white">{activeCaseTitle}</span>
-                  </p>
-                  <p>data: {comparison?.consultedPeriodLabel ?? "Não informado"}</p>
-                  <p>taxa: {comparison?.contractRateLabel ?? "Não informado"}</p>
-                  <p>O sistema:</p>
-                  <p>- consulta BACEN</p>
-                  <p>- busca média daquela modalidade na época</p>
-                  <p>- compara automaticamente</p>
-                  <p>
-                    Resultado: <span className="font-semibold text-white">{comparison?.summary ?? "Comparação BACEN indisponível"}</span>
-                  </p>
-                  <p>
-                    Taxa do contrato: <span className="font-semibold text-white">{comparison?.contractRateLabel ?? "Não informado"}</span>
-                  </p>
-                  <p>
-                    Taxa média BACEN: <span className="font-semibold text-white">{comparison?.marketReferenceLabel ?? "Não informado"}</span>
-                  </p>
-                  <p>
-                    Diferença: <span className="font-semibold text-white">{comparison?.differencePercentLabel ?? "Não informado"}</span>
-                  </p>
-                  <p className="text-amber-200">
-                    ALERTA: <span className="font-semibold text-white">{abusivenessLabel}</span>
-                  </p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Cenario detectado</p>
+                <p className="mt-3 text-lg font-semibold text-white">{caseCalculations?.scenarioDetected.label ?? "A definir"}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-300">
+                  {caseCalculations?.scenarioDetected.summary ?? "A leitura de calculos ainda nao foi consolidada para este caso."}
+                </p>
+              </div>
+
+              <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+                <div className="detail-subpanel p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Calculos ativados para o caso</p>
+                  {caseCalculations?.activatedCalculations.length ? (
+                    <div className="mt-4 grid gap-3">
+                      {caseCalculations.activatedCalculations.map((calculation) => (
+                        <div key={calculation.id} className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="font-semibold text-white">{calculation.label}</p>
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                              Prioridade {calculation.priority}
+                            </span>
+                          </div>
+                          <p className="mt-2 leading-6">{calculation.reason}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-4 detail-soft-row px-4 py-4 text-sm text-slate-400">
+                      Nenhum calculo juridico foi ativado ainda.
+                    </div>
+                  )}
+                </div>
+
+                <div className="detail-subpanel p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Dados de entrada usados</p>
+                  <div className="mt-4 grid gap-3">
+                    {(caseCalculations?.inputData ?? []).map((item) => (
+                      <div key={item.label} className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                        {item.label}: <span className="font-semibold text-white">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {calibration ? (
-                <div className="detail-subpanel p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Detalhes do cálculo</p>
-                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                      Valor financiado: <span className="font-semibold text-white">{calibration.labels.financedAmount}</span>
-                    </div>
-                    <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                      Número de parcelas: <span className="font-semibold text-white">{calibration.labels.installmentCount}</span>
-                    </div>
-                    <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                      Parcela contratada: <span className="font-semibold text-white">{calibration.labels.contractedInstallment}</span>
-                    </div>
-                    <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                      Parcela cobrada: <span className="font-semibold text-white">{calibration.labels.chargedInstallment}</span>
-                    </div>
-                    <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                      Redução estimada: <span className="font-semibold text-white">{calibration.labels.targetReductionPercent}</span>
-                    </div>
+              <div className="detail-subpanel p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Memoria de calculo</p>
+                <p className="mt-3 text-sm leading-7 text-slate-300">
+                  {caseCalculations?.memory.summary ?? "Memoria de calculo indisponivel."}
+                </p>
+                {caseCalculations?.memory.highlights.length ? (
+                  <div className="mt-4 grid gap-3 md:grid-cols-3">
+                    {caseCalculations.memory.highlights.map((highlight) => (
+                      <div key={highlight} className="detail-soft-row px-4 py-4 text-sm leading-6 text-slate-200">
+                        {highlight}
+                      </div>
+                    ))}
                   </div>
-                  <p className="mt-4 text-sm leading-7 text-slate-300">{calibration.basis}</p>
-                </div>
-              ) : null}
+                ) : null}
+              </div>
 
               <div className="detail-subpanel p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Escopo dos cálculos</p>
-                <div className="mt-4 grid gap-2 md:grid-cols-3 xl:grid-cols-5">
-                  {financeCoverageLabels.map((label) => (
-                    <div key={label} className="detail-soft-row px-3 py-2 text-xs font-semibold text-slate-200">
-                      {label}
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Resultado de cada calculo</p>
+                {caseCalculations?.results.length ? (
+                  <div className="mt-4 grid gap-3">
+                    {caseCalculations.results.map((result) => (
+                      <div key={result.id} className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <p className="font-semibold text-white">{result.label}</p>
+                          <span className="text-sm font-semibold text-cyan-50">{result.resultLabel}</span>
+                        </div>
+                        <p className="mt-2 leading-6">{result.detail}</p>
+                        <p className="mt-3 text-cyan-100">{result.legalImpact}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-4 detail-soft-row px-4 py-4 text-sm text-slate-400">
+                    Os resultados dos calculos ainda nao foram materializados.
+                  </div>
+                )}
+              </div>
+
+              <div className="detail-subpanel p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Impacto juridico sugerido</p>
+                <div className="mt-4 grid gap-3">
+                  {(caseCalculations?.memory.legalImpactSuggestions ?? []).map((impact) => (
+                    <div key={impact} className="detail-soft-row px-4 py-4 text-sm leading-6 text-slate-200">
+                      {impact}
                     </div>
                   ))}
                 </div>
@@ -573,11 +589,83 @@ export function ClientCockpitFrame({
             </div>
           ) : null}
 
+          {activePanel === "bacen" ? (
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="workspace-kicker">BACEN</p>
+                  <h3 className="mt-2 text-2xl font-semibold text-white">Consulta automatica da taxa media</h3>
+                </div>
+                <div className="detail-soft-row px-4 py-3 text-sm text-slate-300">
+                  {comparison?.classificationLabel ?? "Consulta pendente"}
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                  Contrato detectado: <span className="font-semibold text-white">{bacenDossier?.contractDetectedLabel ?? activeCaseTitle}</span>
+                </div>
+                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                  Data: <span className="font-semibold text-white">{bacenDossier?.referenceDateLabel ?? comparison?.consultedPeriodLabel ?? "Nao informado"}</span>
+                </div>
+                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                  Taxa do contrato: <span className="font-semibold text-white">{bacenDossier?.contractRateLabel ?? comparison?.contractRateLabel ?? "Nao informado"}</span>
+                </div>
+                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                  Modalidade: <span className="font-semibold text-white">{bacenDossier?.modalityLabel ?? comparison?.modalityLabel ?? "Nao informado"}</span>
+                </div>
+              </div>
+
+              <div className="detail-subpanel p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Como o sistema decide</p>
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  {[
+                    "Consulta automaticamente a referencia BACEN aplicavel ao contrato.",
+                    "Busca a media da modalidade na epoca consultada.",
+                    "Compara taxa contratual, media de mercado e diferenca juridicamente relevante."
+                  ].map((step) => (
+                    <div key={step} className="detail-soft-row px-4 py-4 text-sm leading-6 text-slate-200">
+                      {step}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="detail-subpanel p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Resultado da comparacao</p>
+                <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                    Taxa media BACEN: <span className="font-semibold text-white">{bacenDossier?.marketRateLabel ?? "Nao informado"}</span>
+                  </div>
+                  <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                    Serie consultada: <span className="font-semibold text-white">{bacenDossier?.marketRateSourceLabel ?? comparison?.marketReferenceLabel ?? "Nao informado"}</span>
+                  </div>
+                  <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                    Diferenca: <span className="font-semibold text-white">{bacenDossier?.differenceLabel ?? comparison?.differencePercentLabel ?? "Nao calculado"}</span>
+                  </div>
+                  <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                    Classificacao: <span className="font-semibold text-white">{comparison?.classificationLabel ?? "A definir"}</span>
+                  </div>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-slate-300">
+                  {bacenDossier?.comparisonSummary ?? comparison?.summary ?? "Comparacao BACEN indisponivel no momento."}
+                </p>
+              </div>
+
+              <div className="detail-subpanel p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-200">Alerta juridico</p>
+                <p className="mt-3 text-sm leading-7 text-white">
+                  {bacenDossier?.legalAlert ?? abusivenessLabel}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
           {activePanel === "estrategico" ? (
             <div className="space-y-5">
               <div>
-                <p className="workspace-kicker">Estratégico</p>
-                <h3 className="mt-2 text-2xl font-semibold text-white">Resumo Estratégico do Caso</h3>
+                <p className="workspace-kicker">Estrategico</p>
+                <h3 className="mt-2 text-2xl font-semibold text-white">Resumo estrategico do caso</h3>
               </div>
               <div className="detail-subpanel p-5">
                 <p className="text-sm leading-7 text-slate-200">{strategicSummary}</p>
@@ -615,7 +703,7 @@ export function ClientCockpitFrame({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="workspace-kicker">Laudo</p>
-                  <h3 className="mt-2 text-2xl font-semibold text-white">Laudo automático do caso</h3>
+                  <h3 className="mt-2 text-2xl font-semibold text-white">Laudo automatico do caso</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {laudoPdfHref ? (
@@ -629,7 +717,7 @@ export function ClientCockpitFrame({
                 <p className="text-sm leading-7 text-slate-200">{laudoSummary}</p>
                 {laudoSources.length ? <p className="mt-3 text-xs text-slate-400">Fontes: {laudoSources.join(" | ")}</p> : null}
                 <p className="mt-4 text-sm leading-7 text-slate-300">
-                  O advogado revisa o conteúdo. O PDF já sai montado com OCR, BACEN, cálculos e análise do caso.
+                  O advogado revisa o conteudo. O PDF ja sai montado com OCR, BACEN, calculos e analise do caso.
                 </p>
               </div>
               {normalizedCaseInsights.length ? (
@@ -648,13 +736,13 @@ export function ClientCockpitFrame({
             <div className="space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="workspace-kicker">Petições</p>
-                  <h3 className="mt-2 text-2xl font-semibold text-white">Peça automática do caso</h3>
+                  <p className="workspace-kicker">Peticoes</p>
+                  <h3 className="mt-2 text-2xl font-semibold text-white">Peca automatica do caso</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {petitionDraftHref ? (
                     <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={petitionDraftHref}>
-                      Abrir petição para revisar
+                      Abrir peticao para revisar
                     </Link>
                   ) : null}
                 </div>
@@ -666,15 +754,14 @@ export function ClientCockpitFrame({
                   <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">Fatos: montados automaticamente a partir do caso e dos documentos.</div>
                   <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">Fundamentos: ancorados em BACEN, abusividades e tese sugerida.</div>
                   <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">Pedidos: calibrados conforme o nicho e o risco processual.</div>
-                  <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">Tutela e repetição de indébito: incluídas quando cabíveis.</div>
+                  <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">Tutela e repeticao de indebito: incluidas quando cabiveis.</div>
                 </div>
                 <p className="mt-4 text-sm leading-7 text-slate-300">
-                  A minuta abre em superfície de revisão antes da exportação. Depois da aprovação, use o handoff de
-                  distribuição para seguir ao fluxo que vira processo.
+                  A minuta abre em superficie de revisao antes da exportacao. Depois da aprovacao, use o handoff de distribuicao para seguir ao fluxo que vira processo.
                 </p>
                 {nextTaskTitle ? (
                   <p className="mt-4 text-sm leading-7 text-slate-300">
-                    Próxima tarefa humana: <span className="font-semibold text-white">{nextTaskTitle}</span>
+                    Proxima tarefa humana: <span className="font-semibold text-white">{nextTaskTitle}</span>
                   </p>
                 ) : null}
               </div>
@@ -689,13 +776,13 @@ export function ClientCockpitFrame({
               </div>
               <div className="detail-subpanel p-5">
                 <p className="text-sm leading-7 text-slate-200">
-                  Você abre: <span className="font-semibold text-white">Cliente {client.fullName}</span>
+                  Voce abre: <span className="font-semibold text-white">Cliente {client.fullName}</span>
                 </p>
                 <p className="mt-2 text-sm leading-7 text-slate-200">
                   Caso: <span className="font-semibold text-white">{activeCaseTitle}</span>
                 </p>
                 <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-5">
-                  {["contrato", "cálculos", "BACEN", "parcelas", "abusividades"].map((item) => (
+                  {["contrato", "calculos", "BACEN", "parcelas", "abusividades"].map((item) => (
                     <div key={item} className="detail-soft-row px-4 py-3 text-sm text-slate-300">
                       {item}
                     </div>
@@ -709,8 +796,7 @@ export function ClientCockpitFrame({
                 <p className="mt-3 text-sm leading-7 text-slate-200">{claraResponse}</p>
                 {comparison ? (
                   <div className="mt-4 detail-soft-row px-4 py-4 text-sm text-slate-300">
-                    O contrato possui taxa {comparison.contractRateLabel} e média BACEN {comparison.marketReferenceLabel}. Diferença:
-                    {" "}
+                    O contrato possui taxa {comparison.contractRateLabel} e media BACEN {comparison.marketReferenceLabel}. Diferenca:{" "}
                     <span className="font-semibold text-white">{comparison.differencePercentLabel}</span>.
                   </div>
                 ) : null}
@@ -733,6 +819,35 @@ export function ClientCockpitFrame({
                   </div>
                 ) : null}
               </div>
+              {relatedProcess ? (
+                <div className="detail-subpanel p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Processo em contexto</p>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                      Processo: <span className="font-semibold text-white">{relatedProcess.processNumber}</span>
+                    </div>
+                    <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                      Monitoramento: <span className="font-semibold text-white">{relatedProcess.monitoringModeLabel}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-3">
+                    {relatedProcess.linkedUpdates.map((update) => (
+                      <div key={update.id} className="detail-soft-row flex flex-col gap-3 px-4 py-4 text-sm text-slate-300 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                          <p className="font-semibold text-white">{update.movementType}</p>
+                          <p className="mt-1 text-slate-400">
+                            {new Date(update.occurredAt).toLocaleDateString("pt-BR")} | {update.sourceLabel}
+                          </p>
+                          <p className="mt-3 leading-6">{update.operationalSummary}</p>
+                        </div>
+                        <span className={`rounded-[4px] border px-3 py-1 text-xs font-semibold ${criticalityTone(update.criticality)}`}>
+                          Andamento
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </section>

@@ -43,6 +43,31 @@ type ContractAnalysisDossier = {
   };
 };
 
+type CaseCalculationDescriptor = {
+  id: string;
+  label: string;
+  enabled: boolean;
+  reason: string;
+  priority: 1 | 2;
+};
+
+function parsePercentLabel(value: string) {
+  const normalized = value
+    .replace(/,/g, ".")
+    .replace(/[^0-9.-]/g, "");
+  const parsed = Number(normalized);
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatPercentNumber(value: number) {
+  return `${value.toFixed(2).replace(".", ",")}%`;
+}
+
+function formatBasisPoints(value: number) {
+  return `${value.toFixed(2).replace(".", ",")} p.p.`;
+}
+
 function mapContractAnalysisRow(row: ContractAnalysisRow): ContractAnalysisRecord {
   return {
     id: row.id,
@@ -202,6 +227,176 @@ function getBacenComparisonLabel(params: {
   return "Dentro da média";
 }
 
+function getCaseCalculationDescriptors(params: {
+  niche: string;
+  documentType: string;
+  analysis: ContractAnalysisRecord;
+}) {
+  const evidence = [
+    params.analysis.rateLabel,
+    params.analysis.cetLabel,
+    params.analysis.capitalizationLabel,
+    params.analysis.feesLabel,
+    params.analysis.bundledInsuranceLabel,
+    params.analysis.permanenceCommissionLabel,
+    params.analysis.penaltyLabel,
+    ...params.analysis.abusivenessSignals
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  const has = (pattern: RegExp) => pattern.test(evidence);
+  const isVehicleRevisional =
+    params.niche === "revisional" || params.documentType === "CCB";
+  const isConsignado =
+    params.niche === "cartao-consignado" ||
+    has(/consignad|beneficio|rmc|rcc/);
+  const isSearchAndSeizureCase =
+    params.niche === "busca-apreensao" || has(/busca|apreens|mora/);
+
+  return [
+    {
+      id: "revisional-veiculo",
+      label: "Revisional de veiculo",
+      enabled: isVehicleRevisional,
+      reason: "Ativado quando o contrato do caso pede leitura revisional da divida e da parcela.",
+      priority: 1
+    },
+    {
+      id: "cet",
+      label: "CET",
+      enabled: has(/cet|custo efetivo|tarifa|seguro/) || isVehicleRevisional,
+      reason: "Ativado para verificar custo efetivo e rubricas acessorias embutidas no contrato.",
+      priority: 1
+    },
+    {
+      id: "juros-abusivos",
+      label: "Juros abusivos",
+      enabled: has(/juros|taxa|abusiv|oneros/) || isVehicleRevisional,
+      reason: "Ativado para comparar taxa contratual, custo efetivo e peso da remuneracao no caso.",
+      priority: 1
+    },
+    {
+      id: "recalculo-parcelas",
+      label: "Recalculo de parcelas",
+      enabled: true,
+      reason: "Ativado sempre que ha memoria de calculo com parcela contratada, cobrada e revisada.",
+      priority: 1
+    },
+    {
+      id: "consignado",
+      label: "Consignado",
+      enabled: isConsignado,
+      reason: "Ativado quando a leitura do caso indica desconto em folha, beneficio ou cartao consignado.",
+      priority: 1
+    },
+    {
+      id: "soma-descontada",
+      label: "Soma descontada",
+      enabled: isConsignado,
+      reason: "Ativado para consolidar o total abatido ao longo do contrato quando o caso envolve descontos recorrentes.",
+      priority: 1
+    },
+    {
+      id: "repeticao-indebito",
+      label: "Repeticao do indebito",
+      enabled: has(/indeb|seguro|tarifa|cobranc/) || isConsignado,
+      reason: "Ativado quando a cobranca excessiva permite pedir devolucao ou compensacao.",
+      priority: 1
+    },
+    {
+      id: "rmc",
+      label: "RMC",
+      enabled: has(/rmc|margem/) || params.niche === "cartao-consignado",
+      reason: "Ativado para casos de reserva de margem consignavel ou cartao associado ao beneficio.",
+      priority: 1
+    },
+    {
+      id: "busca-apreensao",
+      label: "Busca e apreensao",
+      enabled: isSearchAndSeizureCase,
+      reason: "Ativado quando o risco do caso inclui consolidacao da mora ou retomada do bem.",
+      priority: 1
+    },
+    {
+      id: "purgacao-mora",
+      label: "Purgacao da mora",
+      enabled: isSearchAndSeizureCase,
+      reason: "Ativado para medir o esforco de regularizacao e sustentar pedido de manutencao da posse.",
+      priority: 1
+    },
+    {
+      id: "saldo-revisado",
+      label: "Saldo revisado",
+      enabled: true,
+      reason: "Ativado para projetar o saldo juridicamente defensavel apos expurgo dos excessos.",
+      priority: 1
+    },
+    {
+      id: "timeline-financeira",
+      label: "Timeline financeira visual",
+      enabled: true,
+      reason: "Mantida pronta para organizar a sequencia financeira do contrato conforme o caso amadurece.",
+      priority: 2
+    },
+    {
+      id: "detector-refinanciamento",
+      label: "Detector de refinanciamento abusivo",
+      enabled: has(/refinanc|renegoci/) || params.documentType === "CCB",
+      reason: "Preparado para apontar substituicoes sucessivas de divida e rollover oneroso.",
+      priority: 2
+    },
+    {
+      id: "motor-acordos",
+      label: "Motor de acordos",
+      enabled: true,
+      reason: "Mantido disponivel para simular cenarios de acordo com base no saldo revisado.",
+      priority: 2
+    },
+    {
+      id: "calculo-judicial",
+      label: "Calculo judicial automatico",
+      enabled: true,
+      reason: "Mantido pronto para converter a memoria revisional em base de liquidacao judicial.",
+      priority: 2
+    }
+  ] satisfies CaseCalculationDescriptor[];
+}
+
+function getLegalImpactSuggestions(params: {
+  descriptors: ReadonlyArray<CaseCalculationDescriptor>;
+  analysis: ContractAnalysisRecord;
+  calculationMemory: ReturnType<typeof getBankingRevisionalCalculation>;
+}) {
+  const enabledIds = new Set(
+    params.descriptors.filter((descriptor) => descriptor.enabled).map((descriptor) => descriptor.id)
+  );
+  const impacts = [
+    enabledIds.has("juros-abusivos")
+      ? `Sustentar revisao da remuneracao contratual com base na taxa ${params.analysis.rateLabel}.`
+      : null,
+    enabledIds.has("cet")
+      ? `Questionar composicao do CET (${params.analysis.cetLabel}) e seus reflexos na formacao da parcela.`
+      : null,
+    enabledIds.has("recalculo-parcelas")
+      ? `Ancorar pedido de recalculo com reducao alvo de ${params.calculationMemory.labels.targetReductionPercent}.`
+      : null,
+    enabledIds.has("repeticao-indebito")
+      ? "Avaliar compensacao ou repeticao do indebito a partir dos excessos estimados."
+      : null,
+    enabledIds.has("busca-apreensao")
+      ? "Reforcar tutela para conter agravamento da mora e preservar a posse enquanto o contrato e revisto."
+      : null,
+    enabledIds.has("rmc")
+      ? "Apoiar pedido de cancelamento da RMC e recomposicao dos descontos vinculados ao beneficio."
+      : null
+  ].filter((item): item is string => Boolean(item));
+
+  return impacts.length
+    ? impacts
+    : ["Concentrar a tese na leitura contratual e na memoria economica inicial do caso."];
+}
+
 export async function getContractAnalysisWorkspace(
   documentId?: string,
   calculationParams?: {
@@ -288,6 +483,65 @@ export async function getContractAnalysisWorkspace(
     calculationMemory,
     detectedAbuses
   });
+  const marketRateSource = bacenConsultation.status === "consulted" ? bacenConsultation.payload.items[0] : null;
+  const contractRatePercent = parsePercentLabel(analysis.rateLabel);
+  const marketRatePercent = parsePercentLabel(marketRateSource?.value ?? "");
+  const rateDifference =
+    contractRatePercent !== null && marketRatePercent !== null
+      ? contractRatePercent - marketRatePercent
+      : null;
+  const relativeDifference =
+    rateDifference !== null && marketRatePercent && marketRatePercent !== 0
+      ? (rateDifference / marketRatePercent) * 100
+      : null;
+  const calculationDescriptors = getCaseCalculationDescriptors({
+    niche: bankingCase.niche,
+    documentType: selectedDocument.documentType,
+    analysis
+  });
+  const legalImpactSuggestions = getLegalImpactSuggestions({
+    descriptors: calculationDescriptors,
+    analysis,
+    calculationMemory
+  });
+  const calculationResults = [
+    {
+      id: "parcela-revisada",
+      label: "Recalculo de parcelas",
+      resultLabel: `${calculationMemory.labels.revisedInstallment} por parcela`,
+      detail:
+        `Parcela cobrada de ${calculationMemory.labels.chargedInstallment} com alvo revisional de ${calculationMemory.labels.targetReductionPercent}.`,
+      legalImpact: "Serve de base para tutela de readequacao da parcela e limitacao da cobranca."
+    },
+    {
+      id: "excesso-mensal",
+      label: "Excesso mensal identificado",
+      resultLabel: calculationMemory.labels.estimatedMonthlyExcess,
+      detail:
+        `Diferenca mensal entre a parcela cobrada e a parcela revisada, hoje medida em ${calculationMemory.labels.estimatedMonthlyExcess}.`,
+      legalImpact: "Sustenta narrativa de onerosidade excessiva atual e urgencia economica."
+    },
+    {
+      id: "excesso-acumulado",
+      label: "Repeticao do indebito potencial",
+      resultLabel: calculationMemory.labels.estimatedTotalExcess,
+      detail:
+        `Excesso acumulado estimado ao longo de ${calculationMemory.labels.installmentCount}.`,
+      legalImpact: "Orienta pedido de compensacao ou repeticao do indebito quando a prova estiver madura."
+    },
+    {
+      id: "saldo-revisado",
+      label: "Saldo revisado",
+      resultLabel: calculationMemory.labels.financedAmount,
+      detail:
+        `Saldo-base hoje lido a partir do capital financiado de ${calculationMemory.labels.financedAmount} com expurgo dos excessos apontados.`,
+      legalImpact: "Ajuda a recalibrar saldo devedor, pedido revisional e proposta de acordo."
+    }
+  ];
+  const bacenSummary =
+    bacenConsultation.status === "consulted"
+      ? `Taxa contratual ${analysis.rateLabel} contra media BACEN ${marketRateSource?.value ?? "indisponivel"}.`
+      : "Comparacao BACEN mantida em boundary controlado enquanto a consulta automatica nao retorna no formato esperado.";
 
   return {
     contractDocuments: contractDocuments.map((document) => ({
@@ -304,23 +558,81 @@ export async function getContractAnalysisWorkspace(
     bacenComparison: {
       contractRateLabel: analysis.rateLabel,
       marketReferenceLabel:
-        bacenConsultation.status === "consulted" && bacenConsultation.payload.items[0]
-          ? `${bacenConsultation.payload.items[0].label}: ${bacenConsultation.payload.items[0].value}`
+        marketRateSource
+          ? `${marketRateSource.label}: ${marketRateSource.value}`
           : "Referencia BACEN indisponivel no momento",
       modalityLabel: bacenConsultation.kind === "sgs" ? "SGS / taxa base" : "Referencia BACEN",
       consultedPeriodLabel:
         bacenConsultation.status === "consulted" ? bacenConsultation.consultedAt?.slice(0, 10) ?? "Hoje" : "Indisponivel",
       differencePercentLabel:
-        bacenConsultation.status === "consulted"
-          ? analysis.proceduralRisk === "high"
-            ? "Acima da media"
-            : "Divergencia controlada"
+        rateDifference !== null
+          ? `${rateDifference >= 0 ? "+" : ""}${formatBasisPoints(rateDifference)} ${
+              relativeDifference !== null ? `(${relativeDifference >= 0 ? "+" : ""}${formatPercentNumber(relativeDifference)})` : ""
+            }`.trim()
           : "Nao calculado",
       classificationLabel: bacenComparisonLabel,
       summary:
         bacenConsultation.status === "consulted"
           ? `Comparacao assistida com ${bacenConsultation.payload.title.toLowerCase()} para ancorar a leitura revisional do caso.`
           : "Comparacao BACEN mantida em boundary controlado enquanto a consulta automatica nao retorna no formato esperado."
+    },
+    caseCalculations: {
+      scenarioDetected: {
+        label: scenarioProfile.label,
+        summary: scenarioProfile.summary
+      },
+      activatedCalculations: calculationDescriptors
+        .filter((descriptor) => descriptor.enabled)
+        .map((descriptor) => ({
+          id: descriptor.id,
+          label: descriptor.label,
+          reason: descriptor.reason,
+          priority: descriptor.priority
+        })),
+      availableCalculations: calculationDescriptors.map((descriptor) => ({
+        id: descriptor.id,
+        label: descriptor.label,
+        enabled: descriptor.enabled,
+        reason: descriptor.reason,
+        priority: descriptor.priority
+      })),
+      inputData: [
+        { label: "Valor financiado", value: calculationMemory.labels.financedAmount },
+        { label: "Numero de parcelas", value: calculationMemory.labels.installmentCount },
+        { label: "Parcela contratada", value: calculationMemory.labels.contractedInstallment },
+        { label: "Parcela cobrada", value: calculationMemory.labels.chargedInstallment },
+        { label: "Reducao alvo", value: calculationMemory.labels.targetReductionPercent },
+        { label: "Taxa contratual", value: analysis.rateLabel },
+        { label: "CET", value: analysis.cetLabel }
+      ],
+      memory: {
+        summary: calculationMemory.basis,
+        highlights: calculationMemory.highlights,
+        legalImpactSuggestions
+      },
+      results: calculationResults
+    },
+    bacenDossier: {
+      contractDetectedLabel: `${selectedDocument.documentType} | ${selectedDocument.fileName}`,
+      referenceDateLabel:
+        bacenConsultation.status === "consulted"
+          ? bacenConsultation.consultedAt?.slice(0, 10) ?? "Hoje"
+          : "Indisponivel",
+      contractRateLabel: analysis.rateLabel,
+      marketRateLabel: marketRateSource?.value ?? "Referencia BACEN indisponivel",
+      marketRateSourceLabel: marketRateSource?.label ?? "Serie BACEN indisponivel",
+      modalityLabel: bacenConsultation.kind === "sgs" ? "SGS / taxa base" : "Referencia BACEN",
+      comparisonSummary: bacenSummary,
+      differenceLabel:
+        rateDifference !== null ? `${rateDifference >= 0 ? "+" : ""}${formatBasisPoints(rateDifference)}` : "Nao calculado",
+      legalAlert:
+        bacenComparisonLabel === "Abusividade relevante"
+          ? "Alerta juridico alto: a distancia para a media e os sinais contratuais sustentam revisao forte."
+          : bacenComparisonLabel === "Possível abusividade"
+            ? "Alerta juridico moderado: a comparacao BACEN reforca a necessidade de prova economica e leitura contratual."
+            : bacenComparisonLabel === "Atenção"
+              ? "Alerta juridico de atencao: a consulta existe, mas a classificacao ainda pede validacao contextual."
+              : "Alerta juridico controlado: a taxa nao destoa da media de forma suficiente, sem afastar outros abusos."
     },
     detectedAbuses,
     calculationMemory,

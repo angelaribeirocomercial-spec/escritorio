@@ -405,6 +405,7 @@ export default async function ClientDetailPage({
   const dossierTabs = [
     { key: "documentos", label: "Documentos" },
     { key: "financeiro", label: "Cálculos" },
+    { key: "bacen", label: "BACEN" },
     { key: "estrategico", label: "Estratégico" },
     { key: "laudo", label: "Laudo" },
     { key: "peticoes", label: "Petições" },
@@ -452,6 +453,8 @@ export default async function ClientDetailPage({
             ? {
                 analysis: contractAnalysisWorkspace.analysis,
                 bacenComparison: contractAnalysisWorkspace.bacenComparison,
+                caseCalculations: contractAnalysisWorkspace.caseCalculations,
+                bacenDossier: contractAnalysisWorkspace.bacenDossier,
                 calculationMemory: contractAnalysisWorkspace.calculationMemory,
                 detectedAbuses: contractAnalysisWorkspace.detectedAbuses,
                 caseDossier: contractAnalysisWorkspace.caseDossier,
