@@ -59,6 +59,7 @@ export async function registerOfficialDistributionAction(formData: FormData) {
   const auditDetail = readText(formData, "auditDetail");
 
   const officialDistributionDate = normalizeDate(officialDistributionDateInput);
+  const isDemoTenant = session.workspace.tenant.slug === "clara-bancaria-demo";
 
   if (!processId) {
     redirect("/processos");
@@ -95,6 +96,37 @@ export async function registerOfficialDistributionAction(formData: FormData) {
   const existingAuditTrail = Array.isArray(processRow.distribution_audit_trail)
     ? processRow.distribution_audit_trail
     : [];
+  let safeProtocolReceiptDocumentId = protocolReceiptDocumentId || null;
+
+  if (safeProtocolReceiptDocumentId) {
+    const { data: receiptDocument, error: receiptDocumentError } = await supabase
+      .from("documents")
+      .select("id")
+      .eq("tenant_id", session.workspace.tenant.id)
+      .eq("id", safeProtocolReceiptDocumentId)
+      .maybeSingle();
+
+    if (receiptDocumentError) {
+      redirect(
+        buildReturnPath(processId, {
+          distributionError: "Nao foi possivel validar o comprovante selecionado."
+        })
+      );
+    }
+
+    if (!receiptDocument) {
+      if (isDemoTenant) {
+        safeProtocolReceiptDocumentId = null;
+      } else {
+        redirect(
+          buildReturnPath(processId, {
+            distributionError:
+              "O comprovante selecionado nao existe na base real do tenant. Anexe-o em Documentos antes de salvar."
+          })
+        );
+      }
+    }
+  }
 
   const auditTitle =
     officialDistributionStatus === "attempt_failed"
@@ -129,7 +161,7 @@ export async function registerOfficialDistributionAction(formData: FormData) {
       official_distribution_date: officialDistributionDate,
       official_source: officialSource,
       official_distribution_status: officialDistributionStatus,
-      protocol_receipt_document_id: protocolReceiptDocumentId || null,
+      protocol_receipt_document_id: safeProtocolReceiptDocumentId,
       distribution_audit_trail: nextAuditTrail
     })
     .eq("tenant_id", session.workspace.tenant.id)

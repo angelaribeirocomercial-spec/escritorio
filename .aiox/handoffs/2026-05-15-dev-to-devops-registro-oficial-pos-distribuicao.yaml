@@ -6,7 +6,7 @@ story_ids:
 consumed: false
 branch: "feature/clara-hardening"
 commit: "uncommitted"
-summary: "Official post-distribution registration is ready for publish with process audit trail, official receipt linking, and a controlled registration form."
+summary: "Official post-distribution registration is ready for publish with process audit trail, official receipt linking, a controlled registration form, and a demo-tenant safeguard for missing fixture receipts."
 quality_gates:
   lint: pass
   typecheck: pass
@@ -19,6 +19,7 @@ changes:
   - "Exposed explicit process UI for local reference, official source, receipt link, audit history, and official registration status."
   - "Added direct upload flow for `Comprovante de protocolo` with return to the process page."
   - "Updated demo/local process fixtures and the Clara virtual process contract to match the new process model."
+  - "Hardened the server action so tenant-demo fixture receipts do not trigger FK failures, while real tenants still receive a clear validation error when the selected receipt is missing."
 files:
   - "packages/domain/src/index.ts"
   - "supabase/migrations/0018_processes_official_distribution_audit.sql"
@@ -56,6 +57,7 @@ devops_steps:
   - "Commit the slice as focused process official-registration work."
   - "Push branch feature/clara-hardening and let preview/deploy run."
   - "After deploy, validate an authenticated real process can save official return data and open the linked receipt."
+  - "In demo mode, confirm the form no longer breaks when the preselected fixture receipt is not present in `documents`."
 notes:
   - "This slice does not automate PJe/TJMG filing."
   - "The process still distinguishes local preparatory state from official return."
