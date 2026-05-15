@@ -2,6 +2,7 @@ import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { uploadDocumentAction } from "@/app/(workspace)/documentos/enviar-arquivos/actions";
 import { getCases } from "@/server/services/cases/get-cases";
+import { ScrollToTop } from "@/components/layout/scroll-to-top";
 
 const documentTypes = [
   "Contrato bancario",
@@ -68,6 +69,7 @@ export default async function EnviarArquivosPage({
 
   return (
     <div className="mj-model-page space-y-4 pb-8">
+      <ScrollToTop />
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="mj-model-title">Enviar arquivos</p>

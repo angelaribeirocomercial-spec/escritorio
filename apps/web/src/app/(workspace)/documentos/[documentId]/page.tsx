@@ -5,6 +5,7 @@ import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { ClaraContextActions } from "@/components/layout/clara-context-actions";
 import { WorkspacePage } from "@/components/layout/workspace-page";
+import { ScrollToTop } from "@/components/layout/scroll-to-top";
 import { reviewDocumentExtractionAction } from "@/app/(workspace)/documentos/[documentId]/actions";
 import { getDocumentFileSignedUrl } from "@/server/services/documents/get-document-file-url";
 import { getDocumentById } from "@/server/services/documents/get-documents";
@@ -116,6 +117,7 @@ export default async function DocumentDetailPage({
       metrics={metrics}
       title={document.fileName}
     >
+      <ScrollToTop />
       <div className="flex flex-col gap-4 rounded-[4px] border border-white/10 bg-white/[0.03] p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-100/80">Documento em foco</p>
