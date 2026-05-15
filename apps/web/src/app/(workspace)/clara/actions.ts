@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getWorkspaceSession } from "@/lib/auth/session";
 
 import {
   createClaraRecord,
@@ -10,6 +11,7 @@ import {
   updateClaraRecordReviewNote,
   updateClaraRecordWorkflowStatus
 } from "@/server/services/clara/clara-record-store";
+import { syncInitialProcessFiling } from "@/server/services/process-filings/sync-initial-filing";
 
 function withRecord(targetPath: string, recordId: string) {
   const url = new URL(targetPath, "http://localhost");
@@ -54,6 +56,7 @@ export async function updateClaraWorkflowStatusAction(formData: FormData) {
     redirect(returnPath);
   }
 
+  const session = await getWorkspaceSession();
   await updateClaraRecordWorkflowStatus(
     recordId,
     workflowStatus as "created" | "reviewed" | "completed"
@@ -66,6 +69,8 @@ export async function updateClaraWorkflowStatusAction(formData: FormData) {
       documentId?: string;
       pieceLabel?: string;
       caseId?: string;
+      title?: string;
+      summary?: string;
     };
 
     if (
@@ -85,6 +90,22 @@ export async function updateClaraWorkflowStatusAction(formData: FormData) {
         })
         .eq("document_id", payload.documentId)
         .eq("case_id", payload.caseId);
+
+      if (workflowStatus === "completed") {
+        await syncInitialProcessFiling({
+          supabase,
+          tenantId: session?.workspace.tenant.id ?? "",
+          caseId: payload.caseId,
+          sourceMinutaId: record.id,
+          title: payload.title ?? "Peticao inicial sincronizada do dossie",
+          summary:
+            payload.summary ??
+            "Peticao inicial aprovada na Clara e pronta para handoff operacional no processo.",
+          nextAction:
+            "Conferir o handoff de distribuicao e registrar o retorno oficial quando houver numero judicial.",
+          status: "approved"
+        });
+      }
     }
   }
 

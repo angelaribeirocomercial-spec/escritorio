@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { requireWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { syncInitialProcessFiling } from "@/server/services/process-filings/sync-initial-filing";
 
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -84,7 +85,7 @@ export async function registerOfficialDistributionAction(formData: FormData) {
   const supabase = getSupabaseAdminClient();
   const { data: processRow, error: processError } = await supabase
     .from("processes")
-    .select("distribution_audit_trail")
+    .select("case_id, distribution_audit_trail")
     .eq("tenant_id", session.workspace.tenant.id)
     .eq("id", processId)
     .maybeSingle();
@@ -173,6 +174,26 @@ export async function registerOfficialDistributionAction(formData: FormData) {
         distributionError: `Nao foi possivel salvar o retorno oficial: ${updateError.message}`
       })
     );
+  }
+
+  if (officialDistributionStatus === "official_confirmed") {
+    try {
+      if (processRow.case_id) {
+        await syncInitialProcessFiling({
+          supabase,
+          tenantId: session.workspace.tenant.id,
+          caseId: String(processRow.case_id),
+          title: "Peticao inicial protocolada",
+          summary:
+            "Peticao inicial promovida para protocolada a partir do retorno oficial confirmado no processo.",
+          nextAction:
+            "Seguir para acompanhamento processual, contestacao, manifestacoes e demais pecas cabiveis.",
+          status: "filed"
+        });
+      }
+    } catch {
+      // A sincronizacao do filing nao deve desfazer o registro oficial salvo no processo.
+    }
   }
 
   revalidatePath(`/processos/${processId}`);

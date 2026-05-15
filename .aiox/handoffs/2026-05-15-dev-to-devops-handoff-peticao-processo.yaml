@@ -1,0 +1,22 @@
+from: "@dev"
+to: "@devops"
+date: "2026-05-15"
+story: "18.46"
+title: "Sincronizar handoff da peticao com processo e protocolo"
+summary:
+  - "Aprovacao da minuta inicial agora sincroniza automaticamente uma peticao_inicial em process_filings."
+  - "A peca inicial sincronizada persiste sourceMinutaId, resumo e proximo passo operacional."
+  - "Retorno oficial confirmado promove automaticamente a peticao_inicial para filed no cockpit do processo."
+quality_gates:
+  lint: "passed"
+  typecheck: "passed"
+  test: "passed"
+  build: "passed"
+files:
+  - "apps/web/src/server/services/process-filings/sync-initial-filing.ts"
+  - "apps/web/src/app/(workspace)/clara/actions.ts"
+  - "apps/web/src/app/(workspace)/processos/[processId]/actions.ts"
+  - "docs/stories/18.46.sincronizar-handoff-da-peticao-com-processo-e-protocolo.md"
+notes:
+  - "Nao ha automacao oficial de protocolo; apenas sincronizacao interna do workspace."
+  - "Pacote nao exige migration."
