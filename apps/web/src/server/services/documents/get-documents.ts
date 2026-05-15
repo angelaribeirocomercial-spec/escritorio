@@ -1,6 +1,7 @@
 import {
   BankingCaseRecord,
   ClientRecord,
+  DocumentStructuredExtractionField,
   DocumentRecord
 } from "@lexia/domain";
 
@@ -83,6 +84,13 @@ type DocumentRow = {
   storage_mime_type: string;
   storage_size_bytes: number;
   actions: string[] | null;
+  structured_extraction: Record<string, DocumentStructuredExtractionField> | null;
+  extraction_source_trace: Record<string, unknown> | null;
+  extraction_error: string | null;
+  extracted_at: string | null;
+  reviewed_at: string | null;
+  review_notes: string | null;
+  review_status: DocumentRecord["reviewStatus"] | null;
   client: ClientRow | ClientRow[] | null;
   banking_case: CaseRow | CaseRow[] | null;
 };
@@ -176,6 +184,13 @@ function mapDocumentRow(row: DocumentRow): DocumentWithContext | null {
     storageMimeType: row.storage_mime_type,
     storageSizeBytes: row.storage_size_bytes,
     actions: row.actions ?? [],
+    structuredExtraction: row.structured_extraction ?? {},
+    extractionSourceTrace: row.extraction_source_trace ?? {},
+    extractionError: row.extraction_error ?? undefined,
+    extractedAt: row.extracted_at ?? undefined,
+    reviewedAt: row.reviewed_at ?? undefined,
+    reviewNotes: row.review_notes ?? undefined,
+    reviewStatus: row.review_status ?? undefined,
     client: mapClientRow(clientRow),
     bankingCase: mapCaseRow(caseRow)
   };
@@ -200,6 +215,13 @@ const DOCUMENT_SELECT = `
   storage_mime_type,
   storage_size_bytes,
   actions,
+  structured_extraction,
+  extraction_source_trace,
+  extraction_error,
+  extracted_at,
+  reviewed_at,
+  review_notes,
+  review_status,
   client:clients (
     id,
     full_name,

@@ -144,6 +144,30 @@ type ProcessCockpitFrameProps = {
     successLabel?: string;
     errorLabel?: string;
   };
+  processFilings: {
+    formAction: string;
+    processId: string;
+    caseId: string;
+    clientId: string;
+    successLabel?: string;
+    errorLabel?: string;
+    records: ReadonlyArray<{
+      id: string;
+      kind:
+        | "peticao_inicial"
+        | "contestacao"
+        | "replica"
+        | "manifestacao"
+        | "recurso"
+        | "cumprimento_sentenca"
+        | "peticao_intercorrente";
+      title: string;
+      status: "draft" | "in_review" | "approved" | "filed" | "fulfilled";
+      summary: string;
+      nextAction: string;
+      updatedAt: string;
+    }>;
+  };
 };
 
 type PanelKey = "updates";
@@ -165,13 +189,48 @@ function criticalityTone(criticality: string) {
   }
 }
 
+function filingKindLabel(kind: string) {
+  switch (kind) {
+    case "peticao_inicial":
+      return "Peticao inicial";
+    case "contestacao":
+      return "Contestacao";
+    case "replica":
+      return "Replica";
+    case "manifestacao":
+      return "Manifestacao";
+    case "recurso":
+      return "Recurso";
+    case "cumprimento_sentenca":
+      return "Cumprimento de sentenca";
+    default:
+      return "Peticao intercorrente";
+  }
+}
+
+function filingStatusLabel(status: string) {
+  switch (status) {
+    case "in_review":
+      return "Em revisao";
+    case "approved":
+      return "Aprovado";
+    case "filed":
+      return "Protocolado";
+    case "fulfilled":
+      return "Cumprido";
+    default:
+      return "Rascunho";
+  }
+}
+
 export function ProcessCockpitFrame({
   process,
   linkedUpdates,
   actionLinks,
   dataJudLabel,
   distributionSummary,
-  officialRegistration
+  officialRegistration,
+  processFilings
 }: ProcessCockpitFrameProps) {
   const [activePanel, setActivePanel] = useState<PanelKey | null>("updates");
   const latestUpdate = linkedUpdates[0]?.operationalSummary ?? "Nenhum andamento recente consolidado";
@@ -495,6 +554,124 @@ export function ProcessCockpitFrame({
 
               <button className="detail-link-button w-full justify-center px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50" disabled={officialRegistration.readOnly} type="submit">
                 Salvar retorno oficial
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section className="detail-panel p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="workspace-kicker">Acompanhamento processual</p>
+            <h3 className="mt-2 text-2xl font-semibold text-white">Pecas supervenientes e proximos passos</h3>
+          </div>
+          <div className="max-w-xl text-sm leading-7 text-slate-300">
+            O processo segue acompanhado por fases, andamentos e pecas cabiveis, sem prometer automacao oficial de protocolo.
+          </div>
+        </div>
+
+        {processFilings.successLabel ? (
+          <div className="mt-4 rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-100">
+            {processFilings.successLabel}
+          </div>
+        ) : null}
+        {processFilings.errorLabel ? (
+          <div className="mt-4 rounded-[4px] border border-fuchsia-300/20 bg-fuchsia-300/10 px-4 py-3 text-sm text-fuchsia-100">
+            {processFilings.errorLabel}
+          </div>
+        ) : null}
+
+        <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <div className="detail-subpanel p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                Carteira de pecas do processo
+              </p>
+              <span className="text-xs text-slate-400">{processFilings.records.length} registro(s)</span>
+            </div>
+            <div className="mt-4 grid gap-3">
+              {processFilings.records.length ? (
+                processFilings.records.map((record) => (
+                  <div key={record.id} className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                    <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                      <div>
+                        <p className="font-semibold text-white">{record.title}</p>
+                        <p className="mt-1 text-slate-400">
+                          {filingKindLabel(record.kind)} | {new Date(record.updatedAt).toLocaleDateString("pt-BR")}
+                        </p>
+                        <p className="mt-2 leading-6 text-slate-300">{record.summary}</p>
+                        <p className="mt-2 text-slate-400">Proximo passo: {record.nextAction}</p>
+                      </div>
+                      <span className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-200">
+                        {filingStatusLabel(record.status)}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="detail-soft-row px-4 py-4 text-sm text-slate-400">
+                  Nenhuma peca superveniente registrada. Use o formulario ao lado para abrir contestacao, manifestacao, recurso ou outro ciclo cabivel.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="detail-subpanel p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+              Registrar peca superveniente
+            </p>
+            <form action={processFilings.formAction as unknown as string} className="mt-4 space-y-4">
+              <input name="processId" type="hidden" value={processFilings.processId} />
+              <input name="caseId" type="hidden" value={processFilings.caseId} />
+              <input name="clientId" type="hidden" value={processFilings.clientId} />
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400" htmlFor="kind">
+                  Tipo de peca
+                </label>
+                <select className="mj-model-input mt-2 w-full px-3 py-2 text-sm outline-none" defaultValue="manifestacao" id="kind" name="kind">
+                  <option value="contestacao">Contestacao</option>
+                  <option value="replica">Replica</option>
+                  <option value="manifestacao">Manifestacao</option>
+                  <option value="recurso">Recurso</option>
+                  <option value="cumprimento_sentenca">Cumprimento de sentenca</option>
+                  <option value="peticao_intercorrente">Peticao intercorrente</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400" htmlFor="title">
+                  Titulo
+                </label>
+                <input className="mj-model-input mt-2 w-full px-3 py-2 text-sm outline-none" id="title" name="title" required type="text" />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400" htmlFor="status">
+                  Status
+                </label>
+                <select className="mj-model-input mt-2 w-full px-3 py-2 text-sm outline-none" defaultValue="draft" id="status" name="status">
+                  <option value="draft">Rascunho</option>
+                  <option value="in_review">Em revisao</option>
+                  <option value="approved">Aprovado</option>
+                  <option value="filed">Protocolado</option>
+                  <option value="fulfilled">Cumprido</option>
+                </select>
+              </div>
+
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Resumo</span>
+                <textarea className="mj-model-input mt-2 min-h-[6rem] w-full px-3 py-2 text-sm outline-none" name="summary" />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Proximo passo</span>
+                <textarea className="mj-model-input mt-2 min-h-[5rem] w-full px-3 py-2 text-sm outline-none" name="nextAction" />
+              </label>
+
+              <button className="detail-link-button px-4 py-3 text-sm font-semibold" type="submit">
+                Registrar peca no acompanhamento
               </button>
             </form>
           </div>

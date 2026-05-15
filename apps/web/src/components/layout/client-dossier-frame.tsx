@@ -32,6 +32,7 @@ type ClientCockpitContractAnalysis = {
     proceduralRisk: "low" | "medium" | "high";
     suggestedRequests: ReadonlyArray<string>;
     executiveSummary: string;
+    approvedForFiling?: boolean;
   };
   bacenComparison: {
     summary: string;
@@ -392,6 +393,7 @@ export function ClientCockpitFrame({
   const peticoesSummary =
     contractAnalysis?.caseDossier.peticoes.summary ?? "Peticoes automaticas indisponiveis no momento.";
   const peticoesSources = contractAnalysis?.caseDossier.peticoes.sources ?? [];
+  const petitionApprovedForFiling = contractAnalysis?.analysis.approvedForFiling ?? false;
   const laudoPdfHref = activeCase ? `/api/clientes/${client.id}/documentos-gerados/laudo/pdf?caseId=${activeCase.id}` : null;
   const baseOverviewDocument =
     caseDocuments.find((document) => isContractAnalysisDocument(document.documentType)) ?? caseDocuments[0] ?? null;
@@ -1018,7 +1020,7 @@ export function ClientCockpitFrame({
                 <div className="flex flex-wrap gap-2">
                   {petitionDraftHref ? (
                     <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={petitionDraftHref}>
-                      Abrir peticao para revisar
+                      {petitionApprovedForFiling ? "Abrir peticao aprovada" : "Abrir peticao para revisar"}
                     </Link>
                   ) : null}
                 </div>
@@ -1026,6 +1028,12 @@ export function ClientCockpitFrame({
               <div className="detail-subpanel p-5">
                 <p className="text-sm leading-7 text-slate-200">{peticoesSummary}</p>
                 {peticoesSources.length ? <p className="mt-3 text-xs text-slate-400">Fontes: {peticoesSources.join(" | ")}</p> : null}
+                <div className="mt-4 detail-soft-row px-4 py-4 text-sm text-slate-300">
+                  Estado de aprovacao:{" "}
+                  <span className="font-semibold text-white">
+                    {petitionApprovedForFiling ? "Pronta para handoff de distribuicao" : "Revisao humana pendente"}
+                  </span>
+                </div>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">Fatos: montados automaticamente a partir do caso e dos documentos.</div>
                   <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">Fundamentos: ancorados em BACEN, abusividades e tese sugerida.</div>

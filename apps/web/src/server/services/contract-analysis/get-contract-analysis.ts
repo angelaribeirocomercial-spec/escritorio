@@ -12,6 +12,7 @@ import { syncDetectedAbusesForAnalysis } from "@/server/services/contract-analys
 
 type ContractAnalysisRow = {
   id: string;
+  case_id: string | null;
   document_id: string;
   rate_label: string;
   cet_label: string;
@@ -26,6 +27,12 @@ type ContractAnalysisRow = {
   procedural_risk: ContractAnalysisRecord["proceduralRisk"];
   suggested_requests: string[] | null;
   executive_summary: string;
+  calculation_snapshot: Record<string, unknown> | null;
+  bacen_snapshot: Record<string, unknown> | null;
+  strategic_snapshot: Record<string, unknown> | null;
+  petition_snapshot: Record<string, unknown> | null;
+  approved_for_filing: boolean | null;
+  synced_at: string | null;
 };
 
 type ContractAnalysisDossier = {
@@ -68,9 +75,14 @@ function formatBasisPoints(value: number) {
   return `${value.toFixed(2).replace(".", ",")} p.p.`;
 }
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 function mapContractAnalysisRow(row: ContractAnalysisRow): ContractAnalysisRecord {
   return {
     id: row.id,
+    caseId: row.case_id ?? undefined,
     documentId: row.document_id,
     rateLabel: row.rate_label,
     cetLabel: row.cet_label,
@@ -84,12 +96,19 @@ function mapContractAnalysisRow(row: ContractAnalysisRow): ContractAnalysisRecor
     suggestedThesis: row.suggested_thesis,
     proceduralRisk: row.procedural_risk,
     suggestedRequests: row.suggested_requests ?? [],
-    executiveSummary: row.executive_summary
+    executiveSummary: row.executive_summary,
+    calculationSnapshot: row.calculation_snapshot ?? undefined,
+    bacenSnapshot: row.bacen_snapshot ?? undefined,
+    strategicSnapshot: row.strategic_snapshot ?? undefined,
+    petitionSnapshot: row.petition_snapshot ?? undefined,
+    approvedForFiling: row.approved_for_filing ?? undefined,
+    syncedAt: row.synced_at ?? undefined
   };
 }
 
 const CONTRACT_ANALYSIS_SELECT = `
   id,
+  case_id,
   document_id,
   rate_label,
   cet_label,
@@ -103,7 +122,13 @@ const CONTRACT_ANALYSIS_SELECT = `
   suggested_thesis,
   procedural_risk,
   suggested_requests,
-  executive_summary
+  executive_summary,
+  calculation_snapshot,
+  bacen_snapshot,
+  strategic_snapshot,
+  petition_snapshot,
+  approved_for_filing,
+  synced_at
 `;
 
 const CONTRACT_ANALYSIS_DOCUMENT_TYPES = new Set(["Contrato bancario", "CCB"]);
@@ -440,40 +465,58 @@ export async function getContractAnalysisWorkspace(
     bankName: bankingCase.bankName,
     documentType: selectedDocument.documentType
   });
+  const persistedBacenSnapshot = isObjectRecord(analysis.bacenSnapshot) ? analysis.bacenSnapshot : null;
+  const persistedCalculationSnapshot = isObjectRecord(analysis.calculationSnapshot)
+    ? analysis.calculationSnapshot
+    : null;
+  const persistedStrategicSnapshot = isObjectRecord(analysis.strategicSnapshot)
+    ? analysis.strategicSnapshot
+    : null;
+  const persistedPetitionSnapshot = isObjectRecord(analysis.petitionSnapshot)
+    ? analysis.petitionSnapshot
+    : null;
   const bacenConsultation = await getBcbSgsConsultation(
     selectedDocument.documentType === "CCB" ? "1" : "433"
   );
-  const bacenComparisonLabel = getBacenComparisonLabel({
-    analysis,
-    consultationStatus: bacenConsultation.status
-  });
+  const bacenComparisonLabel =
+    typeof persistedBacenSnapshot?.classificationLabel === "string"
+      ? persistedBacenSnapshot.classificationLabel
+      : getBacenComparisonLabel({
+          analysis,
+          consultationStatus: bacenConsultation.status
+        });
   const detectedAbuses = await syncDetectedAbusesForAnalysis({
     analysis,
     caseId: bankingCase.id,
     contractId: selectedDocument.id
   });
-  const calculationMemory = getBankingRevisionalCalculation(
-    calculationParams,
-    selectedDocument.id === "doc-004"
-      ? {
-          financedAmount: 248000,
-          installmentCount: 21,
-          contractedInstallment: 8420,
-          chargedInstallment: 10185,
-          targetReductionPercent: 21.8,
-          basis:
-            "Estimativa preliminar com expurgo de capitalizacao mensal e de custos agregados de baixa transparencia."
-        }
-      : {
-          financedAmount: 68400,
-          installmentCount: 29,
-          contractedInstallment: 1842,
-          chargedInstallment: 2214,
-          targetReductionPercent: 27.8,
-          basis:
-            "Estimativa preliminar com exclusao de seguro embutido, readequacao do CET e afastamento de encargos cumulativos."
-        }
-  );
+  const calculationMemory =
+    persistedCalculationSnapshot &&
+    isObjectRecord(persistedCalculationSnapshot.labels) &&
+    typeof persistedCalculationSnapshot.basis === "string"
+      ? (persistedCalculationSnapshot as ReturnType<typeof getBankingRevisionalCalculation>)
+      : getBankingRevisionalCalculation(
+          calculationParams,
+          selectedDocument.id === "doc-004"
+            ? {
+                financedAmount: 248000,
+                installmentCount: 21,
+                contractedInstallment: 8420,
+                chargedInstallment: 10185,
+                targetReductionPercent: 21.8,
+                basis:
+                  "Estimativa preliminar com expurgo de capitalizacao mensal e de custos agregados de baixa transparencia."
+              }
+            : {
+                financedAmount: 68400,
+                installmentCount: 29,
+                contractedInstallment: 1842,
+                chargedInstallment: 2214,
+                targetReductionPercent: 27.8,
+                basis:
+                  "Estimativa preliminar com exclusao de seguro embutido, readequacao do CET e afastamento de encargos cumulativos."
+              }
+        );
   const caseDossier = getCaseDossier({
     selectedDocument,
     client,
@@ -483,7 +526,22 @@ export async function getContractAnalysisWorkspace(
     calculationMemory,
     detectedAbuses
   });
-  const marketRateSource = bacenConsultation.status === "consulted" ? bacenConsultation.payload.items[0] : null;
+  const marketRateSource =
+    persistedBacenSnapshot &&
+    typeof persistedBacenSnapshot.referenceRateLabel === "string"
+      ? {
+          label:
+            typeof persistedBacenSnapshot.sourceLabel === "string"
+              ? persistedBacenSnapshot.sourceLabel
+              : "Referencia BACEN persistida",
+          value: persistedBacenSnapshot.referenceRateLabel
+        }
+      : bacenConsultation.status === "consulted"
+        ? {
+            label: bacenConsultation.payload.items[0]?.label ?? "Serie BACEN",
+            value: bacenConsultation.payload.items[0]?.value ?? ""
+          }
+        : null;
   const contractRatePercent = parsePercentLabel(analysis.rateLabel);
   const marketRatePercent = parsePercentLabel(marketRateSource?.value ?? "");
   const rateDifference =
@@ -539,9 +597,36 @@ export async function getContractAnalysisWorkspace(
     }
   ];
   const bacenSummary =
-    bacenConsultation.status === "consulted"
-      ? `Taxa contratual ${analysis.rateLabel} contra media BACEN ${marketRateSource?.value ?? "indisponivel"}.`
-      : "Comparacao BACEN mantida em boundary controlado enquanto a consulta automatica nao retorna no formato esperado.";
+    typeof persistedBacenSnapshot?.summary === "string"
+      ? persistedBacenSnapshot.summary
+      : bacenConsultation.status === "consulted"
+        ? `Taxa contratual ${analysis.rateLabel} contra media BACEN ${marketRateSource?.value ?? "indisponivel"}.`
+        : "Comparacao BACEN mantida em boundary controlado enquanto a consulta automatica nao retorna no formato esperado.";
+  const strategicSummary =
+    typeof persistedStrategicSnapshot?.executiveSummary === "string"
+      ? persistedStrategicSnapshot.executiveSummary
+      : analysis.executiveSummary;
+  const strategicThesis =
+    typeof persistedStrategicSnapshot?.suggestedThesis === "string"
+      ? persistedStrategicSnapshot.suggestedThesis
+      : analysis.suggestedThesis;
+  const persistedRequests =
+    Array.isArray(persistedStrategicSnapshot?.suggestedRequests) &&
+    persistedStrategicSnapshot.suggestedRequests.every((item) => typeof item === "string")
+      ? (persistedStrategicSnapshot.suggestedRequests as string[])
+      : analysis.suggestedRequests;
+  const petitionReviewChecklist =
+    Array.isArray(persistedPetitionSnapshot?.reviewChecklist) &&
+    persistedPetitionSnapshot.reviewChecklist.every((item) => typeof item === "string")
+      ? (persistedPetitionSnapshot.reviewChecklist as string[])
+      : [];
+
+  const resolvedAnalysis = {
+    ...analysis,
+    executiveSummary: strategicSummary,
+    suggestedThesis: strategicThesis,
+    suggestedRequests: persistedRequests
+  };
 
   return {
     contractDocuments: contractDocuments.map((document) => ({
@@ -550,7 +635,7 @@ export async function getContractAnalysisWorkspace(
       documentType: document.documentType
     })),
     selectedDocument,
-    analysis,
+    analysis: resolvedAnalysis,
     client,
     bankingCase,
     scenarioProfile,
@@ -561,20 +646,28 @@ export async function getContractAnalysisWorkspace(
         marketRateSource
           ? `${marketRateSource.label}: ${marketRateSource.value}`
           : "Referencia BACEN indisponivel no momento",
-      modalityLabel: bacenConsultation.kind === "sgs" ? "SGS / taxa base" : "Referencia BACEN",
+      modalityLabel:
+        typeof persistedBacenSnapshot?.modalityLabel === "string"
+          ? persistedBacenSnapshot.modalityLabel
+          : bacenConsultation.kind === "sgs"
+            ? "SGS / taxa base"
+            : "Referencia BACEN",
       consultedPeriodLabel:
-        bacenConsultation.status === "consulted" ? bacenConsultation.consultedAt?.slice(0, 10) ?? "Hoje" : "Indisponivel",
+        typeof persistedBacenSnapshot?.competenceLabel === "string"
+          ? persistedBacenSnapshot.competenceLabel
+          : bacenConsultation.status === "consulted"
+            ? bacenConsultation.consultedAt?.slice(0, 10) ?? "Hoje"
+            : "Indisponivel",
       differencePercentLabel:
-        rateDifference !== null
+        typeof persistedBacenSnapshot?.differenceLabel === "string"
+          ? persistedBacenSnapshot.differenceLabel
+          : rateDifference !== null
           ? `${rateDifference >= 0 ? "+" : ""}${formatBasisPoints(rateDifference)} ${
               relativeDifference !== null ? `(${relativeDifference >= 0 ? "+" : ""}${formatPercentNumber(relativeDifference)})` : ""
             }`.trim()
           : "Nao calculado",
       classificationLabel: bacenComparisonLabel,
-      summary:
-        bacenConsultation.status === "consulted"
-          ? `Comparacao assistida com ${bacenConsultation.payload.title.toLowerCase()} para ancorar a leitura revisional do caso.`
-          : "Comparacao BACEN mantida em boundary controlado enquanto a consulta automatica nao retorna no formato esperado."
+      summary: bacenSummary
     },
     caseCalculations: {
       scenarioDetected: {
@@ -615,16 +708,27 @@ export async function getContractAnalysisWorkspace(
     bacenDossier: {
       contractDetectedLabel: `${selectedDocument.documentType} | ${selectedDocument.fileName}`,
       referenceDateLabel:
-        bacenConsultation.status === "consulted"
-          ? bacenConsultation.consultedAt?.slice(0, 10) ?? "Hoje"
-          : "Indisponivel",
+        typeof persistedBacenSnapshot?.competenceLabel === "string"
+          ? persistedBacenSnapshot.competenceLabel
+          : bacenConsultation.status === "consulted"
+            ? bacenConsultation.consultedAt?.slice(0, 10) ?? "Hoje"
+            : "Indisponivel",
       contractRateLabel: analysis.rateLabel,
       marketRateLabel: marketRateSource?.value ?? "Referencia BACEN indisponivel",
       marketRateSourceLabel: marketRateSource?.label ?? "Serie BACEN indisponivel",
-      modalityLabel: bacenConsultation.kind === "sgs" ? "SGS / taxa base" : "Referencia BACEN",
+      modalityLabel:
+        typeof persistedBacenSnapshot?.modalityLabel === "string"
+          ? persistedBacenSnapshot.modalityLabel
+          : bacenConsultation.kind === "sgs"
+            ? "SGS / taxa base"
+            : "Referencia BACEN",
       comparisonSummary: bacenSummary,
       differenceLabel:
-        rateDifference !== null ? `${rateDifference >= 0 ? "+" : ""}${formatBasisPoints(rateDifference)}` : "Nao calculado",
+        typeof persistedBacenSnapshot?.differenceLabel === "string"
+          ? persistedBacenSnapshot.differenceLabel
+          : rateDifference !== null
+            ? `${rateDifference >= 0 ? "+" : ""}${formatBasisPoints(rateDifference)}`
+            : "Nao calculado",
       legalAlert:
         bacenComparisonLabel === "Abusividade relevante"
           ? "Alerta juridico alto: a distancia para a media e os sinais contratuais sustentam revisao forte."
@@ -664,12 +768,14 @@ export async function getContractAnalysisWorkspace(
         detail: `Neste tipo de operacao, a Clara prioriza ${scenarioProfile.thesisFocus.join(", ")}.`
       }
     ],
-    revisionalRequests: [
-      "Tutela para conter cobranca excessiva e impedir agravamento da mora",
-      "Revisao das clausulas remuneratorias e recalcule das parcelas",
-      "Recomposicao do saldo contratual sem encargos abusivos",
-      "Compensacao ou repeticao do indebito, quando a prova economica estiver madura"
-    ],
+    revisionalRequests: persistedRequests.length
+      ? persistedRequests
+      : [
+          "Tutela para conter cobranca excessiva e impedir agravamento da mora",
+          "Revisao das clausulas remuneratorias e recalcule das parcelas",
+          "Recomposicao do saldo contratual sem encargos abusivos",
+          "Compensacao ou repeticao do indebito, quando a prova economica estiver madura"
+        ],
     proofStrategy: [
       "Separar contrato, aditivos, proposta comercial e quadro-resumo da operacao",
       "Montar memoria minima do excesso com parcelas contratadas, cobradas e revisadas",
@@ -682,7 +788,29 @@ export async function getContractAnalysisWorkspace(
       "Tutela para limitar cobranca ou readequar a parcela",
       "Pedidos revisionais e eventual repeticao de indebito"
     ],
-    caseDossier
+    caseDossier: {
+      clara: {
+        ...caseDossier.clara,
+        summary:
+          typeof persistedStrategicSnapshot?.executiveSummary === "string"
+            ? persistedStrategicSnapshot.executiveSummary
+            : caseDossier.clara.summary
+      },
+      laudo: {
+        ...caseDossier.laudo,
+        summary: strategicSummary
+      },
+      peticoes: {
+        ...caseDossier.peticoes,
+        summary:
+          typeof persistedPetitionSnapshot?.factualSummary === "string"
+            ? `${persistedPetitionSnapshot.factualSummary} Revisao obrigatoria: ${petitionReviewChecklist.join("; ")}.`
+            : caseDossier.peticoes.summary,
+        sources: petitionReviewChecklist.length
+          ? [...caseDossier.peticoes.sources, "revisao humana obrigatoria"]
+          : caseDossier.peticoes.sources
+      }
+    }
   };
 }
 

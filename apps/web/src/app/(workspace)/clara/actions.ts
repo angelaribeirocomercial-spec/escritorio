@@ -1,9 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 import {
   createClaraRecord,
+  getClaraRecord,
   updateClaraRecordContent,
   updateClaraRecordReviewNote,
   updateClaraRecordWorkflowStatus
@@ -56,6 +58,35 @@ export async function updateClaraWorkflowStatusAction(formData: FormData) {
     recordId,
     workflowStatus as "created" | "reviewed" | "completed"
   );
+
+  const record = await getClaraRecord(recordId);
+
+  if (record?.kind === "text-draft") {
+    const payload = record.payload as {
+      documentId?: string;
+      pieceLabel?: string;
+      caseId?: string;
+    };
+
+    if (
+      payload.documentId &&
+      payload.caseId &&
+      ["acao-revisional", "peticao-inicial"].includes(payload.pieceLabel ?? "")
+    ) {
+      const supabase = getSupabaseAdminClient();
+      await supabase
+        .from("contract_analyses")
+        .update({
+          approved_for_filing: workflowStatus === "completed",
+          petition_snapshot: {
+            reviewState: workflowStatus,
+            approvedAt: workflowStatus === "completed" ? new Date().toISOString() : null
+          }
+        })
+        .eq("document_id", payload.documentId)
+        .eq("case_id", payload.caseId);
+    }
+  }
 
   redirect(returnPath);
 }

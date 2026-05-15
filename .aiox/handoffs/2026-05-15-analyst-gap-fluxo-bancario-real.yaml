@@ -1,0 +1,30 @@
+handoff:
+  date: 2026-05-15
+  from: "@analyst"
+  to:
+    - "@sm"
+    - "@po"
+    - "@architect"
+    - "@dev"
+  branch: "feature/clara-hardening"
+  title: "Gap do fluxo bancario real apos intake, peticao e distribuicao"
+  summary:
+    - "O onboarding, o dossie do caso e o registro oficial pos-distribuicao ja existem como espinha dorsal do produto."
+    - "O principal gap restante esta na cadeia automatica documento -> OCR persistido -> calculo juridico -> BACEN real -> estrategia -> laudo -> peticao."
+    - "Acompanhamento processual pos-distribuicao ainda precisa evoluir de registro inicial para esteira juridica continua com fases, andamentos e pecas cabiveis."
+  implemented_now:
+    - "Cadastro do cliente, criacao do caso e upload documental real."
+    - "Dossie do caso com abas de visao geral, documentos, calculos, BACEN, estrategico, laudo, peticoes e Clara."
+    - "Handoff de distribuicao e registro oficial do processo com trilha auditavel."
+  gaps:
+    - "OCR estruturado ainda nao e persistido automaticamente a partir do upload."
+    - "Calculo juridico ainda nao opera integralmente sobre extracao persistida real."
+    - "BACEN ainda nao esta modelado por modalidade e competencia do contrato."
+    - "Chance de exito, risco e resumo estrategico ainda nao saem de um score juridico consolidado do caso."
+    - "Laudo e peticao ainda precisam ser reancorados em dossie persistido confiavel."
+    - "Acompanhamento processual bancario ainda nao cobre fases, contestacao, manifestacoes, recursos e demais pecas supervenientes."
+recommended_next_steps:
+  - "Abrir a cadeia 18.36 a 18.41 em ordem de dependencia."
+  - "Nao implementar peticao definitiva nem acompanhamento processual antes de fechar OCR, calculo e BACEN reais."
+  - "Preservar a revisao humana obrigatoria antes de distribuicao e antes de qualquer peca superveniente."
+consumed: false

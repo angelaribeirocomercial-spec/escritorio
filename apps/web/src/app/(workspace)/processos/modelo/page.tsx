@@ -325,6 +325,32 @@ export default async function ProcessModelPage() {
               }
             ]
           }}
+          processFilings={{
+            formAction: "#",
+            processId: process.id,
+            caseId: bankingCase.id,
+            clientId: relatedClientId,
+            records: [
+              {
+                id: "modelo-fil-1",
+                kind: "peticao_inicial",
+                title: "Peticao inicial protocolada",
+                status: "filed",
+                summary: "A peca inicial foi revisada, aprovada e utilizada na distribuicao manual do processo.",
+                nextAction: "Aguardar citacao e monitorar eventual contestacao.",
+                updatedAt: "2026-05-05T13:45:00.000Z"
+              },
+              {
+                id: "modelo-fil-2",
+                kind: "manifestacao",
+                title: "Manifestacao superveniente preparada",
+                status: "draft",
+                summary: "Registro canonico de peca superveniente para mostrar o acompanhamento pos-distribuicao.",
+                nextAction: "Acompanhar o proximo andamento e revisar o cabimento da resposta.",
+                updatedAt: "2026-05-06T10:30:00.000Z"
+              }
+            ]
+          }}
           latestTimeline={latestTimeline}
           linkedUpdates={[]}
           process={process}

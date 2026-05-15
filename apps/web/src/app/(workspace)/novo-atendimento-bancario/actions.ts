@@ -17,6 +17,7 @@ import {
   TENANT_DOCUMENT_BUCKET,
   uploadTenantDocument
 } from "@/server/services/documents/upload-tenant-document";
+import { syncCaseDossierFromDocument } from "@/server/services/contract-analysis/sync-case-dossier-from-document";
 
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -438,6 +439,7 @@ export async function createBankingIntakeAction(formData: FormData) {
   ];
   const uploadedDocumentIds: string[] = [];
   const uploadedStoragePaths: string[] = [];
+  const uploadedDocuments: Awaited<ReturnType<typeof uploadTenantDocument>>[] = [];
 
   const supabase = getSupabaseAdminClient();
 
@@ -534,6 +536,7 @@ export async function createBankingIntakeAction(formData: FormData) {
 
       uploadedDocumentIds.push(uploadedDocument.documentId);
       uploadedStoragePaths.push(uploadedDocument.storagePath);
+      uploadedDocuments.push(uploadedDocument);
     }
 
     const uploadedDocumentLabels = DOCUMENT_SLOTS.filter((slot) => readFile(formData, slot.field) !== null).map(
@@ -618,6 +621,26 @@ export async function createBankingIntakeAction(formData: FormData) {
 
     if (updateClientError) {
       throw new Error(`Nao foi possivel atualizar o cliente com o onboarding completo: ${updateClientError.message}`);
+    }
+
+    for (const uploadedDocument of uploadedDocuments) {
+      await syncCaseDossierFromDocument({
+        supabase,
+        tenantId: session.workspace.tenant.id,
+        document: uploadedDocument.document,
+        client: {
+          id: clientId,
+          fullName: resolvedFullName,
+          bankName: resolvedBankName
+        },
+        bankingCase: {
+          id: caseId,
+          title: caseTitle,
+          bankName,
+          niche,
+          claimType: buildClaimType(niche)
+        }
+      });
     }
   } catch (error) {
     await supabase.from("tasks").delete().eq("tenant_id", session.workspace.tenant.id).eq("case_id", caseId);

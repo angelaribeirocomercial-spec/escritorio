@@ -179,3 +179,64 @@ export async function registerOfficialDistributionAction(formData: FormData) {
   revalidatePath("/processos");
   redirect(buildReturnPath(processId, { distributionSaved: "1" }));
 }
+
+export async function registerProcessFilingAction(formData: FormData) {
+  const session = await requireWorkspaceSession();
+  const processId = readText(formData, "processId");
+  const caseId = readText(formData, "caseId");
+  const clientId = readText(formData, "clientId");
+  const kind = readText(formData, "kind");
+  const title = readText(formData, "title");
+  const status = readText(formData, "status");
+  const summary = readText(formData, "summary");
+  const nextAction = readText(formData, "nextAction");
+
+  if (!processId || !caseId || !clientId || !kind || !title || !status) {
+    redirect(buildReturnPath(processId || "", { filingError: "Preencha tipo, titulo e status da peca." }));
+  }
+
+  if (
+    ![
+      "peticao_inicial",
+      "contestacao",
+      "replica",
+      "manifestacao",
+      "recurso",
+      "cumprimento_sentenca",
+      "peticao_intercorrente"
+    ].includes(kind)
+  ) {
+    redirect(buildReturnPath(processId, { filingError: "Tipo de peca invalido." }));
+  }
+
+  if (!["draft", "in_review", "approved", "filed", "fulfilled"].includes(status)) {
+    redirect(buildReturnPath(processId, { filingError: "Status da peca invalido." }));
+  }
+
+  const supabase = getSupabaseAdminClient();
+  const { error } = await supabase.from("process_filings").insert({
+    id: `fil-${randomUUID()}`,
+    tenant_id: session.workspace.tenant.id,
+    process_id: processId,
+    case_id: caseId,
+    client_id: clientId,
+    kind,
+    title,
+    status,
+    summary: summary || "Peca processual registrada manualmente no acompanhamento do processo.",
+    next_action:
+      nextAction || "Conferir o andamento correspondente e revisar a proxima medida cabivel."
+  });
+
+  if (error) {
+    redirect(
+      buildReturnPath(processId, {
+        filingError: `Nao foi possivel registrar a peca processual: ${error.message}`
+      })
+    );
+  }
+
+  revalidatePath(`/processos/${processId}`);
+  revalidatePath("/processos");
+  redirect(buildReturnPath(processId, { filingSaved: "1" }));
+}

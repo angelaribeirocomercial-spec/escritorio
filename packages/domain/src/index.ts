@@ -285,6 +285,13 @@ export interface ProceduralDeadlineRecord {
 }
 
 export type DocumentAiStatus = "not_analyzed" | "analyzed" | "needs_review";
+export type DocumentReviewStatus = "pending" | "reviewed" | "corrected";
+
+export interface DocumentStructuredExtractionField {
+  value: string;
+  confidence: "low" | "medium" | "high";
+  sourceLabel: string;
+}
 
 export interface DocumentRecord {
   id: string;
@@ -305,6 +312,13 @@ export interface DocumentRecord {
   storageMimeType: string;
   storageSizeBytes: number;
   actions: readonly string[];
+  structuredExtraction?: Record<string, DocumentStructuredExtractionField>;
+  extractionSourceTrace?: Record<string, unknown>;
+  extractionError?: string;
+  extractedAt?: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+  reviewStatus?: DocumentReviewStatus;
 }
 
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
@@ -368,6 +382,40 @@ export interface ContractAnalysisRecord {
   proceduralRisk: "low" | "medium" | "high";
   suggestedRequests: readonly string[];
   executiveSummary: string;
+  caseId?: string;
+  calculationSnapshot?: Record<string, unknown>;
+  bacenSnapshot?: Record<string, unknown>;
+  strategicSnapshot?: Record<string, unknown>;
+  petitionSnapshot?: Record<string, unknown>;
+  approvedForFiling?: boolean;
+  syncedAt?: string;
+}
+
+export type ProcessFilingKind =
+  | "peticao_inicial"
+  | "contestacao"
+  | "replica"
+  | "manifestacao"
+  | "recurso"
+  | "cumprimento_sentenca"
+  | "peticao_intercorrente";
+
+export type ProcessFilingStatus = "draft" | "in_review" | "approved" | "filed" | "fulfilled";
+
+export interface ProcessFilingRecord {
+  id: string;
+  processId: string;
+  caseId: string;
+  clientId: string;
+  kind: ProcessFilingKind;
+  title: string;
+  status: ProcessFilingStatus;
+  sourceMinutaId?: string;
+  linkedUpdateId?: string;
+  summary: string;
+  nextAction: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type FinancialEntryKind = "income" | "expense" | "transfer";

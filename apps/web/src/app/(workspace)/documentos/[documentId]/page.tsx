@@ -5,6 +5,7 @@ import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { ClaraContextActions } from "@/components/layout/clara-context-actions";
 import { WorkspacePage } from "@/components/layout/workspace-page";
+import { reviewDocumentExtractionAction } from "@/app/(workspace)/documentos/[documentId]/actions";
 import { getDocumentFileSignedUrl } from "@/server/services/documents/get-document-file-url";
 import { getDocumentById } from "@/server/services/documents/get-documents";
 
@@ -18,6 +19,22 @@ function aiStatusLabel(status: string) {
       return "Aguardando OCR";
   }
 }
+
+const EXTRACTION_FIELD_LABELS: Array<[string, string]> = [
+  ["banco", "Banco"],
+  ["modalidade", "Modalidade"],
+  ["competencia", "Competencia"],
+  ["taxaContrato", "Taxa do contrato"],
+  ["cet", "CET"],
+  ["parcelas", "Parcelas"],
+  ["valorFinanciado", "Valor financiado"],
+  ["parcelaContratada", "Parcela contratada"],
+  ["parcelaCobrada", "Parcela cobrada"],
+  ["seguro", "Seguro"],
+  ["tarifas", "Tarifas"],
+  ["permanencia", "Comissao de permanencia"],
+  ["multa", "Multa"]
+];
 
 export default async function DocumentDetailPage({
   params
@@ -66,6 +83,8 @@ export default async function DocumentDetailPage({
     bucket: document.storageBucket,
     path: document.storagePath
   });
+  const extractionFields = document.structuredExtraction ?? {};
+  const extractionFormAction = reviewDocumentExtractionAction as unknown as string;
 
   return (
     <WorkspacePage
@@ -159,12 +178,73 @@ export default async function DocumentDetailPage({
               </dd>
             </div>
             <div className="detail-subpanel p-4 sm:col-span-2">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status de revisao</dt>
+              <dd className="mt-2 text-sm leading-6 text-slate-200">
+                {document.reviewStatus ?? "pending"} | {document.reviewNotes || "Sem observacoes registradas"}
+              </dd>
+            </div>
+            <div className="detail-subpanel p-4 sm:col-span-2">
               <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Storage</dt>
               <dd className="mt-2 break-all text-sm text-slate-200">
                 {document.storagePath || "Arquivo ainda nao enviado ao storage"}
               </dd>
             </div>
           </dl>
+        </article>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        <article className="detail-panel p-5">
+          <p className="text-sm font-semibold text-white">Leitura estruturada persistida</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {EXTRACTION_FIELD_LABELS.map(([fieldKey, label]) => (
+              <div key={fieldKey} className="detail-subpanel p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+                <p className="mt-2 text-sm text-slate-100">
+                  {extractionFields[fieldKey]?.value || "Nao identificado"}
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  {extractionFields[fieldKey]?.sourceLabel || "Sem origem registrada"}
+                </p>
+              </div>
+            ))}
+          </div>
+          {document.extractionError ? (
+            <div className="mt-4 rounded-[4px] border border-fuchsia-300/20 bg-fuchsia-300/10 px-4 py-3 text-sm text-fuchsia-100">
+              {document.extractionError}
+            </div>
+          ) : null}
+        </article>
+
+        <article className="detail-panel p-5">
+          <p className="text-sm font-semibold text-white">Conferencia humana</p>
+          <form action={extractionFormAction} className="mt-4 space-y-4">
+            <input name="documentId" type="hidden" value={document.id} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              {EXTRACTION_FIELD_LABELS.map(([fieldKey, label]) => (
+                <label key={fieldKey} className="block">
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</span>
+                  <input
+                    className="mj-model-input mt-2 w-full px-3 py-2 text-sm outline-none"
+                    defaultValue={extractionFields[fieldKey]?.value || ""}
+                    name={fieldKey}
+                    type="text"
+                  />
+                </label>
+              ))}
+            </div>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Notas da revisao</span>
+              <textarea
+                className="mj-model-input mt-2 min-h-[7rem] w-full px-3 py-2 text-sm outline-none"
+                defaultValue={document.reviewNotes || ""}
+                name="reviewNotes"
+              />
+            </label>
+            <button className="detail-link-button px-4 py-3 text-sm font-semibold" type="submit">
+              Confirmar leitura e recalcular dossie
+            </button>
+          </form>
         </article>
       </section>
 

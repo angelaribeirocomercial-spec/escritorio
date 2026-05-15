@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DocumentRecord } from "@lexia/domain";
 
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -33,6 +34,7 @@ export type TenantDocumentUploadResult = {
   documentId: string;
   storagePath: string;
   uploadedAt: string;
+  document: DocumentRecord;
 };
 
 function slugifyFileName(fileName: string) {
@@ -119,6 +121,29 @@ export async function uploadTenantDocument(
   return {
     documentId,
     storagePath,
-    uploadedAt
+    uploadedAt,
+    document: {
+      id: documentId,
+      clientId: input.clientId,
+      caseId: input.caseId,
+      fileName: input.file.name,
+      originalFileName: input.file.name,
+      documentType: input.documentType,
+      category: input.category,
+      tags: input.tags ?? [],
+      aiStatus: "not_analyzed",
+      summary: input.summary,
+      pageCount: 0,
+      uploadedAt,
+      previewLabel: "Aguardando leitura OCR e revisao humana.",
+      storageBucket: TENANT_DOCUMENT_BUCKET,
+      storagePath,
+      storageMimeType: mimeType,
+      storageSizeBytes: input.file.size,
+      actions: input.actions ?? ["Ler com OCR", "Classificar documento", "Acionar Clara"],
+      structuredExtraction: {},
+      extractionSourceTrace: {},
+      reviewStatus: "pending"
+    }
   };
 }

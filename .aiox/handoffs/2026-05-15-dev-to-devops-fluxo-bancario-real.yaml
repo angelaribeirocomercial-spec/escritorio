@@ -1,0 +1,36 @@
+handoff:
+  id: "2026-05-15-dev-to-devops-fluxo-bancario-real"
+  date: "2026-05-15"
+  from: "@dev"
+  to: "@devops"
+  branch: "feature/clara-hardening"
+  scope:
+    stories:
+      - "18.36"
+      - "18.37"
+      - "18.38"
+      - "18.39"
+      - "18.40"
+      - "18.41"
+    summary: "Materializa o dossie bancario real desde a extracao estruturada persistida ate o acompanhamento processual com pecas supervenientes."
+  changes:
+    - "Persistencia de OCR estruturado e revisao humana por documento."
+    - "Snapshots persistidos de calculo, BACEN, estrategia e peticao no dossie."
+    - "Aprovacao da peticao refletida no dossie e na Clara."
+    - "Cockpit processual com pecas supervenientes, fases e proximo passo."
+    - "Migration 0019 para suporte ao dossie real e process_filings."
+  quality_gates:
+    lint: "pass"
+    typecheck: "pass"
+    test: "pass"
+    build: "pass"
+  qa:
+    status: "pass_with_fix"
+    notes:
+      - "Corrigido bug no CET derivado quando o documento nao trazia o campo explicitamente."
+  publish:
+    requires_migration: true
+    migration: "supabase/migrations/0019_case_dossier_realization.sql"
+    notes:
+      - "Nao incluir apps/web/tsconfig.json nem apps/web/tsconfig.tsbuildinfo no commit."
+      - "Preservar handoffs antigos e alteracoes paralelas fora do pacote com stash temporario antes do push."

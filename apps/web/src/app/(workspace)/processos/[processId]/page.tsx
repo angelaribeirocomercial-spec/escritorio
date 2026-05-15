@@ -2,7 +2,10 @@ import { notFound } from "next/navigation";
 import { WorkspaceStatePanel } from "@lexia/ui";
 import { getBankingNicheLabel } from "@lexia/domain";
 
-import { registerOfficialDistributionAction } from "@/app/(workspace)/processos/[processId]/actions";
+import {
+  registerOfficialDistributionAction,
+  registerProcessFilingAction
+} from "@/app/(workspace)/processos/[processId]/actions";
 import { ClaraContextActions } from "@/components/layout/clara-context-actions";
 import { ProcessCockpitFrame } from "@/components/layout/process-cockpit-frame";
 import { WorkspacePage } from "@/components/layout/workspace-page";
@@ -14,6 +17,7 @@ import {
 import { getClaraProcessArtifact } from "@/server/services/clara/get-clara-artifacts";
 import { getDocumentsByCaseId } from "@/server/services/documents/get-documents";
 import { getProcessById } from "@/server/services/processes/get-processes";
+import { getProcessFilingsByProcessId } from "@/server/services/process-filings/get-process-filings";
 import { getProceduralUpdatesByProcessId } from "@/server/services/procedural-updates/get-procedural-updates";
 
 function statusLabel(status: string) {
@@ -176,6 +180,8 @@ export default async function ProcessDetailPage({
     case_context?: string;
     distributionSaved?: string;
     distributionError?: string;
+    filingSaved?: string;
+    filingError?: string;
     uploaded?: string;
   };
 }) {
@@ -212,6 +218,7 @@ export default async function ProcessDetailPage({
   }
 
   const linkedUpdates = await getProceduralUpdatesByProcessId(params.processId);
+  const processFilings = await getProcessFilingsByProcessId(params.processId);
   const caseDocuments = await getDocumentsByCaseId(processItem.caseId);
   const claraRecord = await getClaraRecord(searchParams?.record);
   const relatedClaraRecords = (await listClaraRecords(80)).filter((record) => {
@@ -263,6 +270,7 @@ export default async function ProcessDetailPage({
     label: `${document.documentType} | ${document.fileName}`
   }));
   const distributionFormAction = registerOfficialDistributionAction as unknown as string;
+  const filingFormAction = registerProcessFilingAction as unknown as string;
   const postDistributionBankingCase = {
     amountInDispute: processItem.bankingCase.amountInDispute,
     bankName: processItem.bankingCase.bankName,
@@ -457,6 +465,15 @@ export default async function ProcessDetailPage({
                 ? "Comprovante anexado. Vincule-o no registro oficial abaixo."
                 : undefined,
           errorLabel: searchParams?.distributionError
+        }}
+        processFilings={{
+          formAction: filingFormAction,
+          processId: processItem.id,
+          caseId: processItem.caseId,
+          clientId: processItem.clientId,
+          successLabel: searchParams?.filingSaved === "1" ? "Peca processual registrada no acompanhamento." : undefined,
+          errorLabel: searchParams?.filingError,
+          records: processFilings
         }}
         relatedClaraRecordsCount={relatedClaraRecords.length}
       />

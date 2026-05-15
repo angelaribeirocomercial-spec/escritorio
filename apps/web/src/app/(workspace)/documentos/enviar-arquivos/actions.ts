@@ -15,6 +15,7 @@ import {
   MAX_TENANT_DOCUMENT_SIZE_BYTES,
   uploadTenantDocument
 } from "@/server/services/documents/upload-tenant-document";
+import { syncCaseDossierFromDocument } from "@/server/services/contract-analysis/sync-case-dossier-from-document";
 
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -70,6 +71,23 @@ export async function uploadDocumentAction(formData: FormData) {
     category,
     summary: summary || "Documento enviado pela interface e aguardando leitura OCR.",
     tags
+  });
+  await syncCaseDossierFromDocument({
+    supabase,
+    tenantId: session.workspace.tenant.id,
+    document: uploadedDocument.document,
+    client: {
+      id: bankingCase.client.id,
+      fullName: bankingCase.client.fullName,
+      bankName: bankingCase.client.bankName
+    },
+    bankingCase: {
+      id: bankingCase.id,
+      title: bankingCase.title,
+      bankName: bankingCase.bankName,
+      niche: bankingCase.niche,
+      claimType: bankingCase.claimType
+    }
   });
 
   const nextCaseLinkedDocuments = Array.from(

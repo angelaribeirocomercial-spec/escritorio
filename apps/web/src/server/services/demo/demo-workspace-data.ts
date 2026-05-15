@@ -6,6 +6,7 @@ import type {
   ClientRecord,
   DocumentRecord,
   JudicialProcessRecord,
+  ProcessFilingRecord,
   ProceduralUpdateRecord
 } from "@lexia/domain";
 
@@ -359,5 +360,35 @@ export const DEMO_PROCEDURAL_UPDATE_RECORDS: ProceduralUpdateRecord[] = [
       "Registrar proxima janela de leitura",
       "Atualizar cliente sobre distribuicao"
     ]
+  }
+];
+
+export const DEMO_PROCESS_FILING_RECORDS: ProcessFilingRecord[] = [
+  {
+    id: "fil-205-inicial",
+    processId: DEMO_PROCESS_ID,
+    caseId: DEMO_CASE_ID,
+    clientId: DEMO_CLIENT_ID,
+    kind: "peticao_inicial",
+    title: "Peticao inicial protocolada",
+    status: "filed",
+    sourceMinutaId: "draft-case-205-peticao-inicial",
+    summary: "Peticao inicial revisada, aprovada e utilizada no protocolo oficial do processo.",
+    nextAction: "Aguardar citacao e eventual contestacao.",
+    createdAt: "2026-05-05T13:00:00.000Z",
+    updatedAt: "2026-05-05T13:45:00.000Z"
+  },
+  {
+    id: "fil-205-contestacao",
+    processId: DEMO_PROCESS_ID,
+    caseId: DEMO_CASE_ID,
+    clientId: DEMO_CLIENT_ID,
+    kind: "contestacao",
+    title: "Resposta a contestacao do banco",
+    status: "draft",
+    summary: "Peca superveniente aberta para reagir a defesa do banco quando o andamento oficial chegar.",
+    nextAction: "Conferir o primeiro andamento util e preparar replica/manifestação.",
+    createdAt: "2026-05-06T10:30:00.000Z",
+    updatedAt: "2026-05-06T10:30:00.000Z"
   }
 ];
