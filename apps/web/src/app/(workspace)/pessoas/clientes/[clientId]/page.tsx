@@ -416,13 +416,13 @@ export default async function ClientDetailPage({
       }
     : null;
   const dossierTabs = [
-    { key: "visao-geral", label: "Visão geral" },
+    { key: "visao-geral", label: "Visao geral" },
     { key: "documentos", label: "Documentos" },
-    { key: "financeiro", label: "Cálculos" },
+    { key: "financeiro", label: "Calculos" },
     { key: "bacen", label: "Bacen" },
-    { key: "estrategico", label: "Estratégico" },
-    { key: "laudo", label: "Laudo" },
-    { key: "peticoes", label: "Petições" },
+    { key: "estrategico", label: "Estrategico" },
+    { key: "laudo", label: "Pericial (Laudo)" },
+    { key: "peticoes", label: "Peticoes" },
     { key: "clara", label: "Clara" }
   ] as const;
   return (

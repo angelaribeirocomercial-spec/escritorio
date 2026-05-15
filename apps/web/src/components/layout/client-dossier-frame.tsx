@@ -315,6 +315,47 @@ function automationLabel(state: "autonomous" | "assisted" | "blocked") {
   }
 }
 
+function getAutomationReadinessFallback(input: {
+  activeCase: ClientCockpitCase | null;
+  contractAnalysis: ClientCockpitContractAnalysis | null;
+  baseOverviewDocument: ClientCockpitDocument | null;
+}) {
+  if (input.contractAnalysis?.analysis.automationReadiness) {
+    return input.contractAnalysis.analysis.automationReadiness;
+  }
+
+  if (!input.activeCase) {
+    return {
+      state: "blocked" as const,
+      confidenceScore: 0,
+      confidenceLabel: "low" as const,
+      summary: "Ainda nao existe caso ativo suficiente para medir a automacao operacional.",
+      blockers: ["Abra ou vincule um caso para materializar o dossie."],
+      signals: []
+    };
+  }
+
+  if (input.baseOverviewDocument) {
+    return {
+      state: "assisted" as const,
+      confidenceScore: 45,
+      confidenceLabel: "low" as const,
+      summary: "O caso ja tem base documental, mas a confianca operacional ainda depende da consolidacao completa da analise.",
+      blockers: [],
+      signals: [`Documento-base presente: ${input.baseOverviewDocument.documentType}.`]
+    };
+  }
+
+  return {
+    state: "blocked" as const,
+    confidenceScore: 20,
+    confidenceLabel: "low" as const,
+    summary: "A confianca operacional continua bloqueada enquanto o caso nao recebe documento-base suficiente.",
+    blockers: ["Nenhum documento-base foi vinculado ao caso ativo."],
+    signals: []
+  };
+}
+
 const CONTRACT_ANALYSIS_DOCUMENT_TYPES = new Set(["Contrato bancario", "CCB"]);
 
 function isContractAnalysisDocument(documentType: string) {
@@ -424,10 +465,14 @@ export function ClientCockpitFrame({
     contractAnalysis?.caseDossier.peticoes.summary ?? "Peticoes automaticas indisponiveis no momento.";
   const peticoesSources = contractAnalysis?.caseDossier.peticoes.sources ?? [];
   const petitionApprovedForFiling = contractAnalysis?.analysis.approvedForFiling ?? false;
-  const automationReadiness = contractAnalysis?.analysis.automationReadiness ?? null;
   const laudoPdfHref = activeCase ? `/api/clientes/${client.id}/documentos-gerados/laudo/pdf?caseId=${activeCase.id}` : null;
   const baseOverviewDocument =
     caseDocuments.find((document) => isContractAnalysisDocument(document.documentType)) ?? caseDocuments[0] ?? null;
+  const automationReadiness = getAutomationReadinessFallback({
+    activeCase,
+    contractAnalysis,
+    baseOverviewDocument
+  });
   const baseOverviewState = baseOverviewDocument
     ? overviewStateFromDocumentStatus(baseOverviewDocument.aiStatus)
     : "pending";
@@ -603,26 +648,24 @@ export function ClientCockpitFrame({
           </div>
         </div>
 
-        {automationReadiness ? (
-          <div className={`rounded-[4px] border px-4 py-4 ${automationTone(automationReadiness.state)}`}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em]">Confianca operacional</p>
-                <p className="mt-2 text-sm font-semibold">
-                  {automationLabel(automationReadiness.state)} | {automationReadiness.confidenceScore}%
-                </p>
-                <p className="mt-2 text-sm leading-6">{automationReadiness.summary}</p>
-              </div>
-              <div className="text-sm">
-                {automationReadiness.blockers.length ? (
-                  <span>{automationReadiness.blockers[0]}</span>
-                ) : (
-                  <span>{automationReadiness.signals[0] ?? "Envelope automatico consistente."}</span>
-                )}
-              </div>
+        <div className={`rounded-[4px] border px-4 py-4 ${automationTone(automationReadiness.state)}`}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em]">Confianca operacional</p>
+              <p className="mt-2 text-sm font-semibold">
+                {automationLabel(automationReadiness.state)} | {automationReadiness.confidenceScore}%
+              </p>
+              <p className="mt-2 text-sm leading-6">{automationReadiness.summary}</p>
+            </div>
+            <div className="text-sm">
+              {automationReadiness.blockers.length ? (
+                <span>{automationReadiness.blockers[0]}</span>
+              ) : (
+                <span>{automationReadiness.signals[0] ?? "Envelope automatico consistente."}</span>
+              )}
             </div>
           </div>
-        ) : null}
+        </div>
 
         <div className="border-b border-white/10">
           <div className="flex flex-wrap gap-2" role="tablist" aria-label="Abas do dossie do caso">
@@ -1032,8 +1075,8 @@ export function ClientCockpitFrame({
             <div className="space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="workspace-kicker">Laudo</p>
-                  <h3 className="mt-2 text-2xl font-semibold text-white">Laudo automatico do caso</h3>
+                  <p className="workspace-kicker">Pericial (Laudo)</p>
+                  <h3 className="mt-2 text-2xl font-semibold text-white">Laudo pericial automatico do caso</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {laudoPdfHref ? (
