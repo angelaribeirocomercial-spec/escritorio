@@ -1,8 +1,11 @@
 import type { ProcessFilingRecord } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { DEMO_PROCESS_FILING_RECORDS } from "@/server/services/demo/demo-workspace-data";
+import { getProceduralUpdatesByProcessId } from "@/server/services/procedural-updates/get-procedural-updates";
+import { syncSuggestedProcessFiling } from "@/server/services/process-filings/sync-suggested-filing";
 
 type ProcessFilingRow = {
   id: string;
@@ -70,7 +73,7 @@ export async function getProcessFilingsByProcessId(processId: string): Promise<P
   }
 
   const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("process_filings")
     .select(PROCESS_FILING_SELECT)
     .eq("tenant_id", session.workspace.tenant.id)
@@ -82,5 +85,38 @@ export async function getProcessFilingsByProcessId(processId: string): Promise<P
     return [];
   }
 
-  return (data ?? []).map((row) => mapProcessFilingRow(row as ProcessFilingRow));
+  let filings = (data ?? []).map((row) => mapProcessFilingRow(row as ProcessFilingRow));
+
+  try {
+    const updates = await getProceduralUpdatesByProcessId(processId);
+    const admin = getSupabaseAdminClient();
+    const syncResult = await syncSuggestedProcessFiling({
+      supabase: admin,
+      tenantId: session.workspace.tenant.id,
+      processId,
+      updates,
+      existingFilings: filings
+    });
+
+    if (syncResult) {
+      const refreshed = await supabase
+        .from("process_filings")
+        .select(PROCESS_FILING_SELECT)
+        .eq("tenant_id", session.workspace.tenant.id)
+        .eq("process_id", processId)
+        .order("updated_at", { ascending: false });
+
+      if (!refreshed.error) {
+        filings = (refreshed.data ?? []).map((row) => mapProcessFilingRow(row as ProcessFilingRow));
+      }
+    }
+  } catch (syncError) {
+    console.warn(
+      syncError instanceof Error
+        ? syncError.message
+        : `Failed to sync suggested filing for process ${processId}.`
+    );
+  }
+
+  return filings;
 }

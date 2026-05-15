@@ -621,6 +621,10 @@ export function ProcessCockpitFrame({
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
               Registrar peca superveniente
             </p>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Quando um andamento relevante indicar contestacao, intimacao, decisao ou fase executiva, o sistema pode
+              pre-registrar automaticamente a proxima peca cabivel nesta carteira. O protocolo oficial continua externo.
+            </p>
             <form action={processFilings.formAction as unknown as string} className="mt-4 space-y-4">
               <input name="processId" type="hidden" value={processFilings.processId} />
               <input name="caseId" type="hidden" value={processFilings.caseId} />
