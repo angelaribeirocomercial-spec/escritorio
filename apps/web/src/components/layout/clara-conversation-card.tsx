@@ -130,7 +130,6 @@ export function ClaraConversationCard({
   composerValue,
   clientOptions = []
 }: ClaraConversationCardProps) {
-  const formRef = useRef<HTMLFormElement | null>(null);
   const threadRef = useRef<HTMLDivElement | null>(null);
   const initialQuestion = composerValue?.trim() ?? "";
   const initialReply =
@@ -142,13 +141,10 @@ export function ClaraConversationCard({
       return [];
     }
 
-    return [
-      { role: "user", text: initialQuestion },
-      { role: "assistant", text: initialReply }
-    ];
+    return [{ role: "assistant", text: initialReply }];
   }, [initialQuestion, initialReply]);
   const [thread, setThread] = useState<ChatMessage[]>(initialThread);
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState(initialQuestion);
   const [conversationContext, setConversationContext] = useState<ConversationContext>({
     lastClientLabel: initialClientLabel,
     lastTopic: initialClientLabel ? "client" : null
@@ -156,7 +152,12 @@ export function ClaraConversationCard({
 
   useEffect(() => {
     setThread(initialThread);
-  }, [initialThread]);
+    setInputValue(initialQuestion);
+    setConversationContext({
+      lastClientLabel: initialClientLabel,
+      lastTopic: initialClientLabel ? "client" : null
+    });
+  }, [initialClientLabel, initialQuestion, initialThread]);
 
   useEffect(() => {
     threadRef.current?.scrollTo({
@@ -198,29 +199,42 @@ export function ClaraConversationCard({
 
       <div className="mt-5 flex min-h-[28rem] flex-col">
         <form
-          ref={formRef}
           className="border-b border-white/10 pb-4"
           onSubmit={(event) => {
             event.preventDefault();
             sendMessage();
           }}
         >
-          <textarea
-            className="reference-search-input min-h-[7rem] w-full px-3 py-3 text-sm outline-none"
-            name="q"
-            placeholder={composerPlaceholder ?? "Escreva sua pergunta para a Clara."}
-            onChange={(event) => setInputValue(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key !== "Enter" || event.shiftKey) {
-                return;
-              }
+          <div className="rounded-[4px] border border-white/10 bg-black/20 p-3">
+            <textarea
+              autoFocus
+              className="reference-search-input min-h-[7rem] w-full px-3 py-3 text-sm outline-none"
+              name="q"
+              placeholder={composerPlaceholder ?? "Escreva sua pergunta para a Clara."}
+              onChange={(event) => setInputValue(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" || event.shiftKey) {
+                  return;
+                }
 
-              event.preventDefault();
-              sendMessage();
-            }}
-            value={inputValue}
-          />
-          {composerHint ? <p className="mt-3 text-[11px] leading-5 text-slate-500">{composerHint}</p> : null}
+                event.preventDefault();
+                sendMessage();
+              }}
+              value={inputValue}
+            />
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-[11px] leading-5 text-slate-500">
+                {composerHint ?? "Enter envia. Shift+Enter quebra linha."}
+              </p>
+              <button
+                className="inline-flex items-center justify-center rounded-[4px] bg-[linear-gradient(90deg,#22c55e,#4ade80)] px-4 py-2 text-sm font-semibold text-slate-950 shadow-soft transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!inputValue.trim()}
+                type="submit"
+              >
+                Enviar
+              </button>
+            </div>
+          </div>
         </form>
 
         <div

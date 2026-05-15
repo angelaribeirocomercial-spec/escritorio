@@ -468,6 +468,9 @@ export function ClientCockpitFrame({
   const laudoPdfHref = activeCase ? `/api/clientes/${client.id}/documentos-gerados/laudo/pdf?caseId=${activeCase.id}` : null;
   const baseOverviewDocument =
     caseDocuments.find((document) => isContractAnalysisDocument(document.documentType)) ?? caseDocuments[0] ?? null;
+  const baseOverviewHref = baseOverviewDocument
+    ? baseOverviewDocument.pdfHref ?? (activeCase ? `/documentos/meus-arquivos?caseId=${activeCase.id}` : "/documentos/meus-arquivos")
+    : null;
   const automationReadiness = getAutomationReadinessFallback({
     activeCase,
     contractAnalysis,
@@ -750,10 +753,10 @@ export function ClientCockpitFrame({
                   )}
                 </div>
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                  {baseOverviewDocument ? (
+                  {baseOverviewDocument && baseOverviewHref ? (
                     <Link
                       className="detail-link-button inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold text-center"
-                      href={baseOverviewDocument.pdfHref ?? baseOverviewDocument.detailHref}
+                      href={baseOverviewHref}
                     >
                       Abrir documento-base
                     </Link>
