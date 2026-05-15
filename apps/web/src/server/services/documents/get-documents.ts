@@ -340,6 +340,31 @@ export async function getDocumentById(
     return null;
   }
 
+  if (
+    session.workspace.tenant.slug === "clara-bancaria-demo" ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
+  ) {
+    const demoDocument = DEMO_DOCUMENT_RECORDS.find((document) => document.id === documentId);
+
+    if (!demoDocument) {
+      return null;
+    }
+
+    return {
+      ...demoDocument,
+      client: DEMO_CLIENT_RECORD,
+      bankingCase: DEMO_CASE_RECORD,
+      pdfHref: null,
+      automationReadiness: getDocumentAutomationReadiness({
+        ...demoDocument,
+        client: DEMO_CLIENT_RECORD,
+        bankingCase: DEMO_CASE_RECORD,
+        pdfHref: null
+      } as DocumentWithContext)
+    };
+  }
+
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("documents")

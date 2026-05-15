@@ -478,6 +478,8 @@ export default async function ClaraPage({
         structuredCore: structuredCoreFallback,
         taskType: contextualTaskType
       });
+      const structuredFallbackPrompt = `Clara, explique o caso de ${structuredCoreFallback.context.client.fullName} em ${structuredCoreFallback.context.bankingCase.title} e diga o proximo passo.`;
+      const structuredFallbackReply = `${structuredCoreFallback.summary} Posso continuar por cliente, caso, processo ou documento.`;
 
       return (
         <WorkspacePage
@@ -494,6 +496,15 @@ export default async function ClaraPage({
           ]}
           title="Clara em estado controlado"
         >
+          <ClaraConversationCard
+            assistantReply={structuredFallbackReply}
+            badgeLabel="CLARA"
+            badgeSubtitle="Conversa contextual assistida"
+            composerHint="Enter envia. Shift+Enter quebra linha."
+            composerValue={structuredFallbackPrompt}
+            responseDetail="A Clara continua conversando mesmo quando o workspace completo cai em estado controlado."
+          />
+
           <WorkspaceStatePanel
             actionHref={`/pessoas/clientes/${structuredCoreFallback.context.client.id}?case=${structuredCoreFallback.context.bankingCase.id}`}
             actionLabel="Voltar ao cockpit do cliente"
@@ -520,6 +531,9 @@ export default async function ClaraPage({
         : null);
 
     if (fallbackContextualAnalysis) {
+      const fallbackConversationPrompt = `Clara, explique o caso de ${fallbackContextualAnalysis.contextSnapshot.clientId} e diga o proximo passo.`;
+      const fallbackConversationReply = `${fallbackContextualAnalysis.summary} Posso continuar por cliente, caso, processo ou documento.`;
+
       return (
         <WorkspacePage
           description="A Clara contextual minima resolveu cliente e caso, mas o workspace completo nao abriu. O bloco contextual segue visivel para manter o fluxo rastreavel."
@@ -532,6 +546,15 @@ export default async function ClaraPage({
           ]}
           title="Clara em estado controlado"
         >
+          <ClaraConversationCard
+            assistantReply={fallbackConversationReply}
+            badgeLabel="CLARA"
+            badgeSubtitle="Conversa contextual assistida"
+            composerHint="Enter envia. Shift+Enter quebra linha."
+            composerValue={fallbackConversationPrompt}
+            responseDetail="Mesmo em fallback controlado, a Clara mantém um chat editável para o caso atual."
+          />
+
           <WorkspaceStatePanel
             actionHref={`/pessoas/clientes/${fallbackContextualAnalysis.contextSnapshot.clientId}?case=${fallbackContextualAnalysis.contextSnapshot.caseId}`}
             actionLabel="Voltar ao cockpit do cliente"
