@@ -67,7 +67,7 @@ export default async function EnviarArquivosPage({
     searchParams?.returnTo && searchParams.returnTo.startsWith("/") ? searchParams.returnTo : "";
 
   return (
-    <div className="mj-model-page space-y-4">
+    <div className="mj-model-page space-y-4 pb-8">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="mj-model-title">Enviar arquivos</p>
@@ -77,11 +77,11 @@ export default async function EnviarArquivosPage({
         </div>
       </div>
 
-      <form action={uploadFormAction} className="mj-model-panel overflow-hidden">
+      <form action={uploadFormAction} className="mj-model-panel">
         {safeReturnTo ? <input name="returnTo" type="hidden" value={safeReturnTo} /> : null}
         <div className="grid gap-4 px-4 py-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
           <div
-            className="flex min-h-[24rem] flex-col items-center justify-center border border-dashed px-6 text-center mj-model-gridline"
+            className="flex min-h-[26rem] flex-col items-center justify-center border border-dashed px-6 py-8 text-center mj-model-gridline"
             style={{ borderRadius: "4px" }}
           >
             <svg aria-hidden="true" className="h-14 w-14 text-slate-400" fill="none" viewBox="0 0 48 48">

@@ -140,6 +140,31 @@ function getCustomFieldName(tab: TabId | "revisional", label: string) {
   return label.toLowerCase().replace(/\s+/g, "-");
 }
 
+function formatClaraContextualTaskType(taskType: ClaraContextualTaskType) {
+  switch (taskType) {
+    case "analisar-caso":
+      return "Analisar caso";
+    case "checklist-documental":
+      return "Checklist documental";
+    case "sugerir-proximos-passos":
+      return "Proximos passos";
+    case "parecer-tecnico":
+      return "Parecer tecnico";
+    case "analisar-intimacao":
+      return "Analisar intimacao";
+    case "gerar-peca":
+      return "Gerar peca";
+    case "consultar-jurisprudencia":
+      return "Jurisprudencia";
+    case "acompanhar-processo":
+      return "Acompanhar processo";
+    case "revisar-minuta":
+      return "Revisar minuta";
+    default:
+      return taskType;
+  }
+}
+
 function renderClaraContextualAnalysis(
   contextualAnalysis: Awaited<ReturnType<typeof getClaraContextualAnalysis>> | null
 ) {
@@ -153,14 +178,14 @@ function renderClaraContextualAnalysis(
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
-              Clara contextual minima
+              Resumo contextual do caso
             </p>
             <p className="mt-2 text-sm font-semibold text-white">
               Execucao {contextualAnalysis.executionId}
             </p>
           </div>
           <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-cyan-50">
-            {contextualAnalysis.taskType}
+            {formatClaraContextualTaskType(contextualAnalysis.taskType)}
           </span>
         </div>
         <p className="mt-3 text-sm leading-7 text-cyan-50">{contextualAnalysis.summary}</p>
@@ -544,6 +569,9 @@ export default async function ClaraPage({
   }
   const activeWorkspace = clara.tabs[activeTab];
 
+  const controlledConversationPrompt = `Clara, explique o caso de ${clara.structuredCore.context.client.fullName}${clara.structuredCore.context.bankingCase?.title ? ` em ${clara.structuredCore.context.bankingCase.title}` : ""} e diga o proximo passo.`;
+  const controlledConversationReply = `${clara.structuredCore.summary} Posso continuar por cliente, caso, processo ou documento.`;
+
   if (activeNiche && (!hasResolvedProcess || !hasResolvedDocument)) {
     return (
       <WorkspacePage
@@ -556,20 +584,29 @@ export default async function ClaraPage({
           { label: "Documento", value: hasResolvedDocument ? "Resolvido" : "Pendente" }
         ]}
         title="Clara em estado controlado"
-      >
-        <WorkspaceStatePanel
-          actionHref={`/pessoas/clientes/${clara.structuredCore.context.client.id}?case=${clara.structuredCore.context.bankingCase.id}`}
-          actionLabel="Voltar ao cockpit do cliente"
-          description="O contrato contextual da Clara foi resolvido com cliente e caso reais, mas a sessao completa permanece em estado controlado ate o caso ganhar processo vinculado e pelo menos um documento base."
-          title="Contexto juridico minimo preservado"
-          tone="warning"
-        />
-
-        {!hasResolvedDocument ? (
+        >
           <WorkspaceStatePanel
-            actionHref={`/documentos/enviar-arquivos?caseId=${clara.structuredCore.context.bankingCase.id}`}
-            actionLabel="Anexar documento ao caso"
-            description="Sem documento base, a Clara registra fatos e bloqueios do caso, mas nao abre leitura contratual nem minuta assistida."
+            actionHref={`/pessoas/clientes/${clara.structuredCore.context.client.id}?case=${clara.structuredCore.context.bankingCase.id}`}
+            actionLabel="Voltar ao cockpit do cliente"
+            description="O contrato contextual da Clara foi resolvido com cliente e caso reais, mas a sessao completa permanece em estado controlado ate o caso ganhar processo vinculado e pelo menos um documento base."
+            title="Contexto juridico minimo preservado"
+            tone="warning"
+          />
+
+          <ClaraConversationCard
+            assistantReply={controlledConversationReply}
+            badgeLabel="CLARA"
+            badgeSubtitle="Conversa contextual assistida"
+            composerHint="Enter envia. Shift+Enter quebra linha."
+            composerValue={controlledConversationPrompt}
+            responseDetail="Use esta bancada para perguntar sobre o caso mesmo quando o processo ou o documento ainda estao pendentes."
+          />
+
+          {!hasResolvedDocument ? (
+            <WorkspaceStatePanel
+              actionHref={`/documentos/enviar-arquivos?caseId=${clara.structuredCore.context.bankingCase.id}`}
+              actionLabel="Anexar documento ao caso"
+              description="Sem documento base, a Clara registra fatos e bloqueios do caso, mas nao abre leitura contratual nem minuta assistida."
             title="Documento base ainda pendente"
             tone="warning"
           />

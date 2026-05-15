@@ -468,9 +468,8 @@ export function ClientCockpitFrame({
   const laudoPdfHref = activeCase ? `/api/clientes/${client.id}/documentos-gerados/laudo/pdf?caseId=${activeCase.id}` : null;
   const baseOverviewDocument =
     caseDocuments.find((document) => isContractAnalysisDocument(document.documentType)) ?? caseDocuments[0] ?? null;
-  const baseOverviewHref = baseOverviewDocument
-    ? baseOverviewDocument.pdfHref ?? (activeCase ? `/documentos/meus-arquivos?caseId=${activeCase.id}` : "/documentos/meus-arquivos")
-    : null;
+  const baseOverviewHref = baseOverviewDocument ? `/documentos/${baseOverviewDocument.id}` : null;
+  const baseOverviewPdfHref = baseOverviewDocument?.pdfHref ?? null;
   const automationReadiness = getAutomationReadinessFallback({
     activeCase,
     contractAnalysis,
@@ -761,6 +760,16 @@ export function ClientCockpitFrame({
                       Abrir documento-base
                     </Link>
                   ) : null}
+                  {baseOverviewPdfHref ? (
+                    <a
+                      className="detail-link-button inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold text-center"
+                      href={baseOverviewPdfHref}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Abrir PDF
+                    </a>
+                  ) : null}
                   {activeCase && actionLinks.attachDocuments ? (
                     <Link
                       className="detail-link-button inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold text-center"
@@ -829,7 +838,7 @@ export function ClientCockpitFrame({
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <Link className="detail-link-button px-3 py-2 text-xs font-semibold" href={document.detailHref}>
-                            Abrir detalhe
+                            Abrir arquivo
                           </Link>
                           {document.pdfHref ? (
                             <a className="detail-link-button px-3 py-2 text-xs font-semibold" href={document.pdfHref} rel="noreferrer" target="_blank">

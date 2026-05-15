@@ -8,6 +8,7 @@ import {
 import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getDocumentAutomationReadiness } from "@/server/services/contract-analysis/get-automation-readiness";
+import { getDocumentFileSignedUrl } from "@/server/services/documents/get-document-file-url";
 import {
   DEMO_CASE_RECORD,
   DEMO_CLIENT_RECORD,
@@ -17,6 +18,7 @@ import {
 type DocumentWithContext = DocumentRecord & {
   client: ClientRecord;
   bankingCase: BankingCaseRecord;
+  pdfHref: string | null;
 };
 
 type ClientRow = {
@@ -193,7 +195,8 @@ function mapDocumentRow(row: DocumentRow): DocumentWithContext | null {
     reviewNotes: row.review_notes ?? undefined,
     reviewStatus: row.review_status ?? undefined,
     client: mapClientRow(clientRow),
-    bankingCase: mapCaseRow(caseRow)
+    bankingCase: mapCaseRow(caseRow),
+    pdfHref: null
   };
 
   return {
@@ -290,7 +293,8 @@ export async function getDocuments(): Promise<DocumentWithContext[]> {
     return DEMO_DOCUMENT_RECORDS.map((document) => ({
       ...document,
       client: DEMO_CLIENT_RECORD,
-      bankingCase: DEMO_CASE_RECORD
+      bankingCase: DEMO_CASE_RECORD,
+      pdfHref: null
     }));
   }
 
@@ -306,9 +310,25 @@ export async function getDocuments(): Promise<DocumentWithContext[]> {
     return [];
   }
 
-  return (data ?? [])
-    .map((row) => mapDocumentRow(row as DocumentRow))
-    .filter((row): row is DocumentWithContext => row !== null);
+  return Promise.all(
+    (data ?? []).map(async (row) => {
+      const mapped = mapDocumentRow(row as DocumentRow);
+
+      if (!mapped) {
+        return null;
+      }
+
+      const pdfHref = await getDocumentFileSignedUrl({
+        bucket: mapped.storageBucket,
+        path: mapped.storagePath
+      }).catch(() => null);
+
+      return {
+        ...mapped,
+        pdfHref
+      };
+    })
+  ).then((rows) => rows.filter((row): row is DocumentWithContext => row !== null));
 }
 
 export async function getDocumentById(
