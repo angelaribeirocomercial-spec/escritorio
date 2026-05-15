@@ -155,6 +155,57 @@ function officialDistributionStatusLabel(status: string) {
   }
 }
 
+function buildProcessFilingContextualMinutaHref(params: {
+  processId: string;
+  caseId: string;
+  clientId: string;
+  primaryDocumentId?: string | null;
+  filing: {
+    id: string;
+    kind:
+      | "peticao_inicial"
+      | "contestacao"
+      | "replica"
+      | "manifestacao"
+      | "recurso"
+      | "cumprimento_sentenca"
+      | "peticao_intercorrente";
+    title: string;
+    nextAction: string;
+    sourceMinutaId?: string;
+    linkedUpdateId?: string;
+  };
+}) {
+  if (params.filing.kind === "peticao_inicial" && params.filing.sourceMinutaId) {
+    return {
+      href: `/editor-de-texto/meus-textos?record=${encodeURIComponent(params.filing.sourceMinutaId)}`,
+      label: "Abrir minuta-fonte"
+    };
+  }
+
+  const searchParams = new URLSearchParams();
+  searchParams.set("draft", "1");
+  searchParams.set("case", params.caseId);
+  searchParams.set("process", params.processId);
+  searchParams.set("client", params.clientId);
+  searchParams.set("piece", params.filing.kind);
+  searchParams.set("objetivo", params.filing.nextAction || params.filing.title);
+  searchParams.set("source", "process-filings");
+
+  if (params.primaryDocumentId) {
+    searchParams.set("document", params.primaryDocumentId);
+  }
+
+  if (params.filing.linkedUpdateId) {
+    searchParams.set("linked_update", params.filing.linkedUpdateId);
+  }
+
+  return {
+    href: `/editor-de-texto/meus-textos?${searchParams.toString()}`,
+    label: "Abrir minuta contextual"
+  };
+}
+
 function getOfficialSystemLink(tribunal: string) {
   if (tribunal === "TJMG") {
     return {
@@ -265,6 +316,22 @@ export default async function ProcessDetailPage({
         document.tags.some((tag) => /protocolo|distribuicao/.test(tag.toLowerCase()))
     ) ??
     null;
+  const primaryCaseDocument = caseDocuments[0] ?? null;
+  const processFilingsWithContextualMinutas = processFilings.map((record) => {
+    const contextualMinutaHref = buildProcessFilingContextualMinutaHref({
+      processId: processItem.id,
+      caseId: processItem.caseId,
+      clientId: processItem.clientId,
+      primaryDocumentId: primaryCaseDocument?.id ?? protocolReceiptDocument?.id ?? null,
+      filing: record
+    });
+
+    return {
+      ...record,
+      contextualMinutaHref: contextualMinutaHref.href,
+      contextualMinutaLabel: contextualMinutaHref.label
+    };
+  });
   const receiptCandidates = caseDocuments.map((document) => ({
     id: document.id,
     label: `${document.documentType} | ${document.fileName}`
@@ -473,7 +540,7 @@ export default async function ProcessDetailPage({
           clientId: processItem.clientId,
           successLabel: searchParams?.filingSaved === "1" ? "Peca processual registrada no acompanhamento." : undefined,
           errorLabel: searchParams?.filingError,
-          records: processFilings
+          records: processFilingsWithContextualMinutas
         }}
         relatedClaraRecordsCount={relatedClaraRecords.length}
       />

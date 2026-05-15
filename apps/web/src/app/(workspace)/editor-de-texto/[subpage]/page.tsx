@@ -61,6 +61,8 @@ function buildDraftCreationTargetPath(searchParams?: {
   process?: string;
   piece?: string;
   objetivo?: string;
+  source?: string;
+  linked_update?: string;
   revisedInstallment?: string;
   estimatedTotalExcess?: string;
   chargedInstallment?: string;
@@ -82,6 +84,8 @@ function buildDraftCreationTargetPath(searchParams?: {
     ["process", searchParams.process],
     ["piece", searchParams.piece],
     ["objetivo", searchParams.objetivo],
+    ["source", searchParams.source],
+    ["linked_update", searchParams.linked_update],
     ["revisedInstallment", searchParams.revisedInstallment],
     ["estimatedTotalExcess", searchParams.estimatedTotalExcess],
     ["chargedInstallment", searchParams.chargedInstallment],
@@ -129,6 +133,8 @@ function buildDraftReturnPath(params: {
     process?: string;
     piece?: string;
     objetivo?: string;
+    source?: string;
+    linked_update?: string;
     revisedInstallment?: string;
     estimatedTotalExcess?: string;
     chargedInstallment?: string;
@@ -155,7 +161,9 @@ function buildDraftReturnPath(params: {
     case: params.caseId,
     document: params.documentId,
     piece: params.pieceLabel,
-    objetivo: params.objective
+    objetivo: params.objective,
+    source: params.searchParams?.source,
+    linked_update: params.searchParams?.linked_update
   });
 }
 
