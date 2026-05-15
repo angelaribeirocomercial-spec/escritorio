@@ -149,7 +149,11 @@ type ClientCockpitDocument = {
   id: string;
   documentType: string;
   fileName: string;
+  aiStatus: "not_analyzed" | "analyzed" | "needs_review";
   summary: string;
+  uploadedAt: string;
+  previewLabel: string;
+  actions: ReadonlyArray<string>;
   detailHref: string;
   pdfHref: string | null;
 };
@@ -199,7 +203,26 @@ type ClientCockpitRelatedProcess = {
   linkedUpdates: ReadonlyArray<ClientCockpitProcessUpdate>;
 };
 
-type DossierTabKey = "documentos" | "financeiro" | "bacen" | "estrategico" | "laudo" | "peticoes" | "clara";
+type DossierTabKey =
+  | "visao-geral"
+  | "documentos"
+  | "financeiro"
+  | "bacen"
+  | "estrategico"
+  | "laudo"
+  | "peticoes"
+  | "clara";
+
+type OverviewReadState = "read" | "pending" | "needs_review";
+
+type OverviewField = {
+  id: "contrato" | "taxas" | "cet" | "parcelas" | "banco" | "juros";
+  label: string;
+  value: string;
+  detail: string;
+  sourceLabel: string;
+  state: OverviewReadState;
+};
 
 type ClientCockpitDossierTab = {
   key: DossierTabKey;
@@ -261,6 +284,59 @@ function criticalityTone(criticality: "low" | "medium" | "high") {
   }
 }
 
+const CONTRACT_ANALYSIS_DOCUMENT_TYPES = new Set(["Contrato bancario", "CCB"]);
+
+function isContractAnalysisDocument(documentType: string) {
+  return CONTRACT_ANALYSIS_DOCUMENT_TYPES.has(documentType);
+}
+
+function overviewStateFromDocumentStatus(status: ClientCockpitDocument["aiStatus"]): OverviewReadState {
+  switch (status) {
+    case "analyzed":
+      return "read";
+    case "needs_review":
+      return "needs_review";
+    default:
+      return "pending";
+  }
+}
+
+function overviewStateLabel(state: OverviewReadState) {
+  switch (state) {
+    case "read":
+      return "Lido";
+    case "needs_review":
+      return "Precisa revisao";
+    default:
+      return "Pendente";
+  }
+}
+
+function overviewStateTone(state: OverviewReadState) {
+  switch (state) {
+    case "read":
+      return "border-emerald-300/30 bg-emerald-300/10 text-emerald-100";
+    case "needs_review":
+      return "border-amber-300/30 bg-amber-300/10 text-amber-100";
+    default:
+      return "border-slate-400/20 bg-slate-400/10 text-slate-200";
+  }
+}
+
+function formatReadingDate(value: string | null) {
+  if (!value) {
+    return "Nao registrada";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString("pt-BR");
+}
+
 function tabPanelId(tabKey: DossierTabKey) {
   return `client-dossier-tab-${tabKey}`;
 }
@@ -284,9 +360,10 @@ export function ClientCockpitFrame({
   normalizedTimeline,
   clientCaseCount,
   dossierTabs,
-  contractAnalysis
+  contractAnalysis,
+  actionLinks
 }: ClientCockpitFrameProps) {
-  const [activePanel, setActivePanel] = useState<DossierTabKey>(dossierTabs[0]?.key ?? "documentos");
+  const [activePanel, setActivePanel] = useState<DossierTabKey>(dossierTabs[0]?.key ?? "visao-geral");
 
   const documentsRequired = workflow?.requiredDocuments.length ?? 0;
   const documentsReceived = caseDocuments.length;
@@ -316,6 +393,126 @@ export function ClientCockpitFrame({
     contractAnalysis?.caseDossier.peticoes.summary ?? "Peticoes automaticas indisponiveis no momento.";
   const peticoesSources = contractAnalysis?.caseDossier.peticoes.sources ?? [];
   const laudoPdfHref = activeCase ? `/api/clientes/${client.id}/documentos-gerados/laudo/pdf?caseId=${activeCase.id}` : null;
+  const baseOverviewDocument =
+    caseDocuments.find((document) => isContractAnalysisDocument(document.documentType)) ?? caseDocuments[0] ?? null;
+  const baseOverviewState = baseOverviewDocument
+    ? overviewStateFromDocumentStatus(baseOverviewDocument.aiStatus)
+    : "pending";
+  const structuredOverviewAvailable = Boolean(contractAnalysis);
+  const structuredOverviewState: OverviewReadState = structuredOverviewAvailable ? "read" : baseOverviewState;
+  const installmentsInput = caseCalculations?.inputData.find((item) => item.label === "Numero de parcelas")?.value;
+  const contractedInstallmentInput =
+    caseCalculations?.inputData.find((item) => item.label === "Parcela contratada")?.value;
+  const chargedInstallmentInput =
+    caseCalculations?.inputData.find((item) => item.label === "Parcela cobrada")?.value;
+  const overviewFields: ReadonlyArray<OverviewField> = [
+    {
+      id: "contrato",
+      label: "Contrato",
+      value: baseOverviewDocument
+        ? `${baseOverviewDocument.documentType} | ${baseOverviewDocument.fileName}`
+        : "Nenhum documento-base vinculado",
+      detail: baseOverviewDocument?.previewLabel ?? "Anexe o contrato ou a CCB para iniciar a leitura do dossie.",
+      sourceLabel: baseOverviewDocument ? `Documento ${baseOverviewDocument.fileName}` : "Sem origem documental",
+      state: baseOverviewState
+    },
+    {
+      id: "taxas",
+      label: "Taxas",
+      value: contractAnalysis?.analysis.rateLabel ?? "Sem leitura estruturada persistida",
+      detail: structuredOverviewAvailable
+        ? "Taxa contratual carregada do envelope atual de analise."
+        : "A taxa depende de OCR estruturado persistido ou revisao manual do contrato.",
+      sourceLabel: structuredOverviewAvailable
+        ? "Analise contratual persistida"
+        : baseOverviewDocument
+          ? `Boundary documental: ${baseOverviewDocument.fileName}`
+          : "Sem origem documental",
+      state: structuredOverviewState
+    },
+    {
+      id: "cet",
+      label: "CET",
+      value: contractAnalysis?.analysis.cetLabel ?? "Sem leitura estruturada persistida",
+      detail: structuredOverviewAvailable
+        ? "CET carregado do envelope atual de analise."
+        : "O CET ainda nao foi materializado no envelope atual.",
+      sourceLabel: structuredOverviewAvailable
+        ? "Analise contratual persistida"
+        : baseOverviewDocument
+          ? `Boundary documental: ${baseOverviewDocument.fileName}`
+          : "Sem origem documental",
+      state: structuredOverviewState
+    },
+    {
+      id: "parcelas",
+      label: "Parcelas",
+      value:
+        installmentsInput && contractedInstallmentInput
+          ? `${installmentsInput} parcelas | ${contractedInstallmentInput}`
+          : "Sem leitura estruturada persistida",
+      detail:
+        installmentsInput && chargedInstallmentInput
+          ? `Parcela cobrada no envelope atual: ${chargedInstallmentInput}.`
+          : "Quantidade e valor das parcelas ainda dependem de leitura estruturada ou conferencia manual.",
+      sourceLabel: structuredOverviewAvailable
+        ? "Memoria de calculo do caso"
+        : baseOverviewDocument
+          ? `Boundary documental: ${baseOverviewDocument.fileName}`
+          : "Sem origem documental",
+      state: structuredOverviewState
+    },
+    {
+      id: "banco",
+      label: "Banco",
+      value: client.bankName || activeCase?.title || "Nao identificado",
+      detail: client.bankName
+        ? "Banco resolvido pelo cadastro atual do cliente/caso."
+        : "Banco ainda nao consolidado no cadastro atual.",
+      sourceLabel: client.bankName ? "Cadastro do cliente" : "Cadastro pendente",
+      state: client.bankName ? "read" : baseOverviewDocument ? baseOverviewState : "pending"
+    },
+    {
+      id: "juros",
+      label: "Juros",
+      value:
+        contractAnalysis?.bacenComparison.classificationLabel ??
+        contractAnalysis?.analysis.rateLabel ??
+        "Sem leitura estruturada persistida",
+      detail: structuredOverviewAvailable
+        ? contractAnalysis?.analysis.abusivenessSignals[0] ??
+          "A leitura de juros foi consolidada sem sinal de abusividade destacado."
+        : "A leitura de juros depende de OCR estruturado persistido ou revisao humana do contrato.",
+      sourceLabel: structuredOverviewAvailable
+        ? "Analise contratual e leitura Bacen"
+        : baseOverviewDocument
+          ? `Boundary documental: ${baseOverviewDocument.fileName}`
+          : "Sem origem documental",
+      state: structuredOverviewState
+    }
+  ];
+  const overviewOriginLabel = baseOverviewDocument
+    ? `${baseOverviewDocument.documentType} | ${baseOverviewDocument.fileName}`
+    : "Sem documento-base para leitura inicial";
+  const overviewReadingStatusLabel = structuredOverviewAvailable
+    ? "Leitura estruturada disponivel no envelope atual."
+    : baseOverviewDocument
+      ? `${overviewStateLabel(baseOverviewState)} no boundary documental atual, sem OCR estruturado persistido.`
+      : "Nenhuma leitura automatica disponivel ainda.";
+  const overviewReadingDateLabel = formatReadingDate(baseOverviewDocument?.uploadedAt ?? null);
+  const overviewNextSteps = [
+    !baseOverviewDocument ? "Anexar o contrato ou a CCB para abrir a leitura inicial do dossie." : null,
+    baseOverviewDocument && !structuredOverviewAvailable
+      ? "Revisar manualmente o documento-base; ainda nao existe OCR estruturado persistido para este caso."
+      : null,
+    documentsMissing > 0
+      ? `Completar base documental pendente: ${workflow?.missingDocuments.join(" | ") ?? "revisar checklist do caso"}.`
+      : null,
+    structuredOverviewAvailable
+      ? "Aprofundar a prova economica nas abas separadas de Calculos e Bacen."
+      : null,
+    nextTaskTitle ? `Proxima tarefa humana: ${nextTaskTitle}.` : null
+  ].filter((item): item is string => Boolean(item));
 
   const generatedDocumentsContent = generatedDocuments.length ? (
     <div className="mt-4 grid gap-3 lg:grid-cols-2">
@@ -402,6 +599,85 @@ export function ClientCockpitFrame({
         </div>
 
         <section aria-labelledby={tabButtonId(activePanel)} className="detail-panel p-6" id={tabPanelId(activePanel)} role="tabpanel">
+          {activePanel === "visao-geral" ? (
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="workspace-kicker">Visão geral</p>
+                  <h3 className="mt-2 text-2xl font-semibold text-white">Leitura inicial do dossie</h3>
+                </div>
+                <div className="detail-soft-row px-4 py-3 text-sm text-slate-300">{overviewReadingStatusLabel}</div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {overviewFields.map((field) => (
+                  <div key={field.id} className="detail-subpanel p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{field.label}</p>
+                      <span className={`rounded-[4px] border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${overviewStateTone(field.state)}`}>
+                        {overviewStateLabel(field.state)}
+                      </span>
+                    </div>
+                    <p className="mt-4 text-sm font-semibold leading-6 text-white">{field.value}</p>
+                    <p className="mt-3 text-sm leading-6 text-slate-300">{field.detail}</p>
+                    <p className="mt-3 text-xs text-slate-500">Origem: {field.sourceLabel}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                  Origem documental: <span className="font-semibold text-white">{overviewOriginLabel}</span>
+                </div>
+                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                  Data da leitura: <span className="font-semibold text-white">{overviewReadingDateLabel}</span>
+                </div>
+                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                  Base do caso: <span className="font-semibold text-white">{workflow?.completionLabel ?? "Sem checklist consolidado"}</span>
+                </div>
+              </div>
+
+              <div className="detail-subpanel p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Proximos passos</p>
+                <div className="mt-4 grid gap-3">
+                  {overviewNextSteps.length ? (
+                    overviewNextSteps.map((step) => (
+                      <div key={step} className="detail-soft-row px-4 py-4 text-sm leading-6 text-slate-200">
+                        {step}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="detail-soft-row px-4 py-4 text-sm leading-6 text-slate-200">
+                      Usar as abas separadas do dossie para aprofundar a leitura e manter a revisao humana no editor e no handoff operacional.
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {baseOverviewDocument ? (
+                    <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={baseOverviewDocument.detailHref}>
+                      Abrir documento-base
+                    </Link>
+                  ) : null}
+                  {activeCase && actionLinks.attachDocuments ? (
+                    <Link
+                      className="detail-link-button px-4 py-3 text-sm font-semibold"
+                      href={`/documentos/enviar-arquivos?caseId=${activeCase.id}`}
+                    >
+                      Juntar documentos
+                    </Link>
+                  ) : null}
+                  <button
+                    className="detail-link-button px-4 py-3 text-sm font-semibold"
+                    onClick={() => setActivePanel(actionLinks.continueClara)}
+                    type="button"
+                  >
+                    Abrir Clara
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {activePanel === "documentos" ? (
             <div className="space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -593,7 +869,7 @@ export function ClientCockpitFrame({
             <div className="space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="workspace-kicker">BACEN</p>
+                  <p className="workspace-kicker">Bacen</p>
                   <h3 className="mt-2 text-2xl font-semibold text-white">Consulta automatica da taxa media</h3>
                 </div>
                 <div className="detail-soft-row px-4 py-3 text-sm text-slate-300">
@@ -717,7 +993,7 @@ export function ClientCockpitFrame({
                 <p className="text-sm leading-7 text-slate-200">{laudoSummary}</p>
                 {laudoSources.length ? <p className="mt-3 text-xs text-slate-400">Fontes: {laudoSources.join(" | ")}</p> : null}
                 <p className="mt-4 text-sm leading-7 text-slate-300">
-                  O advogado revisa o conteudo. O PDF ja sai montado com OCR, BACEN, calculos e analise do caso.
+                  O advogado revisa o conteudo. O PDF usa a extracao disponivel do contrato/caso, Bacen, calculos e analise do caso.
                 </p>
               </div>
               {normalizedCaseInsights.length ? (
@@ -782,7 +1058,7 @@ export function ClientCockpitFrame({
                   Caso: <span className="font-semibold text-white">{activeCaseTitle}</span>
                 </p>
                 <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-5">
-                  {["contrato", "calculos", "BACEN", "parcelas", "abusividades"].map((item) => (
+                  {["contrato", "calculos", "Bacen", "parcelas", "abusividades"].map((item) => (
                     <div key={item} className="detail-soft-row px-4 py-3 text-sm text-slate-300">
                       {item}
                     </div>

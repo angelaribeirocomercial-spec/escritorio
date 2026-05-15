@@ -310,9 +310,18 @@ export default async function ClientDetailPage({
   const contractAnalysisDocumentId =
     caseDocuments.find((document) => isContractAnalysisDocument(document.documentType))?.id ?? null;
   const activeCaseDraftDocumentId = contractAnalysisDocumentId ?? caseDocuments[0]?.id ?? null;
-  const contractAnalysisWorkspace = contractAnalysisDocumentId
-    ? await getContractAnalysisWorkspace(contractAnalysisDocumentId)
-    : null;
+  let contractAnalysisWorkspace = null;
+
+  if (contractAnalysisDocumentId) {
+    try {
+      contractAnalysisWorkspace = await getContractAnalysisWorkspace(contractAnalysisDocumentId);
+    } catch (error) {
+      console.warn(
+        `Contract analysis workspace unavailable for client dossier document ${contractAnalysisDocumentId}.`,
+        error
+      );
+    }
+  }
   const generatedDocuments =
     activeCase && activeCaseDraftDocumentId
       ? [
@@ -367,7 +376,11 @@ export default async function ClientDetailPage({
       id: document.id,
       documentType: document.documentType,
       fileName: document.fileName,
+      aiStatus: document.aiStatus,
       summary: document.summary,
+      uploadedAt: document.uploadedAt,
+      previewLabel: document.previewLabel,
+      actions: document.actions,
       detailHref: `/documentos/${document.id}`,
       pdfHref: await getDocumentFileSignedUrl({
         bucket: document.storageBucket,
@@ -403,9 +416,10 @@ export default async function ClientDetailPage({
       }
     : null;
   const dossierTabs = [
+    { key: "visao-geral", label: "Visão geral" },
     { key: "documentos", label: "Documentos" },
     { key: "financeiro", label: "Cálculos" },
-    { key: "bacen", label: "BACEN" },
+    { key: "bacen", label: "Bacen" },
     { key: "estrategico", label: "Estratégico" },
     { key: "laudo", label: "Laudo" },
     { key: "peticoes", label: "Petições" },

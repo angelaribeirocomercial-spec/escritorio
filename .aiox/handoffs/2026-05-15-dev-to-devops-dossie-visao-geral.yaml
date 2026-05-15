@@ -1,0 +1,50 @@
+from_agent: dev
+to_agent: devops
+last_command: "*deploy"
+story_ids:
+  - "18.34"
+consumed: false
+branch: "feature/clara-hardening"
+commit: "uncommitted"
+summary: "The client dossier overview tab and fallback flow are ready for deploy after QA pass."
+quality_gates:
+  lint: pass
+  typecheck: pass
+  test: pass
+  qa_review: pass
+changes:
+  - "Added `Visao geral` as the first dossier tab in the client cockpit."
+  - "Rendered a case-local overview with document origin, reading date, OCR/fallback status, and next-step CTAs."
+  - "Made contract analysis workspace loading tolerant to failure so the dossier still opens without breaking the page."
+  - "Passed document metadata needed by the overview slice: ai status, upload date, preview label, and actions."
+  - "Documented the external integration boundary for Meu INSS, Dataprev, and TJMG as a separate technical front."
+files:
+  - "apps/web/src/app/(workspace)/pessoas/clientes/[clientId]/page.tsx"
+  - "apps/web/src/components/layout/client-dossier-frame.tsx"
+  - "docs/stories/18.34.dossie-case-local-com-abas-convencionais-laudo-peticoes-e-clara.md"
+  - "docs/handoffs/2026-05-12-integracoes-institucionais-dossie.md"
+do_not_stage:
+  - ".aiox/handoffs/2026-05-05-analyst-pje-distribuicao-gap.yaml"
+  - ".aiox/handoffs/2026-05-05-dev-to-devops-demo-fallback.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-click-validation-analise-contrato-gap.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-dossie-unico-prd-master-gap.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-onboarding-processos-financeiro-gap.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-to-devops-contract-analysis-failsafe.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-to-devops-dossier-tab-destinations.yaml"
+  - ".aiox/handoffs/2026-05-07-architect-dev-decisions-onboarding-processos-financeiro.yaml"
+  - ".aiox/handoffs/2026-05-07-deploy-preview-escritorio-liart.yaml"
+  - ".aiox/handoffs/2026-05-07-dev-to-devops-consolidate-onboarding-processes-finance.yaml"
+  - ".aiox/handoffs/2026-05-07-final-dossier-tabs-handoff.yaml"
+  - ".aiox/handoffs/2026-05-07-pr-body-feature-clara-hardening.md"
+  - ".aiox/handoffs/2026-05-12-dev-to-devops-dossie-documentos-cleanup.yaml"
+  - ".aiox/handoffs/2026-05-12-dev-to-pm-dossie-documentos-cleanup.yaml"
+  - "apps/web/tsconfig.tsbuildinfo"
+devops_steps:
+  - "Stage only the listed source files and this handoff artifact."
+  - "Keep unrelated handoffs and local helper artifacts out of the publish flow."
+  - "Commit the focused dossier overview slice on branch feature/clara-hardening."
+  - "Push the branch and run the normal preview/deploy flow."
+  - "After deploy, visually verify the authenticated client dossier shows `Visao geral` as the first tab."
+notes:
+  - "No new real OCR boundary was introduced in this slice."
+  - "Meu INSS, Dataprev, and TJMG remain explicitly outside this deploy scope."
