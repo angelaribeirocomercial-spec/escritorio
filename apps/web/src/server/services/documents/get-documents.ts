@@ -7,6 +7,7 @@ import {
 
 import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getDocumentAutomationReadiness } from "@/server/services/contract-analysis/get-automation-readiness";
 import {
   DEMO_CASE_RECORD,
   DEMO_CLIENT_RECORD,
@@ -165,7 +166,7 @@ function mapDocumentRow(row: DocumentRow): DocumentWithContext | null {
     return null;
   }
 
-  return {
+  const mappedDocument: DocumentWithContext = {
     id: row.id,
     clientId: row.client_id,
     caseId: row.case_id,
@@ -193,6 +194,11 @@ function mapDocumentRow(row: DocumentRow): DocumentWithContext | null {
     reviewStatus: row.review_status ?? undefined,
     client: mapClientRow(clientRow),
     bankingCase: mapCaseRow(caseRow)
+  };
+
+  return {
+    ...mappedDocument,
+    automationReadiness: getDocumentAutomationReadiness(mappedDocument)
   };
 }
 

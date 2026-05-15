@@ -1,0 +1,27 @@
+handoff:
+  id: "2026-05-15-dev-to-devops-confianca-bacen"
+  date: "2026-05-15"
+  from: "@dev"
+  to: "@devops"
+  branch: "feature/clara-hardening"
+  scope:
+    stories:
+      - "18.42"
+      - "18.43"
+      - "18.44"
+    summary: "Eleva a automacao bancaria com confianca operacional por excecao, reconciliacao automatica documental e BACEN auditavel quando houver serie oficial aderente."
+  quality_gates:
+    lint: "pass"
+    typecheck: "pass"
+    test: "pass"
+    build: "pass"
+  qa:
+    status: "pass"
+    notes:
+      - "Sem findings bloqueantes."
+      - "Risco residual conhecido: parte das modalidades BACEN ainda depende de fallback controlado por ausencia de serie oficial aderente."
+  publish:
+    requires_migration: false
+    notes:
+      - "Nao incluir apps/web/tsconfig.json nem apps/web/tsconfig.tsbuildinfo no commit."
+      - "Preservar arquivos paralelos antigos com stash temporario antes do push."

@@ -7,6 +7,7 @@ import { getBankingRevisionalCalculation } from "@/server/services/clara/get-ban
 import { getBcbSgsConsultation } from "@/server/services/bcb/get-bcb-consultation";
 import { getCaseById } from "@/server/services/cases/get-cases";
 import { getClientById } from "@/server/services/clients/get-clients";
+import { getCaseAutomationReadiness } from "@/server/services/contract-analysis/get-automation-readiness";
 import { getDocumentById, getDocuments } from "@/server/services/documents/get-documents";
 import { syncDetectedAbusesForAnalysis } from "@/server/services/contract-analysis/detected-abuses-store";
 
@@ -602,6 +603,10 @@ export async function getContractAnalysisWorkspace(
       : bacenConsultation.status === "consulted"
         ? `Taxa contratual ${analysis.rateLabel} contra media BACEN ${marketRateSource?.value ?? "indisponivel"}.`
         : "Comparacao BACEN mantida em boundary controlado enquanto a consulta automatica nao retorna no formato esperado.";
+  const bacenSourceQuality =
+    typeof persistedBacenSnapshot?.sourceQuality === "string"
+      ? persistedBacenSnapshot.sourceQuality
+      : "fallback";
   const strategicSummary =
     typeof persistedStrategicSnapshot?.executiveSummary === "string"
       ? persistedStrategicSnapshot.executiveSummary
@@ -627,6 +632,11 @@ export async function getContractAnalysisWorkspace(
     suggestedThesis: strategicThesis,
     suggestedRequests: persistedRequests
   };
+  const automationReadiness = getCaseAutomationReadiness({
+    document: selectedDocument,
+    analysis: resolvedAnalysis
+  });
+  resolvedAnalysis.automationReadiness = automationReadiness;
 
   return {
     contractDocuments: contractDocuments.map((document) => ({
@@ -640,6 +650,7 @@ export async function getContractAnalysisWorkspace(
     bankingCase,
     scenarioProfile,
     bacenConsultation,
+    automationReadiness,
     bacenComparison: {
       contractRateLabel: analysis.rateLabel,
       marketReferenceLabel:
@@ -798,14 +809,25 @@ export async function getContractAnalysisWorkspace(
       },
       laudo: {
         ...caseDossier.laudo,
-        summary: strategicSummary
+        summary:
+          bacenSourceQuality === "official"
+            ? `${strategicSummary} Fonte BACEN oficial consolidada no envelope do caso.`
+            : `${strategicSummary} Comparacao BACEN ainda em fallback controlado, com revisao humana de seguranca.`
       },
       peticoes: {
         ...caseDossier.peticoes,
         summary:
           typeof persistedPetitionSnapshot?.factualSummary === "string"
-            ? `${persistedPetitionSnapshot.factualSummary} Revisao obrigatoria: ${petitionReviewChecklist.join("; ")}.`
-            : caseDossier.peticoes.summary,
+            ? `${persistedPetitionSnapshot.factualSummary} ${
+                bacenSourceQuality === "official"
+                  ? "Comparacao BACEN com fonte oficial consolidada."
+                  : "Comparacao BACEN ainda em fallback controlado."
+              } Revisao obrigatoria: ${petitionReviewChecklist.join("; ")}.`
+            : `${caseDossier.peticoes.summary} ${
+                bacenSourceQuality === "official"
+                  ? "Comparacao BACEN com fonte oficial consolidada."
+                  : "Comparacao BACEN ainda em fallback controlado."
+              }`,
         sources: petitionReviewChecklist.length
           ? [...caseDossier.peticoes.sources, "revisao humana obrigatoria"]
           : caseDossier.peticoes.sources

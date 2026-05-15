@@ -33,6 +33,14 @@ type ClientCockpitContractAnalysis = {
     suggestedRequests: ReadonlyArray<string>;
     executiveSummary: string;
     approvedForFiling?: boolean;
+    automationReadiness?: {
+      state: "autonomous" | "assisted" | "blocked";
+      confidenceScore: number;
+      confidenceLabel: "high" | "medium" | "low";
+      summary: string;
+      blockers: ReadonlyArray<string>;
+      signals: ReadonlyArray<string>;
+    };
   };
   bacenComparison: {
     summary: string;
@@ -285,6 +293,28 @@ function criticalityTone(criticality: "low" | "medium" | "high") {
   }
 }
 
+function automationTone(state: "autonomous" | "assisted" | "blocked") {
+  switch (state) {
+    case "autonomous":
+      return "border-emerald-300/30 bg-emerald-300/10 text-emerald-100";
+    case "assisted":
+      return "border-cyan-300/30 bg-cyan-300/10 text-cyan-100";
+    default:
+      return "border-amber-300/30 bg-amber-300/10 text-amber-100";
+  }
+}
+
+function automationLabel(state: "autonomous" | "assisted" | "blocked") {
+  switch (state) {
+    case "autonomous":
+      return "Autonomo";
+    case "assisted":
+      return "Assistido";
+    default:
+      return "Bloqueado";
+  }
+}
+
 const CONTRACT_ANALYSIS_DOCUMENT_TYPES = new Set(["Contrato bancario", "CCB"]);
 
 function isContractAnalysisDocument(documentType: string) {
@@ -394,6 +424,7 @@ export function ClientCockpitFrame({
     contractAnalysis?.caseDossier.peticoes.summary ?? "Peticoes automaticas indisponiveis no momento.";
   const peticoesSources = contractAnalysis?.caseDossier.peticoes.sources ?? [];
   const petitionApprovedForFiling = contractAnalysis?.analysis.approvedForFiling ?? false;
+  const automationReadiness = contractAnalysis?.analysis.automationReadiness ?? null;
   const laudoPdfHref = activeCase ? `/api/clientes/${client.id}/documentos-gerados/laudo/pdf?caseId=${activeCase.id}` : null;
   const baseOverviewDocument =
     caseDocuments.find((document) => isContractAnalysisDocument(document.documentType)) ?? caseDocuments[0] ?? null;
@@ -571,6 +602,27 @@ export function ClientCockpitFrame({
             <DeleteClientButton clientId={client.id} clientName={client.fullName} caseCount={clientCaseCount} />
           </div>
         </div>
+
+        {automationReadiness ? (
+          <div className={`rounded-[4px] border px-4 py-4 ${automationTone(automationReadiness.state)}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em]">Confianca operacional</p>
+                <p className="mt-2 text-sm font-semibold">
+                  {automationLabel(automationReadiness.state)} | {automationReadiness.confidenceScore}%
+                </p>
+                <p className="mt-2 text-sm leading-6">{automationReadiness.summary}</p>
+              </div>
+              <div className="text-sm">
+                {automationReadiness.blockers.length ? (
+                  <span>{automationReadiness.blockers[0]}</span>
+                ) : (
+                  <span>{automationReadiness.signals[0] ?? "Envelope automatico consistente."}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="border-b border-white/10">
           <div className="flex flex-wrap gap-2" role="tablist" aria-label="Abas do dossie do caso">

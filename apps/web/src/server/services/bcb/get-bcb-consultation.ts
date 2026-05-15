@@ -27,6 +27,15 @@ export type BcbConsultation = {
   failureReason?: string;
 };
 
+export type BankingRateReferenceConfig = {
+  modalityKey: string;
+  modalityLabel: string;
+  seriesCode: string;
+  seriesLabel: string;
+  sourceUrl: string;
+  approximationLabel?: string;
+};
+
 type ConsultedResponse = {
   title: string;
   items: Array<{
@@ -48,6 +57,40 @@ const DEFAULT_SGS_SERIES = {
   "432": "IGP-M - variacao mensal"
 } as const;
 
+const BANKING_RATE_REFERENCE_BY_MODALITY: Record<string, BankingRateReferenceConfig | null> = {
+  "financiamento-veiculo": {
+    modalityKey: "financiamento-veiculo",
+    modalityLabel: "Financiamento de veiculo",
+    seriesCode: "25471",
+    seriesLabel:
+      "Taxa media mensal de juros das operacoes de credito com recursos livres - Pessoas fisicas - Aquisicao de veiculos",
+    sourceUrl:
+      "https://dadosabertos.bcb.gov.br/dataset/25471-taxa-media-mensal-de-juros-das-operacoes-de-credito-com-recursos-livres---pessoas-fisicas---a"
+  },
+  "busca-apreensao": {
+    modalityKey: "busca-apreensao",
+    modalityLabel: "Financiamento com risco de mora",
+    seriesCode: "25471",
+    seriesLabel:
+      "Taxa media mensal de juros das operacoes de credito com recursos livres - Pessoas fisicas - Aquisicao de veiculos",
+    sourceUrl:
+      "https://dadosabertos.bcb.gov.br/dataset/25471-taxa-media-mensal-de-juros-das-operacoes-de-credito-com-recursos-livres---pessoas-fisicas---a",
+    approximationLabel: "Serie de aquisicao de veiculos usada por aderencia ao contrato-base com garantia do bem."
+  },
+  "beneficio-descontos": {
+    modalityKey: "beneficio-descontos",
+    modalityLabel: "Desconto em beneficio",
+    seriesCode: "25468",
+    seriesLabel:
+      "Taxa media mensal de juros das operacoes de credito com recursos livres - Pessoas fisicas - Credito pessoal consignado para aposentados e pensionistas do INSS",
+    sourceUrl:
+      "https://dadosabertos.bcb.gov.br/dataset/25468-taxa-media-mensal-de-juros-das-operacoes-de-credito-com-recursos-livres---pessoas-fisicas---c"
+  },
+  "cartao-consignado": null,
+  fraude: null,
+  ccb: null
+};
+
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -68,6 +111,47 @@ function formatDateForPtax(value: string) {
   }
 
   return `${month}-${day}-${year}`;
+}
+
+function resolveCompetenceWindow(competenceLabel?: string) {
+  const normalized = competenceLabel?.trim();
+
+  if (!normalized) {
+    const today = new Date();
+    const year = today.getUTCFullYear();
+    const month = String(today.getUTCMonth() + 1).padStart(2, "0");
+    return {
+      competenceLabel: `${month}/${year}`,
+      startDate: `${year}-${month}-01`,
+      endDate: `${year}-${month}-28`
+    };
+  }
+
+  const slashMatch = normalized.match(/^(\d{2})\/(\d{4})$/);
+  if (slashMatch) {
+    const [, month, year] = slashMatch;
+    return {
+      competenceLabel: normalized,
+      startDate: `${year}-${month}-01`,
+      endDate: `${year}-${month}-28`
+    };
+  }
+
+  const isoMatch = normalized.match(/^(\d{4})-(\d{2})$/);
+  if (isoMatch) {
+    const [, year, month] = isoMatch;
+    return {
+      competenceLabel: `${month}/${year}`,
+      startDate: `${year}-${month}-01`,
+      endDate: `${year}-${month}-28`
+    };
+  }
+
+  return {
+    competenceLabel: normalized,
+    startDate: todayIsoDate(),
+    endDate: todayIsoDate()
+  };
 }
 
 function buildUnavailableConsultation(params: {
@@ -288,4 +372,83 @@ export async function getBcbPtaxConsultation(moeda?: string, data?: string) {
       failureReason: error instanceof Error ? error.message : "Falha desconhecida na consulta PTAX."
     });
   }
+}
+
+export async function getBcbBankingRateConsultation(modalityKey?: string, competenceLabel?: string) {
+  const reference = modalityKey ? BANKING_RATE_REFERENCE_BY_MODALITY[modalityKey] : null;
+  const competenceWindow = resolveCompetenceWindow(competenceLabel);
+
+  if (!modalityKey || !reference) {
+    return buildUnavailableConsultation({
+      kind: "sgs",
+      endpoint: BCB_SGS_BASE_URL,
+      query: {
+        modalityKey: modalityKey ?? "",
+        competence: competenceWindow.competenceLabel
+      },
+      title: "Referencia BACEN da modalidade",
+      summary:
+        "Nao existe serie oficial aderente mapeada automaticamente para esta modalidade contratual.",
+      failureReason:
+        "Modalidade sem serie oficial aderente mapeada no adaptador BACEN; fallback controlado mantido."
+    });
+  }
+
+  const consultation = await getBcbSgsConsultation(
+    reference.seriesCode,
+    competenceWindow.startDate,
+    competenceWindow.endDate
+  );
+
+  if (consultation.status !== "consulted") {
+    return {
+      ...consultation,
+      summary: `A serie oficial ${reference.seriesCode} foi selecionada para ${reference.modalityLabel}, mas a consulta nao retornou dado utilizavel para ${competenceWindow.competenceLabel}.`,
+      query: {
+        ...consultation.query,
+        modalityKey: reference.modalityKey,
+        competence: competenceWindow.competenceLabel
+      },
+      sourceTrace: {
+        ...consultation.sourceTrace,
+        origem_documental: [reference.sourceUrl],
+        origem_api: [...consultation.sourceTrace.origem_api, `SGS ${reference.seriesCode}`],
+        inferencia_controlada: reference.approximationLabel
+          ? [...consultation.sourceTrace.inferencia_controlada, reference.approximationLabel]
+          : consultation.sourceTrace.inferencia_controlada
+      }
+    };
+  }
+
+  return {
+    ...consultation,
+    title: reference.seriesLabel,
+    summary: `Serie oficial ${reference.seriesCode} consultada para ${reference.modalityLabel} em ${competenceWindow.competenceLabel}.`,
+    query: {
+      ...consultation.query,
+      modalityKey: reference.modalityKey,
+      competence: competenceWindow.competenceLabel
+    },
+    sourceTrace: {
+      ...consultation.sourceTrace,
+      origem_documental: [reference.sourceUrl],
+      origem_api: [...consultation.sourceTrace.origem_api, `SGS ${reference.seriesCode}`],
+      inferencia_controlada: reference.approximationLabel
+        ? [...consultation.sourceTrace.inferencia_controlada, reference.approximationLabel]
+        : consultation.sourceTrace.inferencia_controlada
+    },
+    payload: {
+      title: reference.seriesLabel,
+      items: consultation.payload.items.map((item, index) => ({
+        ...item,
+        label: index === 0 ? `${reference.modalityLabel} | ${competenceWindow.competenceLabel}` : item.label,
+        metadata: {
+          ...item.metadata,
+          modalityKey: reference.modalityKey,
+          competence: competenceWindow.competenceLabel,
+          sourceUrl: reference.sourceUrl
+        }
+      }))
+    }
+  };
 }

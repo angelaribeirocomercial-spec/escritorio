@@ -9,7 +9,12 @@ import type {
   DocumentStructuredExtractionField
 } from "@lexia/domain";
 
+import { getBcbBankingRateConsultation } from "@/server/services/bcb/get-bcb-consultation";
 import { getBankingRevisionalCalculation } from "@/server/services/clara/get-banking-revisional-calculation";
+import {
+  getCaseAutomationReadiness,
+  getDocumentAutomationReadiness
+} from "@/server/services/contract-analysis/get-automation-readiness";
 
 type ExtractionConfidence = "low" | "medium" | "high";
 
@@ -24,6 +29,8 @@ type BcbSnapshot = {
   differenceLabel: string;
   classificationLabel: string;
   sourceLabel: string;
+  sourceQuality: "official" | "fallback";
+  sourceHandle: string;
   summary: string;
 };
 
@@ -48,7 +55,30 @@ type CalculationSnapshot = ReturnType<typeof getBankingRevisionalCalculation> & 
   legalImpactSummary: string[];
 };
 
+type RelatedDocumentEvidenceRow = {
+  id: string;
+  file_name: string;
+  document_type: string;
+  category: string;
+  structured_extraction: ExtractionFieldMap | null;
+};
+
 const CONTRACT_DOCUMENT_TYPES = new Set(["Contrato bancario", "CCB"]);
+const RECONCILABLE_EXTRACTION_KEYS = [
+  "banco",
+  "modalidade",
+  "competencia",
+  "taxaContrato",
+  "cet",
+  "parcelas",
+  "valorFinanciado",
+  "parcelaContratada",
+  "parcelaCobrada",
+  "seguro",
+  "tarifas",
+  "permanencia",
+  "multa"
+] as const;
 
 const BACEN_REFERENCE_BY_MODALITY: Record<
   string,
@@ -163,6 +193,14 @@ function classifyDifference(contractRate: number | null, referenceRate: number |
 
 function readField(fields: ExtractionFieldMap, key: string) {
   return fields[key]?.value ?? "";
+}
+
+function isMissingExtractionValue(value: string | null | undefined) {
+  if (!value) {
+    return true;
+  }
+
+  return /nao identificado|nao identificada|nao aplicavel|sem leitura|pendente/i.test(value);
 }
 
 function field(value: string, confidence: ExtractionConfidence, sourceLabel: string) {
@@ -320,12 +358,148 @@ function buildStructuredExtraction(params: {
   };
 }
 
-function buildBacenSnapshot(params: {
+async function loadRelatedEvidenceDocuments(params: {
+  supabase: SupabaseClient;
+  tenantId: string;
+  caseId: string;
+  excludingDocumentId: string;
+}) {
+  const { data, error } = await params.supabase
+    .from("documents")
+    .select("id,file_name,document_type,category,structured_extraction")
+    .eq("tenant_id", params.tenantId)
+    .eq("case_id", params.caseId)
+    .neq("id", params.excludingDocumentId);
+
+  if (error) {
+    throw new Error(`Falha ao carregar evidencias documentais do caso: ${error.message}`);
+  }
+
+  return (data ?? []) as RelatedDocumentEvidenceRow[];
+}
+
+function reconcileExtraction(params: {
+  baseExtraction: ReturnType<typeof buildStructuredExtraction>;
+  relatedDocuments: RelatedDocumentEvidenceRow[];
+}) {
+  const nextFields: ExtractionFieldMap = { ...params.baseExtraction.fields };
+  const conflicts: string[] = [];
+  const reinforcementSignals: string[] = [];
+
+  for (const key of RECONCILABLE_EXTRACTION_KEYS) {
+    const baseField = nextFields[key];
+    const siblingCandidates = params.relatedDocuments
+      .map((document) => ({
+        document,
+        field: document.structured_extraction?.[key]
+      }))
+      .filter(
+        (
+          item
+        ): item is { document: RelatedDocumentEvidenceRow; field: DocumentStructuredExtractionField } => {
+          const candidateField = item.field;
+          if (!candidateField) {
+            return false;
+          }
+
+          return !isMissingExtractionValue(candidateField.value);
+        }
+      );
+
+    if (!siblingCandidates.length) {
+      continue;
+    }
+
+    const uniqueValues = Array.from(new Set(siblingCandidates.map((item) => item.field.value.trim())));
+    const primaryCandidate = siblingCandidates[0];
+    const unanimous = uniqueValues.length === 1;
+    const shouldBackfill = !baseField || isMissingExtractionValue(baseField.value);
+
+    if (shouldBackfill) {
+      nextFields[key] = {
+        value: primaryCandidate.field.value,
+        confidence: unanimous || siblingCandidates.length > 1 ? "high" : primaryCandidate.field.confidence,
+        sourceLabel: `Reconciliado com ${primaryCandidate.document.file_name}`
+      };
+      reinforcementSignals.push(`${key} preenchido por reconciliacao documental do caso.`);
+      continue;
+    }
+
+    if (unanimous && baseField.value.trim() === uniqueValues[0] && baseField.confidence !== "high") {
+      nextFields[key] = {
+        ...baseField,
+        confidence: "high",
+        sourceLabel: `${baseField.sourceLabel} | confirmado por ${siblingCandidates.length} documento(s) do caso`
+      };
+      reinforcementSignals.push(`${key} confirmado por evidencia cruzada do caso.`);
+      continue;
+    }
+
+    if (!unanimous && uniqueValues.every((value) => value !== baseField.value.trim())) {
+      conflicts.push(`${key}: ${[baseField.value, ...uniqueValues].join(" | ")}`);
+    }
+  }
+
+  const aiStatus = conflicts.length
+    ? "needs_review"
+    : params.baseExtraction.aiStatus;
+  const previewLabel = conflicts.length
+    ? "Leitura estruturada reconciliada com conflito entre documentos. Revisar apenas os campos divergentes."
+    : reinforcementSignals.length
+      ? "Leitura estruturada enriquecida por reconciliacao automatica entre documentos do caso."
+      : params.baseExtraction.previewLabel;
+  const sourceTrace = {
+    ...params.baseExtraction.sourceTrace,
+    inferencia_controlada: [
+      ...params.baseExtraction.sourceTrace.inferencia_controlada,
+      ...reinforcementSignals,
+      ...(conflicts.length
+        ? [`Conflitos documentais detectados: ${conflicts.join("; ")}.`]
+        : [])
+    ]
+  };
+  const extractionError = conflicts.length
+    ? `Conflito entre documentos do caso em campos criticos: ${conflicts.join("; ")}`
+    : params.baseExtraction.extractionError;
+
+  return {
+    ...params.baseExtraction,
+    fields: nextFields,
+    aiStatus,
+    previewLabel,
+    sourceTrace,
+    extractionError
+  };
+}
+
+async function buildBacenSnapshot(params: {
   extraction: ExtractionFieldMap;
   modality: { key: string; label: string };
 }) {
   const contractRate = parsePercentValue(readField(params.extraction, "taxaContrato"));
   const competenceLabel = readField(params.extraction, "competencia") || "Competencia nao identificada";
+  const officialConsultation = await getBcbBankingRateConsultation(params.modality.key, competenceLabel);
+  const officialItem = officialConsultation.payload.items[0];
+  const officialRawValue =
+    officialItem && "valor" in officialItem.metadata ? officialItem.metadata.valor : officialItem?.value;
+  const officialRate = parsePercentValue(officialRawValue);
+
+  if (officialConsultation.status === "consulted" && officialItem && officialRate != null) {
+    return {
+      status: "consulted",
+      modalityLabel: params.modality.label,
+      competenceLabel,
+      contractRateLabel: readField(params.extraction, "taxaContrato"),
+      referenceRateLabel: formatPercent(officialRate),
+      differenceLabel: formatDifference(contractRate, officialRate),
+      classificationLabel: classifyDifference(contractRate, officialRate),
+      sourceLabel: officialConsultation.payload.title,
+      sourceQuality: "official",
+      sourceHandle: officialItem.sourceHandle,
+      summary: `Comparacao BACEN consolidada com fonte oficial para ${params.modality.label.toLowerCase()} em ${competenceLabel}.`
+    } satisfies BcbSnapshot;
+  }
+
   const reference = BACEN_REFERENCE_BY_MODALITY[params.modality.key];
 
   if (!reference || reference.monthlyRate === 0) {
@@ -337,7 +511,9 @@ function buildBacenSnapshot(params: {
       referenceRateLabel: "Referencia indisponivel",
       differenceLabel: "Nao calculado",
       classificationLabel: "Atencao",
-      sourceLabel: reference?.sourceLabel ?? "BACEN | sem referencia configurada",
+      sourceLabel: officialConsultation.failureReason ?? reference?.sourceLabel ?? "BACEN | sem referencia configurada",
+      sourceQuality: "fallback",
+      sourceHandle: officialItem?.sourceHandle ?? `fallback:${params.modality.key}:no-series`,
       summary:
         "Nao existe referencia BACEN economica util para este documento ou ela ainda nao foi consolidada."
     } satisfies BcbSnapshot;
@@ -352,7 +528,9 @@ function buildBacenSnapshot(params: {
     differenceLabel: formatDifference(contractRate, reference.monthlyRate),
     classificationLabel: classifyDifference(contractRate, reference.monthlyRate),
     sourceLabel: reference.sourceLabel,
-    summary: `Comparacao BACEN consolidada para ${params.modality.label.toLowerCase()} em ${competenceLabel}.`
+    sourceQuality: "fallback",
+    sourceHandle: officialItem?.sourceHandle ?? `fallback:${params.modality.key}`,
+    summary: `Comparacao BACEN consolidada por fallback controlado para ${params.modality.label.toLowerCase()} em ${competenceLabel}.`
   } satisfies BcbSnapshot;
 }
 
@@ -519,10 +697,20 @@ export async function syncCaseDossierFromDocument(params: {
   reviewStatus?: "pending" | "reviewed" | "corrected";
   reviewNotes?: string;
 }) {
-  const baseExtraction = buildStructuredExtraction({
+  const initialExtraction = buildStructuredExtraction({
     document: params.document,
     client: params.client,
     bankingCase: params.bankingCase
+  });
+  const relatedDocuments = await loadRelatedEvidenceDocuments({
+    supabase: params.supabase,
+    tenantId: params.tenantId,
+    caseId: params.bankingCase.id,
+    excludingDocumentId: params.document.id
+  });
+  const baseExtraction = reconcileExtraction({
+    baseExtraction: initialExtraction,
+    relatedDocuments
   });
   const extraction = params.forcedExtraction
     ? {
@@ -538,6 +726,26 @@ export async function syncCaseDossierFromDocument(params: {
         reviewStatus: params.reviewStatus ?? "corrected"
       }
     : baseExtraction;
+  const documentAutomationReadiness = getDocumentAutomationReadiness({
+    aiStatus: extraction.aiStatus as DocumentRecord["aiStatus"],
+    extractionError: extraction.extractionError ?? undefined,
+    reviewStatus: params.reviewStatus ?? extraction.reviewStatus,
+    structuredExtraction: extraction.fields
+  });
+  const effectiveReviewStatus =
+    params.reviewStatus ??
+    (params.forcedExtraction
+      ? "corrected"
+      : documentAutomationReadiness.state === "autonomous"
+        ? "reviewed"
+        : extraction.reviewStatus);
+  const effectiveReviewNotes =
+    params.reviewNotes ??
+    (params.forcedExtraction
+      ? params.document.reviewNotes ?? null
+      : documentAutomationReadiness.state === "autonomous"
+        ? "Autoaprovado por consistencia estrutural do documento. Conferencia humana mantida apenas como seguranca."
+        : params.document.reviewNotes ?? null);
 
   const { error: documentError } = await params.supabase
     .from("documents")
@@ -548,13 +756,15 @@ export async function syncCaseDossierFromDocument(params: {
       extraction_source_trace: extraction.sourceTrace,
       extraction_error: extraction.extractionError,
       extracted_at: new Date().toISOString(),
-      reviewed_at: extraction.reviewStatus === "pending" ? null : new Date().toISOString(),
-      review_notes: params.reviewNotes ?? params.document.reviewNotes ?? null,
-      review_status: params.reviewStatus ?? extraction.reviewStatus,
+      reviewed_at: effectiveReviewStatus === "pending" ? null : new Date().toISOString(),
+      review_notes: effectiveReviewNotes,
+      review_status: effectiveReviewStatus,
       actions:
-        extraction.aiStatus === "analyzed"
-          ? ["Conferir leitura estruturada", "Revisar campos do contrato", "Acionar Clara"]
-          : ["Revisar campos extraidos", "Corrigir dados do documento", "Acionar Clara"]
+        documentAutomationReadiness.state === "autonomous"
+          ? ["Conferir resumo automatico", "Acompanhar dossie do caso", "Acionar Clara"]
+          : extraction.aiStatus === "analyzed"
+            ? ["Conferir leitura estruturada", "Revisar campos do contrato", "Acionar Clara"]
+            : ["Revisar campos extraidos", "Corrigir dados do documento", "Acionar Clara"]
     })
     .eq("tenant_id", params.tenantId)
     .eq("id", params.document.id);
@@ -569,7 +779,7 @@ export async function syncCaseDossierFromDocument(params: {
     };
   }
 
-  const bacenSnapshot = buildBacenSnapshot({
+  const bacenSnapshot = await buildBacenSnapshot({
     extraction: extraction.fields,
     modality: extraction.modality
   });
@@ -593,6 +803,21 @@ export async function syncCaseDossierFromDocument(params: {
   const abusivenessSignals = buildAbusivenessSignals({
     extraction: extraction.fields,
     bacen: bacenSnapshot
+  });
+  const caseAutomationReadiness = getCaseAutomationReadiness({
+    document: {
+      aiStatus: extraction.aiStatus as DocumentRecord["aiStatus"],
+      extractionError: extraction.extractionError ?? undefined,
+      reviewStatus: effectiveReviewStatus,
+      structuredExtraction: extraction.fields
+    },
+    analysis: {
+      calculationSnapshot,
+      bacenSnapshot,
+      strategicSnapshot,
+      petitionSnapshot,
+      approvedForFiling: false
+    }
   });
   const contractAnalysisId = `analysis-${params.document.id}`;
 
@@ -689,7 +914,8 @@ export async function syncCaseDossierFromDocument(params: {
       strategicSnapshot,
       petitionSnapshot,
       approvedForFiling: false,
-      syncedAt: analysisRow.synced_at
+      syncedAt: analysisRow.synced_at,
+      automationReadiness: caseAutomationReadiness
     } satisfies ContractAnalysisRecord
   };
 }

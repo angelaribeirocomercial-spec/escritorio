@@ -17,6 +17,8 @@ import {
 } from "@/server/services/documents/upload-tenant-document";
 import { syncCaseDossierFromDocument } from "@/server/services/contract-analysis/sync-case-dossier-from-document";
 
+const CONTRACT_ANALYSIS_DOCUMENT_TYPES = new Set(["Contrato bancario", "CCB"]);
+
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
 
@@ -89,6 +91,33 @@ export async function uploadDocumentAction(formData: FormData) {
       claimType: bankingCase.claimType
     }
   });
+  const existingDocuments = await getDocumentsByCaseId(bankingCase.id);
+
+  if (!CONTRACT_ANALYSIS_DOCUMENT_TYPES.has(documentType)) {
+    const primaryContractDocument = existingDocuments.find((document) =>
+      CONTRACT_ANALYSIS_DOCUMENT_TYPES.has(document.documentType)
+    );
+
+    if (primaryContractDocument) {
+      await syncCaseDossierFromDocument({
+        supabase,
+        tenantId: session.workspace.tenant.id,
+        document: primaryContractDocument,
+        client: {
+          id: bankingCase.client.id,
+          fullName: bankingCase.client.fullName,
+          bankName: bankingCase.client.bankName
+        },
+        bankingCase: {
+          id: bankingCase.id,
+          title: bankingCase.title,
+          bankName: bankingCase.bankName,
+          niche: bankingCase.niche,
+          claimType: bankingCase.claimType
+        }
+      });
+    }
+  }
 
   const nextCaseLinkedDocuments = Array.from(
     new Set([...bankingCase.linkedDocuments, uploadedDocument.documentId])
@@ -96,7 +125,6 @@ export async function uploadDocumentAction(formData: FormData) {
   const nextClientLinkedDocuments = Array.from(
     new Set([...bankingCase.client.linkedDocuments, uploadedDocument.documentId])
   );
-  const existingDocuments = await getDocumentsByCaseId(bankingCase.id);
   const lifecycleState = buildPersistedBankingCaseLifecycle({
     niche: bankingCase.niche,
     stage: bankingCase.stage,

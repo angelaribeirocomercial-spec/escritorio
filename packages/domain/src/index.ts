@@ -286,6 +286,17 @@ export interface ProceduralDeadlineRecord {
 
 export type DocumentAiStatus = "not_analyzed" | "analyzed" | "needs_review";
 export type DocumentReviewStatus = "pending" | "reviewed" | "corrected";
+export type AutomationReadinessState = "autonomous" | "assisted" | "blocked";
+export type AutomationConfidenceLabel = "high" | "medium" | "low";
+
+export interface AutomationReadinessRecord {
+  state: AutomationReadinessState;
+  confidenceScore: number;
+  confidenceLabel: AutomationConfidenceLabel;
+  summary: string;
+  blockers: readonly string[];
+  signals: readonly string[];
+}
 
 export interface DocumentStructuredExtractionField {
   value: string;
@@ -319,6 +330,7 @@ export interface DocumentRecord {
   reviewedAt?: string;
   reviewNotes?: string;
   reviewStatus?: DocumentReviewStatus;
+  automationReadiness?: AutomationReadinessRecord;
 }
 
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
@@ -389,6 +401,7 @@ export interface ContractAnalysisRecord {
   petitionSnapshot?: Record<string, unknown>;
   approvedForFiling?: boolean;
   syncedAt?: string;
+  automationReadiness?: AutomationReadinessRecord;
 }
 
 export type ProcessFilingKind =

@@ -110,6 +110,7 @@ const DOCUMENT_SLOTS: readonly IntakeDocumentSlot[] = [
 ] as const;
 
 const MINIMUM_REQUIRED_DOCUMENT_SLOT_KEYS = ["personal-document"] as const;
+const CONTRACT_ANALYSIS_DOCUMENT_TYPES = new Set(["Contrato bancario", "CCB", "Contrato bancario ou CCB"]);
 
 function getDocumentSlot(slotKey: string) {
   return DOCUMENT_SLOTS.find((slot) => slot.key === slotKey) ?? null;
@@ -628,6 +629,30 @@ export async function createBankingIntakeAction(formData: FormData) {
         supabase,
         tenantId: session.workspace.tenant.id,
         document: uploadedDocument.document,
+        client: {
+          id: clientId,
+          fullName: resolvedFullName,
+          bankName: resolvedBankName
+        },
+        bankingCase: {
+          id: caseId,
+          title: caseTitle,
+          bankName,
+          niche,
+          claimType: buildClaimType(niche)
+        }
+      });
+    }
+
+    const primaryContractDocument = uploadedDocuments.find((uploadedDocument) =>
+      CONTRACT_ANALYSIS_DOCUMENT_TYPES.has(uploadedDocument.document.documentType)
+    );
+
+    if (primaryContractDocument) {
+      await syncCaseDossierFromDocument({
+        supabase,
+        tenantId: session.workspace.tenant.id,
+        document: primaryContractDocument.document,
         client: {
           id: clientId,
           fullName: resolvedFullName,

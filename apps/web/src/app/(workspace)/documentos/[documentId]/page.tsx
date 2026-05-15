@@ -20,6 +20,28 @@ function aiStatusLabel(status: string) {
   }
 }
 
+function automationTone(state: "autonomous" | "assisted" | "blocked") {
+  switch (state) {
+    case "autonomous":
+      return "border-emerald-300/20 bg-emerald-300/10 text-emerald-100";
+    case "assisted":
+      return "border-cyan-300/20 bg-cyan-300/10 text-cyan-100";
+    default:
+      return "border-amber-300/20 bg-amber-300/10 text-amber-100";
+  }
+}
+
+function automationLabel(state: "autonomous" | "assisted" | "blocked") {
+  switch (state) {
+    case "autonomous":
+      return "Autoaprovado";
+    case "assisted":
+      return "Assistido";
+    default:
+      return "Excecao";
+  }
+}
+
 const EXTRACTION_FIELD_LABELS: Array<[string, string]> = [
   ["banco", "Banco"],
   ["modalidade", "Modalidade"],
@@ -85,6 +107,7 @@ export default async function DocumentDetailPage({
   });
   const extractionFields = document.structuredExtraction ?? {};
   const extractionFormAction = reviewDocumentExtractionAction as unknown as string;
+  const automationReadiness = document.automationReadiness ?? null;
 
   return (
     <WorkspacePage
@@ -119,6 +142,16 @@ export default async function DocumentDetailPage({
           </Link>
         </div>
       </div>
+
+      {automationReadiness ? (
+        <div className={`rounded-[4px] border px-4 py-4 text-sm ${automationTone(automationReadiness.state)}`}>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em]">Confianca operacional do documento</p>
+          <p className="mt-2 font-semibold">
+            {automationLabel(automationReadiness.state)} | {automationReadiness.confidenceScore}%
+          </p>
+          <p className="mt-2 leading-6">{automationReadiness.summary}</p>
+        </div>
+      ) : null}
 
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <article className="detail-panel p-5">
