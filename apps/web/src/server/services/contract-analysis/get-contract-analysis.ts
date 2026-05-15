@@ -607,6 +607,10 @@ export async function getContractAnalysisWorkspace(
     typeof persistedBacenSnapshot?.sourceQuality === "string"
       ? persistedBacenSnapshot.sourceQuality
       : "fallback";
+  const calculationInputQuality =
+    typeof persistedCalculationSnapshot?.inputQuality === "string"
+      ? persistedCalculationSnapshot.inputQuality
+      : "simulated";
   const strategicSummary =
     typeof persistedStrategicSnapshot?.executiveSummary === "string"
       ? persistedStrategicSnapshot.executiveSummary
@@ -810,20 +814,42 @@ export async function getContractAnalysisWorkspace(
       laudo: {
         ...caseDossier.laudo,
         summary:
-          bacenSourceQuality === "official"
-            ? `${strategicSummary} Fonte BACEN oficial consolidada no envelope do caso.`
-            : `${strategicSummary} Comparacao BACEN ainda em fallback controlado, com revisao humana de seguranca.`
+          `${
+            strategicSummary
+          } ${
+            calculationInputQuality === "grounded"
+              ? "Memoria economica ancorada em campos financeiros materializados."
+              : calculationInputQuality === "hybrid"
+                ? "Memoria economica parcialmente simulada por lacunas documentais pontuais."
+                : "Memoria economica ainda simulada e sujeita a reforco documental."
+          } ${
+            bacenSourceQuality === "official"
+              ? "Fonte BACEN oficial consolidada no envelope do caso."
+              : "Comparacao BACEN ainda em fallback controlado, com revisao humana de seguranca."
+          }`
       },
       peticoes: {
         ...caseDossier.peticoes,
         summary:
           typeof persistedPetitionSnapshot?.factualSummary === "string"
             ? `${persistedPetitionSnapshot.factualSummary} ${
+                calculationInputQuality === "grounded"
+                  ? "Base economica materializada no caso."
+                  : calculationInputQuality === "hybrid"
+                    ? "Base economica parcialmente simulada e sinalizada no caso."
+                    : "Base economica ainda simulada e sujeita a reforco documental."
+              } ${
                 bacenSourceQuality === "official"
                   ? "Comparacao BACEN com fonte oficial consolidada."
                   : "Comparacao BACEN ainda em fallback controlado."
               } Revisao obrigatoria: ${petitionReviewChecklist.join("; ")}.`
             : `${caseDossier.peticoes.summary} ${
+                calculationInputQuality === "grounded"
+                  ? "Base economica materializada no caso."
+                  : calculationInputQuality === "hybrid"
+                    ? "Base economica parcialmente simulada e sinalizada no caso."
+                    : "Base economica ainda simulada e sujeita a reforco documental."
+              } ${
                 bacenSourceQuality === "official"
                   ? "Comparacao BACEN com fonte oficial consolidada."
                   : "Comparacao BACEN ainda em fallback controlado."

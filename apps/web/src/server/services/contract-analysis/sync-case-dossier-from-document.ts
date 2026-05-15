@@ -53,6 +53,9 @@ type PetitionSnapshot = {
 
 type CalculationSnapshot = ReturnType<typeof getBankingRevisionalCalculation> & {
   legalImpactSummary: string[];
+  inputQuality: "grounded" | "hybrid" | "simulated";
+  groundedFields: string[];
+  fallbackFields: string[];
 };
 
 type RelatedDocumentEvidenceRow = {
@@ -115,6 +118,10 @@ function normalizeFreeText(value: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+}
+
+function normalizeWhitespace(value: string) {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 function parseCurrencyValue(value: string | null | undefined) {
@@ -216,6 +223,89 @@ function extractFirst(text: string, pattern: RegExp) {
   return match?.[1]?.trim() ?? null;
 }
 
+function createSearchableText(parts: Array<string | null | undefined>) {
+  return normalizeWhitespace(parts.filter(Boolean).join(" "));
+}
+
+function findFirstPattern(text: string, patterns: RegExp[]) {
+  for (const pattern of patterns) {
+    const match = extractFirst(text, pattern);
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
+}
+
+function inferBankNameFromText(text: string) {
+  const normalized = normalizeFreeText(text);
+  const aliases = [
+    { label: "Banco do Brasil", matches: ["banco do brasil", "bb "] },
+    { label: "Bradesco", matches: ["bradesco"] },
+    { label: "Itau", matches: ["itau", "itaú"] },
+    { label: "Santander", matches: ["santander"] },
+    { label: "Caixa Economica Federal", matches: ["caixa economica", "cef"] },
+    { label: "BV Financeira", matches: ["bv financeira", "banco bv", "bv "] },
+    { label: "Banco Pan", matches: ["banco pan", "panamericano", "pan "] },
+    { label: "C6 Bank", matches: ["c6 bank", "c6 "] },
+    { label: "Banco Safra", matches: ["safra"] }
+  ];
+
+  const alias = aliases.find((candidate) =>
+    candidate.matches.some((term) => normalized.includes(normalizeFreeText(term)))
+  );
+
+  return alias?.label ?? null;
+}
+
+function pickCurrencyCandidate(text: string, patterns: RegExp[]) {
+  const value = findFirstPattern(text, patterns);
+  if (!value) {
+    return null;
+  }
+
+  const parsed = parseCurrencyValue(value);
+  if (parsed == null || parsed <= 0) {
+    return null;
+  }
+
+  return formatCurrency(parsed);
+}
+
+function pickPercentCandidate(text: string, patterns: RegExp[]) {
+  const value = findFirstPattern(text, patterns);
+  if (!value) {
+    return null;
+  }
+
+  const parsed = parsePercentValue(value);
+  if (parsed == null || parsed <= 0) {
+    return null;
+  }
+
+  return `${parsed.toFixed(2).replace(".", ",")}%`;
+}
+
+function pickInstallmentCountCandidate(text: string) {
+  const value = findFirstPattern(text, [
+    /(\d{1,3})\s*parcelas?/i,
+    /prazo[^0-9]{0,20}(\d{1,3})/i,
+    /em\s+(\d{1,3})\s*x/i
+  ]);
+
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number(value.replace(/[^0-9]/g, ""));
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return `${Math.round(parsed)} parcelas`;
+}
+
 function inferModality(params: {
   document: Pick<DocumentRecord, "documentType" | "category" | "summary" | "fileName">;
   bankingCase: Pick<BankingCaseRecord, "niche" | "claimType" | "title">;
@@ -262,29 +352,39 @@ function buildStructuredExtraction(params: {
   client: Pick<ClientRecord, "bankName">;
   bankingCase: Pick<BankingCaseRecord, "bankName" | "niche" | "claimType" | "title">;
 }) {
-  const baseText = [
+  const baseText = createSearchableText([
     params.document.documentType,
     params.document.category,
     params.document.summary,
     params.document.fileName
-  ].join(" ");
+  ]);
   const normalized = normalizeFreeText(baseText);
   const modality = inferModality({
     document: params.document,
     bankingCase: params.bankingCase
   });
-  const rateMatch = extractFirst(baseText, /(\d{1,2}[.,]\d{1,2})\s*%/i);
-  const cetMatch = extractFirst(baseText, /CET[^0-9]*(\d{1,2}[.,]\d{1,2})\s*%/i);
-  const installmentCountMatch = extractFirst(baseText, /(\d{1,3})\s*parcelas?/i);
-  const financedAmountMatch = extractFirst(
-    baseText,
-    /(?:valor financiado|saldo|financiado)[^0-9]*([0-9\.\,]{4,})/i
-  );
-  const installmentAmountMatch = extractFirst(
-    baseText,
-    /(?:parcela|prestacao)[^0-9]*([0-9\.\,]{3,})/i
-  );
-  const competenceMatch = extractFirst(baseText, /(\d{2}\/\d{4}|\d{4}-\d{2})/i);
+  const rateLabel = pickPercentCandidate(baseText, [
+    /(?:taxa(?:\s+do\s+contrato)?|juros)[^0-9]{0,20}(\d{1,2}[.,]\d{1,2})\s*%/i,
+    /(\d{1,2}[.,]\d{1,2})\s*%\s*(?:a\.?m\.?|ao mes)/i
+  ]);
+  const cetLabel = pickPercentCandidate(baseText, [
+    /CET[^0-9]{0,20}(\d{1,2}[.,]\d{1,2})\s*%/i,
+    /custo efetivo total[^0-9]{0,20}(\d{1,2}[.,]\d{1,2})\s*%/i
+  ]);
+  const installmentCountLabel = pickInstallmentCountCandidate(baseText);
+  const financedAmountLabel = pickCurrencyCandidate(baseText, [
+    /(?:valor financiado|saldo devedor|saldo financiado|financiado)[^0-9]{0,20}([0-9\.\,]{4,})/i,
+    /(?:valor do contrato|valor liberado)[^0-9]{0,20}([0-9\.\,]{4,})/i
+  ]);
+  const chargedInstallmentLabel = pickCurrencyCandidate(baseText, [
+    /(?:parcela atual|parcela cobrada|prestacao atual|prestacao cobrada)[^0-9]{0,20}([0-9\.\,]{3,})/i,
+    /(?:parcela|prestacao)[^0-9]{0,20}([0-9\.\,]{3,})/i
+  ]);
+  const competenceMatch = findFirstPattern(baseText, [
+    /(\d{2}\/\d{4})/i,
+    /(\d{4}-\d{2})/i,
+    /(?:contratad[oa]|assinad[oa]|emitid[oa])[^0-9]{0,20}(\d{2}\/\d{4})/i
+  ]);
   const bundledInsurance = /seguro|protecao/i.test(normalized)
     ? "Seguro embutido detectado"
     : "Sem seguro embutido identificado";
@@ -297,45 +397,76 @@ function buildStructuredExtraction(params: {
   const penaltyLabel = /multa|mora/i.test(normalized)
     ? "Encargos moratorios presentes"
     : "Encargos moratorios nao identificados";
-  const bankName =
-    params.bankingCase.bankName || params.client.bankName || extractFirst(baseText, /banco\s+([a-zA-Z\s]+)/i) || "Banco pendente";
+  const bankNameFromDocument =
+    inferBankNameFromText(baseText) ?? extractFirst(baseText, /banco\s+([a-zA-Z\s]+)/i);
+  const bankName = bankNameFromDocument || params.bankingCase.bankName || params.client.bankName || "Banco pendente";
   const contractDate =
     competenceMatch?.includes("/")
       ? competenceMatch
       : competenceMatch
         ? `${competenceMatch.slice(5, 7)}/${competenceMatch.slice(0, 4)}`
         : params.document.uploadedAt.slice(5, 7) + "/" + params.document.uploadedAt.slice(0, 4);
-  const contractRate = rateMatch ?? (params.bankingCase.niche === "fraude" ? "" : "2,98");
-  const derivedCet =
-    contractRate != null && contractRate !== ""
-      ? ((parsePercentValue(contractRate) ?? 0) + 0.7).toFixed(2).replace(".", ",")
-      : "";
-  const cet = cetMatch ?? derivedCet;
-  const installmentCount = installmentCountMatch ?? (params.bankingCase.niche === "fraude" ? "0" : "48");
-  const financedAmount = financedAmountMatch ?? (params.bankingCase.niche === "fraude" ? "" : "68.400,00");
-  const chargedInstallment = installmentAmountMatch ?? (params.bankingCase.niche === "fraude" ? "" : "2.214,00");
   const contractedInstallment =
-    chargedInstallment && params.bankingCase.niche !== "fraude"
-      ? formatCurrency((parseCurrencyValue(chargedInstallment) ?? 0) * 0.84)
+    chargedInstallmentLabel && params.bankingCase.niche !== "fraude"
+      ? formatCurrency((parseCurrencyValue(chargedInstallmentLabel) ?? 0) * 0.84)
       : "";
+  const contractRateMissing = !rateLabel && params.bankingCase.niche !== "fraude";
+  const installmentCountMissing = !installmentCountLabel && params.bankingCase.niche !== "fraude";
+  const financedAmountMissing = !financedAmountLabel && params.bankingCase.niche !== "fraude";
+  const chargedInstallmentMissing = !chargedInstallmentLabel && params.bankingCase.niche !== "fraude";
 
   const fields: ExtractionFieldMap = {
-    banco: field(bankName, bankName.includes("pendente") ? "medium" : "high", "Envelope do caso"),
+    banco: field(
+      bankName,
+      bankNameFromDocument ? "high" : bankName.includes("pendente") ? "low" : "medium",
+      bankNameFromDocument ? "Documento normalizado" : "Envelope do caso"
+    ),
     modalidade: field(modality.label, "medium", "Heuristica por nicho e documento"),
-    competencia: field(contractDate, competenceMatch ? "high" : "medium", competenceMatch ? "Documento" : "Upload do caso"),
-    taxaContrato: field(contractRate ? `${contractRate}%` : "Nao identificada", rateMatch ? "high" : "medium", rateMatch ? "Documento" : "Heuristica controlada"),
-    cet: field(cet ? `${cet}%` : "Nao identificado", cetMatch ? "high" : "medium", cetMatch ? "Documento" : "Heuristica controlada"),
-    parcelas: field(installmentCount === "0" ? "Nao aplicavel" : `${installmentCount} parcelas`, installmentCountMatch ? "high" : "medium", installmentCountMatch ? "Documento" : "Heuristica controlada"),
-    valorFinanciado: field(financedAmount ? formatCurrency(parseCurrencyValue(financedAmount) ?? 0) : "Nao identificado", financedAmountMatch ? "high" : "medium", financedAmountMatch ? "Documento" : "Heuristica controlada"),
-    parcelaCobrada: field(chargedInstallment ? formatCurrency(parseCurrencyValue(chargedInstallment) ?? 0) : "Nao identificada", installmentAmountMatch ? "high" : "medium", installmentAmountMatch ? "Documento" : "Heuristica controlada"),
-    parcelaContratada: field(contractedInstallment || "Nao identificada", chargedInstallment ? "medium" : "low", "Derivacao controlada da leitura inicial"),
+    competencia: field(
+      contractDate,
+      competenceMatch ? "high" : "medium",
+      competenceMatch ? "Documento normalizado" : "Upload do caso"
+    ),
+    taxaContrato: field(
+      rateLabel ?? "Nao identificada",
+      rateLabel ? "high" : "low",
+      rateLabel ? "Documento normalizado" : "Sem evidencia financeira suficiente"
+    ),
+    cet: field(
+      cetLabel ?? "Nao identificado",
+      cetLabel ? "high" : "low",
+      cetLabel ? "Documento normalizado" : "Sem evidencia financeira suficiente"
+    ),
+    parcelas: field(
+      params.bankingCase.niche === "fraude"
+        ? "Nao aplicavel"
+        : installmentCountLabel ?? "Nao identificadas",
+      installmentCountLabel ? "high" : params.bankingCase.niche === "fraude" ? "high" : "low",
+      installmentCountLabel ? "Documento normalizado" : params.bankingCase.niche === "fraude" ? "Nao aplicavel ao nicho" : "Sem evidencia financeira suficiente"
+    ),
+    valorFinanciado: field(
+      financedAmountLabel ?? "Nao identificado",
+      financedAmountLabel ? "high" : "low",
+      financedAmountLabel ? "Documento normalizado" : "Sem evidencia financeira suficiente"
+    ),
+    parcelaCobrada: field(
+      chargedInstallmentLabel ?? "Nao identificada",
+      chargedInstallmentLabel ? "high" : "low",
+      chargedInstallmentLabel ? "Documento normalizado" : "Sem evidencia financeira suficiente"
+    ),
+    parcelaContratada: field(
+      contractedInstallment || "Nao identificada",
+      chargedInstallmentLabel ? "medium" : "low",
+      chargedInstallmentLabel ? "Derivacao controlada da parcela cobrada lida no documento" : "Sem evidencia suficiente para derivar parcela contratada"
+    ),
     seguro: field(bundledInsurance, /seguro/i.test(normalized) ? "high" : "medium", "Leitura do documento"),
     tarifas: field(feesLabel, /tarif/i.test(normalized) ? "high" : "medium", "Leitura do documento"),
     permanencia: field(permanenceLabel, /permanencia/i.test(normalized) ? "high" : "medium", "Leitura do documento"),
     multa: field(penaltyLabel, /multa|mora/i.test(normalized) ? "high" : "medium", "Leitura do documento")
   };
 
-  const missingCriticalField = !rateMatch || !installmentCountMatch;
+  const missingCriticalField =
+    contractRateMissing || installmentCountMissing || financedAmountMissing || chargedInstallmentMissing;
   const aiStatus = missingCriticalField ? "needs_review" : "analyzed";
 
   return {
@@ -343,14 +474,17 @@ function buildStructuredExtraction(params: {
     aiStatus,
     previewLabel:
       aiStatus === "analyzed"
-        ? "Leitura estruturada persistida e pronta para revisao humana."
-        : "Leitura estruturada parcial. Conferir campos criticos antes do uso processual.",
+        ? "Leitura estruturada persistida com base financeira evidenciada e pronta para revisao humana."
+        : "Leitura estruturada parcial. O sistema manteve campos financeiros sem chute silencioso e marcou apenas o que falta conferir.",
     sourceTrace: {
       origem_documental: [params.document.fileName],
       origem_interna: [params.document.documentType, params.document.category],
       inferencia_controlada: missingCriticalField
-        ? ["Campos ausentes foram completados por heuristica controlada e pedem revisao."]
-        : ["Leitura estruturada consolidada com apoio do envelope do caso."]
+        ? [
+            "Campos financeiros sem evidencia suficiente foram mantidos como ausentes para evitar simulacao silenciosa.",
+            "Somente banco, competencia ou modalidade podem usar envelope do caso como apoio secundario."
+          ]
+        : ["Leitura estruturada consolidada com evidencias financeiras do proprio documento."]
     },
     reviewStatus: "pending" as const,
     extractionError: null as string | null,
@@ -419,7 +553,7 @@ function reconcileExtraction(params: {
       nextFields[key] = {
         value: primaryCandidate.field.value,
         confidence: unanimous || siblingCandidates.length > 1 ? "high" : primaryCandidate.field.confidence,
-        sourceLabel: `Reconciliado com ${primaryCandidate.document.file_name}`
+        sourceLabel: `Reconciliacao documental do caso com ${primaryCandidate.document.file_name}`
       };
       reinforcementSignals.push(`${key} preenchido por reconciliacao documental do caso.`);
       continue;
@@ -542,6 +676,24 @@ function buildCalculationSnapshot(params: {
   const installmentCount = readField(params.extraction, "parcelas").replace(/[^0-9]/g, "");
   const contractedInstallment = readField(params.extraction, "parcelaContratada");
   const chargedInstallment = readField(params.extraction, "parcelaCobrada");
+  const groundedFields = [
+    !isMissingExtractionValue(financedAmount) ? "valorFinanciado" : null,
+    installmentCount ? "parcelas" : null,
+    !isMissingExtractionValue(contractedInstallment) ? "parcelaContratada" : null,
+    !isMissingExtractionValue(chargedInstallment) ? "parcelaCobrada" : null
+  ].filter((value): value is string => Boolean(value));
+  const fallbackFields = [
+    isMissingExtractionValue(financedAmount) ? "valorFinanciado" : null,
+    !installmentCount ? "parcelas" : null,
+    isMissingExtractionValue(contractedInstallment) ? "parcelaContratada" : null,
+    isMissingExtractionValue(chargedInstallment) ? "parcelaCobrada" : null
+  ].filter((value): value is string => Boolean(value));
+  const inputQuality: CalculationSnapshot["inputQuality"] =
+    fallbackFields.length === 0
+      ? "grounded"
+      : groundedFields.length === 0
+        ? "simulated"
+        : "hybrid";
   const targetReductionPercent =
     params.bankingCase.niche === "cartao-consignado" || params.bankingCase.niche === "beneficio-descontos"
       ? "18"
@@ -561,16 +713,28 @@ function buildCalculationSnapshot(params: {
       chargedInstallment: 2214,
       targetReductionPercent: 27.8,
       basis:
-        "Memoria juridica inicial derivada da leitura estruturada persistida, com parametros prontos para revisao humana."
+        inputQuality === "grounded"
+          ? "Memoria juridica inicial derivada integralmente da leitura estruturada persistida."
+          : inputQuality === "hybrid"
+            ? "Memoria juridica inicial derivada de leitura estruturada com lacunas pontuais completadas por simulacao controlada."
+            : "Memoria juridica inicial ainda simulada por falta de evidencias financeiras suficientes no documento."
     }
   );
 
   return {
     ...snapshot,
+    inputQuality,
+    groundedFields,
+    fallbackFields,
     legalImpactSummary: [
       `Saldo-base identificado em ${snapshot.labels.financedAmount}.`,
       `Parcela cobrada de ${snapshot.labels.chargedInstallment} para alvo revisional de ${snapshot.labels.targetReductionPercent}.`,
-      `Potencial de repeticao do indebito estimado em ${snapshot.labels.estimatedTotalExcess}.`
+      `Potencial de repeticao do indebito estimado em ${snapshot.labels.estimatedTotalExcess}.`,
+      inputQuality === "grounded"
+        ? "Memoria economica sustentada pelos campos financeiros materializados no caso."
+        : inputQuality === "hybrid"
+          ? `Memoria economica parcialmente sustentada por evidencias. Campos ainda simulados: ${fallbackFields.join(", ")}.`
+          : `Memoria economica inteiramente simulada ate que os campos financeiros sejam materializados: ${fallbackFields.join(", ")}.`
     ]
   } satisfies CalculationSnapshot;
 }

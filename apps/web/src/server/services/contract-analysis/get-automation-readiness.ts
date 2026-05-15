@@ -162,6 +162,20 @@ export function getCaseAutomationReadiness(params: {
     signals.push("Calculo e estrategia do caso ja estao persistidos.");
   }
 
+  const calculationInputQuality =
+    typeof calculationSnapshot?.inputQuality === "string" ? calculationSnapshot.inputQuality : null;
+
+  if (calculationInputQuality === "grounded") {
+    signals.push("Memoria economica sustentada por campos financeiros materializados no caso.");
+    score += 8;
+  } else if (calculationInputQuality === "hybrid") {
+    signals.push("Memoria economica parcialmente simulada por lacunas documentais pontuais.");
+    score += 1;
+  } else if (calculationInputQuality === "simulated") {
+    blockers.push("Memoria economica ainda depende de simulacao por falta de evidencia financeira suficiente.");
+    score -= 12;
+  }
+
   const bacenStatus = typeof bacenSnapshot?.status === "string" ? bacenSnapshot.status : null;
   const bacenSourceQuality =
     typeof bacenSnapshot?.sourceQuality === "string" ? bacenSnapshot.sourceQuality : null;
