@@ -107,7 +107,7 @@ export const navSections: NavSection[] = [
       },
       {
         href: "/financeiro",
-        label: "Financeiro Operacional",
+        label: "Financeiro",
         shortLabel: "Financeiro",
         icon: "financial",
         description: "Receitas, despesas e leitura operacional do escritorio.",

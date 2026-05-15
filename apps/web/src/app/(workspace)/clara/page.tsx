@@ -1102,6 +1102,20 @@ export default async function ClaraPage({
   const selectedAction = searchParams?.action;
   const workflowFields = [...activeWorkspace.workflow.fields];
   const globalSearchQuery = searchParams?.q?.trim() ?? "";
+  const hasExplicitConversationContext = Boolean(
+    searchParams?.client || searchParams?.case || searchParams?.process || searchParams?.document
+  );
+  const selectedClientLabel = selectedClient.label.split(" · ")[0] ?? selectedClient.label;
+  const contextualConversationPrompt =
+    !globalSearchQuery && hasExplicitConversationContext
+      ? `Clara, explique o caso de ${selectedClientLabel}${selectedCase ? ` em ${selectedCase.label}` : ""} e diga o próximo passo.`
+      : globalSearchQuery;
+  const contextualConversationReply =
+    globalSearchQuery
+      ? buildClaraReply(globalSearchQuery)
+      : hasExplicitConversationContext
+        ? `Entendi o contexto de ${selectedClientLabel}${selectedCase ? `, caso ${selectedCase.label}` : ""}${selectedProcess ? `, processo ${selectedProcess.label}` : ""}${selectedDocument ? ` e documento ${selectedDocument.label}` : ""}. ${clara.structuredCore.summary} Posso detalhar cliente, caso, processo, documentos ou a próxima ação.`
+        : undefined;
 
   function buildClaraReply(question: string) {
     const normalized = question
@@ -2062,10 +2076,10 @@ export default async function ClaraPage({
             badgeLabel="CLARA"
             badgeSubtitle={`${nicheConfig?.title ?? "Workspace juridico"} · ${activeModeLabel}`}
             responseDetail={activeWorkspace.summary}
-            assistantReply={globalSearchQuery ? buildClaraReply(globalSearchQuery) : undefined}
+            assistantReply={contextualConversationReply}
             composerHint="Pressione Enter para enviar. Use Shift+Enter para quebrar linha."
             composerPlaceholder="Ex.: Analise a prova, diga o risco e monte a proxima acao juridica."
-            composerValue={globalSearchQuery}
+            composerValue={contextualConversationPrompt}
             clientOptions={visibleClientOptions}
           />
 

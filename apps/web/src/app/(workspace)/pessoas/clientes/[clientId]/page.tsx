@@ -435,7 +435,7 @@ export default async function ClientDetailPage({
       <ClientCockpitFrame
         actionLinks={{
           attachDocuments: "documentos",
-          continueClara: "clara"
+          continueClaraHref: `/clara?niche=revisional&client=${client.id}&case=${activeCase?.id ?? ""}&process=${relatedProcess?.id ?? ""}&document=${activeCaseDraftDocumentId ?? ""}&tab=analise#clara-workbench`
         }}
         activeCase={cockpitFrameActiveCase}
         caseDocuments={caseDocumentsForFrame}

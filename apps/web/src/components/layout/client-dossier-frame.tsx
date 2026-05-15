@@ -278,7 +278,7 @@ type ClientCockpitFrameProps = {
   contractAnalysis: ClientCockpitContractAnalysis | null;
   actionLinks: {
     attachDocuments?: DossierTabKey;
-    continueClara: DossierTabKey;
+    continueClaraHref: string;
   };
 };
 
@@ -749,27 +749,29 @@ export function ClientCockpitFrame({
                     </div>
                   )}
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
                   {baseOverviewDocument ? (
-                    <Link className="detail-link-button px-4 py-3 text-sm font-semibold" href={baseOverviewDocument.detailHref}>
+                    <Link
+                      className="detail-link-button inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold text-center"
+                      href={baseOverviewDocument.pdfHref ?? baseOverviewDocument.detailHref}
+                    >
                       Abrir documento-base
                     </Link>
                   ) : null}
                   {activeCase && actionLinks.attachDocuments ? (
                     <Link
-                      className="detail-link-button px-4 py-3 text-sm font-semibold"
+                      className="detail-link-button inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold text-center"
                       href={`/documentos/enviar-arquivos?caseId=${activeCase.id}`}
                     >
                       Juntar documentos
                     </Link>
                   ) : null}
-                  <button
-                    className="detail-link-button px-4 py-3 text-sm font-semibold"
-                    onClick={() => setActivePanel(actionLinks.continueClara)}
-                    type="button"
+                  <Link
+                    className="detail-link-button inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold text-center"
+                    href={actionLinks.continueClaraHref}
                   >
                     Abrir Clara
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

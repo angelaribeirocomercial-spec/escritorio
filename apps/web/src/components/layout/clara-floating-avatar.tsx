@@ -46,7 +46,7 @@ function buildClaraHref(pathname: string, searchParams: URLSearchParams) {
   }
 
   const queryString = params.toString();
-  return queryString ? `/clara?${queryString}` : "/clara";
+  return queryString ? `/clara?${queryString}#clara-workbench` : "/clara#clara-workbench";
 }
 
 function ClaraAvatarGlyph() {
