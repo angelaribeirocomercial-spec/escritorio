@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { WorkspaceStatePanel } from "@lexia/ui";
 import { getBankingNicheLabel } from "@lexia/domain";
 
+import { registerOfficialDistributionAction } from "@/app/(workspace)/processos/[processId]/actions";
 import { ClaraContextActions } from "@/components/layout/clara-context-actions";
 import { ProcessCockpitFrame } from "@/components/layout/process-cockpit-frame";
 import { WorkspacePage } from "@/components/layout/workspace-page";
@@ -11,6 +12,7 @@ import {
   listClaraRecords
 } from "@/server/services/clara/clara-record-store";
 import { getClaraProcessArtifact } from "@/server/services/clara/get-clara-artifacts";
+import { getDocumentsByCaseId } from "@/server/services/documents/get-documents";
 import { getProcessById } from "@/server/services/processes/get-processes";
 import { getProceduralUpdatesByProcessId } from "@/server/services/procedural-updates/get-procedural-updates";
 
@@ -127,6 +129,28 @@ function distributionStatusLabel(status: string) {
   }
 }
 
+function officialSourceLabel(source?: string) {
+  switch (source) {
+    case "official_import":
+      return "Importador oficial";
+    case "manual_confirmed":
+      return "Manual confirmada";
+    default:
+      return "Nao registrada";
+  }
+}
+
+function officialDistributionStatusLabel(status: string) {
+  switch (status) {
+    case "official_confirmed":
+      return "Retorno oficial confirmado";
+    case "attempt_failed":
+      return "Tentativa frustrada";
+    default:
+      return "Estado local preparatorio";
+  }
+}
+
 function getOfficialSystemLink(tribunal: string) {
   if (tribunal === "TJMG") {
     return {
@@ -150,6 +174,9 @@ export default async function ProcessDetailPage({
     document?: string;
     client?: string;
     case_context?: string;
+    distributionSaved?: string;
+    distributionError?: string;
+    uploaded?: string;
   };
 }) {
   let processItem = null;
@@ -185,6 +212,7 @@ export default async function ProcessDetailPage({
   }
 
   const linkedUpdates = await getProceduralUpdatesByProcessId(params.processId);
+  const caseDocuments = await getDocumentsByCaseId(processItem.caseId);
   const claraRecord = await getClaraRecord(searchParams?.record);
   const relatedClaraRecords = (await listClaraRecords(80)).filter((record) => {
     if (record.kind !== "process") {
@@ -221,6 +249,20 @@ export default async function ProcessDetailPage({
     };
   });
   const officialSystemLink = getOfficialSystemLink(processItem.tribunal);
+  const uploadReceiptHref = `/documentos/enviar-arquivos?caseId=${encodeURIComponent(processItem.caseId)}&documentType=${encodeURIComponent("Comprovante de protocolo")}&returnTo=${encodeURIComponent(`/processos/${params.processId}`)}`;
+  const protocolReceiptDocument =
+    caseDocuments.find((document) => document.id === processItem.protocolReceiptDocumentId) ??
+    caseDocuments.find(
+      (document) =>
+        document.documentType === "Comprovante de protocolo" ||
+        document.tags.some((tag) => /protocolo|distribuicao/.test(tag.toLowerCase()))
+    ) ??
+    null;
+  const receiptCandidates = caseDocuments.map((document) => ({
+    id: document.id,
+    label: `${document.documentType} | ${document.fileName}`
+  }));
+  const distributionFormAction = registerOfficialDistributionAction as unknown as string;
   const postDistributionBankingCase = {
     amountInDispute: processItem.bankingCase.amountInDispute,
     bankName: processItem.bankingCase.bankName,
@@ -254,16 +296,27 @@ export default async function ProcessDetailPage({
       {
         id: "origin",
         label: "Origem oficial",
-        state: "ready" as const,
-        detail: "Distribuicao manual ou importacao oficial consolidada.",
-        blockers: []
+        state:
+          processItem.officialDistributionStatus === "official_confirmed"
+            ? ("ready" as const)
+            : ("blocked" as const),
+        detail:
+          processItem.officialDistributionStatus === "official_confirmed"
+            ? "Distribuicao manual ou importacao oficial consolidada."
+            : "O retorno oficial ainda nao foi consolidado neste processo.",
+        blockers:
+          processItem.officialDistributionStatus === "official_confirmed"
+            ? []
+            : ["Retorno oficial pendente"]
       },
       {
         id: "receipt",
         label: "Comprovante",
-        state: "ready" as const,
-        detail: "Numero, data e comprovante oficial registrados no processo.",
-        blockers: []
+        state: protocolReceiptDocument ? ("ready" as const) : ("blocked" as const),
+        detail: protocolReceiptDocument
+          ? "Numero, data e comprovante oficial registrados no processo."
+          : "O processo ainda nao tem comprovante oficial vinculado no workspace.",
+        blockers: protocolReceiptDocument ? [] : ["Comprovante oficial nao vinculado"]
       },
       {
         id: "monitoring",
@@ -284,13 +337,16 @@ export default async function ProcessDetailPage({
         id: "origem",
         title: "Origem oficial recebida",
         detail: "Processo anexado a partir da distribuicao manual ou importacao oficial.",
-        state: "done" as const
+        state:
+          processItem.officialDistributionStatus === "official_confirmed"
+            ? ("done" as const)
+            : ("pending" as const)
       },
       {
         id: "comprovante",
         title: "Comprovante consolidado",
         detail: "Numero, data e comprovante oficial revisados.",
-        state: "done" as const
+        state: protocolReceiptDocument ? ("done" as const) : ("pending" as const)
       },
       {
         id: "acompanhamento",
@@ -310,6 +366,7 @@ export default async function ProcessDetailPage({
           openClaraHistory: `/clara?tab=analise&process=${params.processId}&client=${processItem.client.id}#clara-history`,
           openDataJud: `/processos/${encodeURIComponent(processItem.id)}/datajud`,
           openOabMonitoring: `/processos/importar-oab?process=${encodeURIComponent(processItem.id)}`,
+          uploadOfficialReceipt: uploadReceiptHref,
           openOfficialSystem: officialSystemLink?.href
         }}
         dataJudLabel="Consultar DataJud (CNJ)"
@@ -345,15 +402,24 @@ export default async function ProcessDetailPage({
           actionTypeLabel: actionTypeLabel(processItem.bankingCase.niche),
           adversePartyLabel: processItem.bankingCase.bankName,
           competenceLabel: processItem.courtName,
-          distributedProcessNumber: processItem.processNumber,
-          distributionDateLabel: distributionDateLabel(processItem.latestTimeline),
-          distributionStatusLabel: distributionStatusLabel(processItem.status),
-          integrationStatusLabel: officialSystemLink
-            ? "Origem oficial consolidada; protocolo automatico nao implementado."
-            : "Sem link oficial configurado neste tribunal e sem automacao.",
+          localReferenceNumber: processItem.localReferenceNumber,
+          distributedProcessNumber: processItem.officialProcessNumber ?? processItem.processNumber,
+          distributionDateLabel:
+            processItem.officialDistributionDate ?? distributionDateLabel(processItem.latestTimeline),
+          distributionStatusLabel: officialDistributionStatusLabel(processItem.officialDistributionStatus),
+          officialSourceLabel: officialSourceLabel(processItem.officialSource),
+          integrationStatusLabel:
+            processItem.officialDistributionStatus === "official_confirmed"
+              ? officialSystemLink
+                ? "Retorno oficial consolidado; protocolo automatico nao implementado."
+                : "Retorno oficial consolidado sem link oficial configurado neste tribunal."
+              : "O workspace ainda diferencia estado local preparatorio de retorno oficial nao consolidado.",
           officialSystemLabel: officialSystemLink?.label ?? null,
           processClassLabel: suggestedJudicialClass(processItem.bankingCase.niche),
-          protocolReceiptLabel: "Comprovante oficial anexado",
+          protocolReceiptLabel: protocolReceiptDocument
+            ? `${protocolReceiptDocument.documentType} | ${protocolReceiptDocument.fileName}`
+            : "Nenhum comprovante oficial vinculado",
+          protocolReceiptHref: protocolReceiptDocument ? `/documentos/${protocolReceiptDocument.id}` : null,
           suggestedCnjSubjectLabel: suggestedCnjSubject(
             processItem.bankingCase.niche,
             processItem.bankingCase.claimType
@@ -364,7 +430,33 @@ export default async function ProcessDetailPage({
             mainThesis: processItem.bankingCase.mainThesis,
             suggestedStrategy: processItem.bankingCase.suggestedStrategy
           }),
-          valueInCauseLabel: `R$ ${processItem.bankingCase.estimatedValue.toLocaleString("pt-BR")}`
+          valueInCauseLabel: `R$ ${processItem.bankingCase.estimatedValue.toLocaleString("pt-BR")}`,
+          auditTrail: processItem.distributionAuditTrail.map((event) => ({
+            id: event.id,
+            occurredAt: event.occurredAt,
+            title: event.title,
+            detail: event.detail,
+            statusLabel: officialDistributionStatusLabel(event.status),
+            sourceLabel: officialSourceLabel(event.source)
+          }))
+        }}
+        officialRegistration={{
+          formAction: distributionFormAction,
+          processId: processItem.id,
+          localReferenceNumber: processItem.localReferenceNumber,
+          officialProcessNumber: processItem.officialProcessNumber ?? processItem.processNumber,
+          officialDistributionDate: processItem.officialDistributionDate ?? "",
+          officialSource: processItem.officialSource ?? "manual_confirmed",
+          officialDistributionStatus: processItem.officialDistributionStatus,
+          protocolReceiptDocumentId: processItem.protocolReceiptDocumentId ?? protocolReceiptDocument?.id ?? "",
+          receiptCandidates,
+          successLabel:
+            searchParams?.distributionSaved === "1"
+              ? "Retorno oficial salvo no processo."
+              : searchParams?.uploaded === "1"
+                ? "Comprovante anexado. Vincule-o no registro oficial abaixo."
+                : undefined,
+          errorLabel: searchParams?.distributionError
         }}
         relatedClaraRecordsCount={relatedClaraRecords.length}
       />

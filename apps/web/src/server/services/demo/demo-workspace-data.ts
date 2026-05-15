@@ -38,7 +38,7 @@ export const DEMO_CLIENT_RECORD: ClientRecord = {
       thesis: "Falha de seguranca e dano moral"
     } satisfies ClientLinkedCaseSummary
   ],
-  linkedDocuments: ["Comprovantes PIX", "Atendimento bancario", "Capturas de tela", "Boletim de ocorrencia"],
+  linkedDocuments: ["Comprovantes PIX", "Atendimento bancario", "Capturas de tela", "Boletim de ocorrencia", "Comprovante de protocolo"],
   timeline: [
     "Captação inicial e enquadramento bancario",
     "Checklist documental concluido",
@@ -147,7 +147,7 @@ export const DEMO_CASE_RECORD: BankingCaseRecord & { client: ClientRecord } = {
     "Fechar cronologia do evento, reforcar prova documental e estruturar narrativa de falha na seguranca da operacao PIX.",
   ownerLabel: "Dr. Caio Nascimento",
   niche: "fraude",
-  linkedDocuments: ["Comprovantes PIX", "Atendimento bancario", "Capturas de tela", "Boletim de ocorrencia"],
+  linkedDocuments: ["Comprovantes PIX", "Atendimento bancario", "Capturas de tela", "Boletim de ocorrencia", "Comprovante de protocolo"],
   linkedTasks: ["Cobrar boletim de ocorrencia", "Solicitar comprovante bancario detalhado", "Montar cronologia do golpe"],
   linkedDeadlines: ["Revisar pendencias documentais em 11/04/2026"],
   lexiaInsights: [
@@ -164,6 +164,30 @@ export const DEMO_PROCESS_RECORD: JudicialProcessRecord = {
   caseId: DEMO_CASE_ID,
   clientId: DEMO_CLIENT_ID,
   processNumber: "5011274-65.2026.8.19.0001",
+  localReferenceNumber: "pendente-distribuicao-case-205",
+  officialProcessNumber: "5011274-65.2026.8.19.0001",
+  officialDistributionDate: "2026-05-05",
+  officialSource: "manual_confirmed",
+  officialDistributionStatus: "official_confirmed",
+  protocolReceiptDocumentId: "doc-205-protocolo",
+  distributionAuditTrail: [
+    {
+      id: "audit-205-attempt",
+      occurredAt: "2026-05-05T12:40:00.000Z",
+      status: "attempt_failed",
+      source: "manual_confirmed",
+      title: "Primeira tentativa frustrada",
+      detail: "A primeira tentativa manual foi interrompida por inconsistencias de anexo antes do protocolo final."
+    },
+    {
+      id: "audit-205-confirmed",
+      occurredAt: "2026-05-05T13:45:00.000Z",
+      status: "official_confirmed",
+      source: "manual_confirmed",
+      title: "Distribuicao confirmada",
+      detail: "Numero oficial, data e comprovante do protocolo foram revisados e registrados no workspace."
+    }
+  ],
   tribunal: "TJRJ",
   courtDistrict: "Rio de Janeiro/RJ",
   courtName: "7o Juizado Especial Civel da Capital",
@@ -194,6 +218,26 @@ export const DEMO_PROCESS_RECORD: JudicialProcessRecord = {
 };
 
 export const DEMO_DOCUMENT_RECORDS: DocumentRecord[] = [
+  {
+    id: "doc-205-protocolo",
+    clientId: DEMO_CLIENT_ID,
+    caseId: DEMO_CASE_ID,
+    fileName: "comprovante-protocolo-carlos-henrique.pdf",
+    originalFileName: "comprovante-protocolo.pdf",
+    documentType: "Comprovante de protocolo",
+    category: "protocolo-oficial",
+    tags: ["protocolo", "distribuicao", "oficial"],
+    aiStatus: "analyzed",
+    summary: "Recibo oficial do protocolo manual usado para consolidar o processo judicial no workspace.",
+    pageCount: 1,
+    uploadedAt: "2026-05-05T13:45:00.000Z",
+    previewLabel: "Comprovante oficial do protocolo",
+    storageBucket: "demo",
+    storagePath: "documents/case-205/comprovante-protocolo.pdf",
+    storageMimeType: "application/pdf",
+    storageSizeBytes: 98304,
+    actions: ["visualizar"]
+  },
   {
     id: "doc-205-pix",
     clientId: DEMO_CLIENT_ID,

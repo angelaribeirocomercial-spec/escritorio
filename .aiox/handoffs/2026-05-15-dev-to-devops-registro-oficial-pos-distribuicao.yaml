@@ -1,0 +1,61 @@
+from_agent: dev
+to_agent: devops
+last_command: "*deploy"
+story_ids:
+  - "18.35"
+consumed: false
+branch: "feature/clara-hardening"
+commit: "uncommitted"
+summary: "Official post-distribution registration is ready for publish with process audit trail, official receipt linking, and a controlled registration form."
+quality_gates:
+  lint: pass
+  typecheck: pass
+  test: pass
+  build: pass
+  qa_review: pass
+changes:
+  - "Extended the `processes` model with local reference, official number/date/source, official status, linked receipt document, and audit trail."
+  - "Added a process detail form to register or correct official post-distribution return without implying automated filing."
+  - "Exposed explicit process UI for local reference, official source, receipt link, audit history, and official registration status."
+  - "Added direct upload flow for `Comprovante de protocolo` with return to the process page."
+  - "Updated demo/local process fixtures and the Clara virtual process contract to match the new process model."
+files:
+  - "packages/domain/src/index.ts"
+  - "supabase/migrations/0018_processes_official_distribution_audit.sql"
+  - "apps/web/src/server/services/processes/get-processes.ts"
+  - "apps/web/src/server/services/demo/demo-workspace-data.ts"
+  - "apps/web/src/app/(workspace)/processos/[processId]/actions.ts"
+  - "apps/web/src/app/(workspace)/processos/[processId]/page.tsx"
+  - "apps/web/src/components/layout/process-cockpit-frame.tsx"
+  - "apps/web/src/app/(workspace)/documentos/enviar-arquivos/page.tsx"
+  - "apps/web/src/app/(workspace)/documentos/enviar-arquivos/actions.ts"
+  - "apps/web/src/app/(workspace)/processos/modelo/page.tsx"
+  - "apps/web/src/app/(workspace)/clara/page.tsx"
+  - "docs/stories/18.35.registro-oficial-pos-distribuicao-com-comprovante-e-auditoria.md"
+  - ".aiox/handoffs/2026-05-15-dev-to-devops-registro-oficial-pos-distribuicao.yaml"
+do_not_stage:
+  - ".aiox/handoffs/2026-05-05-analyst-pje-distribuicao-gap.yaml"
+  - ".aiox/handoffs/2026-05-05-dev-to-devops-demo-fallback.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-click-validation-analise-contrato-gap.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-dossie-unico-prd-master-gap.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-onboarding-processos-financeiro-gap.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-to-devops-contract-analysis-failsafe.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-to-devops-dossier-tab-destinations.yaml"
+  - ".aiox/handoffs/2026-05-07-architect-dev-decisions-onboarding-processos-financeiro.yaml"
+  - ".aiox/handoffs/2026-05-07-deploy-preview-escritorio-liart.yaml"
+  - ".aiox/handoffs/2026-05-07-dev-to-devops-consolidate-onboarding-processes-finance.yaml"
+  - ".aiox/handoffs/2026-05-07-final-dossier-tabs-handoff.yaml"
+  - ".aiox/handoffs/2026-05-07-pr-body-feature-clara-hardening.md"
+  - ".aiox/handoffs/2026-05-12-dev-to-devops-dossie-documentos-cleanup.yaml"
+  - ".aiox/handoffs/2026-05-12-dev-to-pm-dossie-documentos-cleanup.yaml"
+  - "apps/web/tsconfig.json"
+  - "apps/web/tsconfig.tsbuildinfo"
+devops_steps:
+  - "Stage only the listed files for story 18.35 and this handoff artifact."
+  - "Keep the Next.js auto-rewritten `apps/web/tsconfig.json` out of the publish commit."
+  - "Commit the slice as focused process official-registration work."
+  - "Push branch feature/clara-hardening and let preview/deploy run."
+  - "After deploy, validate an authenticated real process can save official return data and open the linked receipt."
+notes:
+  - "This slice does not automate PJe/TJMG filing."
+  - "The process still distinguishes local preparatory state from official return."

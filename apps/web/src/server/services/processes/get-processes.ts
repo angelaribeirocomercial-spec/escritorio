@@ -2,7 +2,10 @@ import {
   BankingCaseRecord,
   ClientLinkedCaseSummary,
   ClientRecord,
+  JudicialDistributionAuditItem,
   JudicialProcessRecord,
+  JudicialOfficialDistributionStatus,
+  JudicialOfficialSource,
   JudicialTimelineItem
 } from "@lexia/domain";
 
@@ -46,6 +49,13 @@ type ProcessRow = {
   case_id: string;
   client_id: string;
   process_number: string;
+  local_reference_number: string | null;
+  official_process_number: string | null;
+  official_distribution_date: string | null;
+  official_source: JudicialOfficialSource | null;
+  official_distribution_status: JudicialOfficialDistributionStatus;
+  protocol_receipt_document_id: string | null;
+  distribution_audit_trail: JudicialDistributionAuditItem[] | null;
   tribunal: string;
   court_district: string;
   court_name: string;
@@ -94,6 +104,13 @@ function mapProcessRow(row: ProcessRow): JudicialProcessWithRelations | null {
     caseId: row.case_id,
     clientId: row.client_id,
     processNumber: row.process_number,
+    localReferenceNumber: row.local_reference_number ?? row.process_number,
+    officialProcessNumber: row.official_process_number ?? undefined,
+    officialDistributionDate: row.official_distribution_date ?? undefined,
+    officialSource: row.official_source ?? undefined,
+    officialDistributionStatus: row.official_distribution_status,
+    protocolReceiptDocumentId: row.protocol_receipt_document_id ?? undefined,
+    distributionAuditTrail: row.distribution_audit_trail ?? [],
     tribunal: row.tribunal,
     courtDistrict: row.court_district,
     courtName: row.court_name,
@@ -112,6 +129,13 @@ const PROCESS_SELECT = `
   case_id,
   client_id,
   process_number,
+  local_reference_number,
+  official_process_number,
+  official_distribution_date,
+  official_source,
+  official_distribution_status,
+  protocol_receipt_document_id,
+  distribution_audit_trail,
   tribunal,
   court_district,
   court_name,

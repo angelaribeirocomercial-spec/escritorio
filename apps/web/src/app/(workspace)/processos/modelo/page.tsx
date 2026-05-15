@@ -198,6 +198,7 @@ export default async function ProcessModelPage() {
             openClaraHistory: `/clara?tab=analise&process=${process.id}&client=${relatedClientId}#clara-history`,
             openDataJud: `/processos/${encodeURIComponent(process.id)}/datajud`,
             openOabMonitoring: `/processos/importar-oab?process=${encodeURIComponent(process.id)}`,
+            uploadOfficialReceipt: `/documentos/enviar-arquivos?caseId=${encodeURIComponent(bankingCase.id)}&documentType=${encodeURIComponent("Comprovante de protocolo")}&returnTo=${encodeURIComponent(`/processos/${process.id}`)}`,
             openOfficialSystem: "https://pje.tjmg.jus.br/pje/"
           }}
           bankingCase={{
@@ -270,13 +271,16 @@ export default async function ProcessModelPage() {
             actionTypeLabel: actionTypeLabel(bankingCase.niche),
             adversePartyLabel: bankingCase.bankName,
             competenceLabel: process.courtName,
+            localReferenceNumber: "pendente-distribuicao-case-205",
             distributedProcessNumber: process.processNumber,
             distributionDateLabel: latestTimeline[0]?.occurredAt ?? "2026-05-05",
-            distributionStatusLabel: "Distribuido e em acompanhamento",
+            distributionStatusLabel: "Retorno oficial confirmado",
+            officialSourceLabel: "Manual confirmada",
             integrationStatusLabel: "Exemplo canonico sem protocolo automatizado.",
             officialSystemLabel: "Abrir PJe/TJMG",
             processClassLabel: suggestedJudicialClass(bankingCase.niche),
-            protocolReceiptLabel: "Nao registrado no workspace",
+            protocolReceiptLabel: "Comprovante de protocolo | comprovante-protocolo-carlos-henrique.pdf",
+            protocolReceiptHref: "/documentos/doc-205-protocolo",
             suggestedCnjSubjectLabel: suggestedCnjSubject(bankingCase.niche, bankingCase.claimType),
             urgencyLabel: urgencyLabel(
               bankingCase.title,
@@ -284,7 +288,42 @@ export default async function ProcessModelPage() {
               bankingCase.mainThesis,
               bankingCase.suggestedStrategy
             ),
-            valueInCauseLabel: `R$ ${bankingCase.estimatedValue.toLocaleString("pt-BR")}`
+            valueInCauseLabel: `R$ ${bankingCase.estimatedValue.toLocaleString("pt-BR")}`,
+            auditTrail: [
+              {
+                id: "modelo-audit-1",
+                occurredAt: "2026-05-05T12:40:00.000Z",
+                title: "Tentativa frustrada registrada",
+                detail: "A primeira tentativa manual foi interrompida para ajustar o anexo antes do protocolo final.",
+                statusLabel: "Tentativa frustrada",
+                sourceLabel: "Manual confirmada"
+              },
+              {
+                id: "modelo-audit-2",
+                occurredAt: "2026-05-05T13:45:00.000Z",
+                title: "Retorno oficial confirmado",
+                detail: "Numero oficial, data e comprovante foram consolidados depois da distribuicao humana.",
+                statusLabel: "Retorno oficial confirmado",
+                sourceLabel: "Manual confirmada"
+              }
+            ]
+          }}
+          officialRegistration={{
+            readOnly: true,
+            formAction: "#",
+            processId: process.id,
+            localReferenceNumber: "pendente-distribuicao-case-205",
+            officialProcessNumber: process.processNumber,
+            officialDistributionDate: "2026-05-05",
+            officialSource: "manual_confirmed",
+            officialDistributionStatus: "official_confirmed",
+            protocolReceiptDocumentId: "doc-205-protocolo",
+            receiptCandidates: [
+              {
+                id: "doc-205-protocolo",
+                label: "Comprovante de protocolo | comprovante-protocolo-carlos-henrique.pdf"
+              }
+            ]
           }}
           latestTimeline={latestTimeline}
           linkedUpdates={[]}

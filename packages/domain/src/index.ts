@@ -170,6 +170,11 @@ export type JudicialProcessStatus =
   | "closed";
 
 export type JudicialProcessCriticality = "low" | "medium" | "high";
+export type JudicialOfficialSource = "manual_confirmed" | "official_import";
+export type JudicialOfficialDistributionStatus =
+  | "preparatory_local"
+  | "attempt_failed"
+  | "official_confirmed";
 
 export interface JudicialTimelineItem {
   id: string;
@@ -180,11 +185,27 @@ export interface JudicialTimelineItem {
   criticality: JudicialProcessCriticality;
 }
 
+export interface JudicialDistributionAuditItem {
+  id: string;
+  occurredAt: string;
+  status: JudicialOfficialDistributionStatus;
+  source: JudicialOfficialSource;
+  title: string;
+  detail: string;
+}
+
 export interface JudicialProcessRecord {
   id: string;
   caseId: string;
   clientId: string;
   processNumber: string;
+  localReferenceNumber: string;
+  officialProcessNumber?: string;
+  officialDistributionDate?: string;
+  officialSource?: JudicialOfficialSource;
+  officialDistributionStatus: JudicialOfficialDistributionStatus;
+  protocolReceiptDocumentId?: string;
+  distributionAuditTrail: readonly JudicialDistributionAuditItem[];
   tribunal: string;
   courtDistrict: string;
   courtName: string;

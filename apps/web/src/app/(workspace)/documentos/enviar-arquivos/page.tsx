@@ -8,6 +8,7 @@ const documentTypes = [
   "CCB",
   "Peticao",
   "Comprovante",
+  "Comprovante de protocolo",
   "Planilha",
   "Notificacao"
 ];
@@ -15,7 +16,7 @@ const documentTypes = [
 export default async function EnviarArquivosPage({
   searchParams
 }: {
-  searchParams?: { caseId?: string };
+  searchParams?: { caseId?: string; documentType?: string; returnTo?: string };
 }) {
   let cases: Awaited<ReturnType<typeof getCases>> = [];
   let state: { title: string; description: string; tone?: "neutral" | "warning" | "danger" } | null = null;
@@ -59,6 +60,11 @@ export default async function EnviarArquivosPage({
   const defaultCaseId = cases.some((caseItem) => caseItem.id === searchParams?.caseId)
     ? searchParams?.caseId
     : cases[0]?.id;
+  const defaultDocumentType = documentTypes.includes(searchParams?.documentType ?? "")
+    ? searchParams?.documentType
+    : documentTypes[0];
+  const safeReturnTo =
+    searchParams?.returnTo && searchParams.returnTo.startsWith("/") ? searchParams.returnTo : "";
 
   return (
     <div className="mj-model-page space-y-4">
@@ -72,6 +78,7 @@ export default async function EnviarArquivosPage({
       </div>
 
       <form action={uploadFormAction} className="mj-model-panel overflow-hidden">
+        {safeReturnTo ? <input name="returnTo" type="hidden" value={safeReturnTo} /> : null}
         <div className="grid gap-4 px-4 py-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
           <div
             className="flex min-h-[24rem] flex-col items-center justify-center border border-dashed px-6 text-center mj-model-gridline"
@@ -123,6 +130,7 @@ export default async function EnviarArquivosPage({
             </label>
             <select
               className="mj-model-input mt-1 w-full px-3 py-2 text-[13px] outline-none"
+              defaultValue={defaultDocumentType}
               id="documentType"
               name="documentType"
               required

@@ -43,6 +43,7 @@ export async function uploadDocumentAction(formData: FormData) {
   const documentType = readText(formData, "documentType");
   const category = readText(formData, "category");
   const summary = readText(formData, "summary");
+  const returnTo = readText(formData, "returnTo");
   const tags = readText(formData, "tags")
     .split(",")
     .map((tag) => tag.trim())
@@ -134,6 +135,12 @@ export async function uploadDocumentAction(formData: FormData) {
 
   revalidatePath("/documentos/meus-arquivos");
   revalidatePath(`/pessoas/clientes/${bankingCase.clientId}`);
+  revalidatePath("/processos");
   revalidatePath("/tarefas");
+
+  if (returnTo.startsWith("/")) {
+    redirect(returnTo.includes("?") ? `${returnTo}&uploaded=1` : `${returnTo}?uploaded=1`);
+  }
+
   redirect(`/pessoas/clientes/${bankingCase.clientId}?case=${bankingCase.id}&uploaded=1`);
 }

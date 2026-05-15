@@ -94,6 +94,7 @@ type ProcessCockpitFrameProps = {
     openDataJud: string;
     openClaraHistory: string;
     openOabMonitoring: string;
+    uploadOfficialReceipt: string;
     openOfficialSystem?: string;
   };
   dataJudLabel: string;
@@ -105,12 +106,43 @@ type ProcessCockpitFrameProps = {
     valueInCauseLabel: string;
     actionTypeLabel: string;
     urgencyLabel: string;
+    localReferenceNumber: string;
     distributedProcessNumber: string;
     distributionDateLabel: string;
+    officialSourceLabel: string;
     protocolReceiptLabel: string;
+    protocolReceiptHref: string | null;
     distributionStatusLabel: string;
     integrationStatusLabel: string;
     officialSystemLabel: string | null;
+    auditTrail: ReadonlyArray<{
+      id: string;
+      occurredAt: string;
+      title: string;
+      detail: string;
+      statusLabel: string;
+      sourceLabel: string;
+    }>;
+  };
+  officialRegistration: {
+    readOnly?: boolean;
+    formAction: string;
+    processId: string;
+    localReferenceNumber: string;
+    officialProcessNumber: string;
+    officialDistributionDate: string;
+    officialSource: "manual_confirmed" | "official_import";
+    officialDistributionStatus:
+      | "preparatory_local"
+      | "attempt_failed"
+      | "official_confirmed";
+    protocolReceiptDocumentId: string;
+    receiptCandidates: ReadonlyArray<{
+      id: string;
+      label: string;
+    }>;
+    successLabel?: string;
+    errorLabel?: string;
   };
 };
 
@@ -138,7 +170,8 @@ export function ProcessCockpitFrame({
   linkedUpdates,
   actionLinks,
   dataJudLabel,
-  distributionSummary
+  distributionSummary,
+  officialRegistration
 }: ProcessCockpitFrameProps) {
   const [activePanel, setActivePanel] = useState<PanelKey | null>("updates");
   const latestUpdate = linkedUpdates[0]?.operationalSummary ?? "Nenhum andamento recente consolidado";
@@ -251,21 +284,219 @@ export function ProcessCockpitFrame({
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Numero do processo:{" "}
+              Referencia local:{" "}
+              <span className="font-semibold text-white">{distributionSummary.localReferenceNumber}</span>
+            </div>
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Numero oficial:{" "}
               <span className="font-semibold text-white">{distributionSummary.distributedProcessNumber}</span>
             </div>
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Data da distribuicao:{" "}
+              Data oficial:{" "}
               <span className="font-semibold text-white">{distributionSummary.distributionDateLabel}</span>
             </div>
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Comprovante oficial:{" "}
-              <span className="font-semibold text-white">{distributionSummary.protocolReceiptLabel}</span>
+              Origem oficial:{" "}
+              <span className="font-semibold text-white">{distributionSummary.officialSourceLabel}</span>
             </div>
             <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
               Status do registro:{" "}
               <span className="font-semibold text-white">{distributionSummary.distributionStatusLabel}</span>
             </div>
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+              Comprovante oficial:{" "}
+              {distributionSummary.protocolReceiptHref ? (
+                <Link className="font-semibold text-white underline-offset-4 hover:underline" href={distributionSummary.protocolReceiptHref}>
+                  {distributionSummary.protocolReceiptLabel}
+                </Link>
+              ) : (
+                <span className="font-semibold text-white">{distributionSummary.protocolReceiptLabel}</span>
+              )}
+            </div>
+            <Link className="detail-link-button px-4 py-4 text-sm font-semibold" href={actionLinks.uploadOfficialReceipt}>
+              Anexar comprovante
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+          <div className="detail-subpanel p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                Historico auditavel
+              </p>
+              <span className="text-xs text-slate-400">{distributionSummary.auditTrail.length} evento(s)</span>
+            </div>
+            <div className="mt-4 grid gap-3">
+              {distributionSummary.auditTrail.length ? (
+                distributionSummary.auditTrail.map((event) => (
+                  <div key={event.id} className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                    <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-white">{event.title}</p>
+                        <p className="mt-1 text-slate-400">
+                          {new Date(event.occurredAt).toLocaleDateString("pt-BR")} | {event.sourceLabel}
+                        </p>
+                        <p className="mt-2 leading-6 text-slate-300">{event.detail}</p>
+                      </div>
+                      <span className="rounded-[4px] border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-200">
+                        {event.statusLabel}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="detail-soft-row px-4 py-4 text-sm text-slate-400">
+                  Nenhum evento auditavel registrado. O processo ainda nao consolidou retorno oficial nesta superficie.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="detail-subpanel p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                Registrar retorno oficial
+              </p>
+              <span className="text-xs text-slate-400">Sem automacao de protocolo</span>
+            </div>
+            {officialRegistration.successLabel ? (
+              <div className="mt-4 rounded-[4px] border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-100">
+                {officialRegistration.successLabel}
+              </div>
+            ) : null}
+            {officialRegistration.errorLabel ? (
+              <div className="mt-4 rounded-[4px] border border-fuchsia-300/20 bg-fuchsia-300/10 px-4 py-3 text-sm text-fuchsia-100">
+                {officialRegistration.errorLabel}
+              </div>
+            ) : null}
+            {officialRegistration.readOnly ? (
+              <div className="mt-4 rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm leading-6 text-slate-300">
+                Este exemplo canonico apenas demonstra o estado final do processo. O registro oficial editavel fica disponivel no processo real do tenant.
+              </div>
+            ) : null}
+            <form action={officialRegistration.formAction as unknown as string} className="mt-4 space-y-4">
+              <input name="processId" type="hidden" value={officialRegistration.processId} />
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400" htmlFor="localReferenceNumber">
+                  Referencia local
+                </label>
+                <input
+                  className="mj-model-input mt-2 w-full px-3 py-2 text-sm outline-none"
+                  defaultValue={officialRegistration.localReferenceNumber}
+                  disabled={officialRegistration.readOnly}
+                  id="localReferenceNumber"
+                  name="localReferenceNumber"
+                  required
+                  type="text"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400" htmlFor="officialProcessNumber">
+                  Numero oficial
+                </label>
+                <input
+                  className="mj-model-input mt-2 w-full px-3 py-2 text-sm outline-none"
+                  defaultValue={officialRegistration.officialProcessNumber}
+                  disabled={officialRegistration.readOnly}
+                  id="officialProcessNumber"
+                  name="officialProcessNumber"
+                  required
+                  type="text"
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400" htmlFor="officialDistributionDate">
+                    Data oficial
+                  </label>
+                  <input
+                    className="mj-model-input mt-2 w-full px-3 py-2 text-sm outline-none"
+                  defaultValue={officialRegistration.officialDistributionDate}
+                  disabled={officialRegistration.readOnly}
+                  id="officialDistributionDate"
+                    name="officialDistributionDate"
+                    required
+                    type="date"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400" htmlFor="officialSource">
+                    Origem
+                  </label>
+                  <select
+                    className="mj-model-input mt-2 w-full px-3 py-2 text-sm outline-none"
+                    defaultValue={officialRegistration.officialSource}
+                    disabled={officialRegistration.readOnly}
+                    id="officialSource"
+                    name="officialSource"
+                  >
+                    <option value="manual_confirmed">Manual confirmada</option>
+                    <option value="official_import">Importador oficial</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400" htmlFor="officialDistributionStatus">
+                  Status auditavel
+                </label>
+                <select
+                  className="mj-model-input mt-2 w-full px-3 py-2 text-sm outline-none"
+                  defaultValue={officialRegistration.officialDistributionStatus}
+                  disabled={officialRegistration.readOnly}
+                  id="officialDistributionStatus"
+                  name="officialDistributionStatus"
+                >
+                  <option value="preparatory_local">Estado local preparatorio</option>
+                  <option value="attempt_failed">Tentativa frustrada</option>
+                  <option value="official_confirmed">Retorno oficial confirmado</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400" htmlFor="protocolReceiptDocumentId">
+                  Comprovante vinculado
+                </label>
+                <select
+                  className="mj-model-input mt-2 w-full px-3 py-2 text-sm outline-none"
+                  defaultValue={officialRegistration.protocolReceiptDocumentId}
+                  disabled={officialRegistration.readOnly}
+                  id="protocolReceiptDocumentId"
+                  name="protocolReceiptDocumentId"
+                >
+                  <option value="">Sem comprovante vinculado</option>
+                  {officialRegistration.receiptCandidates.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400" htmlFor="auditDetail">
+                  Nota auditavel
+                </label>
+                <textarea
+                  className="mj-model-input mt-2 min-h-[8rem] w-full px-3 py-2 text-sm outline-none"
+                  disabled={officialRegistration.readOnly}
+                  id="auditDetail"
+                  name="auditDetail"
+                  placeholder="Descreva o que foi confirmado manualmente ou importado nesta etapa."
+                />
+              </div>
+
+              <button className="detail-link-button w-full justify-center px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50" disabled={officialRegistration.readOnly} type="submit">
+                Salvar retorno oficial
+              </button>
+            </form>
           </div>
         </div>
       </section>
