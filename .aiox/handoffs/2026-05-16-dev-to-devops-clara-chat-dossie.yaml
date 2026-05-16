@@ -1,0 +1,64 @@
+from_agent: dev
+to_agent: devops
+last_command: "*deploy"
+story_ids:
+  - "18.50"
+consumed: false
+branch: "feature/clara-hardening"
+commit: "uncommitted"
+summary: "The first Clara conversational slice is ready to publish in the dossier only, with a dedicated chat store, new /api/clara/chat endpoint, and controlled fallback."
+quality_gates:
+  lint: pass
+  typecheck: pass
+  test: pass
+  build: pass
+  qa_review: pending
+changes:
+  - "Replaced the static Clara block in the client dossier with a real conversational panel bound to the active case context."
+  - "Added a dedicated Clara chat store and service, separate from clara-record-store, with Supabase-first persistence and local fallback."
+  - "Added a new /api/clara/chat route that routes free-form messages to existing Clara legal intents server-side."
+  - "Added a new migration for clara_chat_threads and clara_chat_messages."
+  - "Preserved fallback behavior so the dossier remains functional if the conversational path fails."
+files:
+  - "apps/web/src/server/services/clara/clara-chat-types.ts"
+  - "apps/web/src/server/services/clara/clara-chat-store.ts"
+  - "apps/web/src/server/services/clara/clara-chat-service.ts"
+  - "apps/web/src/app/api/clara/chat/route.ts"
+  - "apps/web/src/components/layout/clara-case-chat-panel.tsx"
+  - "apps/web/src/components/layout/client-dossier-frame.tsx"
+  - "apps/web/src/app/(workspace)/pessoas/clientes/[clientId]/page.tsx"
+  - "supabase/migrations/0020_clara_chat_threads.sql"
+  - "apps/web/tsconfig.json"
+  - "docs/stories/18.50.clara-conversacional-persistida-no-dossie-do-caso.md"
+  - "docs/handoffs/2026-05-16-dev-to-devops-clara-chat-dossie.md"
+do_not_stage:
+  - ".aiox/handoffs/2026-05-05-analyst-pje-distribuicao-gap.yaml"
+  - ".aiox/handoffs/2026-05-05-dev-to-devops-demo-fallback.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-click-validation-analise-contrato-gap.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-dossie-unico-prd-master-gap.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-onboarding-processos-financeiro-gap.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-to-devops-contract-analysis-failsafe.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-to-devops-dossier-tab-destinations.yaml"
+  - ".aiox/handoffs/2026-05-07-architect-dev-decisions-onboarding-processos-financeiro.yaml"
+  - ".aiox/handoffs/2026-05-07-deploy-preview-escritorio-liart.yaml"
+  - ".aiox/handoffs/2026-05-07-dev-to-devops-consolidate-onboarding-processes-finance.yaml"
+  - ".aiox/handoffs/2026-05-07-final-dossier-tabs-handoff.yaml"
+  - ".aiox/handoffs/2026-05-07-pr-body-feature-clara-hardening.md"
+  - ".aiox/handoffs/2026-05-12-dev-to-devops-dossie-documentos-cleanup.yaml"
+  - ".aiox/handoffs/2026-05-12-dev-to-pm-dossie-documentos-cleanup.yaml"
+  - ".aiox/handoffs/2026-05-16-analyst-clara-chat-real-sem-regressao.yaml"
+  - ".aiox/handoffs/2026-05-16-pausa-clara-conversacional.yaml"
+  - ".tmp-playwright/"
+  - "apps/web/tsconfig.tsbuildinfo"
+  - "supabase/.temp/"
+devops_steps:
+  - "Stage only the listed delivery files and this handoff artifact."
+  - "Keep unrelated handoffs, generated temp directories, and local helper artifacts out of the publish flow."
+  - "Commit the focused 18.50 dossier Clara chat slice on branch feature/clara-hardening."
+  - "Run the normal preview/deploy flow."
+  - "Apply or ensure availability of supabase/migrations/0020_clara_chat_threads.sql in the target environment."
+  - "After deploy, validate an authenticated client dossier opens the Clara tab with a real thread and can send at least one message."
+notes:
+  - "The full /clara unification is intentionally outside this publish scope."
+  - "If the migration is not applied, the UI should still render with controlled fallback, but thread persistence in the database will not be active."
+  - "apps/web/tsconfig.json was rewritten by the Next build and is part of the verified working state."

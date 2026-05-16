@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { ClaraCaseChatPanel } from "@/components/layout/clara-case-chat-panel";
 import { DeleteClientButton } from "@/components/layout/delete-client-button";
 
 type ClientCockpitCase = {
@@ -276,6 +277,13 @@ type ClientCockpitFrameProps = {
   clientCaseCount: number;
   dossierTabs: ReadonlyArray<ClientCockpitDossierTab>;
   contractAnalysis: ClientCockpitContractAnalysis | null;
+  claraChatContext: {
+    clientId: string;
+    caseId: string;
+    processId?: string | null;
+    documentId?: string | null;
+    source: "dossie";
+  } | null;
   actionLinks: {
     attachDocuments?: DossierTabKey;
     continueClaraHref: string;
@@ -433,6 +441,7 @@ export function ClientCockpitFrame({
   clientCaseCount,
   dossierTabs,
   contractAnalysis,
+  claraChatContext,
   actionLinks
 }: ClientCockpitFrameProps) {
   const [activePanel, setActivePanel] = useState<DossierTabKey>(dossierTabs[0]?.key ?? "visao-geral");
@@ -1167,51 +1176,30 @@ export function ClientCockpitFrame({
                 <p className="workspace-kicker">Clara</p>
                 <h3 className="mt-2 text-2xl font-semibold text-white">Clara dentro do caso</h3>
               </div>
-              <div className="detail-subpanel p-5">
-                <p className="text-sm leading-7 text-slate-200">
-                  Voce abre: <span className="font-semibold text-white">Cliente {client.fullName}</span>
-                </p>
-                <p className="mt-2 text-sm leading-7 text-slate-200">
-                  Caso: <span className="font-semibold text-white">{activeCaseTitle}</span>
-                </p>
-                <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-5">
-                  {["contrato", "calculos", "Bacen", "parcelas", "abusividades"].map((item) => (
-                    <div key={item} className="detail-soft-row px-4 py-3 text-sm text-slate-300">
-                      {item}
-                    </div>
-                  ))}
+              {claraChatContext ? (
+                <ClaraCaseChatPanel
+                  context={claraChatContext}
+                  header={{
+                    clientName: client.fullName,
+                    caseTitle: activeCaseTitle
+                  }}
+                  fallback={{
+                    summary: claraResponse,
+                    focusPoints: claraFocusPoints,
+                    timeline: normalizedTimeline,
+                    comparisonLabel: comparison
+                      ? `O contrato possui taxa ${comparison.contractRateLabel} e media BACEN ${comparison.marketReferenceLabel}. Diferenca: ${comparison.differencePercentLabel}.`
+                      : null
+                  }}
+                />
+              ) : (
+                <div className="detail-subpanel p-5">
+                  <p className="text-sm leading-7 text-slate-200">
+                    A conversa real da Clara depende de um caso ativo valido. O dossie continua disponivel com o resumo contextual atual.
+                  </p>
+                  <p className="mt-4 text-sm leading-7 text-slate-200">{claraResponse}</p>
                 </div>
-              </div>
-              <div className="detail-subpanel p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pergunta</p>
-                <p className="mt-3 text-sm leading-7 text-slate-200">Clara, explique esse caso.</p>
-                <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Resposta</p>
-                <p className="mt-3 text-sm leading-7 text-slate-200">{claraResponse}</p>
-                {comparison ? (
-                  <div className="mt-4 detail-soft-row px-4 py-4 text-sm text-slate-300">
-                    O contrato possui taxa {comparison.contractRateLabel} e media BACEN {comparison.marketReferenceLabel}. Diferenca:{" "}
-                    <span className="font-semibold text-white">{comparison.differencePercentLabel}</span>.
-                  </div>
-                ) : null}
-                {claraFocusPoints.length ? (
-                  <div className="mt-4 grid gap-2">
-                    {claraFocusPoints.map((point) => (
-                      <div key={point} className="detail-soft-row px-4 py-3 text-sm text-slate-300">
-                        {point}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-                {normalizedTimeline.length ? (
-                  <div className="mt-4 grid gap-2">
-                    {normalizedTimeline.slice(0, 3).map((entry) => (
-                      <div key={entry} className="detail-soft-row px-4 py-3 text-sm text-slate-300">
-                        {entry}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
+              )}
               {relatedProcess ? (
                 <div className="detail-subpanel p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Processo em contexto</p>

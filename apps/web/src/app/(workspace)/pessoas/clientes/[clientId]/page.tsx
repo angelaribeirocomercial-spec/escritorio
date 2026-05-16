@@ -480,6 +480,17 @@ export default async function ClientDetailPage({
               }
             : null
         }
+        claraChatContext={
+          activeCase
+            ? {
+                clientId: client.id,
+                caseId: activeCase.id,
+                processId: relatedProcess?.id ?? null,
+                documentId: activeCaseDraftDocumentId,
+                source: "dossie"
+              }
+            : null
+        }
         relatedClaraRecordsCount={relatedClaraRecords.length}
         relatedProcess={
           relatedProcess
