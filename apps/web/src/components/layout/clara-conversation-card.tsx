@@ -69,7 +69,7 @@ function buildAssistantReplyWithContext(
     const clientLabel = clientMatch.label.split(" · ")[0] ?? clientMatch.label;
 
     return {
-      reply: `Encontrei o cliente ${clientLabel}. Posso abrir o cockpit dele e seguir com o caso, os documentos ou a minuta.`,
+      reply: `Encontrei o cliente ${clientLabel}. Posso seguir com o caso, os documentos ou a minuta. O que você quer ver primeiro?`,
       nextContext: {
         lastClientLabel: clientLabel,
         lastTopic: "client" as const
@@ -88,28 +88,28 @@ function buildAssistantReplyWithContext(
             : "fluxo";
 
     return {
-      reply: `Continuando com ${context.lastClientLabel}: posso abrir o cockpit, retomar o ${topic} ou seguir para a próxima ação do fluxo.`,
+      reply: `Continuando com ${context.lastClientLabel}. Posso retomar o ${topic} ou avançar para a próxima ação do fluxo. O que prefere?`,
       nextContext: context
     };
   }
 
   if (normalized.includes("caso")) {
     return {
-      reply: "Posso localizar o caso, cruzar cliente, processo e documentos e seguir com a resposta curta que voce pediu.",
+      reply: "Posso localizar o caso, cruzar cliente, processo e documentos e te responder de forma direta a partir daí.",
       nextContext: { ...context, lastTopic: "case" as const }
     };
   }
 
   if (normalized.includes("documento")) {
     return {
-      reply: "Posso revisar os documentos ligados ao caso e apontar o que ja esta anexado e o que ainda falta.",
+      reply: "Posso revisar os documentos ligados ao caso e te dizer o que já está anexado e o que ainda falta.",
       nextContext: { ...context, lastTopic: "document" as const }
     };
   }
 
   if (normalized.includes("processo")) {
     return {
-      reply: "Posso localizar o processo e te mostrar a situacao processual, os andamentos e o proximo passo operacional.",
+      reply: "Posso localizar o processo e te mostrar a situação processual, os andamentos e o próximo passo operacional.",
       nextContext: { ...context, lastTopic: "process" as const }
     };
   }
@@ -132,17 +132,15 @@ export function ClaraConversationCard({
 }: ClaraConversationCardProps) {
   const threadRef = useRef<HTMLDivElement | null>(null);
   const initialQuestion = composerValue?.trim() ?? "";
-  const initialReply =
-    assistantReply ?? "Pode me dizer o que você precisa? Eu respondo de forma curta e objetiva no contexto bancário.";
   const initialClientMatch = initialQuestion ? findClientMatch(initialQuestion, clientOptions) : null;
   const initialClientLabel = initialClientMatch ? initialClientMatch.label.split(" · ")[0] ?? initialClientMatch.label : null;
   const initialThread = useMemo<ChatMessage[]>(() => {
-    if (!initialQuestion) {
+    if (!initialQuestion || !assistantReply) {
       return [];
     }
 
-    return [{ role: "assistant", text: initialReply }];
-  }, [initialQuestion, initialReply]);
+    return [{ role: "assistant", text: assistantReply }];
+  }, [assistantReply, initialQuestion]);
   const [thread, setThread] = useState<ChatMessage[]>(initialThread);
   const [inputValue, setInputValue] = useState(initialQuestion);
   const [conversationContext, setConversationContext] = useState<ConversationContext>({

@@ -478,9 +478,6 @@ export default async function ClaraPage({
         structuredCore: structuredCoreFallback,
         taskType: contextualTaskType
       });
-      const structuredFallbackPrompt = `Clara, explique o caso de ${structuredCoreFallback.context.client.fullName} em ${structuredCoreFallback.context.bankingCase.title} e diga o proximo passo.`;
-      const structuredFallbackReply = `${structuredCoreFallback.summary} Posso continuar por cliente, caso, processo ou documento.`;
-
       return (
         <WorkspacePage
           description="A Clara nao fechou o workspace completo, mas manteve cliente e caso resolvidos com seguranca."
@@ -497,11 +494,10 @@ export default async function ClaraPage({
           title="Clara em estado controlado"
         >
           <ClaraConversationCard
-            assistantReply={structuredFallbackReply}
             badgeLabel="CLARA"
             badgeSubtitle="Conversa contextual assistida"
             composerHint="Enter envia. Shift+Enter quebra linha."
-            composerValue={structuredFallbackPrompt}
+            composerPlaceholder="Pergunte à Clara sobre o caso, o documento ou o próximo passo."
             responseDetail="A Clara continua conversando mesmo quando o workspace completo cai em estado controlado."
           />
 
@@ -531,9 +527,6 @@ export default async function ClaraPage({
         : null);
 
     if (fallbackContextualAnalysis) {
-      const fallbackConversationPrompt = `Clara, explique o caso de ${fallbackContextualAnalysis.contextSnapshot.clientId} e diga o proximo passo.`;
-      const fallbackConversationReply = `${fallbackContextualAnalysis.summary} Posso continuar por cliente, caso, processo ou documento.`;
-
       return (
         <WorkspacePage
           description="A Clara contextual minima resolveu cliente e caso, mas o workspace completo nao abriu. O bloco contextual segue visivel para manter o fluxo rastreavel."
@@ -547,11 +540,10 @@ export default async function ClaraPage({
           title="Clara em estado controlado"
         >
           <ClaraConversationCard
-            assistantReply={fallbackConversationReply}
             badgeLabel="CLARA"
             badgeSubtitle="Conversa contextual assistida"
             composerHint="Enter envia. Shift+Enter quebra linha."
-            composerValue={fallbackConversationPrompt}
+            composerPlaceholder="Pergunte à Clara sobre o caso, o documento ou o próximo passo."
             responseDetail="Mesmo em fallback controlado, a Clara mantém um chat editável para o caso atual."
           />
 
@@ -592,9 +584,6 @@ export default async function ClaraPage({
   }
   const activeWorkspace = clara.tabs[activeTab];
 
-  const controlledConversationPrompt = `Clara, explique o caso de ${clara.structuredCore.context.client.fullName}${clara.structuredCore.context.bankingCase?.title ? ` em ${clara.structuredCore.context.bankingCase.title}` : ""} e diga o proximo passo.`;
-  const controlledConversationReply = `${clara.structuredCore.summary} Posso continuar por cliente, caso, processo ou documento.`;
-
   if (activeNiche && (!hasResolvedProcess || !hasResolvedDocument)) {
     return (
       <WorkspacePage
@@ -617,11 +606,10 @@ export default async function ClaraPage({
           />
 
           <ClaraConversationCard
-            assistantReply={controlledConversationReply}
             badgeLabel="CLARA"
             badgeSubtitle="Conversa contextual assistida"
             composerHint="Enter envia. Shift+Enter quebra linha."
-            composerValue={controlledConversationPrompt}
+            composerPlaceholder="Pergunte à Clara sobre o caso, o documento ou o próximo passo."
             responseDetail="Use esta bancada para perguntar sobre o caso mesmo quando o processo ou o documento ainda estao pendentes."
           />
 
@@ -1162,61 +1150,6 @@ export default async function ClaraPage({
   const selectedAction = searchParams?.action;
   const workflowFields = [...activeWorkspace.workflow.fields];
   const globalSearchQuery = searchParams?.q?.trim() ?? "";
-  const hasExplicitConversationContext = Boolean(
-    searchParams?.client || searchParams?.case || searchParams?.process || searchParams?.document
-  );
-  const selectedClientLabel = selectedClient.label.split(" · ")[0] ?? selectedClient.label;
-  const contextualConversationPrompt =
-    !globalSearchQuery && hasExplicitConversationContext
-      ? `Clara, explique o caso de ${selectedClientLabel}${selectedCase ? ` em ${selectedCase.label}` : ""} e diga o próximo passo.`
-      : globalSearchQuery;
-  const contextualConversationReply =
-    globalSearchQuery
-      ? buildClaraReply(globalSearchQuery)
-      : hasExplicitConversationContext
-        ? `Entendi o contexto de ${selectedClientLabel}${selectedCase ? `, caso ${selectedCase.label}` : ""}${selectedProcess ? `, processo ${selectedProcess.label}` : ""}${selectedDocument ? ` e documento ${selectedDocument.label}` : ""}. ${clara.structuredCore.summary} Posso detalhar cliente, caso, processo, documentos ou a próxima ação.`
-        : undefined;
-
-  function buildClaraReply(question: string) {
-    const normalized = question
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .trim();
-
-    const clientMatch = visibleClientOptions.find((client) => {
-      const clientName = client.label
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
-      const clientId = client.id
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
-
-      return (
-        normalized.includes(clientName) ||
-        clientName.includes(normalized) ||
-        normalized.includes(clientId)
-      );
-    });
-
-    if (clientMatch) {
-      const clientLabel = clientMatch.label.split(" · ")[0] ?? clientMatch.label;
-
-      return `Encontrei o cliente ${clientLabel}. Posso abrir o cockpit dele, localizar o caso e mostrar as ações prontas do fluxo.`;
-    }
-
-    if (normalized.includes("cliente") || normalized.includes("caso")) {
-      return "Não encontrei um cliente com esse nome no workspace. Se quiser, eu posso procurar por nome completo, sobrenome ou CPF.";
-    }
-
-    if (normalized.includes("documento")) {
-      return "Posso revisar os documentos ligados ao caso e apontar o que já está anexado e o que ainda falta.";
-    }
-
-    return "Posso localizar cliente, caso, processo ou documento. Me diga o nome, CPF ou identificador que eu sigo direto.";
-  }
 
   function getFieldWeight(fieldType: string) {
     if (fieldType === "client") return 0;
@@ -2136,10 +2069,8 @@ export default async function ClaraPage({
             badgeLabel="CLARA"
             badgeSubtitle={`${nicheConfig?.title ?? "Workspace juridico"} · ${activeModeLabel}`}
             responseDetail={activeWorkspace.summary}
-            assistantReply={contextualConversationReply}
             composerHint="Pressione Enter para enviar. Use Shift+Enter para quebrar linha."
             composerPlaceholder="Ex.: Analise a prova, diga o risco e monte a proxima acao juridica."
-            composerValue={contextualConversationPrompt}
             clientOptions={visibleClientOptions}
           />
 
