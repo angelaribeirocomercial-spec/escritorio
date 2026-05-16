@@ -262,10 +262,6 @@ export async function sendClaraChatMessage(params: {
 
   const thread = await getClaraChatThread(params.context);
 
-  if (params.threadId && params.threadId !== thread.id) {
-    throw new Error("A thread informada nao corresponde ao contexto atual do caso.");
-  }
-
   const intent = detectIntent(trimmedMessage);
   const userMessage = createMessage({
     role: "user",
