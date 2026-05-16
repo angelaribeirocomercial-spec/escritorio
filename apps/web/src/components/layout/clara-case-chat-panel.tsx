@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormEvent } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import type {
@@ -39,6 +39,13 @@ function formatMessageTime(value: string) {
     hour: "2-digit",
     minute: "2-digit"
   });
+}
+
+function isStaticGreetingMessage(message: ClaraChatMessage) {
+  return (
+    message.role === "assistant" &&
+    message.text.startsWith("Entendi. Este chat esta preso ao caso")
+  );
 }
 
 export function ClaraCaseChatPanel(props: ClaraCaseChatPanelProps) {
@@ -174,14 +181,19 @@ export function ClaraCaseChatPanel(props: ClaraCaseChatPanelProps) {
         <p className="mt-2 text-sm leading-7 text-slate-200">
           Caso atual: <span className="font-semibold text-white">{props.header.caseTitle}</span>
         </p>
+        <p className="mt-2 text-sm leading-7 text-slate-200">
+          Este chat esta preso ao caso <span className="font-semibold text-white">{props.context.caseId}</span> e a Clara
+          responde usando o contexto real do dossie. Voce pode perguntar sobre o caso, documentos, processo, proximo passo
+          ou minuta.
+        </p>
       </div>
 
       <div className="detail-subpanel p-5">
         {isLoading ? (
           <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">Clara esta abrindo a thread do caso.</div>
-        ) : messages.length ? (
+        ) : messages.filter((message) => !isStaticGreetingMessage(message)).length ? (
           <div className="grid gap-4">
-            {messages.map((message) => {
+            {messages.filter((message) => !isStaticGreetingMessage(message)).map((message) => {
               const isUser = message.role === "user";
 
               return (
@@ -222,6 +234,17 @@ export function ClaraCaseChatPanel(props: ClaraCaseChatPanelProps) {
             placeholder="Pergunte sobre o caso, os documentos, o processo ou o proximo passo."
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+
+                const form = event.currentTarget.form;
+
+                if (form) {
+                  form.requestSubmit();
+                }
+              }
+            }}
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-slate-400">Enter envia. Shift+Enter quebra linha.</p>

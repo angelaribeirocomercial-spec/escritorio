@@ -74,26 +74,21 @@ function detectIntent(message: string): ClaraChatIntent {
   return "fallback";
 }
 
-function buildGreeting(context: ClaraChatContext) {
-  return createMessage({
-    role: "assistant",
-    text:
-      `Entendi. Este chat esta preso ao caso ${context.caseId} e vou responder usando o contexto real do dossie.` +
-      " Pode perguntar sobre o caso, documentos, processo, proximo passo ou minuta.",
-    intent: "fallback",
-    status: "completed",
-    metadata: {
-      source: context.source
-    }
-  });
-}
-
 function formatSection(title: string, items: ReadonlyArray<string>) {
   if (!items.length) {
     return "";
   }
 
   return `${title}: ${items.join(" | ")}`;
+}
+
+function normalizeAssistantVoice(text: string) {
+  return text
+    .replace(/^Clara classificou\s*/i, "Pelo que vejo aqui, ")
+    .replace(/^A Clara recomenda\s*/i, "Eu recomendo ")
+    .replace(/^Clara recomenda\s*/i, "Eu recomendo ")
+    .replace(/\bA Clara\b/g, "Eu")
+    .replace(/\bClara\b/g, "Eu");
 }
 
 async function buildAssistantReply(
@@ -109,10 +104,10 @@ async function buildAssistantReply(
 
     return {
       text: [
-        payload.summary,
-        formatSection("Fatos confirmados", payload.confirmedFacts),
-        formatSection("Documentos faltantes", payload.documentsMissing),
-        formatSection("Recomendacoes", payload.recommendations)
+        normalizeAssistantVoice(payload.summary),
+        formatSection("O que eu consigo confirmar", payload.confirmedFacts),
+        formatSection("O que ainda esta faltando", payload.documentsMissing),
+        formatSection("O que eu recomendo agora", payload.recommendations)
       ]
         .filter(Boolean)
         .join("\n\n"),
@@ -131,9 +126,9 @@ async function buildAssistantReply(
 
     return {
       text: [
-        payload.summary,
-        `Proximo passo sugerido: ${payload.nextStep}`,
-        formatSection("Riscos", payload.risks),
+        normalizeAssistantVoice(payload.summary),
+        `Meu proximo passo sugerido aqui e: ${payload.nextStep}`,
+        formatSection("Riscos que eu vejo agora", payload.risks),
         formatSection("Lacunas documentais", payload.documentsMissing)
       ]
         .filter(Boolean)
@@ -151,9 +146,9 @@ async function buildAssistantReply(
 
     return {
       text: [
-        payload.summary,
-        formatSection("Atualizacoes relevantes", payload.updates.map((update) => update.operationalSummary)),
-        formatSection("Proximas acoes", payload.nextActions)
+        normalizeAssistantVoice(payload.summary),
+        formatSection("Atualizacoes que eu considerei relevantes", payload.updates.map((update) => update.operationalSummary)),
+        formatSection("Proximas acoes que eu sugiro", payload.nextActions)
       ]
         .filter(Boolean)
         .join("\n\n"),
@@ -178,10 +173,10 @@ async function buildAssistantReply(
 
     return {
       text: [
-        analysis.summary,
-        formatSection("Base factual", analysis.caseAnalysis.confirmedFacts),
-        formatSection("Sugestoes", analysis.caseAnalysis.suggestions),
-        draft ? `Minuta relacionada: ${draft.summary}` : ""
+        normalizeAssistantVoice(analysis.summary),
+        formatSection("Base factual que eu consigo sustentar", analysis.caseAnalysis.confirmedFacts),
+        formatSection("O que eu sugiro para a peca", analysis.caseAnalysis.suggestions),
+        draft ? `A minuta relacionada neste contexto e: ${normalizeAssistantVoice(draft.summary)}` : ""
       ]
         .filter(Boolean)
         .join("\n\n"),
@@ -200,9 +195,9 @@ async function buildAssistantReply(
 
     return {
       text: [
-        payload.draft.preview,
-        formatSection("Checklist de revisao", payload.reviewChecklist),
-        formatSection("Alertas", payload.warnings)
+        normalizeAssistantVoice(payload.draft.preview),
+        formatSection("Checklist de revisao que eu seguiria", payload.reviewChecklist),
+        formatSection("Alertas que eu deixo aqui", payload.warnings)
       ]
         .filter(Boolean)
         .join("\n\n"),
@@ -220,10 +215,10 @@ async function buildAssistantReply(
 
   return {
     text: [
-      analysis.summary,
-      formatSection("Fatos confirmados", analysis.caseAnalysis.confirmedFacts),
-      formatSection("Lacunas atuais", analysis.caseAnalysis.documentsMissing),
-      formatSection("Sugestoes", analysis.caseAnalysis.suggestions)
+      normalizeAssistantVoice(analysis.summary),
+      formatSection("O que eu consigo confirmar", analysis.caseAnalysis.confirmedFacts),
+      formatSection("Lacunas que ainda vejo", analysis.caseAnalysis.documentsMissing),
+      formatSection("O que eu sugiro a partir daqui", analysis.caseAnalysis.suggestions)
     ]
       .filter(Boolean)
       .join("\n\n"),
@@ -236,17 +231,7 @@ async function buildAssistantReply(
 }
 
 export async function getClaraChatThread(context: ClaraChatContext): Promise<ClaraChatThread> {
-  const thread = await getOrCreateClaraChatThread(context);
-
-  if (thread.messages.length > 0) {
-    return thread;
-  }
-
-  return appendClaraChatMessages({
-    threadId: thread.id,
-    context,
-    messages: [buildGreeting(context)]
-  });
+  return getOrCreateClaraChatThread(context);
 }
 
 export async function sendClaraChatMessage(params: {
