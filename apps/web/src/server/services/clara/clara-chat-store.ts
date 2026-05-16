@@ -51,6 +51,18 @@ type ClaraSupabaseSource = {
 const DATA_DIR = path.join(process.cwd(), ".data");
 const STORE_PATH = path.join(DATA_DIR, "clara-chat.json");
 
+function shouldFallbackToLocalStore(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    message.includes("clara_chat_threads") ||
+    message.includes("clara_chat_messages") ||
+    message.includes("schema cache") ||
+    message.includes("relation") ||
+    message.includes("does not exist")
+  );
+}
+
 async function ensureStore() {
   await mkdir(DATA_DIR, { recursive: true });
 
@@ -74,6 +86,52 @@ async function readStore() {
 async function writeStore(store: ClaraChatLocalStore) {
   await ensureStore();
   await writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+}
+
+async function getOrCreateClaraChatThreadFromLocalStore(context: ClaraChatContext) {
+  const session = await getWorkspaceSession();
+  const tenantId = session?.workspace?.tenant?.id ?? "demo-tenant";
+  const store = await readStore();
+  const existing = store.threads.find(
+    (entry) => entry.tenantId === tenantId && matchesThread(entry.thread, context)
+  );
+
+  if (existing) {
+    return existing.thread;
+  }
+
+  const thread = buildThread(context);
+
+  store.threads.push({ tenantId, thread });
+  await writeStore(store);
+
+  return thread;
+}
+
+async function appendClaraChatMessagesToLocalStore(params: {
+  threadId: string;
+  context: ClaraChatContext;
+  messages: ClaraChatMessage[];
+}) {
+  const session = await getWorkspaceSession();
+  const tenantId = session?.workspace?.tenant?.id ?? "demo-tenant";
+  const store = await readStore();
+  const threadEntry = store.threads.find(
+    (entry) => entry.tenantId === tenantId && entry.thread.id === params.threadId
+  );
+
+  if (!threadEntry) {
+    throw new Error("Thread da Clara nao encontrada para gravar mensagens.");
+  }
+
+  threadEntry.thread.processId = params.context.processId ?? null;
+  threadEntry.thread.documentId = params.context.documentId ?? null;
+  threadEntry.thread.updatedAt = new Date().toISOString();
+  threadEntry.thread.messages.push(...params.messages);
+
+  await writeStore(store);
+
+  return threadEntry.thread;
 }
 
 async function resolveSupabaseSource(): Promise<ClaraSupabaseSource | null> {
@@ -164,90 +222,80 @@ export async function getOrCreateClaraChatThread(context: ClaraChatContext) {
   const supabaseSource = await resolveSupabaseSource();
 
   if (supabaseSource) {
-    const tenantId = supabaseSource.session.workspace.tenant.id;
-    let threadLookupQuery = supabaseSource.supabase
-      .from("clara_chat_threads")
-      .select("*")
-      .eq("tenant_id", tenantId)
-      .eq("client_id", context.clientId)
-      .eq("case_id", context.caseId)
-      .eq("source", context.source);
-
-    threadLookupQuery = context.processId
-      ? threadLookupQuery.eq("process_id", context.processId)
-      : threadLookupQuery.is("process_id", null);
-    threadLookupQuery = context.documentId
-      ? threadLookupQuery.eq("document_id", context.documentId)
-      : threadLookupQuery.is("document_id", null);
-
-    const { data: existingThreadRow, error: threadLookupError } =
-      await threadLookupQuery.maybeSingle<ClaraChatThreadRow>();
-
-    if (threadLookupError) {
-      throw new Error(`Falha ao localizar thread da Clara: ${threadLookupError.message}`);
-    }
-
-    let threadRow = existingThreadRow;
-
-    if (!threadRow) {
-      const { data, error } = await supabaseSource.supabase
+    try {
+      const tenantId = supabaseSource.session.workspace.tenant.id;
+      let threadLookupQuery = supabaseSource.supabase
         .from("clara_chat_threads")
-        .insert({
-          id: `clara-thread-${randomUUID()}`,
-          tenant_id: tenantId,
-          client_id: context.clientId,
-          case_id: context.caseId,
-          process_id: context.processId ?? null,
-          document_id: context.documentId ?? null,
-          source: context.source,
-          status: "active"
-        })
         .select("*")
-        .single<ClaraChatThreadRow>();
+        .eq("tenant_id", tenantId)
+        .eq("client_id", context.clientId)
+        .eq("case_id", context.caseId)
+        .eq("source", context.source);
 
-      if (error) {
-        throw new Error(`Falha ao criar thread da Clara: ${error.message}`);
+      threadLookupQuery = context.processId
+        ? threadLookupQuery.eq("process_id", context.processId)
+        : threadLookupQuery.is("process_id", null);
+      threadLookupQuery = context.documentId
+        ? threadLookupQuery.eq("document_id", context.documentId)
+        : threadLookupQuery.is("document_id", null);
+
+      const { data: existingThreadRow, error: threadLookupError } =
+        await threadLookupQuery.maybeSingle<ClaraChatThreadRow>();
+
+      if (threadLookupError) {
+        throw new Error(`Falha ao localizar thread da Clara: ${threadLookupError.message}`);
       }
 
-      threadRow = data;
+      let threadRow = existingThreadRow;
+
+      if (!threadRow) {
+        const { data, error } = await supabaseSource.supabase
+          .from("clara_chat_threads")
+          .insert({
+            id: `clara-thread-${randomUUID()}`,
+            tenant_id: tenantId,
+            client_id: context.clientId,
+            case_id: context.caseId,
+            process_id: context.processId ?? null,
+            document_id: context.documentId ?? null,
+            source: context.source,
+            status: "active"
+          })
+          .select("*")
+          .single<ClaraChatThreadRow>();
+
+        if (error) {
+          throw new Error(`Falha ao criar thread da Clara: ${error.message}`);
+        }
+
+        threadRow = data;
+      }
+
+      if (!threadRow) {
+        throw new Error("Falha ao materializar a thread da Clara.");
+      }
+
+      const { data: messageRows, error: messagesError } = await supabaseSource.supabase
+        .from("clara_chat_messages")
+        .select("*")
+        .eq("tenant_id", tenantId)
+        .eq("thread_id", threadRow.id)
+        .order("created_at", { ascending: true })
+        .returns<ClaraChatMessageRow[]>();
+
+      if (messagesError) {
+        throw new Error(`Falha ao carregar mensagens da Clara: ${messagesError.message}`);
+      }
+
+      return mapThreadRow(threadRow, messageRows ?? []);
+    } catch (error) {
+      if (!shouldFallbackToLocalStore(error)) {
+        throw error;
+      }
     }
-
-    if (!threadRow) {
-      throw new Error("Falha ao materializar a thread da Clara.");
-    }
-
-    const { data: messageRows, error: messagesError } = await supabaseSource.supabase
-      .from("clara_chat_messages")
-      .select("*")
-      .eq("tenant_id", tenantId)
-      .eq("thread_id", threadRow.id)
-      .order("created_at", { ascending: true })
-      .returns<ClaraChatMessageRow[]>();
-
-    if (messagesError) {
-      throw new Error(`Falha ao carregar mensagens da Clara: ${messagesError.message}`);
-    }
-
-    return mapThreadRow(threadRow, messageRows ?? []);
   }
 
-  const session = await getWorkspaceSession();
-  const tenantId = session?.workspace?.tenant?.id ?? "demo-tenant";
-  const store = await readStore();
-  const existing = store.threads.find(
-    (entry) => entry.tenantId === tenantId && matchesThread(entry.thread, context)
-  );
-
-  if (existing) {
-    return existing.thread;
-  }
-
-  const thread = buildThread(context);
-
-  store.threads.push({ tenantId, thread });
-  await writeStore(store);
-
-  return thread;
+  return getOrCreateClaraChatThreadFromLocalStore(context);
 }
 
 export async function appendClaraChatMessages(params: {
@@ -258,61 +306,49 @@ export async function appendClaraChatMessages(params: {
   const supabaseSource = await resolveSupabaseSource();
 
   if (supabaseSource) {
-    const tenantId = supabaseSource.session.workspace.tenant.id;
-    const { error: threadError } = await supabaseSource.supabase
-      .from("clara_chat_threads")
-      .update({
-        updated_at: new Date().toISOString(),
-        process_id: params.context.processId ?? null,
-        document_id: params.context.documentId ?? null
-      })
-      .eq("tenant_id", tenantId)
-      .eq("id", params.threadId);
+    try {
+      const tenantId = supabaseSource.session.workspace.tenant.id;
+      const { error: threadError } = await supabaseSource.supabase
+        .from("clara_chat_threads")
+        .update({
+          updated_at: new Date().toISOString(),
+          process_id: params.context.processId ?? null,
+          document_id: params.context.documentId ?? null
+        })
+        .eq("tenant_id", tenantId)
+        .eq("id", params.threadId);
 
-    if (threadError) {
-      throw new Error(`Falha ao atualizar thread da Clara: ${threadError.message}`);
+      if (threadError) {
+        throw new Error(`Falha ao atualizar thread da Clara: ${threadError.message}`);
+      }
+
+      const rows = params.messages.map((message) => ({
+        id: message.id,
+        thread_id: params.threadId,
+        tenant_id: tenantId,
+        role: message.role,
+        text: message.text,
+        intent: message.intent ?? null,
+        status: message.status ?? null,
+        source_trace: message.sourceTrace ?? {},
+        metadata: message.metadata ?? {}
+      }));
+
+      const { error: insertError } = await supabaseSource.supabase
+        .from("clara_chat_messages")
+        .insert(rows);
+
+      if (insertError) {
+        throw new Error(`Falha ao gravar mensagens da Clara: ${insertError.message}`);
+      }
+
+      return getOrCreateClaraChatThread(params.context);
+    } catch (error) {
+      if (!shouldFallbackToLocalStore(error)) {
+        throw error;
+      }
     }
-
-    const rows = params.messages.map((message) => ({
-      id: message.id,
-      thread_id: params.threadId,
-      tenant_id: tenantId,
-      role: message.role,
-      text: message.text,
-      intent: message.intent ?? null,
-      status: message.status ?? null,
-      source_trace: message.sourceTrace ?? {},
-      metadata: message.metadata ?? {}
-    }));
-
-    const { error: insertError } = await supabaseSource.supabase
-      .from("clara_chat_messages")
-      .insert(rows);
-
-    if (insertError) {
-      throw new Error(`Falha ao gravar mensagens da Clara: ${insertError.message}`);
-    }
-
-    return getOrCreateClaraChatThread(params.context);
   }
 
-  const session = await getWorkspaceSession();
-  const tenantId = session?.workspace?.tenant?.id ?? "demo-tenant";
-  const store = await readStore();
-  const threadEntry = store.threads.find(
-    (entry) => entry.tenantId === tenantId && entry.thread.id === params.threadId
-  );
-
-  if (!threadEntry) {
-    throw new Error("Thread da Clara nao encontrada para gravar mensagens.");
-  }
-
-  threadEntry.thread.processId = params.context.processId ?? null;
-  threadEntry.thread.documentId = params.context.documentId ?? null;
-  threadEntry.thread.updatedAt = new Date().toISOString();
-  threadEntry.thread.messages.push(...params.messages);
-
-  await writeStore(store);
-
-  return threadEntry.thread;
+  return appendClaraChatMessagesToLocalStore(params);
 }
