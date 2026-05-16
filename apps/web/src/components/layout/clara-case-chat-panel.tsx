@@ -179,12 +179,9 @@ export function ClaraCaseChatPanel(props: ClaraCaseChatPanelProps) {
           Conversa viva com a Clara para <span className="font-semibold text-white">{props.header.clientName}</span>.
         </p>
         <p className="mt-2 text-sm leading-7 text-slate-200">
-          Caso atual: <span className="font-semibold text-white">{props.header.caseTitle}</span>
-        </p>
-        <p className="mt-2 text-sm leading-7 text-slate-200">
           Este chat esta preso ao caso <span className="font-semibold text-white">{props.context.caseId}</span> e a Clara
-          responde usando o contexto real do dossie. Voce pode perguntar sobre o caso, documentos, processo, proximo passo
-          ou minuta.
+          responde usando o contexto real do dossie de <span className="font-semibold text-white">{props.header.caseTitle}</span>.
+          Voce pode perguntar sobre o caso, documentos, processo, proximo passo ou minuta.
         </p>
       </div>
 

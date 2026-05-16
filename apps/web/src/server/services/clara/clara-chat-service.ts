@@ -85,29 +85,77 @@ function formatSection(title: string, items: ReadonlyArray<string>) {
 function normalizeAssistantVoice(text: string) {
   return text
     .replace(/^Clara classificou\s*/i, "Pelo que vejo aqui, ")
+    .replace(/\bIA Clara\b/g, "Eu")
     .replace(/^A Clara recomenda\s*/i, "Eu recomendo ")
     .replace(/^Clara recomenda\s*/i, "Eu recomendo ")
     .replace(/\bA Clara\b/g, "Eu")
     .replace(/\bClara\b/g, "Eu");
 }
 
+function normalizeMessageText(message: string) {
+  return message.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+}
+
+function isShortContinuationPrompt(message: string) {
+  return /^(clara|oi|ola|opa|ok|entendi|me explica melhor|explique melhor|continua|continue)$/i.test(
+    normalizeMessageText(message)
+  );
+}
+
+function takeFirstItems(items: ReadonlyArray<string>, count: number) {
+  return items.slice(0, count);
+}
+
+function buildContinuationReply(lastAssistantIntent?: ClaraChatIntent) {
+  if (lastAssistantIntent === "checklist-documental") {
+    return "Estou aqui. Se quiser, eu posso focar so nos documentos faltantes ou te dizer o que cobrar primeiro.";
+  }
+
+  if (lastAssistantIntent === "sugerir-proximos-passos") {
+    return "Estou aqui. Se quiser, eu detalho o proximo passo ou separo o que depende de documento e o que ja pode andar agora.";
+  }
+
+  if (lastAssistantIntent === "acompanhar-processo") {
+    return "Estou acompanhando com voce. Se quiser, eu posso resumir o andamento ou destacar so o risco e a proxima acao.";
+  }
+
+  if (lastAssistantIntent === "gerar-peca" || lastAssistantIntent === "revisar-minuta") {
+    return "Posso continuar por minuta. Se quiser, eu separo a base factual, os pedidos ou os pontos que ainda precisam de revisao.";
+  }
+
+  return "Estou aqui. Posso resumir o caso, listar os documentos faltantes, te dizer o proximo passo ou olhar a minuta.";
+}
+
 async function buildAssistantReply(
   context: ClaraChatContext,
-  intent: ClaraChatIntent
+  intent: ClaraChatIntent,
+  thread: ClaraChatThread,
+  userMessage: string
 ): Promise<{
   text: string;
   resolution: ClaraChatResolution;
   sourceTrace?: ClaraChatMessage["sourceTrace"];
 }> {
+  const lastAssistantIntent = [...thread.messages]
+    .reverse()
+    .find((message) => message.role === "assistant" && message.intent)?.intent;
+
+  if (intent === "fallback" && isShortContinuationPrompt(userMessage)) {
+    return {
+      text: buildContinuationReply(lastAssistantIntent),
+      resolution: { intent: "fallback", usedFallback: false }
+    };
+  }
+
   if (intent === "checklist-documental") {
     const payload = await getClaraCaseChecklistApiPayload(context.caseId);
 
     return {
       text: [
         normalizeAssistantVoice(payload.summary),
-        formatSection("O que eu consigo confirmar", payload.confirmedFacts),
-        formatSection("O que ainda esta faltando", payload.documentsMissing),
-        formatSection("O que eu recomendo agora", payload.recommendations)
+        formatSection("O que eu consigo confirmar", takeFirstItems(payload.confirmedFacts, 3)),
+        formatSection("O que ainda esta faltando", takeFirstItems(payload.documentsMissing, 3)),
+        formatSection("O que eu recomendo agora", takeFirstItems(payload.recommendations, 2))
       ]
         .filter(Boolean)
         .join("\n\n"),
@@ -128,8 +176,8 @@ async function buildAssistantReply(
       text: [
         normalizeAssistantVoice(payload.summary),
         `Meu proximo passo sugerido aqui e: ${payload.nextStep}`,
-        formatSection("Riscos que eu vejo agora", payload.risks),
-        formatSection("Lacunas documentais", payload.documentsMissing)
+        formatSection("Riscos que eu vejo agora", takeFirstItems(payload.risks, 2)),
+        formatSection("Lacunas documentais", takeFirstItems(payload.documentsMissing, 2))
       ]
         .filter(Boolean)
         .join("\n\n"),
@@ -147,8 +195,11 @@ async function buildAssistantReply(
     return {
       text: [
         normalizeAssistantVoice(payload.summary),
-        formatSection("Atualizacoes que eu considerei relevantes", payload.updates.map((update) => update.operationalSummary)),
-        formatSection("Proximas acoes que eu sugiro", payload.nextActions)
+        formatSection(
+          "Atualizacoes que eu considerei relevantes",
+          takeFirstItems(payload.updates.map((update) => update.operationalSummary), 2)
+        ),
+        formatSection("Proximas acoes que eu sugiro", takeFirstItems(payload.nextActions, 2))
       ]
         .filter(Boolean)
         .join("\n\n"),
@@ -174,8 +225,11 @@ async function buildAssistantReply(
     return {
       text: [
         normalizeAssistantVoice(analysis.summary),
-        formatSection("Base factual que eu consigo sustentar", analysis.caseAnalysis.confirmedFacts),
-        formatSection("O que eu sugiro para a peca", analysis.caseAnalysis.suggestions),
+        formatSection(
+          "Base factual que eu consigo sustentar",
+          takeFirstItems(analysis.caseAnalysis.confirmedFacts, 3)
+        ),
+        formatSection("O que eu sugiro para a peca", takeFirstItems(analysis.caseAnalysis.suggestions, 2)),
         draft ? `A minuta relacionada neste contexto e: ${normalizeAssistantVoice(draft.summary)}` : ""
       ]
         .filter(Boolean)
@@ -196,8 +250,8 @@ async function buildAssistantReply(
     return {
       text: [
         normalizeAssistantVoice(payload.draft.preview),
-        formatSection("Checklist de revisao que eu seguiria", payload.reviewChecklist),
-        formatSection("Alertas que eu deixo aqui", payload.warnings)
+        formatSection("Checklist de revisao que eu seguiria", takeFirstItems(payload.reviewChecklist, 3)),
+        formatSection("Alertas que eu deixo aqui", takeFirstItems(payload.warnings, 2))
       ]
         .filter(Boolean)
         .join("\n\n"),
@@ -216,9 +270,9 @@ async function buildAssistantReply(
   return {
     text: [
       normalizeAssistantVoice(analysis.summary),
-      formatSection("O que eu consigo confirmar", analysis.caseAnalysis.confirmedFacts),
-      formatSection("Lacunas que ainda vejo", analysis.caseAnalysis.documentsMissing),
-      formatSection("O que eu sugiro a partir daqui", analysis.caseAnalysis.suggestions)
+      formatSection("O que eu consigo confirmar", takeFirstItems(analysis.caseAnalysis.confirmedFacts, 4)),
+      formatSection("Lacunas que ainda vejo", takeFirstItems(analysis.caseAnalysis.documentsMissing, 2)),
+      formatSection("O que eu sugiro a partir daqui", takeFirstItems(analysis.caseAnalysis.suggestions, 2))
     ]
       .filter(Boolean)
       .join("\n\n"),
@@ -254,7 +308,7 @@ export async function sendClaraChatMessage(params: {
   });
 
   try {
-    const assistantReply = await buildAssistantReply(params.context, intent);
+    const assistantReply = await buildAssistantReply(params.context, intent, thread, trimmedMessage);
     const assistantMessage = createMessage({
       role: "assistant",
       text: assistantReply.text,
