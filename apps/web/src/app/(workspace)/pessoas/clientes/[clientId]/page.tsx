@@ -229,7 +229,7 @@ export default async function ClientDetailPage({
   let client = null;
 
   try {
-    client = await getClientById(params.clientId);
+    client = await getClientById(params.clientId, { failOnError: true });
   } catch {
     return (
       <WorkspacePage

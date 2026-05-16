@@ -29,6 +29,14 @@ type ClientRow = {
   timeline: string[] | null;
 };
 
+type GetClientsOptions = {
+  failOnError?: boolean;
+};
+
+type GetClientByIdOptions = {
+  failOnError?: boolean;
+};
+
 function mapClientRow(row: ClientRow): ClientRecord {
   return {
     id: row.id,
@@ -53,7 +61,7 @@ function mapClientRow(row: ClientRow): ClientRecord {
   };
 }
 
-export async function getClients(): Promise<ClientRecord[]> {
+export async function getClients(options?: GetClientsOptions): Promise<ClientRecord[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
@@ -95,13 +103,23 @@ export async function getClients(): Promise<ClientRecord[]> {
 
   if (error) {
     console.warn(`Failed to load clients for tenant ${session.workspace.tenant.id}.`);
+
+    if (options?.failOnError) {
+      throw new Error(
+        `Falha ao carregar clientes para o tenant ${session.workspace.tenant.id}.`
+      );
+    }
+
     return [];
   }
 
   return (data ?? []).map((row) => mapClientRow(row as ClientRow));
 }
 
-export async function getClientById(clientId: string): Promise<ClientRecord | null> {
+export async function getClientById(
+  clientId: string,
+  options?: GetClientByIdOptions
+): Promise<ClientRecord | null> {
   const session = await getWorkspaceSession();
 
   if (!session) {
@@ -149,6 +167,13 @@ export async function getClientById(clientId: string): Promise<ClientRecord | nu
 
   if (error) {
     console.warn(`Failed to load client ${clientId} for tenant ${session.workspace.tenant.id}.`);
+
+    if (options?.failOnError) {
+      throw new Error(
+        `Falha ao carregar o cliente ${clientId} para o tenant ${session.workspace.tenant.id}.`
+      );
+    }
+
     return null;
   }
 
