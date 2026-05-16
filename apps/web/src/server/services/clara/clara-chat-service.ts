@@ -126,6 +126,37 @@ function buildContinuationReply(lastAssistantIntent?: ClaraChatIntent) {
   return "Estou aqui. Posso resumir o caso, listar os documentos faltantes, te dizer o proximo passo ou olhar a minuta.";
 }
 
+function buildShortDocumentsReply(documentsMissing: ReadonlyArray<string>) {
+  if (!documentsMissing.length) {
+    return "Pelo que vejo aqui, nao encontrei lacuna documental aberta neste caso agora.";
+  }
+
+  if (documentsMissing.length === 1) {
+    return `Sim. Aqui ainda falta ${documentsMissing[0]}.`;
+  }
+
+  return `Sim. Aqui ainda faltam ${documentsMissing.join(" e ")}.`;
+}
+
+function buildShortNextStepReply(nextStep: string, risks: ReadonlyArray<string>) {
+  const riskLine = risks[0] ? ` O principal ponto de atencao agora e ${risks[0].toLowerCase()}.` : "";
+
+  return `Meu proximo passo aqui seria ${nextStep}.${riskLine}`.trim();
+}
+
+function buildShortCaseSummaryReply(analysis: Awaited<ReturnType<typeof getClaraAnalysisApiPayload>>) {
+  const mainFact = analysis.caseAnalysis.confirmedFacts[0];
+  const mainSuggestion = analysis.caseAnalysis.suggestions[0];
+
+  return [
+    normalizeAssistantVoice(analysis.summary),
+    mainFact ? `O ponto central que eu consigo sustentar aqui e: ${mainFact}.` : "",
+    mainSuggestion ? `A linha que eu seguiria agora e: ${mainSuggestion}.` : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 async function buildAssistantReply(
   context: ClaraChatContext,
   intent: ClaraChatIntent,
@@ -152,13 +183,11 @@ async function buildAssistantReply(
 
     return {
       text: [
-        normalizeAssistantVoice(payload.summary),
-        formatSection("O que eu consigo confirmar", takeFirstItems(payload.confirmedFacts, 3)),
-        formatSection("O que ainda esta faltando", takeFirstItems(payload.documentsMissing, 3)),
-        formatSection("O que eu recomendo agora", takeFirstItems(payload.recommendations, 2))
+        buildShortDocumentsReply(payload.documentsMissing),
+        payload.recommendations[0] ? `O que eu recomendo agora e ${payload.recommendations[0].toLowerCase()}.` : ""
       ]
         .filter(Boolean)
-        .join("\n\n"),
+        .join(" "),
       resolution: { intent, usedFallback: false }
     };
   }
@@ -173,14 +202,7 @@ async function buildAssistantReply(
     });
 
     return {
-      text: [
-        normalizeAssistantVoice(payload.summary),
-        `Meu proximo passo sugerido aqui e: ${payload.nextStep}`,
-        formatSection("Riscos que eu vejo agora", takeFirstItems(payload.risks, 2)),
-        formatSection("Lacunas documentais", takeFirstItems(payload.documentsMissing, 2))
-      ]
-        .filter(Boolean)
-        .join("\n\n"),
+      text: buildShortNextStepReply(payload.nextStep, payload.risks),
       resolution: { intent, usedFallback: false }
     };
   }
@@ -268,14 +290,7 @@ async function buildAssistantReply(
   });
 
   return {
-    text: [
-      normalizeAssistantVoice(analysis.summary),
-      formatSection("O que eu consigo confirmar", takeFirstItems(analysis.caseAnalysis.confirmedFacts, 4)),
-      formatSection("Lacunas que ainda vejo", takeFirstItems(analysis.caseAnalysis.documentsMissing, 2)),
-      formatSection("O que eu sugiro a partir daqui", takeFirstItems(analysis.caseAnalysis.suggestions, 2))
-    ]
-      .filter(Boolean)
-      .join("\n\n"),
+    text: buildShortCaseSummaryReply(analysis),
     resolution: {
       intent,
       usedFallback: intent === "fallback"
