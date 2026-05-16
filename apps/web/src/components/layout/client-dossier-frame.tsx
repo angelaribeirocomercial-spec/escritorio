@@ -275,6 +275,7 @@ type ClientCockpitFrameProps = {
   normalizedClientIaContext: string;
   normalizedTimeline: ReadonlyArray<string>;
   clientCaseCount: number;
+  initialPanel?: DossierTabKey;
   dossierTabs: ReadonlyArray<ClientCockpitDossierTab>;
   contractAnalysis: ClientCockpitContractAnalysis | null;
   claraChatContext: {
@@ -439,12 +440,17 @@ export function ClientCockpitFrame({
   normalizedClientIaContext,
   normalizedTimeline,
   clientCaseCount,
+  initialPanel,
   dossierTabs,
   contractAnalysis,
   claraChatContext,
   actionLinks
 }: ClientCockpitFrameProps) {
-  const [activePanel, setActivePanel] = useState<DossierTabKey>(dossierTabs[0]?.key ?? "visao-geral");
+  const initialActivePanel =
+    initialPanel && dossierTabs.some((tab) => tab.key === initialPanel)
+      ? initialPanel
+      : (dossierTabs[0]?.key ?? "visao-geral");
+  const [activePanel, setActivePanel] = useState<DossierTabKey>(initialActivePanel);
 
   const documentsRequired = workflow?.requiredDocuments.length ?? 0;
   const documentsReceived = caseDocuments.length;

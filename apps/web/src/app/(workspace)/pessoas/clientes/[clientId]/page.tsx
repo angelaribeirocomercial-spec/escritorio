@@ -221,6 +221,7 @@ export default async function ClientDetailPage({
     record?: string;
     action?: string;
     case?: string;
+    panel?: string;
     onboarding?: string;
     workflow?: string;
     uploaded?: string;
@@ -441,6 +442,7 @@ export default async function ClientDetailPage({
         caseDocuments={caseDocumentsForFrame}
         generatedDocuments={generatedDocuments}
         petitionDraftHref={petitionDraftHref}
+        initialPanel={searchParams?.panel === "clara" ? "clara" : undefined}
         client={{
           id: client.id,
           fullName: client.fullName,

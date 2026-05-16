@@ -360,6 +360,60 @@ function buildStructuredCoreFallbackContextualAnalysis(params: {
   };
 }
 
+function buildControlledModeConversationHref(params: {
+  clientId: string;
+  caseId: string;
+}) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("case", params.caseId);
+  searchParams.set("panel", "clara");
+
+  return `/pessoas/clientes/${params.clientId}?${searchParams.toString()}#client-dossier-tab-trigger-clara`;
+}
+
+function renderControlledModeConversationGuide(params: {
+  clientId: string;
+  caseId: string;
+  clientName?: string;
+  caseTitle?: string;
+}) {
+  return (
+    <section className="workspace-panel p-6">
+      <div className="rounded-[4px] border border-cyan-300/20 bg-cyan-300/10 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
+          Conversa do caso
+        </p>
+        <h2 className="mt-2 text-lg font-semibold text-white">
+          Esta tela mostra o estado tecnico/controlado da Clara
+        </h2>
+        <p className="mt-3 text-sm leading-7 text-cyan-50">
+          Use esta pagina para validar o contexto minimo preservado e o resumo tecnico do caso. A
+          conversa operacional acontece na aba <strong>Clara</strong> do dossie de
+          {params.clientName ? ` ${params.clientName}` : " cliente"}
+          {params.caseTitle ? `, no caso ${params.caseTitle}` : ""}.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            className="inline-flex rounded-[4px] bg-[linear-gradient(90deg,#22c55e,#4ade80)] px-4 py-3 text-sm font-semibold text-slate-950 shadow-soft"
+            href={buildControlledModeConversationHref({
+              clientId: params.clientId,
+              caseId: params.caseId
+            })}
+          >
+            Continuar conversa no dossie
+          </Link>
+          <Link
+            className="clara-secondary-button inline-flex rounded-[4px] border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+            href={`/pessoas/clientes/${params.clientId}?case=${params.caseId}`}
+          >
+            Voltar ao cockpit do cliente
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default async function ClaraPage({
   searchParams
 }: {
@@ -493,13 +547,12 @@ export default async function ClaraPage({
           ]}
           title="Clara em estado controlado"
         >
-          <ClaraConversationCard
-            badgeLabel="CLARA"
-            badgeSubtitle="Conversa contextual assistida"
-            composerHint="Enter envia. Shift+Enter quebra linha."
-            composerPlaceholder="Pergunte à Clara sobre o caso, o documento ou o próximo passo."
-            responseDetail="A Clara continua conversando mesmo quando o workspace completo cai em estado controlado."
-          />
+          {renderControlledModeConversationGuide({
+            clientId: structuredCoreFallback.context.client.id,
+            caseId: structuredCoreFallback.context.bankingCase.id,
+            clientName: structuredCoreFallback.context.client.fullName,
+            caseTitle: structuredCoreFallback.context.bankingCase.title
+          })}
 
           <WorkspaceStatePanel
             actionHref={`/pessoas/clientes/${structuredCoreFallback.context.client.id}?case=${structuredCoreFallback.context.bankingCase.id}`}
@@ -539,13 +592,10 @@ export default async function ClaraPage({
           ]}
           title="Clara em estado controlado"
         >
-          <ClaraConversationCard
-            badgeLabel="CLARA"
-            badgeSubtitle="Conversa contextual assistida"
-            composerHint="Enter envia. Shift+Enter quebra linha."
-            composerPlaceholder="Pergunte à Clara sobre o caso, o documento ou o próximo passo."
-            responseDetail="Mesmo em fallback controlado, a Clara mantém um chat editável para o caso atual."
-          />
+          {renderControlledModeConversationGuide({
+            clientId: fallbackContextualAnalysis.contextSnapshot.clientId,
+            caseId: fallbackContextualAnalysis.contextSnapshot.caseId
+          })}
 
           <WorkspaceStatePanel
             actionHref={`/pessoas/clientes/${fallbackContextualAnalysis.contextSnapshot.clientId}?case=${fallbackContextualAnalysis.contextSnapshot.caseId}`}
@@ -597,20 +647,19 @@ export default async function ClaraPage({
         ]}
         title="Clara em estado controlado"
         >
+          {renderControlledModeConversationGuide({
+            clientId: clara.structuredCore.context.client.id,
+            caseId: clara.structuredCore.context.bankingCase.id,
+            clientName: clara.structuredCore.context.client.fullName,
+            caseTitle: clara.structuredCore.context.bankingCase.title
+          })}
+
           <WorkspaceStatePanel
             actionHref={`/pessoas/clientes/${clara.structuredCore.context.client.id}?case=${clara.structuredCore.context.bankingCase.id}`}
             actionLabel="Voltar ao cockpit do cliente"
             description="O contrato contextual da Clara foi resolvido com cliente e caso reais, mas a sessao completa permanece em estado controlado ate o caso ganhar processo vinculado e pelo menos um documento base."
             title="Contexto juridico minimo preservado"
             tone="warning"
-          />
-
-          <ClaraConversationCard
-            badgeLabel="CLARA"
-            badgeSubtitle="Conversa contextual assistida"
-            composerHint="Enter envia. Shift+Enter quebra linha."
-            composerPlaceholder="Pergunte à Clara sobre o caso, o documento ou o próximo passo."
-            responseDetail="Use esta bancada para perguntar sobre o caso mesmo quando o processo ou o documento ainda estao pendentes."
           />
 
           {!hasResolvedDocument ? (
