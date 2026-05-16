@@ -50,6 +50,9 @@ type ClaraSupabaseSource = {
 
 const DATA_DIR = path.join(process.cwd(), ".data");
 const STORE_PATH = path.join(DATA_DIR, "clara-chat.json");
+const ephemeralStore: ClaraChatLocalStore = {
+  threads: []
+};
 
 function shouldFallbackToLocalStore(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
@@ -63,6 +66,17 @@ function shouldFallbackToLocalStore(error: unknown) {
   );
 }
 
+function shouldFallbackToEphemeralMemory(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    message.includes("EROFS") ||
+    message.includes("read-only file system") ||
+    message.includes("EPERM") ||
+    message.includes("EACCES")
+  );
+}
+
 async function ensureStore() {
   await mkdir(DATA_DIR, { recursive: true });
 
@@ -73,8 +87,7 @@ async function ensureStore() {
   }
 }
 
-async function readStore() {
-  await ensureStore();
+async function readFileStore() {
   const raw = await readFile(STORE_PATH, "utf8");
   const parsed = JSON.parse(raw) as ClaraChatLocalStore;
 
@@ -83,9 +96,42 @@ async function readStore() {
   } satisfies ClaraChatLocalStore;
 }
 
-async function writeStore(store: ClaraChatLocalStore) {
-  await ensureStore();
+async function writeFileStore(store: ClaraChatLocalStore) {
   await writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+}
+
+async function readStore() {
+  try {
+    await ensureStore();
+    return await readFileStore();
+  } catch (error) {
+    if (!shouldFallbackToEphemeralMemory(error)) {
+      throw error;
+    }
+
+    return {
+      threads: [...ephemeralStore.threads]
+    } satisfies ClaraChatLocalStore;
+  }
+}
+
+async function writeStore(store: ClaraChatLocalStore) {
+  try {
+    await ensureStore();
+    await writeFileStore(store);
+  } catch (error) {
+    if (!shouldFallbackToEphemeralMemory(error)) {
+      throw error;
+    }
+
+    ephemeralStore.threads = store.threads.map((entry) => ({
+      tenantId: entry.tenantId,
+      thread: {
+        ...entry.thread,
+        messages: [...entry.thread.messages]
+      }
+    }));
+  }
 }
 
 async function getOrCreateClaraChatThreadFromLocalStore(context: ClaraChatContext) {
