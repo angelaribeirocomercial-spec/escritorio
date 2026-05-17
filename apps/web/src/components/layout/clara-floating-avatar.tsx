@@ -1,53 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
-function buildClaraHref(pathname: string, searchParams: URLSearchParams) {
-  const routeParts = pathname.split("/").filter(Boolean);
-  const params = new URLSearchParams();
-
-  const clientFromQuery = searchParams.get("client") ?? searchParams.get("clientId");
-  const caseFromQuery = searchParams.get("case") ?? searchParams.get("caseId");
-  const processFromQuery = searchParams.get("process") ?? searchParams.get("processId");
-  const documentFromQuery = searchParams.get("document") ?? searchParams.get("documentId");
-  const taskFromQuery = searchParams.get("task");
-
-  if (pathname.startsWith("/pessoas/clientes/") && routeParts[2]) {
-    params.set("client", routeParts[2]);
-  } else if (clientFromQuery) {
-    params.set("client", clientFromQuery);
-  }
-
-  if (caseFromQuery) {
-    params.set("case", caseFromQuery);
-  }
-
-  if (pathname.startsWith("/processos/") && routeParts[1] && routeParts[1] !== "modelo") {
-    params.set("process", routeParts[1]);
-  } else if (processFromQuery) {
-    params.set("process", processFromQuery);
-  }
-
-  if (pathname.startsWith("/documentos/") && routeParts[1] && routeParts[1] !== "enviar-arquivos") {
-    params.set("document", routeParts[1]);
-  } else if (documentFromQuery) {
-    params.set("document", documentFromQuery);
-  }
-
-  if (taskFromQuery) {
-    params.set("task", taskFromQuery);
-  }
-
-  if (!params.has("tab")) {
-    params.set("tab", "analise");
-  }
-
-  const queryString = params.toString();
-  return queryString ? `/clara?${queryString}#clara-workbench` : "/clara#clara-workbench";
-}
+import { CLARA_GLOBAL_SEARCH_OPEN_EVENT } from "@/components/layout/workspace-global-search-events";
 
 function ClaraAvatarGlyph() {
   return (
@@ -65,9 +21,6 @@ function ClaraAvatarGlyph() {
 }
 
 export function ClaraFloatingAvatar() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const avatarSize = 80;
   const viewportMargin = 16;
   const positionRef = useRef({ x: 0, y: 0 });
@@ -80,11 +33,6 @@ export function ClaraFloatingAvatar() {
   const suppressClickRef = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-
-  const claraHref = useMemo(
-    () => buildClaraHref(pathname, new URLSearchParams(searchParams.toString())),
-    [pathname, searchParams]
-  );
 
   useEffect(() => {
     const initialX = Math.max(viewportMargin, window.innerWidth - avatarSize - viewportMargin);
@@ -179,7 +127,7 @@ export function ClaraFloatingAvatar() {
             return;
           }
 
-          router.push(claraHref);
+          window.dispatchEvent(new CustomEvent(CLARA_GLOBAL_SEARCH_OPEN_EVENT));
         }}
         onPointerDown={(event) => {
           suppressClickRef.current = false;

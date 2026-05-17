@@ -319,7 +319,7 @@ function buildFallbackClaraContextualAnalysis(params: {
         "A Clara opera em modo controlado ate o processo e o documento entrarem no caso."
       ],
       suggestions: [
-        "Voltar ao cockpit do cliente para completar o contexto.",
+        "Continuar a conversa contextual pela aba Clara do dossie.",
         "Anexar documentos do caso antes de abrir a saida formal."
       ]
     }
@@ -401,12 +401,6 @@ function renderControlledModeConversationGuide(params: {
             })}
           >
             Continuar conversa no dossie
-          </Link>
-          <Link
-            className="clara-secondary-button inline-flex rounded-[4px] border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
-            href={`/pessoas/clientes/${params.clientId}?case=${params.caseId}`}
-          >
-            Voltar ao cockpit do cliente
           </Link>
         </div>
       </div>
@@ -554,14 +548,6 @@ export default async function ClaraPage({
             caseTitle: structuredCoreFallback.context.bankingCase.title
           })}
 
-          <WorkspaceStatePanel
-            actionHref={`/pessoas/clientes/${structuredCoreFallback.context.client.id}?case=${structuredCoreFallback.context.bankingCase.id}`}
-            actionLabel="Voltar ao cockpit do cliente"
-            description="A Clara abriu com contexto juridico minimo preservado. O processo e o documento continuam pendentes no workspace, mas cliente e caso ja estao resolvidos."
-            title="Contexto juridico minimo preservado"
-            tone="warning"
-          />
-
           {renderClaraContextualAnalysis(fallbackStructuredAnalysis)}
         </WorkspacePage>
       );
@@ -596,14 +582,6 @@ export default async function ClaraPage({
             clientId: fallbackContextualAnalysis.contextSnapshot.clientId,
             caseId: fallbackContextualAnalysis.contextSnapshot.caseId
           })}
-
-          <WorkspaceStatePanel
-            actionHref={`/pessoas/clientes/${fallbackContextualAnalysis.contextSnapshot.clientId}?case=${fallbackContextualAnalysis.contextSnapshot.caseId}`}
-            actionLabel="Voltar ao cockpit do cliente"
-            description="A Clara contextual minima permaneceu observavel com cliente e caso resolvidos, mesmo sem o workspace completo abrir."
-            title="Contexto juridico minimo preservado"
-            tone="warning"
-          />
 
           {renderClaraContextualAnalysis(fallbackContextualAnalysis)}
         </WorkspacePage>
@@ -653,14 +631,6 @@ export default async function ClaraPage({
             clientName: clara.structuredCore.context.client.fullName,
             caseTitle: clara.structuredCore.context.bankingCase.title
           })}
-
-          <WorkspaceStatePanel
-            actionHref={`/pessoas/clientes/${clara.structuredCore.context.client.id}?case=${clara.structuredCore.context.bankingCase.id}`}
-            actionLabel="Voltar ao cockpit do cliente"
-            description="O contrato contextual da Clara foi resolvido com cliente e caso reais, mas a sessao completa permanece em estado controlado ate o caso ganhar processo vinculado e pelo menos um documento base."
-            title="Contexto juridico minimo preservado"
-            tone="warning"
-          />
 
           {!hasResolvedDocument ? (
             <WorkspaceStatePanel
