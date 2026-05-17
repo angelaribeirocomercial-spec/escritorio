@@ -10,6 +10,14 @@ import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getCases } from "@/server/services/cases/get-cases";
 import { getClients } from "@/server/services/clients/get-clients";
+import {
+  DEMO_CASE_ID,
+  DEMO_CASE_RECORD,
+  DEMO_CLIENT_ID,
+  DEMO_CLIENT_RECORD,
+  DEMO_PROCESS_ID,
+  DEMO_PROCESS_RECORD
+} from "@/server/services/demo/demo-workspace-data";
 import { getProcesses } from "@/server/services/processes/get-processes";
 
 export type OfficialDiaryPublicationWithRelations = OfficialDiaryPublicationRecord & {
@@ -67,6 +75,56 @@ const OFFICIAL_DIARY_PUBLICATION_SELECT = `
   suggested_task_description,
   archived_at
 `;
+
+const DEMO_OFFICIAL_DIARY_PUBLICATIONS: OfficialDiaryPublicationWithRelations[] = [
+  {
+    id: "official-diary-demo-1",
+    processId: DEMO_PROCESS_ID,
+    caseId: DEMO_CASE_ID,
+    clientId: DEMO_CLIENT_ID,
+    publishedAt: "2026-05-06T08:30:00.000Z",
+    sourceCourt: "TJRJ",
+    sourceLabel: "DJERJ - Caderno Judicial",
+    title: "Intimacao para manifestacao sobre documentos bancarios complementares",
+    rawContext:
+      "Fica a parte autora intimada a se manifestar, no prazo legal, sobre os documentos bancarios juntados aos autos e eventual interesse em audiencia de conciliacao.",
+    bankingSummary:
+      "A publicacao exige leitura processual e cruzamento com os comprovantes PIX e protocolos bancarios ja reunidos no caso.",
+    requiredAction: "Preparar manifestacao e revisar anexos bancarios",
+    urgency: "high",
+    responsibleLawyer: DEMO_PROCESS_RECORD.responsibleLawyer,
+    suggestedTaskTitle: "Montar manifestacao sobre documentos bancarios do caso Carlos Henrique Duarte",
+    suggestedTaskDescription:
+      "Revisar a publicacao do DJERJ, validar os anexos bancarios e preparar a minuta de manifestacao para conferencia humana.",
+    client: DEMO_CLIENT_RECORD,
+    bankingCase: DEMO_CASE_RECORD,
+    judicialProcess: DEMO_PROCESS_RECORD
+  },
+  {
+    id: "official-diary-demo-archived-1",
+    processId: DEMO_PROCESS_ID,
+    caseId: DEMO_CASE_ID,
+    clientId: DEMO_CLIENT_ID,
+    publishedAt: "2026-05-03T11:20:00.000Z",
+    sourceCourt: "TJRJ",
+    sourceLabel: "DJERJ - Caderno Judicial",
+    title: "Publicacao arquivada apos triagem operacional inicial",
+    rawContext:
+      "Registro arquivado para manter o historico do acompanhamento e demonstrar a lixeira operacional do Diario Oficial.",
+    bankingSummary:
+      "A publicacao foi mantida apenas para historico e nao demanda acao operacional adicional.",
+    requiredAction: "Historico arquivado",
+    urgency: "low",
+    responsibleLawyer: DEMO_PROCESS_RECORD.responsibleLawyer,
+    suggestedTaskTitle: "Sem tarefa adicional para publicacao arquivada",
+    suggestedTaskDescription:
+      "Item arquivado apenas para historico de triagem do Diario Oficial no tenant demo.",
+    archivedAt: "2026-05-04T09:15:00.000Z",
+    client: DEMO_CLIENT_RECORD,
+    bankingCase: DEMO_CASE_RECORD,
+    judicialProcess: DEMO_PROCESS_RECORD
+  }
+];
 
 function mapUrgencyToPriority(urgency: OfficialDiaryPublicationRecord["urgency"]): TaskPriority {
   switch (urgency) {
@@ -127,6 +185,14 @@ export async function getOfficialDiaryPublications(): Promise<
     throw new Error("Workspace session is required to load official diary publications.");
   }
 
+  if (
+    session.workspace.tenant.slug === "clara-bancaria-demo" ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
+  ) {
+    return DEMO_OFFICIAL_DIARY_PUBLICATIONS.filter((publication) => publication.archivedAt == null);
+  }
+
   const supabase = getSupabaseServerClient();
   const [{ data, error }, clients, cases, processes] = await Promise.all([
     supabase
@@ -164,6 +230,14 @@ export async function getArchivedOfficialDiaryPublications(): Promise<
 
   if (!session) {
     throw new Error("Workspace session is required to load archived official diary publications.");
+  }
+
+  if (
+    session.workspace.tenant.slug === "clara-bancaria-demo" ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
+  ) {
+    return DEMO_OFFICIAL_DIARY_PUBLICATIONS.filter((publication) => publication.archivedAt != null);
   }
 
   const supabase = getSupabaseServerClient();

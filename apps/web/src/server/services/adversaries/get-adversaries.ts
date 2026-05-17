@@ -25,6 +25,19 @@ const ADVERSARY_SELECT = `
   status
 `;
 
+const DEMO_ADVERSARIES: AdversaryRecord[] = [
+  {
+    id: "adv-demo-itau-1",
+    name: "Banco Itau Unibanco S.A.",
+    documentId: "60.701.190/0001-04",
+    bankName: "Itau",
+    caseSummary: "Fraude bancaria via PIX",
+    attorneyLabel: "Dr. Caio Nascimento",
+    contactLabel: "contencioso@itau.demo.local",
+    status: "active"
+  }
+];
+
 function mapAdversaryRow(row: AdversaryRow): AdversaryRecord {
   return {
     id: row.id,
@@ -43,6 +56,14 @@ export async function getAdversaries(): Promise<AdversaryRecord[]> {
 
   if (!session) {
     throw new Error("Workspace session is required to load adversaries.");
+  }
+
+  if (
+    session.workspace.tenant.slug === "clara-bancaria-demo" ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
+  ) {
+    return DEMO_ADVERSARIES;
   }
 
   const supabase = getSupabaseServerClient();
