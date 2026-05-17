@@ -38,6 +38,17 @@ const DEMO_ADVERSARIES: AdversaryRecord[] = [
   }
 ];
 
+function isDemoTenant(tenantSlug: string): boolean {
+  return tenantSlug === "clara-bancaria-demo";
+}
+
+function isSupabasePublicConfigAvailable(): boolean {
+  return (
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL) != null &&
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY) != null
+  );
+}
+
 function mapAdversaryRow(row: AdversaryRow): AdversaryRecord {
   return {
     id: row.id,
@@ -58,12 +69,14 @@ export async function getAdversaries(): Promise<AdversaryRecord[]> {
     throw new Error("Workspace session is required to load adversaries.");
   }
 
-  if (
-    session.workspace.tenant.slug === "clara-bancaria-demo" ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
-  ) {
-    return DEMO_ADVERSARIES;
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabasePublicConfigAvailable()) {
+    if (demoTenant) {
+      return DEMO_ADVERSARIES;
+    }
+
+    throw new Error("Supabase public configuration is required to load adversaries.");
   }
 
   const supabase = getSupabaseServerClient();
@@ -74,8 +87,18 @@ export async function getAdversaries(): Promise<AdversaryRecord[]> {
     .order("name", { ascending: true });
 
   if (error) {
+    if (demoTenant) {
+      return DEMO_ADVERSARIES;
+    }
+
     throw new Error(`Failed to load adversaries for tenant ${session.workspace.tenant.id}.`);
   }
 
-  return (data ?? []).map((row) => mapAdversaryRow(row as AdversaryRow));
+  const adversaries = (data ?? []).map((row) => mapAdversaryRow(row as AdversaryRow));
+
+  if (demoTenant && adversaries.length === 0) {
+    return DEMO_ADVERSARIES;
+  }
+
+  return adversaries;
 }

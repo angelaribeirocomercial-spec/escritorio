@@ -126,6 +126,23 @@ const DEMO_OFFICIAL_DIARY_PUBLICATIONS: OfficialDiaryPublicationWithRelations[] 
   }
 ];
 
+function isDemoTenant(tenantSlug: string): boolean {
+  return tenantSlug === "clara-bancaria-demo";
+}
+
+function isSupabasePublicConfigAvailable(): boolean {
+  return (
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL) != null &&
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY) != null
+  );
+}
+
+function getDemoOfficialDiaryPublications(includeArchived: boolean) {
+  return DEMO_OFFICIAL_DIARY_PUBLICATIONS.filter((publication) =>
+    includeArchived ? publication.archivedAt != null : publication.archivedAt == null
+  );
+}
+
 function mapUrgencyToPriority(urgency: OfficialDiaryPublicationRecord["urgency"]): TaskPriority {
   switch (urgency) {
     case "high":
@@ -185,12 +202,14 @@ export async function getOfficialDiaryPublications(): Promise<
     throw new Error("Workspace session is required to load official diary publications.");
   }
 
-  if (
-    session.workspace.tenant.slug === "clara-bancaria-demo" ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
-  ) {
-    return DEMO_OFFICIAL_DIARY_PUBLICATIONS.filter((publication) => publication.archivedAt == null);
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabasePublicConfigAvailable()) {
+    if (demoTenant) {
+      return getDemoOfficialDiaryPublications(false);
+    }
+
+    throw new Error("Supabase public configuration is required to load official diary publications.");
   }
 
   const supabase = getSupabaseServerClient();
@@ -207,12 +226,16 @@ export async function getOfficialDiaryPublications(): Promise<
   ]);
 
   if (error) {
+    if (demoTenant) {
+      return getDemoOfficialDiaryPublications(false);
+    }
+
     throw new Error(
       `Failed to load official diary publications for tenant ${session.workspace.tenant.id}.`
     );
   }
 
-  return (data ?? [])
+  const publications = (data ?? [])
     .map((row) =>
       mapOfficialDiaryPublicationRow(row as OfficialDiaryPublicationRow, {
         cases,
@@ -221,6 +244,12 @@ export async function getOfficialDiaryPublications(): Promise<
       })
     )
     .filter((row): row is OfficialDiaryPublicationWithRelations => row !== null);
+
+  if (demoTenant && publications.length === 0) {
+    return getDemoOfficialDiaryPublications(false);
+  }
+
+  return publications;
 }
 
 export async function getArchivedOfficialDiaryPublications(): Promise<
@@ -232,12 +261,16 @@ export async function getArchivedOfficialDiaryPublications(): Promise<
     throw new Error("Workspace session is required to load archived official diary publications.");
   }
 
-  if (
-    session.workspace.tenant.slug === "clara-bancaria-demo" ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
-  ) {
-    return DEMO_OFFICIAL_DIARY_PUBLICATIONS.filter((publication) => publication.archivedAt != null);
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabasePublicConfigAvailable()) {
+    if (demoTenant) {
+      return getDemoOfficialDiaryPublications(true);
+    }
+
+    throw new Error(
+      "Supabase public configuration is required to load archived official diary publications."
+    );
   }
 
   const supabase = getSupabaseServerClient();
@@ -254,12 +287,16 @@ export async function getArchivedOfficialDiaryPublications(): Promise<
   ]);
 
   if (error) {
+    if (demoTenant) {
+      return getDemoOfficialDiaryPublications(true);
+    }
+
     throw new Error(
       `Failed to load archived official diary publications for tenant ${session.workspace.tenant.id}.`
     );
   }
 
-  return (data ?? [])
+  const publications = (data ?? [])
     .map((row) =>
       mapOfficialDiaryPublicationRow(row as OfficialDiaryPublicationRow, {
         cases,
@@ -268,6 +305,12 @@ export async function getArchivedOfficialDiaryPublications(): Promise<
       })
     )
     .filter((row): row is OfficialDiaryPublicationWithRelations => row !== null);
+
+  if (demoTenant && publications.length === 0) {
+    return getDemoOfficialDiaryPublications(true);
+  }
+
+  return publications;
 }
 
 export async function getOfficialDiaryPublicationById(
