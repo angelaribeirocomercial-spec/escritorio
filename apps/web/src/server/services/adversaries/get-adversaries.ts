@@ -1,6 +1,7 @@
 import { AdversaryRecord } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 type AdversaryRow = {
@@ -79,7 +80,7 @@ export async function getAdversaries(): Promise<AdversaryRecord[]> {
     throw new Error("Supabase public configuration is required to load adversaries.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = demoTenant ? getSupabaseAdminClient() : getSupabaseServerClient();
   const { data, error } = await supabase
     .from("adversaries")
     .select(ADVERSARY_SELECT)

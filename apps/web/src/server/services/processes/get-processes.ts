@@ -10,6 +10,7 @@ import {
 } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
   DEMO_CASE_RECORD,
@@ -67,6 +68,18 @@ type ProcessRow = {
   banking_case_snapshot: BankingCaseRecord | null;
   client: ClientRow | ClientRow[] | null;
 };
+
+function isDemoTenant(tenantSlug: string): boolean {
+  return tenantSlug === "clara-bancaria-demo";
+}
+
+function isSupabaseConfigured() {
+  return (
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL) != null &&
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY) != null &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY != null
+  );
+}
 
 function mapClientRow(row: ClientRow): ClientRecord {
   return {
@@ -175,11 +188,9 @@ export async function getProcesses(): Promise<JudicialProcessWithRelations[]> {
     return [];
   }
 
-  if (
-    session.workspace.tenant.slug === "clara-bancaria-demo" ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
-  ) {
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabaseConfigured()) {
     return [
       {
         ...DEMO_PROCESS_RECORD,
@@ -189,7 +200,7 @@ export async function getProcesses(): Promise<JudicialProcessWithRelations[]> {
     ];
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = demoTenant ? getSupabaseAdminClient() : getSupabaseServerClient();
   const { data, error } = await supabase
     .from("processes")
     .select(PROCESS_SELECT)
@@ -198,12 +209,35 @@ export async function getProcesses(): Promise<JudicialProcessWithRelations[]> {
 
   if (error) {
     console.warn(`Failed to load processes for tenant ${session.workspace.tenant.id}.`);
+
+    if (demoTenant) {
+      return [
+        {
+          ...DEMO_PROCESS_RECORD,
+          client: DEMO_CLIENT_RECORD,
+          bankingCase: DEMO_CASE_RECORD
+        }
+      ];
+    }
+
     return [];
   }
 
-  return (data ?? [])
+  const processes = (data ?? [])
     .map((row) => mapProcessRow(row as ProcessRow))
     .filter((row): row is JudicialProcessWithRelations => row !== null);
+
+  if (processes.length === 0 && demoTenant) {
+    return [
+      {
+        ...DEMO_PROCESS_RECORD,
+        client: DEMO_CLIENT_RECORD,
+        bankingCase: DEMO_CASE_RECORD
+      }
+    ];
+  }
+
+  return processes;
 }
 
 export async function getProcessById(
@@ -215,12 +249,9 @@ export async function getProcessById(
     return null;
   }
 
-  if (
-    processId === DEMO_PROCESS_RECORD.id &&
-    (session.workspace.tenant.slug === "clara-bancaria-demo" ||
-      process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null)
-  ) {
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (processId === DEMO_PROCESS_RECORD.id && !isSupabaseConfigured() && demoTenant) {
     return {
       ...DEMO_PROCESS_RECORD,
       client: DEMO_CLIENT_RECORD,
@@ -228,7 +259,7 @@ export async function getProcessById(
     };
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = demoTenant ? getSupabaseAdminClient() : getSupabaseServerClient();
   const { data, error } = await supabase
     .from("processes")
     .select(PROCESS_SELECT)
@@ -238,7 +269,24 @@ export async function getProcessById(
 
   if (error) {
     console.warn(`Failed to load process ${processId} for tenant ${session.workspace.tenant.id}.`);
+
+    if (demoTenant && processId === DEMO_PROCESS_RECORD.id) {
+      return {
+        ...DEMO_PROCESS_RECORD,
+        client: DEMO_CLIENT_RECORD,
+        bankingCase: DEMO_CASE_RECORD
+      };
+    }
+
     return null;
+  }
+
+  if (!data && demoTenant && processId === DEMO_PROCESS_RECORD.id) {
+    return {
+      ...DEMO_PROCESS_RECORD,
+      client: DEMO_CLIENT_RECORD,
+      bankingCase: DEMO_CASE_RECORD
+    };
   }
 
   return data ? mapProcessRow(data as ProcessRow) : null;

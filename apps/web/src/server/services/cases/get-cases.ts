@@ -60,6 +60,18 @@ type CaseRow = {
   client: ClientRow | ClientRow[] | null;
 };
 
+function isDemoTenant(tenantSlug: string): boolean {
+  return tenantSlug === "clara-bancaria-demo";
+}
+
+function isSupabaseConfigured() {
+  return (
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL) != null &&
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY) != null &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY != null
+  );
+}
+
 function mapClientRow(row: ClientRow): ClientRecord {
   return {
     id: row.id,
@@ -185,15 +197,13 @@ export async function getCases(filters?: {
     return [];
   }
 
-  if (
-    session.workspace.tenant.slug === "clara-bancaria-demo" ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
-  ) {
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabaseConfigured()) {
     const matchesClient = !filters?.clientId || filters.clientId === DEMO_CLIENT_ID;
     const matchesCase = !filters?.caseId || filters.caseId === DEMO_CASE_ID;
 
-    return matchesClient && matchesCase ? [DEMO_CASE_RECORD] : [];
+    return demoTenant && matchesClient && matchesCase ? [DEMO_CASE_RECORD] : [];
   }
 
   const supabase = getSupabaseAdminClient();
@@ -214,12 +224,29 @@ export async function getCases(filters?: {
 
   if (error) {
     console.warn(`Failed to load cases for tenant ${session.workspace.tenant.id}.`);
+
+    if (demoTenant) {
+      const matchesClient = !filters?.clientId || filters.clientId === DEMO_CLIENT_ID;
+      const matchesCase = !filters?.caseId || filters.caseId === DEMO_CASE_ID;
+
+      return matchesClient && matchesCase ? [DEMO_CASE_RECORD] : [];
+    }
+
     return [];
   }
 
-  return (data ?? [])
+  const cases = (data ?? [])
     .map((row) => mapCaseRow(row as CaseRow))
     .filter((row): row is BankingCaseWithClient => row !== null);
+
+  if (cases.length === 0 && demoTenant) {
+    const matchesClient = !filters?.clientId || filters.clientId === DEMO_CLIENT_ID;
+    const matchesCase = !filters?.caseId || filters.caseId === DEMO_CASE_ID;
+
+    return matchesClient && matchesCase ? [DEMO_CASE_RECORD] : [];
+  }
+
+  return cases;
 }
 
 export async function getCaseById(caseId: string): Promise<BankingCaseWithClient | null> {
@@ -227,9 +254,8 @@ export async function getCaseById(caseId: string): Promise<BankingCaseWithClient
 
   if (
     session &&
-    (session.workspace.tenant.slug === "clara-bancaria-demo" ||
-      process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null) &&
+    !isSupabaseConfigured() &&
+    isDemoTenant(session.workspace.tenant.slug) &&
     caseId === DEMO_CASE_ID
   ) {
     return DEMO_CASE_RECORD;

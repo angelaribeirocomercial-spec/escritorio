@@ -37,6 +37,18 @@ type GetClientByIdOptions = {
   failOnError?: boolean;
 };
 
+function isDemoTenant(tenantSlug: string): boolean {
+  return tenantSlug === "clara-bancaria-demo";
+}
+
+function isSupabaseConfigured() {
+  return (
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL) != null &&
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY) != null &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY != null
+  );
+}
+
 function mapClientRow(row: ClientRow): ClientRecord {
   return {
     id: row.id,
@@ -68,8 +80,14 @@ export async function getClients(options?: GetClientsOptions): Promise<ClientRec
     return [];
   }
 
-  if (session.workspace.tenant.slug === "clara-bancaria-demo" || process.env.NEXT_PUBLIC_SUPABASE_URL == null || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null) {
-    return [DEMO_CLIENT_RECORD];
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabaseConfigured()) {
+    if (demoTenant) {
+      return [DEMO_CLIENT_RECORD];
+    }
+
+    return [];
   }
 
   const supabase = getSupabaseAdminClient();
@@ -104,6 +122,10 @@ export async function getClients(options?: GetClientsOptions): Promise<ClientRec
   if (error) {
     console.warn(`Failed to load clients for tenant ${session.workspace.tenant.id}.`);
 
+    if (demoTenant) {
+      return [DEMO_CLIENT_RECORD];
+    }
+
     if (options?.failOnError) {
       throw new Error(
         `Falha ao carregar clientes para o tenant ${session.workspace.tenant.id}.`
@@ -113,7 +135,13 @@ export async function getClients(options?: GetClientsOptions): Promise<ClientRec
     return [];
   }
 
-  return (data ?? []).map((row) => mapClientRow(row as ClientRow));
+  const clients = (data ?? []).map((row) => mapClientRow(row as ClientRow));
+
+  if (clients.length === 0 && demoTenant) {
+    return [DEMO_CLIENT_RECORD];
+  }
+
+  return clients;
 }
 
 export async function getClientById(
@@ -126,12 +154,9 @@ export async function getClientById(
     return null;
   }
 
-  if (
-    clientId === DEMO_CLIENT_ID &&
-    (session.workspace.tenant.slug === "clara-bancaria-demo" ||
-      process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null)
-  ) {
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabaseConfigured() && clientId === DEMO_CLIENT_ID && demoTenant) {
     return DEMO_CLIENT_RECORD;
   }
 
@@ -168,6 +193,10 @@ export async function getClientById(
   if (error) {
     console.warn(`Failed to load client ${clientId} for tenant ${session.workspace.tenant.id}.`);
 
+    if (demoTenant && clientId === DEMO_CLIENT_ID) {
+      return DEMO_CLIENT_RECORD;
+    }
+
     if (options?.failOnError) {
       throw new Error(
         `Falha ao carregar o cliente ${clientId} para o tenant ${session.workspace.tenant.id}.`
@@ -175,6 +204,10 @@ export async function getClientById(
     }
 
     return null;
+  }
+
+  if (!data && demoTenant && clientId === DEMO_CLIENT_ID) {
+    return DEMO_CLIENT_RECORD;
   }
 
   return data ? mapClientRow(data as ClientRow) : null;

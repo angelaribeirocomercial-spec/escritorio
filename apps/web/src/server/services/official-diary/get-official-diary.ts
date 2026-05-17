@@ -7,6 +7,7 @@ import {
 } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getCases } from "@/server/services/cases/get-cases";
 import { getClients } from "@/server/services/clients/get-clients";
@@ -212,7 +213,7 @@ export async function getOfficialDiaryPublications(): Promise<
     throw new Error("Supabase public configuration is required to load official diary publications.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = demoTenant ? getSupabaseAdminClient() : getSupabaseServerClient();
   const [{ data, error }, clients, cases, processes] = await Promise.all([
     supabase
       .from("official_diary_publications")
@@ -273,7 +274,7 @@ export async function getArchivedOfficialDiaryPublications(): Promise<
     );
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = demoTenant ? getSupabaseAdminClient() : getSupabaseServerClient();
   const [{ data, error }, clients, cases, processes] = await Promise.all([
     supabase
       .from("official_diary_publications")
