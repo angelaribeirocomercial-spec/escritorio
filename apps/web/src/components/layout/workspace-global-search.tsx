@@ -40,6 +40,32 @@ function labelForAction(entry: WorkspaceSearchEntry) {
       return "Abrir documento";
     case "Tese":
       return "Abrir tese";
+    case "Compromisso":
+      return "Abrir agenda";
+    case "Tarefa":
+      return "Abrir tarefa";
+    case "Prazo":
+      return "Abrir prazo";
+    case "Andamento":
+      return "Abrir andamento";
+    case "Adverso":
+      return "Abrir adverso";
+    case "Contrato":
+      return "Abrir contrato";
+    case "Follow-up":
+      return "Abrir follow-up";
+    case "Publicacao":
+      return "Abrir publicacoes";
+    case "Palavra-chave":
+      return "Abrir palavras-chave";
+    case "Advogado":
+      return "Abrir advogados";
+    case "Financeiro":
+      return "Abrir financeiro";
+    case "Integracao":
+      return "Abrir integracao";
+    case "Configuracao":
+      return "Abrir configuracoes";
     default:
       return "Abrir";
   }
@@ -57,6 +83,32 @@ function kindLabel(kind: WorkspaceSearchEntryKind) {
       return "Documento";
     case "Tese":
       return "Tese";
+    case "Compromisso":
+      return "Compromisso";
+    case "Tarefa":
+      return "Tarefa";
+    case "Prazo":
+      return "Prazo";
+    case "Andamento":
+      return "Andamento";
+    case "Adverso":
+      return "Adverso";
+    case "Contrato":
+      return "Contrato";
+    case "Follow-up":
+      return "Follow-up";
+    case "Publicacao":
+      return "Publicacao";
+    case "Palavra-chave":
+      return "Palavra-chave";
+    case "Advogado":
+      return "Advogado";
+    case "Financeiro":
+      return "Financeiro";
+    case "Integracao":
+      return "Integracao";
+    case "Configuracao":
+      return "Configuracao";
     default:
       return kind;
   }
@@ -520,7 +572,7 @@ export function WorkspaceGlobalSearch({ entries }: WorkspaceGlobalSearchProps) {
                   submitSearch();
                 }
               }}
-              placeholder="Busque cliente, caso, processo, documento ou tese"
+              placeholder="Busque qualquer dado interno do workspace"
               type="search"
               value={query}
             />
@@ -601,7 +653,7 @@ export function WorkspaceGlobalSearch({ entries }: WorkspaceGlobalSearchProps) {
         >
           <span className="flex min-w-0 items-center gap-2">
             <SearchIcon />
-            <span className="truncate">Clara global: cliente, caso, processo, documento ou tese</span>
+            <span className="truncate">Clara global: busque qualquer dado interno</span>
           </span>
           <span className="shrink-0 rounded-[4px] border border-white/10 bg-white/5 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em]">
             /

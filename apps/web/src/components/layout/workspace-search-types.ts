@@ -1,4 +1,22 @@
-export type WorkspaceSearchEntryKind = "Cliente" | "Caso" | "Processo" | "Documento" | "Tese";
+export type WorkspaceSearchEntryKind =
+  | "Cliente"
+  | "Caso"
+  | "Processo"
+  | "Documento"
+  | "Tese"
+  | "Compromisso"
+  | "Tarefa"
+  | "Prazo"
+  | "Andamento"
+  | "Adverso"
+  | "Contrato"
+  | "Follow-up"
+  | "Publicacao"
+  | "Palavra-chave"
+  | "Advogado"
+  | "Financeiro"
+  | "Integracao"
+  | "Configuracao";
 
 export type WorkspaceSearchEntryRouteContext = {
   clientId?: string;
