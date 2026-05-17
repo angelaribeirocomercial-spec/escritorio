@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CLARA_GLOBAL_SEARCH_OPEN_EVENT } from "@/components/layout/workspace-global-search-events";
 
@@ -384,8 +384,8 @@ export function WorkspaceGlobalSearch({ entries }: WorkspaceGlobalSearchProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const [activeContextEntry, setActiveContextEntry] = useState<WorkspaceSearchEntry | null>(null);
-  const deferredQuery = useDeferredValue(query);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -438,29 +438,29 @@ export function WorkspaceGlobalSearch({ entries }: WorkspaceGlobalSearchProps) {
   }, []);
 
   const filteredEntries = useMemo(() => {
-    if (!deferredQuery.trim()) {
+    if (!submittedQuery.trim()) {
       return [];
     }
 
     return entries
       .map((entry) => ({
         entry,
-        score: scoreEntry(entry, deferredQuery)
+        score: scoreEntry(entry, submittedQuery)
       }))
       .filter(({ score }) => score > 0)
       .sort((left, right) => right.score - left.score || left.entry.title.localeCompare(right.entry.title))
       .slice(0, 6)
       .map(({ entry }) => entry);
-  }, [deferredQuery, entries]);
+  }, [entries, submittedQuery]);
 
   const claraAnswer = useMemo(
     () =>
       buildClaraAnswer({
-        query: deferredQuery,
+        query: submittedQuery,
         filteredEntries,
         activeContextEntry
       }),
-    [activeContextEntry, deferredQuery, filteredEntries]
+    [activeContextEntry, filteredEntries, submittedQuery]
   );
 
   useEffect(() => {
@@ -472,6 +472,17 @@ export function WorkspaceGlobalSearch({ entries }: WorkspaceGlobalSearchProps) {
   function closeSearch() {
     setIsOpen(false);
     setQuery("");
+    setSubmittedQuery("");
+  }
+
+  function submitSearch() {
+    const trimmedQuery = query.trim();
+
+    if (!trimmedQuery) {
+      return;
+    }
+
+    setSubmittedQuery(trimmedQuery);
   }
 
   function openBestResult() {
@@ -499,17 +510,28 @@ export function WorkspaceGlobalSearch({ entries }: WorkspaceGlobalSearchProps) {
             <input
               ref={inputRef}
               className="w-full bg-transparent text-[13px] font-medium text-white outline-none placeholder:text-cyan-100/45"
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setSubmittedQuery("");
+              }}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
-                  openBestResult();
+                  submitSearch();
                 }
               }}
-              placeholder="Pergunte para a Clara global sobre cliente, caso, processo, documento ou tese"
+              placeholder="Busque cliente, caso, processo, documento ou tese"
               type="search"
               value={query}
             />
+            <button
+              aria-label="Buscar"
+              className="rounded-[4px] border border-white/10 bg-white/5 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-cyan-100/70"
+              onClick={submitSearch}
+              type="button"
+            >
+              Ir
+            </button>
             <button
               aria-label="Fechar busca"
               className="rounded-[4px] border border-white/10 bg-white/5 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-cyan-100/70"
@@ -521,22 +543,8 @@ export function WorkspaceGlobalSearch({ entries }: WorkspaceGlobalSearchProps) {
           </div>
 
           <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 overflow-hidden rounded-[18px] border border-white/10 bg-[rgba(20,27,38,0.98)] shadow-[0_24px_90px_rgba(0,0,0,0.4)] backdrop-blur-xl">
-            <div className="border-b border-white/8 px-4 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-100/55">
-                Clara global do sistema
-              </p>
-              <p className="mt-1 text-[12px] leading-5 text-cyan-100/55">
-                Busca interna sem API externa. O avatar e este campo abrem a mesma Clara global.
-              </p>
-              {activeContextEntry ? (
-                <div className="mt-3 inline-flex rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[11px] font-medium text-cyan-50">
-                  Contexto atual: {activeContextEntry.claraContext?.clientName ?? activeContextEntry.title}
-                </div>
-              ) : null}
-            </div>
-
             <div className="max-h-[24rem] overflow-auto p-2">
-              {deferredQuery.trim() ? (
+              {submittedQuery.trim() ? (
                 <>
                   {claraAnswer ? (
                     <div className="mx-2 mb-2 rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-4">
@@ -572,13 +580,13 @@ export function WorkspaceGlobalSearch({ entries }: WorkspaceGlobalSearchProps) {
                     ))
                   ) : (
                     <div className="px-3 py-5 text-sm text-cyan-100/60">
-                      Nenhum resultado para <span className="font-semibold text-white">&quot;{deferredQuery.trim()}&quot;</span>.
+                      Nenhum resultado para <span className="font-semibold text-white">&quot;{submittedQuery.trim()}&quot;</span>.
                     </div>
                   )}
                 </>
               ) : (
-                <div className="px-3 py-5 text-sm leading-6 text-cyan-100/60">
-                  Digite para buscar cliente, caso, processo, documento ou tese. Sem sugestoes enquanto o campo estiver vazio.
+                <div className="px-3 py-4 text-xs text-cyan-100/50">
+                  Digite e pressione Enter.
                 </div>
               )}
             </div>
