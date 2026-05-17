@@ -144,6 +144,20 @@ function getDemoOfficialDiaryPublications(includeArchived: boolean) {
   );
 }
 
+async function hasRealOfficialDiaryPublications(tenantId: string) {
+  const supabase = getSupabaseAdminClient();
+  const { count, error } = await supabase
+    .from("official_diary_publications")
+    .select("id", { count: "exact", head: true })
+    .eq("tenant_id", tenantId);
+
+  if (error) {
+    throw error;
+  }
+
+  return (count ?? 0) > 0;
+}
+
 function mapUrgencyToPriority(urgency: OfficialDiaryPublicationRecord["urgency"]): TaskPriority {
   switch (urgency) {
     case "high":
@@ -308,6 +322,12 @@ export async function getArchivedOfficialDiaryPublications(): Promise<
     .filter((row): row is OfficialDiaryPublicationWithRelations => row !== null);
 
   if (demoTenant && publications.length === 0) {
+    const hasRealPublications = await hasRealOfficialDiaryPublications(session.workspace.tenant.id);
+
+    if (hasRealPublications) {
+      return [];
+    }
+
     return getDemoOfficialDiaryPublications(true);
   }
 
