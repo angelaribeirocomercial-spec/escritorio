@@ -60,7 +60,7 @@ export function SignInForm({ error, supabaseConfigured }: SignInFormProps) {
       </form>
 
       <p className="sign-in-helper text-sm font-medium leading-6 text-slate-400">
-        A demonstracao abre a Clara dentro de um caso pronto, em vez de cair em um menu generico do sistema.
+        A demonstracao abre a Clara global do sistema; a Clara contextual do caso continua dentro do dossie.
       </p>
     </div>
   );

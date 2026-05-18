@@ -29,7 +29,7 @@ export default async function SignInPage({
             Comece gratis e abra a Clara no fluxo real do direito bancario.
           </h1>
           <p className="mt-5 max-w-2xl text-base font-medium leading-8 text-slate-300">
-            Entre para ver um sistema moderno, simples de usar e automatizado. O cliente entra, os documentos sobem, o caso se organiza e a Clara assume a explicacao do proximo passo.
+            Entre para ver um sistema moderno, simples de usar e automatizado. A Clara global abre como assistente do sistema, enquanto o dossie continua concentrando a leitura contextual de cada caso.
           </p>
 
           {!configured ? (
@@ -51,13 +51,13 @@ export default async function SignInPage({
             <div className="sign-in-security-card rounded-[24px] border border-white/10 bg-white/[0.05] px-4 py-4">
               <p className="text-sm font-semibold text-white">Entrada autenticada antes da demonstracao</p>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                A demonstracao passa primeiro pela autenticacao e depois abre a Clara dentro de um caso valido.
+                A demonstracao passa primeiro pela autenticacao e depois abre a Clara global do sistema.
               </p>
             </div>
             <div className="sign-in-security-card rounded-[24px] border border-white/10 bg-white/[0.05] px-4 py-4">
               <p className="text-sm font-semibold text-white">Fluxo simples e contextual</p>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                O objetivo aqui nao e jogar voce em um menu. E colocar a Clara no centro do caso logo na entrada.
+                O objetivo aqui nao e jogar voce em um menu tecnico. E abrir a Clara como porta inteligente do sistema, sem confundir isso com a Clara contextual do dossie.
               </p>
             </div>
             <div className="sign-in-security-card rounded-[24px] border border-white/10 bg-white/[0.05] px-4 py-4">

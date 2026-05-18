@@ -263,11 +263,6 @@ assert.match(
 );
 assert.match(
   demoEntrySource,
-  /searchParams\.set\("niche", "fraude"\)/,
-  "Expected the Clara-first demo entry to open the fraud banking niche in Clara."
-);
-assert.match(
-  demoEntrySource,
   /return `\/clara\?/,
   "Expected the Clara-first demo entry to open the Clara workspace route."
 );
@@ -275,6 +270,11 @@ assert.match(
   demoEntrySource,
   /#clara-workbench/,
   "Expected the Clara-first demo entry to deep-link to the Clara workbench."
+);
+assert.doesNotMatch(
+  demoEntrySource,
+  /searchParams\.set\("client"|searchParams\.set\("case"|searchParams\.set\("process"|searchParams\.set\("document"|searchParams\.set\("niche"/,
+  "Expected the global Clara demo entry to avoid requiring case-bound context."
 );
 assert.match(
   sessionSource,

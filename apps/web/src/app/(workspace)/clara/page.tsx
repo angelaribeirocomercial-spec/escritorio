@@ -413,11 +413,7 @@ export default async function ClaraPage({
 }: {
   searchParams?: SearchParams;
 }) {
-  const activeNiche = isNicheId(searchParams?.niche)
-    ? searchParams.niche
-    : searchParams?.tab
-      ? "revisional"
-      : null;
+  const activeNiche = isNicheId(searchParams?.niche) ? searchParams.niche : null;
   const activeTab = isTabId(searchParams?.tab) ? searchParams.tab : "analise";
 
   if (activeNiche && (!searchParams?.client || !searchParams?.case)) {
