@@ -38,7 +38,7 @@ values
     'Banco Santander',
     '90.400.888/0001-42',
     'Santander',
-    'Capital de giro e negativacao indevida',
+    'Fraude consignada / RMC e busca e apreensao',
     'Santander Juridico',
     '(11) 4004-3535 | juridico@santander.example',
     'active'

@@ -60,12 +60,12 @@ values
     'Ato ordinatorio',
     'TJMG',
     'Portal TJMG',
-    'Intime-se a parte autora para conferencia dos anexos empresariais e regularidade da representacao documental.',
-    'A movimentacao nao muda a tese, mas exige saneamento de anexos antes do protocolo final.',
+    'Intime-se a parte autora para conferencia dos anexos de consignado e regularidade da prova do desconto.',
+    'A movimentacao nao muda a tese, mas exige saneamento de prova e extratos antes do protocolo final.',
     'low',
-    'O caso segue forte. O risco imediato nao e juridico, e sim operacional por eventual erro documental.',
-    'Um detalhe societario mal anexado pode atrasar um caso que ja esta maduro para ingresso.',
-    '["Conferir contrato social", "Validar poderes de representacao", "Liberar protocolo apos saneamento"]'::jsonb
+    'O caso segue forte. O risco imediato nao e juridico, e sim operacional por eventual lacuna probatoria no consignado.',
+    'Um extrato mal anexado pode atrasar um caso que ja esta maduro para ingresso.',
+    '["Conferir contrato consignado", "Validar extrato do beneficio", "Liberar protocolo apos saneamento"]'::jsonb
   ),
   (
     'upd-312',
@@ -77,12 +77,12 @@ values
     'Despacho',
     'TJMG',
     'Portal TJMG',
-    'Intime-se a parte autora para apresentar prova complementar da negativacao e do dano operacional alegado.',
-    'A tutela depende agora de prova objetiva da restricao e do impacto concreto na operacao da empresa.',
+    'Intime-se a parte autora para apresentar prova complementar da mora e da posse do veiculo.',
+    'A tutela depende agora de prova objetiva da mora controvertida e do impacto concreto sobre o veiculo.',
     'high',
-    'A tese continua boa, mas o caso pede prova mais incisiva para sustentar urgencia e dano moral empresarial.',
-    'Sem prova forte da restricao, o pedido de urgencia pode perder aderencia.',
-    '["Reunir prova da negativacao", "Documentar impacto comercial", "Reforcar pedido de tutela"]'::jsonb
+    'A tese continua boa, mas o caso pede prova mais incisiva para sustentar urgencia e preservacao do veiculo.',
+    'Sem prova forte da mora, o pedido de urgencia pode perder aderencia.',
+    '["Reunir prova da mora", "Documentar posse do veiculo", "Reforcar pedido de tutela"]'::jsonb
   )
 on conflict (id) do update
 set

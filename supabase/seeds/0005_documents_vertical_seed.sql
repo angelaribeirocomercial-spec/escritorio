@@ -72,16 +72,16 @@ values
     '11111111-1111-1111-1111-111111111111',
     'cl-003',
     'case-311',
-    'ccb-capital-giro-araujo.pdf',
-    'ccb-capital-giro-araujo.pdf',
-    'CCB',
+    'contrato-cartao-consignado-araujo.pdf',
+    'contrato-cartao-consignado-araujo.pdf',
+    'Contrato do cartao consignado',
     'contrato',
-    '["capital-giro","ccb","capitalizacao"]'::jsonb,
+    '["consignado","rmc","desconto"]'::jsonb,
     'analyzed',
-    'Cedula de credito bancario com pontos sensiveis sobre capitalizacao mensal e encargos remuneratorios.',
+    'Contrato do cartao consignado com descontos em folha e pontos sensiveis sobre RMC e margem comprometida.',
     22,
     '2026-04-01',
-    'Preview pendente da CCB com clausulas sensiveis destacadas.',
+    'Preview pendente do contrato consignado com clausulas sensiveis destacadas.',
     '["Analisar com IA","Resumir","Extrair tese","Gerar peca","Buscar jurisprudencia"]'::jsonb
   ),
   (
@@ -89,17 +89,17 @@ values
     '11111111-1111-1111-1111-111111111111',
     'cl-003',
     'case-312',
-    'notificacao-negativacao-araujo.pdf',
-    'notificacao-negativacao-araujo.pdf',
-    'Intimacao',
+    'notificacao-busca-apreensao-araujo.pdf',
+    'notificacao-busca-apreensao-araujo.pdf',
+    'Notificacao de busca e apreensao',
     'cobranca',
-    '["negativacao","urgencia","cobranca"]'::jsonb,
-    'not_analyzed',
-    'Notificacao de negativacao vinculada ao contrato principal com potencial para pedido urgente.',
+    '["busca","apreensao","veiculo"]'::jsonb,
+    'analyzed',
+    'Notificacao de mora e busca e apreensao vinculada ao contrato de financiamento do veiculo.',
     3,
     '2026-04-05',
-    'Preview pendente da notificacao de negativacao.',
-    '["Analisar com IA","Resumir","Gerar peca"]'::jsonb
+    'Preview pendente da notificacao de busca e apreensao.',
+    '["Analisar com IA","Resumir","Gerar peca","Buscar jurisprudencia"]'::jsonb
   )
 on conflict (id) do update
 set

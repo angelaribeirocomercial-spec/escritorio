@@ -62,14 +62,14 @@ values
     '2026-04-07',
     'TJMG',
     'DJE TJMG',
-    'Ato ordinatorio para conferencia de anexos empresariais',
-    'Intime-se a parte autora para confirmar regularidade dos anexos empresariais e eventual representacao da pessoa juridica nos autos.',
-    'A publicacao nao altera a tese de capitalizacao mensal, mas exige saneamento documental antes do protocolo ou da continuidade da medida.',
-    'Conferir contrato social, poderes e anexos empresariais antes do proximo movimento da equipe.',
+    'Ato ordinatorio para conferencia de anexos de consignado',
+    'Intime-se a parte autora para confirmar regularidade dos anexos de consignado e eventual extrato do beneficio nos autos.',
+    'A publicacao nao altera a tese de desconto indevido, mas exige saneamento documental antes do protocolo ou da continuidade da medida.',
+    'Conferir contrato consignado, extrato e prova do desconto antes do proximo movimento da equipe.',
     'medium',
     'Dra. Julia Ramalho',
-    'Conferir anexos empresariais do capital de giro',
-    'Validar representacao da empresa e anexos obrigatorios para manter o caso apto ao protocolo.'
+    'Conferir anexos do cartao consignado',
+    'Validar extrato e contrato obrigatorios para manter o caso apto ao protocolo.'
   ),
   (
     'pub-312',
@@ -80,14 +80,14 @@ values
     '2026-04-07',
     'TJMG',
     'DJE TJMG',
-    'Despacho exigindo prova complementar da negativacao',
-    'Intime-se a parte autora para apresentar prova documental complementar acerca da inscricao restritiva e do impacto alegado, no prazo assinalado.',
-    'A tese permanece boa, mas a tutela depende de prova objetiva da restricao e do dano operacional causado pela cobranca indevida.',
-    'Separar notificacao de negativacao, comprovantes e demonstracao do impacto comercial para reforcar a urgencia.',
+    'Despacho exigindo prova complementar da busca e apreensao',
+    'Intime-se a parte autora para apresentar prova documental complementar acerca da mora e da posse do veiculo, no prazo assinalado.',
+    'A tese permanece boa, mas a tutela depende de prova objetiva da mora controvertida e da preservacao do bem.',
+    'Separar notificacao de mora, comprovantes e demonstracao da posse do veiculo para reforcar a urgencia.',
     'high',
     'Dra. Julia Ramalho',
-    'Montar prova complementar da negativacao',
-    'Reunir prova da restricao crediticia e do impacto comercial para sustentar tutela e danos.'
+    'Montar prova complementar da busca e apreensao',
+    'Reunir prova da mora e da posse do veiculo para sustentar tutela e preservacao do bem.'
   )
 on conflict (id) do update
 set
