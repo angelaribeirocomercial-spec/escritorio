@@ -640,10 +640,10 @@ export default async function ClaraPage({
   }
   const activeWorkspace = clara.tabs[activeTab];
 
-  if (activeNiche && (!hasResolvedProcess || !hasResolvedDocument)) {
+  if (activeNiche && !hasResolvedDocument) {
     return (
       <WorkspacePage
-        description="A Clara contextual minima segue operando com clientId e caseId resolvidos, mas sem fingir que processo ou documento ja existem quando o caso ainda esta em fase inicial."
+        description="A Clara contextual minima segue operando com clientId e caseId resolvidos, mas sem fingir que o documento base ja existe quando o caso ainda esta em fase inicial."
         eyebrow="Clara"
         metrics={[
           { label: "Cliente", value: clara.structuredCore.context.client.fullName },
@@ -666,16 +666,6 @@ export default async function ClaraPage({
               actionLabel="Anexar documento ao caso"
               description="Sem documento base, a Clara registra fatos e bloqueios do caso, mas nao abre leitura contratual nem minuta assistida."
             title="Documento base ainda pendente"
-            tone="warning"
-          />
-        ) : null}
-
-        {!hasResolvedProcess ? (
-          <WorkspaceStatePanel
-            actionHref={`/pessoas/clientes/${clara.structuredCore.context.client.id}?case=${clara.structuredCore.context.bankingCase.id}`}
-            actionLabel="Continuar pelo cockpit do caso"
-            description="O handoff arquitetural permite que o processo nasca vazio no onboarding. A Clara nao trava por isso, mas tambem nao promete acompanhamento processual antes do vinculo real."
-            title="Processo ainda nao vinculado"
             tone="warning"
           />
         ) : null}
@@ -2109,6 +2099,16 @@ export default async function ClaraPage({
             "Escolha um nicho para abrir a sequencia operacional dentro do contexto correto."}
         </p>
       </section>
+
+      {activeNiche && !hasResolvedProcess ? (
+        <WorkspaceStatePanel
+          actionHref={`/pessoas/clientes/${clara.structuredCore.context.client.id}?case=${clara.structuredCore.context.bankingCase.id}`}
+          actionLabel="Continuar pelo cockpit do caso"
+          description="O processo ainda nao foi vinculado ao caso, mas a Clara Advogada Digital IA ja pode organizar triagem, estrategia, minuta e leitura documental com o contexto disponivel."
+          title="Processo ainda nao vinculado"
+          tone="warning"
+        />
+      ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_22rem]">
         <div className="space-y-4">
