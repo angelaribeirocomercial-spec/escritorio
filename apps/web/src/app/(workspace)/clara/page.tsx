@@ -408,6 +408,34 @@ function renderControlledModeConversationGuide(params: {
   );
 }
 
+function renderGlobalClaraLanding(activeTab: TabId) {
+  return (
+    <div className="space-y-6">
+      <ClaraLandingHero
+        activeModeLabel={tabItems.find((item) => item.id === activeTab)?.label ?? "Triagem"}
+        caseLabel="Fluxo global do escritorio"
+        clientLabel="Clara global"
+        documentsMissing={[
+          "Leituras avulsas sem documento vinculado",
+          "Buscas amplas por tese, prazo ou orientacao"
+        ]}
+        factsConfirmed={[
+          "Clara global funciona sem cliente ou caso obrigatorios.",
+          "A sessao lateral serve para perguntas gerais, leituras avulsas e buscas internas.",
+          "A Clara contextual do caso continua no dossie, com cliente e caso resolvidos."
+        ]}
+        processLabel="Sem processo obrigatorio"
+        risks={[
+          "Toda orientacao juridica segue sujeita a revisao humana.",
+          "Para respostas ancoradas em um caso real, use a Clara do dossie."
+        ]}
+        summary="A Clara global e a porta inteligente do sistema: recebe perguntas soltas, ajuda em leituras avulsas e orienta o proximo passo antes de entrar no contexto detalhado de cliente e caso."
+        tabs={tabItems}
+      />
+    </div>
+  );
+}
+
 export default async function ClaraPage({
   searchParams
 }: {
@@ -508,6 +536,10 @@ export default async function ClaraPage({
       ).catch(() => null);
     }
   } catch {
+    if (!activeNiche) {
+      return renderGlobalClaraLanding(activeTab);
+    }
+
     const structuredCoreFallback = await getClaraStructuredCore({
       clientId: searchParams?.client,
       caseId: searchParams?.case,

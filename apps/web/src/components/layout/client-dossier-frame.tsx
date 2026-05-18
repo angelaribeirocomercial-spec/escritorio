@@ -797,7 +797,7 @@ export function ClientCockpitFrame({
                     className="detail-link-button inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold text-center"
                     href={actionLinks.continueClaraHref}
                   >
-                    Abrir Clara
+                    Abrir Clara Advogada Digital IA
                   </Link>
                 </div>
               </div>
