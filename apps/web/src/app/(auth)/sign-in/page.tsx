@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { SignInForm } from "@/app/(auth)/sign-in/sign-in-form";
+import { getDemoClaraFirstHref } from "@/lib/auth/demo-entry";
 import { getWorkspaceSession } from "@/lib/auth/session";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -12,7 +13,7 @@ export default async function SignInPage({
   const session = await getWorkspaceSession();
 
   if (session) {
-    redirect("/crm");
+    redirect(getDemoClaraFirstHref());
   }
 
   const configured = isSupabaseConfigured();
@@ -25,10 +26,10 @@ export default async function SignInPage({
             ADVX
           </p>
           <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-            Acesse uma operacao juridica premium desenhada para Direito Bancario.
+            Comece gratis e abra a Clara no fluxo real do direito bancario.
           </h1>
           <p className="mt-5 max-w-2xl text-base font-medium leading-8 text-slate-300">
-            CRM, casos, GED, tarefas e Clara no mesmo produto. A entrada precisa vender a confianca de uma plataforma que organiza o escritorio e acelera decisao.
+            Entre para ver um sistema moderno, simples de usar e automatizado. O cliente entra, os documentos sobem, o caso se organiza e a Clara assume a explicacao do proximo passo.
           </p>
 
           {!configured ? (
@@ -48,21 +49,21 @@ export default async function SignInPage({
           </p>
           <div className="mt-6 grid gap-4">
             <div className="sign-in-security-card rounded-[24px] border border-white/10 bg-white/[0.05] px-4 py-4">
-              <p className="text-sm font-semibold text-white">Sessao gerenciada no servidor</p>
+              <p className="text-sm font-semibold text-white">Entrada autenticada antes da demonstracao</p>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                A base de autenticacao foi preparada para operar com contexto real de tenant e membership.
+                A demonstracao passa primeiro pela autenticacao e depois abre a Clara dentro de um caso valido.
               </p>
             </div>
             <div className="sign-in-security-card rounded-[24px] border border-white/10 bg-white/[0.05] px-4 py-4">
-              <p className="text-sm font-semibold text-white">Workspace protegido</p>
+              <p className="text-sm font-semibold text-white">Fluxo simples e contextual</p>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                O fluxo inteiro do produto considera guard reutilizavel e separacao clara entre acesso e operacao.
+                O objetivo aqui nao e jogar voce em um menu. E colocar a Clara no centro do caso logo na entrada.
               </p>
             </div>
             <div className="sign-in-security-card rounded-[24px] border border-white/10 bg-white/[0.05] px-4 py-4">
-              <p className="text-sm font-semibold text-white">Base pronta para escalar</p>
+              <p className="text-sm font-semibold text-white">Pensado para escritorio de direito bancario</p>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                O login ja prepara a camada certa para tenant resolution, controle de papel e demonstracao comercial.
+                Clara, CRM, clientes, processos, agenda, diario oficial e financeiro operam conectados no mesmo sistema.
               </p>
             </div>
           </div>

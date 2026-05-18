@@ -6,6 +6,7 @@ import {
   DEMO_PASSWORD,
   isDemoAccessEnabled
 } from "@/lib/auth/demo-access";
+import { getDemoClaraFirstHref } from "@/lib/auth/demo-entry";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!error) {
-      const response = NextResponse.redirect(new URL("/crm", request.url));
+      const response = NextResponse.redirect(new URL(getDemoClaraFirstHref(), request.url));
 
       response.cookies.set({
         name: DEMO_AUTH_COOKIE,
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const response = NextResponse.redirect(new URL("/crm", request.url));
+  const response = NextResponse.redirect(new URL(getDemoClaraFirstHref(), request.url));
 
   response.cookies.set({
     name: DEMO_AUTH_COOKIE,

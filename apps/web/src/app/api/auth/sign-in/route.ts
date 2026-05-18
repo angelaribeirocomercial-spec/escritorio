@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getDemoClaraFirstHref } from "@/lib/auth/demo-entry";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -46,5 +47,5 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.redirect(new URL("/crm", request.url));
+  return NextResponse.redirect(new URL(getDemoClaraFirstHref(), request.url));
 }

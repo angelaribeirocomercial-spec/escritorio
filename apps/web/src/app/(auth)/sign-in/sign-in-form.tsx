@@ -46,7 +46,7 @@ export function SignInForm({ error, supabaseConfigured }: SignInFormProps) {
           disabled={!supabaseConfigured}
           type="submit"
         >
-          Entrar no workspace
+          Entrar e abrir a Clara
         </button>
       </form>
 
@@ -55,12 +55,12 @@ export function SignInForm({ error, supabaseConfigured }: SignInFormProps) {
           className="sign-in-demo-button w-full rounded-[18px] border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-cyan-300/25 hover:bg-white/[0.08]"
           type="submit"
         >
-          Entrar na demonstracao
+          Ver demonstracao guiada
         </button>
       </form>
 
       <p className="sign-in-helper text-sm font-medium leading-6 text-slate-400">
-        O acesso de demonstracao existe para validar UX, contraste e navegacao sem depender de credenciais reais.
+        A demonstracao abre a Clara dentro de um caso pronto, em vez de cair em um menu generico do sistema.
       </p>
     </div>
   );

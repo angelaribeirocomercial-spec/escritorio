@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { getDemoClaraFirstHref } from "@/lib/auth/demo-entry";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const signInSchema = z.object({
@@ -40,7 +41,7 @@ export async function signInAction(
     };
   }
 
-  redirect("/crm");
+  redirect(getDemoClaraFirstHref());
 }
 
 export async function signOutAction() {

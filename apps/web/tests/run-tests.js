@@ -93,6 +93,7 @@ assert.equal(true, true);
   "src/components/layout/session-actions.tsx",
   "src/lib/branding/normalize-visible-copy.ts",
   "src/lib/auth/session.ts",
+  "src/lib/auth/demo-entry.ts",
   "src/lib/supabase/client.ts",
   "src/lib/supabase/server.ts",
   "src/middleware.ts",
@@ -241,6 +242,10 @@ const demoSignInRouteSource = fs.readFileSync(
   path.join(__dirname, "..", "src/app/api/auth/demo-sign-in/route.ts"),
   "utf8"
 );
+const demoEntrySource = fs.readFileSync(
+  path.join(__dirname, "..", "src/lib/auth/demo-entry.ts"),
+  "utf8"
+);
 assert.match(
   demoSignInRouteSource,
   /isSupabaseConfigured\(\)/,
@@ -253,8 +258,18 @@ assert.match(
 );
 assert.match(
   demoSignInRouteSource,
-  /new URL\("\/crm", request\.url\)/,
-  "Expected demo sign-in route to redirect to CRM instead of dashboard."
+  /getDemoClaraFirstHref\(\)/,
+  "Expected demo sign-in route to redirect to the Clara-first demo entry."
+);
+assert.match(
+  demoEntrySource,
+  /panel", "clara"/,
+  "Expected the Clara-first demo entry to open the dossier with the Clara panel selected."
+);
+assert.match(
+  demoEntrySource,
+  /client-dossier-tab-trigger-clara/,
+  "Expected the Clara-first demo entry to deep-link to the Clara dossier tab."
 );
 assert.match(
   sessionSource,
@@ -273,8 +288,8 @@ const signInRouteSource = fs.readFileSync(
 );
 assert.match(
   signInRouteSource,
-  /new URL\("\/crm", request\.url\)/,
-  "Expected the email/password sign-in route to redirect to CRM instead of dashboard."
+  /getDemoClaraFirstHref\(\)/,
+  "Expected the email/password sign-in route to redirect to the Clara-first demo entry."
 );
 
 const signInPageSource = fs.readFileSync(
@@ -283,8 +298,8 @@ const signInPageSource = fs.readFileSync(
 );
 assert.match(
   signInPageSource,
-  /redirect\("\/crm"\)/,
-  "Expected the sign-in page to send existing sessions to CRM."
+  /redirect\(getDemoClaraFirstHref\(\)\)/,
+  "Expected the sign-in page to send existing sessions to the Clara-first demo entry."
 );
 
 const workspaceHeaderNarrativeSource = fs.readFileSync(
