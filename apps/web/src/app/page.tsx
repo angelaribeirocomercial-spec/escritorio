@@ -145,13 +145,12 @@ export default function HomePage() {
           Escritorio de direito bancario com fluxo simples e automacao real
         </p>
         <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">
-          Voce cadastra o cliente e envia os documentos.
-          <span className="text-blue-700"> O sistema devolve calculos, BACEN, estrategia, laudo, peticao e Clara.</span>
+          Seu escritorio envia os documentos.
+          <span className="text-blue-700"> A plataforma devolve analise, estrategia e producao juridica.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-slate-600">
-          Esta plataforma foi desenhada para o fluxo real do direito bancario. O cliente entra, os documentos sobem,
-          o caso se organiza e a Clara aparece dentro do sistema para resumir documentos, explicar riscos e orientar
-          o proximo passo.
+          Cadastre o cliente, suba contrato, extrato, fotos e prints. O sistema organiza o caso, calcula, compara com
+          o BACEN, identifica abusividades e coloca a Clara para orientar o proximo passo.
         </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-4">
@@ -192,10 +191,11 @@ export default function HomePage() {
       <section className="py-20">
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="text-center text-3xl font-bold text-slate-950">
-            O que acontece automaticamente depois do upload
+            O sistema faz a parte pesada do direito bancario
           </h2>
           <p className="mt-3 text-center text-slate-600">
-            O sistema nao so guarda arquivos. Ele interpreta, calcula, compara, estrutura e explica.
+            Depois do upload, a plataforma le, calcula, compara, interpreta e prepara material juridico para o
+            escritorio agir com mais rapidez.
           </p>
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {automationSteps.map((item, index) => (
@@ -220,11 +220,11 @@ export default function HomePage() {
                 Clara na sessao lateral
               </p>
               <h3 className="mt-4 text-2xl font-bold text-slate-950">
-                A Clara abre com o caso carregado e responde sobre aquele contexto.
+                A Clara nao e um chat solto. Ela entra no caso ja entendendo o que aconteceu.
               </h3>
               <p className="mt-4 text-base leading-7 text-slate-600">
-                Ela entende contrato, calculos, BACEN, parcelas e abusividades do caso. Nao e um chat solto e nao
-                joga o usuario em uma tela generica.
+                Ela responde com base nos documentos, nos calculos, na comparacao com o BACEN, nas parcelas e nas
+                abusividades daquele cliente.
               </p>
               <div className="mt-6 rounded-xl bg-slate-950 p-5 text-left text-sm text-slate-100">
                 <p>Clara, explique esse caso.</p>
@@ -252,7 +252,7 @@ export default function HomePage() {
       <section className="py-20">
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="text-center text-3xl font-bold text-slate-950">
-            Tudo do escritorio em um sistema so
+            Clara no centro. Operacao completa ao redor.
           </h2>
           <p className="mt-3 text-center text-slate-600">
             Clara no centro, com CRM, clientes, processos, agenda, diario oficial e financeiro conectados ao redor.
@@ -271,11 +271,10 @@ export default function HomePage() {
       <section className="border-t bg-slate-50 py-20">
         <div className="mx-auto max-w-5xl px-4 text-center">
           <h2 className="text-3xl font-bold text-slate-950">
-            Menos trabalho manual. Mais clareza no caso. Mais velocidade para agir.
+            Comece gratis e veja a Clara funcionando no fluxo real do escritorio.
           </h2>
           <p className="mx-auto mt-4 max-w-3xl text-lg text-slate-600">
-            Crie sua conta, veja a Clara funcionando no fluxo real do direito bancario e continue com assinatura se
-            fizer sentido para sua operacao.
+            Crie sua conta para entrar na demonstracao e conhecer a experiencia completa do sistema.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
@@ -286,7 +285,7 @@ export default function HomePage() {
             </Link>
             <DemoSignInButton
               className="rounded-lg border border-slate-300 px-8 py-3 text-lg font-semibold text-slate-700 transition hover:bg-white"
-              label="Entrar na demonstracao"
+              label="Ver demonstracao"
             />
           </div>
         </div>
