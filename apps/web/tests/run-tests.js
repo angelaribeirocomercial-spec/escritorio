@@ -263,13 +263,18 @@ assert.match(
 );
 assert.match(
   demoEntrySource,
-  /panel", "clara"/,
-  "Expected the Clara-first demo entry to open the dossier with the Clara panel selected."
+  /searchParams\.set\("niche", "fraude"\)/,
+  "Expected the Clara-first demo entry to open the fraud banking niche in Clara."
 );
 assert.match(
   demoEntrySource,
-  /client-dossier-tab-trigger-clara/,
-  "Expected the Clara-first demo entry to deep-link to the Clara dossier tab."
+  /return `\/clara\?/,
+  "Expected the Clara-first demo entry to open the Clara workspace route."
+);
+assert.match(
+  demoEntrySource,
+  /#clara-workbench/,
+  "Expected the Clara-first demo entry to deep-link to the Clara workbench."
 );
 assert.match(
   sessionSource,
