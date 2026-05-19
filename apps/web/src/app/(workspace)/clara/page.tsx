@@ -3,7 +3,7 @@
 import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { ClaraConversationCard } from "@/components/layout/clara-conversation-card";
-import { ClaraLandingHero } from "@/components/layout/clara-landing-hero";
+import { WorkspaceGlobalSearch } from "@/components/layout/workspace-global-search";
 import { WorkspacePage } from "@/components/layout/workspace-page";
 import {
   commitClaraExecutionAction,
@@ -40,6 +40,7 @@ import { getClaraWorkspace } from "@/server/services/clara/get-clara-workspace";
 import { getJurisprudenceConsultation } from "@/server/services/jurisprudence/get-jurisprudence-consultation";
 import type { JudicialProcessWithRelations } from "@/server/services/processes/get-processes";
 import type { TaskWithContext } from "@/server/services/tasks/get-tasks";
+import { getWorkspaceShellSearchEntries } from "@/server/services/workspace/get-workspace-shell-search";
 
 const tabItems = [
   { id: "analise", label: "Triagem" },
@@ -74,6 +75,388 @@ const nicheItems = [
 
 type TabId = (typeof tabItems)[number]["id"];
 type NicheId = (typeof nicheItems)[number]["id"] | "cartao-consignado" | "beneficio-descontos";
+
+const globalAreaCopy: Record<
+  TabId,
+  {
+    title: string;
+    strapline: string;
+    summary: string;
+    mission: string;
+    queueTitle: string;
+    queue: string[];
+    outputs: string[];
+    prompts: string[];
+    handoff: string;
+  }
+> = {
+  analise: {
+    title: "Triagem",
+    strapline: "Entrada operacional para abrir o assunto certo antes de encostar em um caso.",
+    summary:
+      "Classifica a demanda, organiza fatos iniciais e define se a Clara resolve globalmente ou se o trabalho precisa descer para um dossie contextual.",
+    mission: "Ler o pedido, mapear lacunas e devolver a melhor trilha inicial do escritorio.",
+    queueTitle: "Fila de triagem",
+    queue: [
+      "Classificar demanda por nicho, urgencia e dependencia documental.",
+      "Separar pergunta avulsa de trabalho juridico que exige contexto de caso.",
+      "Sinalizar qual area da Clara deve assumir o proximo passo."
+    ],
+    outputs: [
+      "Diagnostico inicial do assunto.",
+      "Checklist minimo para prosseguir.",
+      "Direcionamento para o modulo seguinte ou para o dossie."
+    ],
+    prompts: [
+      "Classifique este atendimento e diga o que falta para eu seguir.",
+      "Me diga se isso fica na Clara global ou se precisa abrir um caso.",
+      "Monte uma triagem enxuta para este pedido do escritorio."
+    ],
+    handoff: "Quando existir cliente, caso ou documento especifico, a transicao sai daqui para o dossie."
+  },
+  intimacao: {
+    title: "Intimacao",
+    strapline: "Leitura de atos e prazos sem depender de cockpit de caso para comecar.",
+    summary:
+      "Concentra a decodificacao de intimacoes, a leitura do ato exigido e a organizacao da resposta operacional antes de entrar na peca.",
+    mission: "Extrair prazo, ato exigido, risco e resposta recomendada com rastreabilidade.",
+    queueTitle: "Esteira de intimacao",
+    queue: [
+      "Identificar orgao, ato, prazo e urgencia.",
+      "Resumir a resposta juridica esperada pela intimacao.",
+      "Encaminhar para peca ou estrategia quando houver providencia formal."
+    ],
+    outputs: [
+      "Resumo do ato intimado.",
+      "Prazo e risco operacional.",
+      "Resposta recomendada para revisao humana."
+    ],
+    prompts: [
+      "Leia esta intimacao e destaque prazo, risco e resposta.",
+      "Me diga o que vence primeiro e o que depende de prova.",
+      "Transforme este ato em orientacao objetiva para o escritorio."
+    ],
+    handoff: "Quando a resposta exigir documento ou movimento processual concreto, o fluxo segue para peca ou acompanhamento."
+  },
+  pecas: {
+    title: "Peca",
+    strapline: "Bancada de redacao juridica com saida pronta para revisao humana.",
+    summary:
+      "Organiza a construcao de minutas, manifestacoes e pecas a partir da tese escolhida, sem confundir rascunho global com expediente do dossie.",
+    mission: "Transformar tese e contexto suficiente em minuta revisavel, clara e governada.",
+    queueTitle: "Bancada de peca",
+    queue: [
+      "Escolher o tipo de peca e a tese principal.",
+      "Agrupar fundamentos, fatos e pedidos na ordem certa.",
+      "Gerar rascunho revisavel antes de qualquer uso formal."
+    ],
+    outputs: [
+      "Rascunho juridico revisavel.",
+      "Fundamentos e pedidos organizados.",
+      "Pontos de cautela para a advogada revisar."
+    ],
+    prompts: [
+      "Monte a estrutura desta peca antes de redigir.",
+      "Gere um primeiro rascunho com cautelas e lacunas.",
+      "Organize fatos, fundamentos e pedidos em ordem de uso."
+    ],
+    handoff: "A aprovacao final continua humana; o dossie so entra quando a peca precisar ancorar no caso real."
+  },
+  jurisprudencia: {
+    title: "Jurisprudencia",
+    strapline: "Pesquisa dirigida para tese, precedente e argumento citavel.",
+    summary:
+      "Abre uma frente propria de consulta, comparacao de entendimento e sugestao de precedente, em vez de esconder isso como aba acessoria.",
+    mission: "Transformar tese em pesquisa juridica rastreavel, util e pronta para citacao.",
+    queueTitle: "Mesa de pesquisa",
+    queue: [
+      "Definir tese, tribunal e recorte util.",
+      "Sugerir consulta com linguagem de pesquisa objetiva.",
+      "Separar precedente citavel de referencia apenas exploratoria."
+    ],
+    outputs: [
+      "Resumo de entendimento.",
+      "Precedentes ou trilhas de pesquisa.",
+      "Risco de citacao e necessidade de confirmacao humana."
+    ],
+    prompts: [
+      "Monte uma pesquisa de jurisprudencia para esta tese.",
+      "Separe o que e citavel do que e apenas exploratorio.",
+      "Me diga quais tribunais consultar primeiro."
+    ],
+    handoff: "O resultado alimenta estrategia ou peca, mas nao substitui a verificacao final da fonte."
+  },
+  checklist: {
+    title: "Acompanhamento",
+    strapline: "Controle de pendencias, fase processual e proxima cobranca operacional.",
+    summary:
+      "Desenha uma area de acompanhamento para o escritorio revisar pendencias, status e proximas cobrancas sem parecer so um checklist perdido no layout.",
+    mission: "Manter o trabalho em movimento, com visibilidade de faltas, status e proxima cobranca.",
+    queueTitle: "Radar operacional",
+    queue: [
+      "Listar pendencias e evidencias faltantes.",
+      "Mostrar fase processual e proximo marco esperado.",
+      "Apontar qual bloqueio impede a proxima entrega."
+    ],
+    outputs: [
+      "Pendencias priorizadas.",
+      "Status operacional do fluxo.",
+      "Proxima acao concreta de acompanhamento."
+    ],
+    prompts: [
+      "Resuma o que esta pendente e o que trava o fluxo.",
+      "Mostre o proximo marco processual esperado.",
+      "Transforme isso em acompanhamento objetivo do escritorio."
+    ],
+    handoff: "Quando o acompanhamento depender de expediente do caso, a navegacao continua no dossie contextual."
+  },
+  "proximos-passos": {
+    title: "Estrategia",
+    strapline: "Camada de decisao para escolher tese, sequencia e prioridade.",
+    summary:
+      "Sai do papel de tab residual e vira uma area para consolidar tese, opcao de avancar e justificativa do proximo movimento juridico.",
+    mission: "Decidir o que fazer agora, por que fazer e qual risco aceita ao seguir.",
+    queueTitle: "Mesa de estrategia",
+    queue: [
+      "Comparar caminhos possiveis e dependencias.",
+      "Priorizar acao conforme urgencia, prova e tese.",
+      "Explicar o proximo movimento com linguagem operacional."
+    ],
+    outputs: [
+      "Recomendacao estrategica principal.",
+      "Alternativas e trade-offs.",
+      "Proxima acao juridica priorizada."
+    ],
+    prompts: [
+      "Compare as estrategias possiveis para este quadro.",
+      "Me diga o proximo passo com justificativa juridica.",
+      "Priorize o que fazer agora e o que pode esperar."
+    ],
+    handoff: "A estrategia global organiza o pensamento antes de formalizar o trabalho dentro do caso."
+  },
+  comparador: {
+    title: "Revisao",
+    strapline: "Fechamento da qualidade antes de aprovar texto, tese ou encaminhamento.",
+    summary:
+      "Concentra revisao final, comparacao de versoes e conferencias humanas para a Clara global nao parecer um cockpit unico disfarçado.",
+    mission: "Conferir consistencia, lacunas e risco antes da aprovacao humana.",
+    queueTitle: "Mesa de revisao",
+    queue: [
+      "Comparar versoes, fundamentos e pedidos.",
+      "Marcar inconsistencias, omissoes e cautelas.",
+      "Preparar a saida para revisao humana obrigatoria."
+    ],
+    outputs: [
+      "Checklist de revisao final.",
+      "Divergencias encontradas.",
+      "Aprovacao ou devolucao para ajuste."
+    ],
+    prompts: [
+      "Revise este rascunho e aponte inconsistencias.",
+      "Compare duas versoes e destaque risco juridico.",
+      "Prepare a revisao final antes da aprovacao da advogada."
+    ],
+    handoff: "Nada sai daqui sem revisao humana; quando houver caso real, o historico definitivo continua no dossie."
+  }
+};
+
+function renderGlobalAreaWorkbench(activeTab: TabId, options?: { summary?: string }) {
+  switch (activeTab) {
+    case "intimacao":
+      return (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
+              Leitura do ato
+            </p>
+            <h3 className="mt-3 text-lg font-semibold text-white">Painel de prazo e resposta</h3>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Identifique o prazo util, o ato exigido e o nivel de urgencia.</p>
+              <p>- Separe o que e mera ciencia do que exige providencia formal.</p>
+              <p>- Encaminhe a resposta para Peça quando houver manifestacao a protocolar.</p>
+            </div>
+          </article>
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">
+              Saidas desta area
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Prazo mapeado com data de vencimento.</p>
+              <p>- Risco operacional se nada for feito.</p>
+              <p>- Resposta recomendada para revisao humana.</p>
+            </div>
+          </article>
+        </div>
+      );
+    case "pecas":
+      return (
+        <div className="grid gap-4 xl:grid-cols-3">
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+              Estrutura
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Fatos relevantes.</p>
+              <p>- Fundamentos juridicos.</p>
+              <p>- Pedidos e cautelas.</p>
+            </div>
+          </article>
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
+              Redacao
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Rascunho revisavel pela advogada.</p>
+              <p>- Ajuste fino de tom, tese e pedidos.</p>
+              <p>- Preparacao para editor e aprovacao humana.</p>
+            </div>
+          </article>
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
+              Governanca
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Nada sai sem revisao humana.</p>
+              <p>- O dossie ancora a versao final quando houver caso real.</p>
+              <p>- A Clara global prepara a peca, nao publica sozinha.</p>
+            </div>
+          </article>
+        </div>
+      );
+    case "jurisprudencia":
+      return (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+              Frente de pesquisa
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Defina tese, tribunal e recorte temporal.</p>
+              <p>- Converta a tese em linguagem de busca objetiva.</p>
+              <p>- Traga consulta pronta para citacao ou aprofundamento.</p>
+            </div>
+          </article>
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">
+              Resultado esperado
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Precedentes aproveitaveis.</p>
+              <p>- Alertas sobre citacao insegura.</p>
+              <p>- Ponte direta para Estrategia ou Peça.</p>
+            </div>
+          </article>
+        </div>
+      );
+    case "checklist":
+      return (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
+              Radar de pendencias
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- O que falta para destravar o trabalho.</p>
+              <p>- O que depende de documento, prazo ou pessoa.</p>
+              <p>- Qual bloqueio vem primeiro na fila de resolucao.</p>
+            </div>
+          </article>
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
+              Proximo marco
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Fase atual resumida.</p>
+              <p>- Proxima cobranca operacional.</p>
+              <p>- Encaminhamento para o dossie quando o acompanhamento for do caso.</p>
+            </div>
+          </article>
+        </div>
+      );
+    case "proximos-passos":
+      return (
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">
+              Mesa de decisao
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Compare caminhos possiveis antes de agir.</p>
+              <p>- Meça urgencia, prova e custo de atraso.</p>
+              <p>- Saia com a proxima acao priorizada e defendida.</p>
+            </div>
+          </article>
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+              Resultado estrategico
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Recomendacao principal.</p>
+              <p>- Alternativas com trade-offs.</p>
+              <p>- Handoff para Peça, Acompanhamento ou dossie.</p>
+            </div>
+          </article>
+        </div>
+      );
+    case "comparador":
+      return (
+        <div className="grid gap-4 xl:grid-cols-3">
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
+              Conferencia
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Compare versoes, pedidos e fundamentos.</p>
+              <p>- Marque pontos incoerentes ou omitidos.</p>
+            </div>
+          </article>
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">
+              Risco
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Identifique onde a tese perdeu consistencia.</p>
+              <p>- Separe risco juridico de ajuste redacional.</p>
+            </div>
+          </article>
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
+              Aprovacao
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Consolidacao final para revisao humana.</p>
+              <p>- Devolucao para ajuste se algo falhar.</p>
+            </div>
+          </article>
+        </div>
+      );
+    case "analise":
+    default:
+      return (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+              Triagem inicial
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- Classifique o pedido antes de entrar em caso, processo ou documento.</p>
+              <p>- Separe duvida avulsa, leitura pontual e trabalho que exige contexto real.</p>
+              <p>- Decida se a Clara resolve aqui ou se precisa descer para o dossie.</p>
+            </div>
+          </article>
+          <article className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
+              Sinal atual da Clara
+            </p>
+            <p className="mt-4 text-sm leading-6 text-slate-300">
+              {options?.summary ??
+                "A Triagem agora fica restrita ao enquadramento inicial do trabalho, sem carregar os blocos operacionais das outras areas."}
+            </p>
+          </article>
+        </div>
+      );
+  }
+}
 
 type SearchParams = {
   tab?: string;
@@ -408,31 +791,342 @@ function renderControlledModeConversationGuide(params: {
   );
 }
 
-function renderGlobalClaraLanding(activeTab: TabId) {
+function renderGlobalClaraLanding(
+  activeTab: TabId,
+  options: {
+    searchEntries: Awaited<ReturnType<typeof getWorkspaceShellSearchEntries>>;
+  }
+) {
+  const activeArea = globalAreaCopy[activeTab];
+
   return (
     <div className="space-y-6">
-      <ClaraLandingHero
-        activeModeLabel={tabItems.find((item) => item.id === activeTab)?.label ?? "Triagem"}
-        caseLabel="Fluxo global do escritorio"
-        clientLabel="Clara global"
-        documentsMissing={[
-          "Leituras avulsas sem documento vinculado",
-          "Buscas amplas por tese, prazo ou orientacao"
-        ]}
-        factsConfirmed={[
-          "Clara global funciona sem cliente ou caso obrigatorios.",
-          "A sessao lateral serve para perguntas gerais, leituras avulsas e buscas internas.",
-          "A Clara contextual do caso continua no dossie, com cliente e caso resolvidos."
-        ]}
-        processLabel="Sem processo obrigatorio"
-        risks={[
-          "Toda orientacao juridica segue sujeita a revisao humana.",
-          "Para respostas ancoradas em um caso real, use a Clara do dossie."
-        ]}
-        summary="A Clara global e a porta inteligente do sistema: recebe perguntas soltas, ajuda em leituras avulsas e orienta o proximo passo antes de entrar no contexto detalhado de cliente e caso."
-        tabs={tabItems}
-      />
+      <section className="workspace-panel p-6 lg:p-8">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_24rem]">
+          <div className="max-w-4xl">
+            <p className="workspace-kicker">CLARA GLOBAL</p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-5xl">
+              Clara Advogada Digital IA
+            </h1>
+            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300">
+              Chat real da Clara para buscar qualquer dado do sistema, tirar duvidas de direito
+              bancario e abrir documentos ou casos sem depender de um contexto obrigatorio.
+            </p>
+            <div className="mt-6 rounded-[10px] border border-white/10 bg-white/[0.03] p-5">
+              <WorkspaceGlobalSearch entries={options.searchEntries} />
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                  Busca interna: <span className="font-semibold text-white">ativa</span>
+                </div>
+                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                  Modo juridico: <span className="font-semibold text-white">bancario</span>
+                </div>
+                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
+                  Entrada sugerida: <span className="font-semibold text-white">{activeArea.title}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="workspace-soft-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+              Conversas que a Clara global deve resolver
+            </p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+              <p>- “Encontre o processo do Carlos no TJMG.”</p>
+              <p>- “Quais clientes estao travados por documento faltante?”</p>
+              <p>- “Explique a diferenca entre CET e taxa contratual.”</p>
+              <p>- “Analise este documento sem abrir um caso ainda.”</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[19rem_minmax(0,1fr)_20rem]">
+        <aside className="workspace-panel p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="workspace-kicker">Areas</p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                A Clara global orienta a conversa e aponta para a frente correta antes de abrir um caso.
+              </p>
+            </div>
+            <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-300">
+              7 frentes
+            </span>
+          </div>
+          <div className="mt-4 space-y-3">
+            {tabItems.map((item, index) => {
+              const area = globalAreaCopy[item.id];
+              const active = item.id === activeTab;
+
+              return (
+                <Link
+                  key={item.id}
+                  className={`block rounded-[8px] border px-4 py-4 transition ${
+                    active
+                      ? "border-emerald-300/30 bg-emerald-300/10 shadow-soft"
+                      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
+                  }`}
+                  href={`/clara?tab=${item.id}#clara-global-workspace`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                        active
+                          ? "bg-[linear-gradient(90deg,#22c55e,#4ade80)] text-slate-950"
+                          : "border border-white/10 bg-black/20 text-slate-200"
+                      }`}
+                    >
+                      {index + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white">{item.label}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-400">{area.strapline}</p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </aside>
+
+        <div className="space-y-6" id="clara-global-workspace">
+          <section className="workspace-panel p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-3xl">
+                <p className="workspace-kicker">Frente sugerida</p>
+                <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
+                  {activeArea.title}
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-slate-300">
+                  {activeArea.summary}
+                </p>
+              </div>
+              <div className="rounded-[8px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm text-slate-300 lg:max-w-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Missao da area
+                </p>
+                <p className="mt-2 leading-6 text-white">{activeArea.mission}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <article className="workspace-soft-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                  {activeArea.queueTitle}
+                </p>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                  {activeArea.queue.map((item) => (
+                    <li key={item}>- {item}</li>
+                  ))}
+                </ul>
+              </article>
+              <article className="workspace-soft-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
+                  Entregaveis
+                </p>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                  {activeArea.outputs.map((item) => (
+                    <li key={item}>- {item}</li>
+                  ))}
+                </ul>
+              </article>
+              <article className="workspace-soft-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
+                  Handoff
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">{activeArea.handoff}</p>
+              </article>
+            </div>
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="workspace-panel p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="workspace-kicker">Mesa operacional</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    A Clara global trabalha por frente funcional, nao por um layout unico que so
+                    mostra cards informativos. A busca acima e a entrada real da conversa.
+                  </p>
+                </div>
+                <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-300">
+                  Global
+                </span>
+              </div>
+
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <article className="workspace-soft-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">
+                    Prompts de partida
+                  </p>
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                    {activeArea.prompts.map((item) => (
+                      <li key={item}>- {item}</li>
+                    ))}
+                  </ul>
+                </article>
+                <article className="workspace-soft-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    Como usar esta area
+                  </p>
+                  <div className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
+                    <p>1. Abra a frente funcional correta pela coluna lateral.</p>
+                    <p>2. Use a Clara para organizar leitura, decisao e saida dessa area.</p>
+                    <p>3. So desca para o dossie quando houver caso real para ancorar.</p>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <Link
+                      className="rounded-[6px] bg-[linear-gradient(90deg,#22c55e,#4ade80)] px-4 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-105"
+                      href={`/clara?tab=${activeTab}#clara-global-workspace`}
+                    >
+                      Fixar area ativa
+                    </Link>
+                    <Link
+                      className="rounded-[6px] border border-white/10 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06]"
+                      href="/pessoas/clientes"
+                    >
+                      Abrir dossies do escritorio
+                    </Link>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            <aside className="space-y-4">
+              <section className="workspace-panel p-5">
+                <p className="workspace-kicker">Guardrails</p>
+                <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
+                  {[
+                    "A Clara global abre sem cliente, caso, processo ou documento obrigatorios.",
+                    "O dossie continua sendo a Clara contextual do caso.",
+                    "Quando a conversa exigir contexto real, a Clara deve apontar para o caso correto."
+                  ].map((item) => (
+                    <li key={item}>- {item}</li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="workspace-panel p-5">
+                <p className="workspace-kicker">Atencoes</p>
+                <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
+                  {[
+                    "Toda saida juridica segue sujeita a revisao humana obrigatoria.",
+                    "Se a demanda ja for de um caso real, o historico definitivo fica no dossie."
+                  ].map((item) => (
+                    <li key={item}>- {item}</li>
+                  ))}
+                </ul>
+              </section>
+            </aside>
+          </section>
+        </div>
+      </section>
     </div>
+  );
+}
+
+function renderContextualClaraPendingDocument(params: {
+  activeTab: TabId;
+  clientId: string;
+  clientName: string;
+  caseId: string;
+  caseTitle: string;
+  processLabel: string;
+}) {
+  const activeArea = globalAreaCopy[params.activeTab];
+
+  return (
+    <WorkspacePage
+      description="A Clara do caso continua acessivel mesmo sem documento-base materializado. As areas funcionam, mas as acoes que dependem de leitura documental seguem assistidas."
+      eyebrow="Clara do caso"
+      metrics={[
+        { label: "Cliente", value: params.clientName },
+        { label: "Caso", value: params.caseTitle },
+        { label: "Processo", value: params.processLabel },
+        { label: "Documento base", value: "Pendente" }
+      ]}
+      title="CLARA Advogada Digital IA"
+    >
+      <section className="workspace-panel p-5">
+        <div className="flex flex-wrap gap-2">
+          {tabItems.map((item) => {
+            const active = item.id === params.activeTab;
+
+            return (
+              <Link
+                key={item.id}
+                className={`rounded-[4px] px-4 py-3 text-sm font-semibold transition ${
+                  active
+                    ? "bg-[linear-gradient(90deg,#22c55e,#4ade80)] text-slate-950 shadow-soft"
+                    : "clara-secondary-button border border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]"
+                }`}
+                href={`/clara?niche=revisional&client=${encodeURIComponent(params.clientId)}&case=${encodeURIComponent(params.caseId)}&tab=${item.id}`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      <WorkspaceStatePanel
+        actionHref={`/documentos/enviar-arquivos?caseId=${params.caseId}`}
+        actionLabel="Anexar documento-base"
+        description="Sem documento-base, a Clara do caso pode organizar triagem, estrategia e acompanhamento, mas nao deve fingir leitura contratual completa."
+        title="Documento base ainda pendente"
+        tone="warning"
+      />
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_22rem]">
+        <div className="workspace-panel p-6">
+          <p className="workspace-kicker">{activeArea.title}</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">{activeArea.strapline}</h2>
+          <p className="mt-4 text-sm leading-7 text-slate-300">{activeArea.summary}</p>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <article className="workspace-soft-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                Trabalho desta aba
+              </p>
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                {activeArea.queue.map((item) => (
+                  <li key={item}>- {item}</li>
+                ))}
+              </ul>
+            </article>
+            <article className="workspace-soft-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
+                Saidas disponiveis agora
+              </p>
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                {activeArea.outputs.map((item) => (
+                  <li key={item}>- {item}</li>
+                ))}
+              </ul>
+            </article>
+          </div>
+        </div>
+
+        <aside className="space-y-4">
+          <section className="workspace-panel p-5">
+            <p className="workspace-kicker">Cautela</p>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Esta e a Clara contextual do caso. O documento-base ainda nao foi anexado, entao a
+              aba atual fica limitada ao trabalho que nao depende de leitura documental completa.
+            </p>
+          </section>
+          <section className="workspace-panel p-5">
+            <p className="workspace-kicker">Voltar ao dossie</p>
+            <Link
+              className="detail-link-button mt-4 inline-flex px-4 py-3 text-sm font-semibold"
+              href={`/pessoas/clientes/${params.clientId}?case=${params.caseId}&panel=clara#client-dossier-tab-trigger-clara`}
+            >
+              Abrir Clara dentro do dossie
+            </Link>
+          </section>
+        </aside>
+      </section>
+    </WorkspacePage>
   );
 }
 
@@ -443,6 +1137,12 @@ export default async function ClaraPage({
 }) {
   const activeNiche = isNicheId(searchParams?.niche) ? searchParams.niche : null;
   const activeTab = isTabId(searchParams?.tab) ? searchParams.tab : "analise";
+
+  if (!activeNiche) {
+    const searchEntries = await getWorkspaceShellSearchEntries().catch(() => []);
+
+    return renderGlobalClaraLanding(activeTab, { searchEntries });
+  }
 
   if (activeNiche && (!searchParams?.client || !searchParams?.case)) {
     return (
@@ -536,10 +1236,6 @@ export default async function ClaraPage({
       ).catch(() => null);
     }
   } catch {
-    if (!activeNiche) {
-      return renderGlobalClaraLanding(activeTab);
-    }
-
     const structuredCoreFallback = await getClaraStructuredCore({
       clientId: searchParams?.client,
       caseId: searchParams?.case,
@@ -641,38 +1337,14 @@ export default async function ClaraPage({
   const activeWorkspace = clara.tabs[activeTab];
 
   if (activeNiche && !hasResolvedDocument) {
-    return (
-      <WorkspacePage
-        description="A Clara contextual minima segue operando com clientId e caseId resolvidos, mas sem fingir que o documento base ja existe quando o caso ainda esta em fase inicial."
-        eyebrow="Clara"
-        metrics={[
-          { label: "Cliente", value: clara.structuredCore.context.client.fullName },
-          { label: "Caso", value: clara.structuredCore.context.bankingCase.title },
-          { label: "Processo", value: hasResolvedProcess ? "Resolvido" : "Pendente" },
-          { label: "Documento", value: hasResolvedDocument ? "Resolvido" : "Pendente" }
-        ]}
-        title="Clara em estado controlado"
-        >
-          {renderControlledModeConversationGuide({
-            clientId: clara.structuredCore.context.client.id,
-            caseId: clara.structuredCore.context.bankingCase.id,
-            clientName: clara.structuredCore.context.client.fullName,
-            caseTitle: clara.structuredCore.context.bankingCase.title
-          })}
-
-          {!hasResolvedDocument ? (
-            <WorkspaceStatePanel
-              actionHref={`/documentos/enviar-arquivos?caseId=${clara.structuredCore.context.bankingCase.id}`}
-              actionLabel="Anexar documento ao caso"
-              description="Sem documento base, a Clara registra fatos e bloqueios do caso, mas nao abre leitura contratual nem minuta assistida."
-            title="Documento base ainda pendente"
-            tone="warning"
-          />
-        ) : null}
-
-        {renderClaraContextualAnalysis(contextualAnalysis)}
-      </WorkspacePage>
-    );
+    return renderContextualClaraPendingDocument({
+      activeTab,
+      clientId: clara.structuredCore.context.client.id,
+      clientName: clara.structuredCore.context.client.fullName,
+      caseId: clara.structuredCore.context.bankingCase.id,
+      caseTitle: clara.structuredCore.context.bankingCase.title,
+      processLabel: clara.structuredCore.context.process?.processNumber ?? "Pendente"
+    });
   }
 
   const nicheConfig = activeNiche
@@ -2028,24 +2700,6 @@ export default async function ClaraPage({
     jurisprudence: jurisprudenceConsultation
   });
 
-  if (!activeNiche) {
-    return (
-      <div className="space-y-6">
-        <ClaraLandingHero
-          activeModeLabel={tabItems.find((item) => item.id === activeTab)?.label ?? "Triagem"}
-          caseLabel={clara.structuredCore.context.bankingCase.title}
-          clientLabel={clara.structuredCore.context.client.fullName}
-          documentsMissing={clara.structuredCore.documentsMissing}
-          factsConfirmed={clara.structuredCore.confirmedFacts}
-          processLabel={clara.structuredCore.context.process?.processNumber ?? "Processo pendente"}
-          risks={clara.structuredCore.risks}
-          summary={clara.structuredCore.summary}
-          tabs={tabItems}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <section className="workspace-panel scroll-mt-40 p-6" id="clara-nicho-ativo">
@@ -2121,140 +2775,202 @@ export default async function ClaraPage({
             clientOptions={visibleClientOptions}
           />
 
-          <section className="workspace-panel p-5">
-            <div className="flex flex-col gap-2">
-              <p className="workspace-kicker">Resposta estruturada</p>
-              <h3 className="text-lg font-semibold text-white">{activeLegalMode.label}</h3>
-              <p className="text-sm leading-6 text-slate-300">{activeLegalMode.summary}</p>
-            </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              <div className="workspace-soft-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">Fatos confirmados</p>
-                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-                  {structuredResponse.factsConfirmed.map((item) => (
-                    <li key={item}>- {item}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="workspace-soft-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">Pendencias</p>
-                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-                  {structuredResponse.pendingItems.map((item) => (
-                    <li key={item}>- {item}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="workspace-soft-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">Riscos</p>
-                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-                  {structuredResponse.risks.map((item) => (
-                    <li key={item}>- {item}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="workspace-soft-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Sugestao juridica</p>
-                <p className="mt-3 text-sm leading-6 text-slate-300">{structuredResponse.legalSuggestion}</p>
-              </div>
-              <div className="workspace-soft-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Proxima acao</p>
-                <p className="mt-3 text-sm leading-6 text-slate-300">{structuredResponse.nextAction}</p>
-              </div>
-              <div className="workspace-soft-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Fontes e revisao</p>
-                <p className="mt-3 text-sm leading-6 text-slate-300">
-                  Banco interno: {structuredResponse.sourceBuckets.origem_interna.length} | API: {structuredResponse.sourceBuckets.origem_api.length} | Inferencia: {structuredResponse.sourceBuckets.inferencia_controlada.length}
+          {activeTab === "analise" ? (
+            <section className="workspace-panel p-5">
+              <div className="flex flex-col gap-2">
+                <p className="workspace-kicker">Triagem do caso</p>
+                <h3 className="text-lg font-semibold text-white">{activeLegalMode.label}</h3>
+                <p className="text-sm leading-6 text-slate-300">
+                  Esta aba fica restrita a enquadramento, fatos confirmados, lacunas e proxima decisao.
                 </p>
-                <p className="mt-3 text-sm leading-6 text-slate-400">{structuredResponse.reviewStatus}</p>
               </div>
-            </div>
-          </section>
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <div className="workspace-soft-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">Fatos confirmados</p>
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                    {structuredResponse.factsConfirmed.map((item) => (
+                      <li key={item}>- {item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="workspace-soft-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">Pendencias</p>
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                    {structuredResponse.pendingItems.map((item) => (
+                      <li key={item}>- {item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="workspace-soft-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">Riscos</p>
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                    {structuredResponse.risks.map((item) => (
+                      <li key={item}>- {item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="workspace-soft-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Sugestao juridica</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">{structuredResponse.legalSuggestion}</p>
+                </div>
+                <div className="workspace-soft-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Proxima acao</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">{structuredResponse.nextAction}</p>
+                </div>
+                <div className="workspace-soft-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Fontes e revisao</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">
+                    Banco interno: {structuredResponse.sourceBuckets.origem_interna.length} | API: {structuredResponse.sourceBuckets.origem_api.length} | Inferencia: {structuredResponse.sourceBuckets.inferencia_controlada.length}
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-slate-400">{structuredResponse.reviewStatus}</p>
+                </div>
+              </div>
+            </section>
+          ) : (
+            <section className="workspace-panel p-5">
+              <div className="flex flex-col gap-2">
+                <p className="workspace-kicker">{activeWorkspace.title}</p>
+                <h3 className="text-lg font-semibold text-white">{activeWorkspace.subtitle}</h3>
+                <p className="text-sm leading-6 text-slate-300">{activeWorkspace.summary}</p>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {activeWorkspace.cards.map((card) => (
+                  <div key={`${card.label}-${card.value}`} className="workspace-soft-card p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      {card.label}
+                    </p>
+                    <p className="mt-3 text-sm font-semibold text-white">{card.value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                <div className="workspace-soft-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                    Foco desta aba
+                  </p>
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                    {activeWorkspace.highlights.map((item) => (
+                      <li key={item}>- {item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="workspace-soft-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
+                    Saida esperada
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">{activeLegalMode.summary}</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-400">{structuredResponse.reviewStatus}</p>
+                </div>
+              </div>
+            </section>
+          )}
         </div>
 
         <aside className="space-y-4">
-          <section className="workspace-panel p-5">
-            <p className="workspace-kicker">Resumo do caso</p>
-            <p className="mt-3 text-sm font-semibold text-white">{clara.structuredCore.classification.scenarioLabel}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-300">{clara.structuredCore.summary}</p>
-            <div className="mt-4 space-y-2 text-sm text-slate-300">
-              <div className="detail-soft-row px-3 py-3">
-                Fase: <span className="font-semibold text-white">{workspaceCase.stage}</span>
-              </div>
-              <div className="detail-soft-row px-3 py-3">
-                Risco: <span className="font-semibold text-white">{clara.structuredCore.classification.decisionLabel}</span>
-              </div>
-              <div className="detail-soft-row px-3 py-3">
-                Proxima acao: <span className="font-semibold text-white">{clara.structuredCore.nextStep}</span>
-              </div>
-            </div>
-          </section>
+          {activeTab === "analise" ? (
+            <>
+              <section className="workspace-panel p-5">
+                <p className="workspace-kicker">Resumo do caso</p>
+                <p className="mt-3 text-sm font-semibold text-white">{clara.structuredCore.classification.scenarioLabel}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{clara.structuredCore.summary}</p>
+                <div className="mt-4 space-y-2 text-sm text-slate-300">
+                  <div className="detail-soft-row px-3 py-3">
+                    Fase: <span className="font-semibold text-white">{workspaceCase.stage}</span>
+                  </div>
+                  <div className="detail-soft-row px-3 py-3">
+                    Risco: <span className="font-semibold text-white">{clara.structuredCore.classification.decisionLabel}</span>
+                  </div>
+                  <div className="detail-soft-row px-3 py-3">
+                    Proxima acao: <span className="font-semibold text-white">{clara.structuredCore.nextStep}</span>
+                  </div>
+                </div>
+              </section>
 
-          <section className="workspace-panel p-5">
-            <p className="workspace-kicker">Documentos e pendencias</p>
-            <div className="mt-4 space-y-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">Presentes</p>
-                <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
-                  {documentsFoundItems.length > 0 ? (
-                    documentsFoundItems.map((document) => <li key={document.id}>- {document.label}</li>)
-                  ) : (
-                    <li>- Nenhum documento base confirmado.</li>
-                  )}
-                </ul>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">Pendentes</p>
-                <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
-                  {pendingItems.length > 0 ? (
-                    pendingItems.map((item) => <li key={item}>- {item}</li>)
-                  ) : (
-                    <li>- Nenhuma pendencia essencial aberta.</li>
-                  )}
-                </ul>
-              </div>
-            </div>
-          </section>
+              <section className="workspace-panel p-5">
+                <p className="workspace-kicker">Documentos e pendencias</p>
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">Presentes</p>
+                    <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
+                      {documentsFoundItems.length > 0 ? (
+                        documentsFoundItems.map((document) => <li key={document.id}>- {document.label}</li>)
+                      ) : (
+                        <li>- Nenhum documento base confirmado.</li>
+                      )}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">Pendentes</p>
+                    <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
+                      {pendingItems.length > 0 ? (
+                        pendingItems.map((item) => <li key={item}>- {item}</li>)
+                      ) : (
+                        <li>- Nenhuma pendencia essencial aberta.</li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </section>
 
-          <section className="workspace-panel p-5">
-            <p className="workspace-kicker">Pecas e revisao</p>
-            <div className="mt-4 space-y-3 text-sm text-slate-300">
-              <div className="detail-soft-row px-3 py-3">
-                Registros prontos: <span className="font-semibold text-white">{pieceRecords.length}</span>
-              </div>
-              <div className="detail-soft-row px-3 py-3">
-                Historico da Clara: <span className="font-semibold text-white">{filteredRecords.length}</span>
-              </div>
-              <div className="detail-soft-row px-3 py-3">
-                Revisao final: <span className="font-semibold text-white">Humana obrigatoria</span>
-              </div>
-            </div>
-          </section>
+              <section className="workspace-panel p-5">
+                <p className="workspace-kicker">Fontes e alertas</p>
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Consultas preparadas</p>
+                    <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
+                      {sourceItems.map((adapter) => (
+                        <li key={adapter.sourceId}>
+                          - {adapter.sourceLabel}: {adapter.status === "consulted" ? "consultada" : adapter.status === "not_consulted" ? "preparada" : adapter.status === "failed" ? "falha" : "indisponivel"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">Alertas</p>
+                    <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
+                      {sidebarAlerts.length > 0 ? (
+                        sidebarAlerts.map((alert) => <li key={alert}>- {alert}</li>)
+                      ) : (
+                        <li>- Nenhum alerta critico adicional aberto.</li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </section>
+            </>
+          ) : (
+            <>
+              <section className="workspace-panel p-5">
+                <p className="workspace-kicker">Contexto desta aba</p>
+                <div className="mt-4 space-y-3 text-sm text-slate-300">
+                  <div className="detail-soft-row px-3 py-3">
+                    Caso: <span className="font-semibold text-white">{workspaceCase.title}</span>
+                  </div>
+                  <div className="detail-soft-row px-3 py-3">
+                    Processo: <span className="font-semibold text-white">{workspaceProcess?.processNumber ?? selectedProcess.label}</span>
+                  </div>
+                  <div className="detail-soft-row px-3 py-3">
+                    Saida: <span className="font-semibold text-white">{activeWorkspace.title}</span>
+                  </div>
+                </div>
+              </section>
 
-          <section className="workspace-panel p-5">
-            <p className="workspace-kicker">Fontes e alertas</p>
-            <div className="mt-4 space-y-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Consultas preparadas</p>
-                <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
-                  {sourceItems.map((adapter) => (
-                    <li key={adapter.sourceId}>
-                      - {adapter.sourceLabel}: {adapter.status === "consulted" ? "consultada" : adapter.status === "not_consulted" ? "preparada" : adapter.status === "failed" ? "falha" : "indisponivel"}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">Alertas</p>
-                <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-300">
-                  {sidebarAlerts.length > 0 ? (
-                    sidebarAlerts.map((alert) => <li key={alert}>- {alert}</li>)
-                  ) : (
-                    <li>- Nenhum alerta critico adicional aberto.</li>
-                  )}
-                </ul>
-              </div>
-            </div>
-          </section>
+              <section className="workspace-panel p-5">
+                <p className="workspace-kicker">Registros e revisao</p>
+                <div className="mt-4 space-y-3 text-sm text-slate-300">
+                  <div className="detail-soft-row px-3 py-3">
+                    Registros prontos: <span className="font-semibold text-white">{pieceRecords.length}</span>
+                  </div>
+                  <div className="detail-soft-row px-3 py-3">
+                    Historico da Clara: <span className="font-semibold text-white">{filteredRecords.length}</span>
+                  </div>
+                  <div className="detail-soft-row px-3 py-3">
+                    Revisao final: <span className="font-semibold text-white">Humana obrigatoria</span>
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
 
           {activeTab === "intimacao" && intimationAnalysis ? (
             <section className="workspace-panel p-5">

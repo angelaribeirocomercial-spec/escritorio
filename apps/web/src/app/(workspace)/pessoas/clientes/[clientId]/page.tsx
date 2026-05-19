@@ -211,6 +211,35 @@ function buildTextDraftEditorHref(input: {
   return `/editor-de-texto/meus-textos?${searchParams.toString()}`;
 }
 
+function buildCaseClaraHref(input: {
+  niche?: string | null;
+  clientId: string;
+  caseId?: string | null;
+  processId?: string | null;
+  documentId?: string | null;
+  tab?: string;
+}) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("niche", input.niche ?? "revisional");
+  searchParams.set("client", input.clientId);
+
+  if (input.caseId) {
+    searchParams.set("case", input.caseId);
+  }
+
+  if (input.processId) {
+    searchParams.set("process", input.processId);
+  }
+
+  if (input.documentId) {
+    searchParams.set("document", input.documentId);
+  }
+
+  searchParams.set("tab", input.tab ?? "analise");
+
+  return `/clara?${searchParams.toString()}`;
+}
+
 export default async function ClientDetailPage({
   params,
   searchParams
@@ -436,7 +465,14 @@ export default async function ClientDetailPage({
       <ClientCockpitFrame
         actionLinks={{
           attachDocuments: "documentos",
-          continueClaraHref: `/clara?niche=${activeCase?.niche ?? "revisional"}&client=${client.id}&case=${activeCase?.id ?? ""}&process=${relatedProcess?.id ?? ""}&document=${activeCaseDraftDocumentId ?? ""}&tab=analise`
+          continueClaraHref: buildCaseClaraHref({
+            niche: activeCase?.niche ?? "revisional",
+            clientId: client.id,
+            caseId: activeCase?.id ?? null,
+            processId: relatedProcess?.id ?? null,
+            documentId: activeCaseDraftDocumentId,
+            tab: "analise"
+          })
         }}
         activeCase={cockpitFrameActiveCase}
         caseDocuments={caseDocumentsForFrame}

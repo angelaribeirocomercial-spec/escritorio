@@ -767,10 +767,10 @@ export function ClientCockpitFrame({
                   )}
                 </div>
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                  {baseOverviewDocument && baseOverviewHref ? (
+                  {activeCase ? (
                     <Link
                       className="detail-link-button inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold text-center"
-                      href={baseOverviewHref}
+                      href={baseOverviewHref ?? `/documentos/enviar-arquivos?caseId=${activeCase.id}`}
                     >
                       Abrir documento-base
                     </Link>
