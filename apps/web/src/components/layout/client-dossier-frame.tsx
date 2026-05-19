@@ -793,12 +793,12 @@ export function ClientCockpitFrame({
                       Juntar documentos
                     </Link>
                   ) : null}
-                  <Link
+                  <a
                     className="detail-link-button inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold text-center"
                     href={actionLinks.continueClaraHref}
                   >
                     Abrir Clara Advogada Digital IA
-                  </Link>
+                  </a>
                 </div>
               </div>
             </div>

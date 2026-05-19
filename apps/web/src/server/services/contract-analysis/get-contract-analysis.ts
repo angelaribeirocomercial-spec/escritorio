@@ -2,6 +2,7 @@ import { ContractAnalysisRecord } from "@lexia/domain";
 import { notFound } from "next/navigation";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getBankingRevisionalCalculation } from "@/server/services/clara/get-banking-revisional-calculation";
 import { getBcbSgsConsultation } from "@/server/services/bcb/get-bcb-consultation";
@@ -863,6 +864,10 @@ export async function getContractAnalysisWorkspace(
 }
 
 export async function getContractAnalyses(): Promise<ContractAnalysisRecord[]> {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
   const session = await getWorkspaceSession();
 
   if (!session) {
@@ -887,6 +892,10 @@ export async function getContractAnalyses(): Promise<ContractAnalysisRecord[]> {
 export async function getContractAnalysisByDocumentId(
   documentId: string
 ): Promise<ContractAnalysisRecord | null> {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
   const session = await getWorkspaceSession();
 
   if (!session) {

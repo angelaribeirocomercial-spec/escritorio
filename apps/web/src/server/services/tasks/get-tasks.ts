@@ -7,6 +7,7 @@ import {
 
 import { getWorkspaceSession } from "@/lib/auth/session";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 export type TaskWithContext = TaskRecord & {
   client: ClientRecord;
@@ -253,6 +254,10 @@ export async function getTasks(filters?: {
   const session = await getWorkspaceSession();
 
   if (!session) {
+    return [];
+  }
+
+  if (!isSupabaseConfigured()) {
     return [];
   }
 

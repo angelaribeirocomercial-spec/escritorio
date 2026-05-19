@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { CLARA_GLOBAL_SEARCH_OPEN_EVENT } from "@/components/layout/workspace-global-search-events";
+
 type ClaraLandingHeroProps = {
   activeModeLabel: string;
   clientLabel: string;
@@ -39,6 +41,10 @@ export function ClaraLandingHero({
   summary,
   tabs
 }: ClaraLandingHeroProps) {
+  function openGlobalClaraChat() {
+    window.dispatchEvent(new CustomEvent(CLARA_GLOBAL_SEARCH_OPEN_EVENT));
+  }
+
   return (
     <section className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(26rem,0.95fr)]">
       <div className="workspace-panel p-6 lg:p-8">
@@ -92,12 +98,13 @@ export function ClaraLandingHero({
         </div>
 
         <div className="mt-10 flex flex-wrap gap-3">
-          <Link
+          <button
             className="rounded-[0.9rem] bg-[linear-gradient(90deg,#22c55e,#4ade80)] px-6 py-4 text-sm font-semibold text-slate-950 transition hover:brightness-105"
-            href="/clara?tab=analise#clara-workbench"
+            onClick={openGlobalClaraChat}
+            type="button"
           >
-            Abrir fluxo da Clara
-          </Link>
+            Abrir chat da Clara
+          </button>
           <Link
             className="rounded-[0.9rem] border border-white/10 px-6 py-4 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06]"
             href="#clara-workbench"
@@ -144,7 +151,11 @@ export function ClaraLandingHero({
               </div>
             </div>
 
-            <div className="rounded-[1.4rem] border border-white/15 bg-[#0b1220]/95 p-4 shadow-[0_22px_60px_rgba(2,6,23,0.35)]">
+            <button
+              className="w-full rounded-[1.4rem] border border-white/15 bg-[#0b1220]/95 p-4 text-left shadow-[0_22px_60px_rgba(2,6,23,0.35)] transition hover:border-cyan-200/30"
+              onClick={openGlobalClaraChat}
+              type="button"
+            >
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-white">Analisando processo 0001234-56.2024.8.26.0100...</p>
                 <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-100">
@@ -175,7 +186,10 @@ export function ClaraLandingHero({
               <p className="mt-4 text-sm leading-6 text-slate-300">
                 Deseja que eu redija um rascunho da contestacao?
               </p>
-            </div>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                Clique para abrir o chat real da Clara global
+              </p>
+            </button>
 
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <span className="h-2 w-2 rounded-full bg-amber-300" />

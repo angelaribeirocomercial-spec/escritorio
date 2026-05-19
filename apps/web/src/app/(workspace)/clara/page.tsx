@@ -3,7 +3,7 @@
 import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { ClaraConversationCard } from "@/components/layout/clara-conversation-card";
-import { WorkspaceGlobalSearch } from "@/components/layout/workspace-global-search";
+import { ClaraLandingHero } from "@/components/layout/clara-landing-hero";
 import { WorkspacePage } from "@/components/layout/workspace-page";
 import {
   commitClaraExecutionAction,
@@ -40,7 +40,6 @@ import { getClaraWorkspace } from "@/server/services/clara/get-clara-workspace";
 import { getJurisprudenceConsultation } from "@/server/services/jurisprudence/get-jurisprudence-consultation";
 import type { JudicialProcessWithRelations } from "@/server/services/processes/get-processes";
 import type { TaskWithContext } from "@/server/services/tasks/get-tasks";
-import { getWorkspaceShellSearchEntries } from "@/server/services/workspace/get-workspace-shell-search";
 
 const tabItems = [
   { id: "analise", label: "Triagem" },
@@ -259,204 +258,6 @@ const globalAreaCopy: Record<
     handoff: "Nada sai daqui sem revisao humana; quando houver caso real, o historico definitivo continua no dossie."
   }
 };
-
-function renderGlobalAreaWorkbench(activeTab: TabId, options?: { summary?: string }) {
-  switch (activeTab) {
-    case "intimacao":
-      return (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
-              Leitura do ato
-            </p>
-            <h3 className="mt-3 text-lg font-semibold text-white">Painel de prazo e resposta</h3>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Identifique o prazo util, o ato exigido e o nivel de urgencia.</p>
-              <p>- Separe o que e mera ciencia do que exige providencia formal.</p>
-              <p>- Encaminhe a resposta para Peça quando houver manifestacao a protocolar.</p>
-            </div>
-          </article>
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">
-              Saidas desta area
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Prazo mapeado com data de vencimento.</p>
-              <p>- Risco operacional se nada for feito.</p>
-              <p>- Resposta recomendada para revisao humana.</p>
-            </div>
-          </article>
-        </div>
-      );
-    case "pecas":
-      return (
-        <div className="grid gap-4 xl:grid-cols-3">
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
-              Estrutura
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Fatos relevantes.</p>
-              <p>- Fundamentos juridicos.</p>
-              <p>- Pedidos e cautelas.</p>
-            </div>
-          </article>
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
-              Redacao
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Rascunho revisavel pela advogada.</p>
-              <p>- Ajuste fino de tom, tese e pedidos.</p>
-              <p>- Preparacao para editor e aprovacao humana.</p>
-            </div>
-          </article>
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
-              Governanca
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Nada sai sem revisao humana.</p>
-              <p>- O dossie ancora a versao final quando houver caso real.</p>
-              <p>- A Clara global prepara a peca, nao publica sozinha.</p>
-            </div>
-          </article>
-        </div>
-      );
-    case "jurisprudencia":
-      return (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
-              Frente de pesquisa
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Defina tese, tribunal e recorte temporal.</p>
-              <p>- Converta a tese em linguagem de busca objetiva.</p>
-              <p>- Traga consulta pronta para citacao ou aprofundamento.</p>
-            </div>
-          </article>
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">
-              Resultado esperado
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Precedentes aproveitaveis.</p>
-              <p>- Alertas sobre citacao insegura.</p>
-              <p>- Ponte direta para Estrategia ou Peça.</p>
-            </div>
-          </article>
-        </div>
-      );
-    case "checklist":
-      return (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
-              Radar de pendencias
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- O que falta para destravar o trabalho.</p>
-              <p>- O que depende de documento, prazo ou pessoa.</p>
-              <p>- Qual bloqueio vem primeiro na fila de resolucao.</p>
-            </div>
-          </article>
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
-              Proximo marco
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Fase atual resumida.</p>
-              <p>- Proxima cobranca operacional.</p>
-              <p>- Encaminhamento para o dossie quando o acompanhamento for do caso.</p>
-            </div>
-          </article>
-        </div>
-      );
-    case "proximos-passos":
-      return (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">
-              Mesa de decisao
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Compare caminhos possiveis antes de agir.</p>
-              <p>- Meça urgencia, prova e custo de atraso.</p>
-              <p>- Saia com a proxima acao priorizada e defendida.</p>
-            </div>
-          </article>
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
-              Resultado estrategico
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Recomendacao principal.</p>
-              <p>- Alternativas com trade-offs.</p>
-              <p>- Handoff para Peça, Acompanhamento ou dossie.</p>
-            </div>
-          </article>
-        </div>
-      );
-    case "comparador":
-      return (
-        <div className="grid gap-4 xl:grid-cols-3">
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
-              Conferencia
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Compare versoes, pedidos e fundamentos.</p>
-              <p>- Marque pontos incoerentes ou omitidos.</p>
-            </div>
-          </article>
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">
-              Risco
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Identifique onde a tese perdeu consistencia.</p>
-              <p>- Separe risco juridico de ajuste redacional.</p>
-            </div>
-          </article>
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
-              Aprovacao
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Consolidacao final para revisao humana.</p>
-              <p>- Devolucao para ajuste se algo falhar.</p>
-            </div>
-          </article>
-        </div>
-      );
-    case "analise":
-    default:
-      return (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
-              Triagem inicial
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- Classifique o pedido antes de entrar em caso, processo ou documento.</p>
-              <p>- Separe duvida avulsa, leitura pontual e trabalho que exige contexto real.</p>
-              <p>- Decida se a Clara resolve aqui ou se precisa descer para o dossie.</p>
-            </div>
-          </article>
-          <article className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
-              Sinal atual da Clara
-            </p>
-            <p className="mt-4 text-sm leading-6 text-slate-300">
-              {options?.summary ??
-                "A Triagem agora fica restrita ao enquadramento inicial do trabalho, sem carregar os blocos operacionais das outras areas."}
-            </p>
-          </article>
-        </div>
-      );
-  }
-}
 
 type SearchParams = {
   tab?: string;
@@ -791,243 +592,37 @@ function renderControlledModeConversationGuide(params: {
   );
 }
 
-function renderGlobalClaraLanding(
-  activeTab: TabId,
-  options: {
-    searchEntries: Awaited<ReturnType<typeof getWorkspaceShellSearchEntries>>;
-  }
-) {
-  const activeArea = globalAreaCopy[activeTab];
-
+function renderGlobalClaraLanding(activeTab: TabId) {
   return (
     <div className="space-y-6">
-      <section className="workspace-panel p-6 lg:p-8">
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_24rem]">
-          <div className="max-w-4xl">
-            <p className="workspace-kicker">CLARA GLOBAL</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-5xl">
-              Clara Advogada Digital IA
-            </h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300">
-              Chat real da Clara para buscar qualquer dado do sistema, tirar duvidas de direito
-              bancario e abrir documentos ou casos sem depender de um contexto obrigatorio.
-            </p>
-            <div className="mt-6 rounded-[10px] border border-white/10 bg-white/[0.03] p-5">
-              <WorkspaceGlobalSearch entries={options.searchEntries} />
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
-                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                  Busca interna: <span className="font-semibold text-white">ativa</span>
-                </div>
-                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                  Modo juridico: <span className="font-semibold text-white">bancario</span>
-                </div>
-                <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                  Entrada sugerida: <span className="font-semibold text-white">{activeArea.title}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="workspace-soft-card p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
-              Conversas que a Clara global deve resolver
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <p>- “Encontre o processo do Carlos no TJMG.”</p>
-              <p>- “Quais clientes estao travados por documento faltante?”</p>
-              <p>- “Explique a diferenca entre CET e taxa contratual.”</p>
-              <p>- “Analise este documento sem abrir um caso ainda.”</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[19rem_minmax(0,1fr)_20rem]">
-        <aside className="workspace-panel p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="workspace-kicker">Areas</p>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                A Clara global orienta a conversa e aponta para a frente correta antes de abrir um caso.
-              </p>
-            </div>
-            <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-300">
-              7 frentes
-            </span>
-          </div>
-          <div className="mt-4 space-y-3">
-            {tabItems.map((item, index) => {
-              const area = globalAreaCopy[item.id];
-              const active = item.id === activeTab;
-
-              return (
-                <Link
-                  key={item.id}
-                  className={`block rounded-[8px] border px-4 py-4 transition ${
-                    active
-                      ? "border-emerald-300/30 bg-emerald-300/10 shadow-soft"
-                      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
-                  }`}
-                  href={`/clara?tab=${item.id}#clara-global-workspace`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                        active
-                          ? "bg-[linear-gradient(90deg,#22c55e,#4ade80)] text-slate-950"
-                          : "border border-white/10 bg-black/20 text-slate-200"
-                      }`}
-                    >
-                      {index + 1}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-white">{item.label}</p>
-                      <p className="mt-1 text-xs leading-5 text-slate-400">{area.strapline}</p>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </aside>
-
-        <div className="space-y-6" id="clara-global-workspace">
-          <section className="workspace-panel p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="workspace-kicker">Frente sugerida</p>
-                <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
-                  {activeArea.title}
-                </h2>
-                <p className="mt-3 text-sm leading-7 text-slate-300">
-                  {activeArea.summary}
-                </p>
-              </div>
-              <div className="rounded-[8px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm text-slate-300 lg:max-w-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Missao da area
-                </p>
-                <p className="mt-2 leading-6 text-white">{activeArea.mission}</p>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <article className="workspace-soft-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
-                  {activeArea.queueTitle}
-                </p>
-                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-                  {activeArea.queue.map((item) => (
-                    <li key={item}>- {item}</li>
-                  ))}
-                </ul>
-              </article>
-              <article className="workspace-soft-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">
-                  Entregaveis
-                </p>
-                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-                  {activeArea.outputs.map((item) => (
-                    <li key={item}>- {item}</li>
-                  ))}
-                </ul>
-              </article>
-              <article className="workspace-soft-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
-                  Handoff
-                </p>
-                <p className="mt-3 text-sm leading-6 text-slate-300">{activeArea.handoff}</p>
-              </article>
-            </div>
-          </section>
-
-          <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-            <div className="workspace-panel p-5">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="workspace-kicker">Mesa operacional</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">
-                    A Clara global trabalha por frente funcional, nao por um layout unico que so
-                    mostra cards informativos. A busca acima e a entrada real da conversa.
-                  </p>
-                </div>
-                <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-300">
-                  Global
-                </span>
-              </div>
-
-              <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                <article className="workspace-soft-card p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100">
-                    Prompts de partida
-                  </p>
-                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-                    {activeArea.prompts.map((item) => (
-                      <li key={item}>- {item}</li>
-                    ))}
-                  </ul>
-                </article>
-                <article className="workspace-soft-card p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Como usar esta area
-                  </p>
-                  <div className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
-                    <p>1. Abra a frente funcional correta pela coluna lateral.</p>
-                    <p>2. Use a Clara para organizar leitura, decisao e saida dessa area.</p>
-                    <p>3. So desca para o dossie quando houver caso real para ancorar.</p>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <Link
-                      className="rounded-[6px] bg-[linear-gradient(90deg,#22c55e,#4ade80)] px-4 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-105"
-                      href={`/clara?tab=${activeTab}#clara-global-workspace`}
-                    >
-                      Fixar area ativa
-                    </Link>
-                    <Link
-                      className="rounded-[6px] border border-white/10 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06]"
-                      href="/pessoas/clientes"
-                    >
-                      Abrir dossies do escritorio
-                    </Link>
-                  </div>
-                </article>
-              </div>
-            </div>
-
-            <aside className="space-y-4">
-              <section className="workspace-panel p-5">
-                <p className="workspace-kicker">Guardrails</p>
-                <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
-                  {[
-                    "A Clara global abre sem cliente, caso, processo ou documento obrigatorios.",
-                    "O dossie continua sendo a Clara contextual do caso.",
-                    "Quando a conversa exigir contexto real, a Clara deve apontar para o caso correto."
-                  ].map((item) => (
-                    <li key={item}>- {item}</li>
-                  ))}
-                </ul>
-              </section>
-
-              <section className="workspace-panel p-5">
-                <p className="workspace-kicker">Atencoes</p>
-                <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
-                  {[
-                    "Toda saida juridica segue sujeita a revisao humana obrigatoria.",
-                    "Se a demanda ja for de um caso real, o historico definitivo fica no dossie."
-                  ].map((item) => (
-                    <li key={item}>- {item}</li>
-                  ))}
-                </ul>
-              </section>
-            </aside>
-          </section>
-        </div>
-      </section>
+      <ClaraLandingHero
+        activeModeLabel={tabItems.find((item) => item.id === activeTab)?.label ?? "Triagem"}
+        caseLabel="Fluxo global do escritorio"
+        clientLabel="Clara global"
+        documentsMissing={[
+          "Leituras avulsas sem documento vinculado",
+          "Buscas amplas por tese, prazo ou orientacao"
+        ]}
+        factsConfirmed={[
+          "Clara global funciona sem cliente ou caso obrigatorios.",
+          "A sessao lateral serve para perguntas gerais, leituras avulsas e buscas internas.",
+          "A Clara contextual do caso continua no dossie, com cliente e caso resolvidos."
+        ]}
+        processLabel="Sem processo obrigatorio"
+        risks={[
+          "Toda orientacao juridica segue sujeita a revisao humana.",
+          "Para respostas ancoradas em um caso real, use a Clara do dossie."
+        ]}
+        summary="A Clara global e a porta inteligente do sistema: recebe perguntas soltas, ajuda em leituras avulsas e orienta o proximo passo antes de entrar no contexto detalhado de cliente e caso."
+        tabs={tabItems}
+      />
     </div>
   );
 }
 
 function renderContextualClaraPendingDocument(params: {
   activeTab: TabId;
+  niche: NicheId;
   clientId: string;
   clientName: string;
   caseId: string;
@@ -1054,17 +649,17 @@ function renderContextualClaraPendingDocument(params: {
             const active = item.id === params.activeTab;
 
             return (
-              <Link
+              <a
                 key={item.id}
                 className={`rounded-[4px] px-4 py-3 text-sm font-semibold transition ${
                   active
                     ? "bg-[linear-gradient(90deg,#22c55e,#4ade80)] text-slate-950 shadow-soft"
                     : "clara-secondary-button border border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]"
                 }`}
-                href={`/clara?niche=revisional&client=${encodeURIComponent(params.clientId)}&case=${encodeURIComponent(params.caseId)}&tab=${item.id}`}
+                href={`/clara?niche=${encodeURIComponent(params.niche)}&client=${encodeURIComponent(params.clientId)}&case=${encodeURIComponent(params.caseId)}&tab=${item.id}`}
               >
                 {item.label}
-              </Link>
+              </a>
             );
           })}
         </div>
@@ -1139,9 +734,7 @@ export default async function ClaraPage({
   const activeTab = isTabId(searchParams?.tab) ? searchParams.tab : "analise";
 
   if (!activeNiche) {
-    const searchEntries = await getWorkspaceShellSearchEntries().catch(() => []);
-
-    return renderGlobalClaraLanding(activeTab, { searchEntries });
+    return renderGlobalClaraLanding(activeTab);
   }
 
   if (activeNiche && (!searchParams?.client || !searchParams?.case)) {
@@ -1245,6 +838,18 @@ export default async function ClaraPage({
       tab: activeTab
     }).catch(() => null);
 
+    if (structuredCoreFallback && !structuredCoreFallback.context.selectedDocument) {
+      return renderContextualClaraPendingDocument({
+        activeTab,
+        niche: activeNiche,
+        clientId: structuredCoreFallback.context.client.id,
+        clientName: structuredCoreFallback.context.client.fullName,
+        caseId: structuredCoreFallback.context.bankingCase.id,
+        caseTitle: structuredCoreFallback.context.bankingCase.title,
+        processLabel: structuredCoreFallback.context.process?.processNumber ?? "Pendente"
+      });
+    }
+
     if (structuredCoreFallback) {
       const fallbackStructuredAnalysis = buildStructuredCoreFallbackContextualAnalysis({
         structuredCore: structuredCoreFallback,
@@ -1288,6 +893,18 @@ export default async function ClaraPage({
             taskType: contextualTaskType
           })
         : null);
+
+    if (fallbackContextualAnalysis && !fallbackContextualAnalysis.contextSnapshot.documentId) {
+      return renderContextualClaraPendingDocument({
+        activeTab,
+        niche: activeNiche,
+        clientId: fallbackContextualAnalysis.contextSnapshot.clientId,
+        clientName: fallbackContextualAnalysis.contextSnapshot.clientId,
+        caseId: fallbackContextualAnalysis.contextSnapshot.caseId,
+        caseTitle: fallbackContextualAnalysis.contextSnapshot.caseId,
+        processLabel: fallbackContextualAnalysis.contextSnapshot.processId ?? "Pendente"
+      });
+    }
 
     if (fallbackContextualAnalysis) {
       return (
@@ -1339,6 +956,7 @@ export default async function ClaraPage({
   if (activeNiche && !hasResolvedDocument) {
     return renderContextualClaraPendingDocument({
       activeTab,
+      niche: activeNiche,
       clientId: clara.structuredCore.context.client.id,
       clientName: clara.structuredCore.context.client.fullName,
       caseId: clara.structuredCore.context.bankingCase.id,
@@ -2734,7 +2352,7 @@ export default async function ClaraPage({
             const active = item.id === activeTab;
 
             return (
-              <Link
+              <a
                 key={item.id}
                 className={`rounded-[4px] px-4 py-3 text-sm font-semibold transition ${
                   active
@@ -2744,7 +2362,7 @@ export default async function ClaraPage({
                 href={`${claraPageBaseHref}&tab=${item.id}#clara-workbench`}
               >
                 {item.label}
-              </Link>
+              </a>
             );
           })}
         </div>
