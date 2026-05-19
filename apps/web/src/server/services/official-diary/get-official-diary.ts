@@ -7,9 +7,18 @@ import {
 } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getCases } from "@/server/services/cases/get-cases";
 import { getClients } from "@/server/services/clients/get-clients";
+import {
+  DEMO_CASE_ID,
+  DEMO_CASE_RECORD,
+  DEMO_CLIENT_ID,
+  DEMO_CLIENT_RECORD,
+  DEMO_PROCESS_ID,
+  DEMO_PROCESS_RECORD
+} from "@/server/services/demo/demo-workspace-data";
 import { getProcesses } from "@/server/services/processes/get-processes";
 
 export type OfficialDiaryPublicationWithRelations = OfficialDiaryPublicationRecord & {
@@ -67,6 +76,87 @@ const OFFICIAL_DIARY_PUBLICATION_SELECT = `
   suggested_task_description,
   archived_at
 `;
+
+const DEMO_OFFICIAL_DIARY_PUBLICATIONS: OfficialDiaryPublicationWithRelations[] = [
+  {
+    id: "official-diary-demo-1",
+    processId: DEMO_PROCESS_ID,
+    caseId: DEMO_CASE_ID,
+    clientId: DEMO_CLIENT_ID,
+    publishedAt: "2026-05-06T08:30:00.000Z",
+    sourceCourt: "TJRJ",
+    sourceLabel: "DJERJ - Caderno Judicial",
+    title: "Intimacao para manifestacao sobre documentos bancarios complementares",
+    rawContext:
+      "Fica a parte autora intimada a se manifestar, no prazo legal, sobre os documentos bancarios juntados aos autos e eventual interesse em audiencia de conciliacao.",
+    bankingSummary:
+      "A publicacao exige leitura processual e cruzamento com os comprovantes PIX e protocolos bancarios ja reunidos no caso.",
+    requiredAction: "Preparar manifestacao e revisar anexos bancarios",
+    urgency: "high",
+    responsibleLawyer: DEMO_PROCESS_RECORD.responsibleLawyer,
+    suggestedTaskTitle: "Montar manifestacao sobre documentos bancarios do caso Carlos Henrique Duarte",
+    suggestedTaskDescription:
+      "Revisar a publicacao do DJERJ, validar os anexos bancarios e preparar a minuta de manifestacao para conferencia humana.",
+    client: DEMO_CLIENT_RECORD,
+    bankingCase: DEMO_CASE_RECORD,
+    judicialProcess: DEMO_PROCESS_RECORD
+  },
+  {
+    id: "official-diary-demo-archived-1",
+    processId: DEMO_PROCESS_ID,
+    caseId: DEMO_CASE_ID,
+    clientId: DEMO_CLIENT_ID,
+    publishedAt: "2026-05-03T11:20:00.000Z",
+    sourceCourt: "TJRJ",
+    sourceLabel: "DJERJ - Caderno Judicial",
+    title: "Publicacao arquivada apos triagem operacional inicial",
+    rawContext:
+      "Registro arquivado para manter o historico do acompanhamento e demonstrar a lixeira operacional do Diario Oficial.",
+    bankingSummary:
+      "A publicacao foi mantida apenas para historico e nao demanda acao operacional adicional.",
+    requiredAction: "Historico arquivado",
+    urgency: "low",
+    responsibleLawyer: DEMO_PROCESS_RECORD.responsibleLawyer,
+    suggestedTaskTitle: "Sem tarefa adicional para publicacao arquivada",
+    suggestedTaskDescription:
+      "Item arquivado apenas para historico de triagem do Diario Oficial no tenant demo.",
+    archivedAt: "2026-05-04T09:15:00.000Z",
+    client: DEMO_CLIENT_RECORD,
+    bankingCase: DEMO_CASE_RECORD,
+    judicialProcess: DEMO_PROCESS_RECORD
+  }
+];
+
+function isDemoTenant(tenantSlug: string): boolean {
+  return tenantSlug === "clara-bancaria-demo";
+}
+
+function isSupabasePublicConfigAvailable(): boolean {
+  return (
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL) != null &&
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY) != null
+  );
+}
+
+function getDemoOfficialDiaryPublications(includeArchived: boolean) {
+  return DEMO_OFFICIAL_DIARY_PUBLICATIONS.filter((publication) =>
+    includeArchived ? publication.archivedAt != null : publication.archivedAt == null
+  );
+}
+
+async function hasRealOfficialDiaryPublications(tenantId: string) {
+  const supabase = getSupabaseAdminClient();
+  const { count, error } = await supabase
+    .from("official_diary_publications")
+    .select("id", { count: "exact", head: true })
+    .eq("tenant_id", tenantId);
+
+  if (error) {
+    throw error;
+  }
+
+  return (count ?? 0) > 0;
+}
 
 function mapUrgencyToPriority(urgency: OfficialDiaryPublicationRecord["urgency"]): TaskPriority {
   switch (urgency) {
@@ -127,7 +217,17 @@ export async function getOfficialDiaryPublications(): Promise<
     throw new Error("Workspace session is required to load official diary publications.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabasePublicConfigAvailable()) {
+    if (demoTenant) {
+      return getDemoOfficialDiaryPublications(false);
+    }
+
+    throw new Error("Supabase public configuration is required to load official diary publications.");
+  }
+
+  const supabase = demoTenant ? getSupabaseAdminClient() : getSupabaseServerClient();
   const [{ data, error }, clients, cases, processes] = await Promise.all([
     supabase
       .from("official_diary_publications")
@@ -141,12 +241,16 @@ export async function getOfficialDiaryPublications(): Promise<
   ]);
 
   if (error) {
+    if (demoTenant) {
+      return getDemoOfficialDiaryPublications(false);
+    }
+
     throw new Error(
       `Failed to load official diary publications for tenant ${session.workspace.tenant.id}.`
     );
   }
 
-  return (data ?? [])
+  const publications = (data ?? [])
     .map((row) =>
       mapOfficialDiaryPublicationRow(row as OfficialDiaryPublicationRow, {
         cases,
@@ -155,6 +259,12 @@ export async function getOfficialDiaryPublications(): Promise<
       })
     )
     .filter((row): row is OfficialDiaryPublicationWithRelations => row !== null);
+
+  if (demoTenant && publications.length === 0) {
+    return getDemoOfficialDiaryPublications(false);
+  }
+
+  return publications;
 }
 
 export async function getArchivedOfficialDiaryPublications(): Promise<
@@ -166,7 +276,19 @@ export async function getArchivedOfficialDiaryPublications(): Promise<
     throw new Error("Workspace session is required to load archived official diary publications.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabasePublicConfigAvailable()) {
+    if (demoTenant) {
+      return getDemoOfficialDiaryPublications(true);
+    }
+
+    throw new Error(
+      "Supabase public configuration is required to load archived official diary publications."
+    );
+  }
+
+  const supabase = demoTenant ? getSupabaseAdminClient() : getSupabaseServerClient();
   const [{ data, error }, clients, cases, processes] = await Promise.all([
     supabase
       .from("official_diary_publications")
@@ -180,12 +302,16 @@ export async function getArchivedOfficialDiaryPublications(): Promise<
   ]);
 
   if (error) {
+    if (demoTenant) {
+      return getDemoOfficialDiaryPublications(true);
+    }
+
     throw new Error(
       `Failed to load archived official diary publications for tenant ${session.workspace.tenant.id}.`
     );
   }
 
-  return (data ?? [])
+  const publications = (data ?? [])
     .map((row) =>
       mapOfficialDiaryPublicationRow(row as OfficialDiaryPublicationRow, {
         cases,
@@ -194,6 +320,18 @@ export async function getArchivedOfficialDiaryPublications(): Promise<
       })
     )
     .filter((row): row is OfficialDiaryPublicationWithRelations => row !== null);
+
+  if (demoTenant && publications.length === 0) {
+    const hasRealPublications = await hasRealOfficialDiaryPublications(session.workspace.tenant.id);
+
+    if (hasRealPublications) {
+      return [];
+    }
+
+    return getDemoOfficialDiaryPublications(true);
+  }
+
+  return publications;
 }
 
 export async function getOfficialDiaryPublicationById(

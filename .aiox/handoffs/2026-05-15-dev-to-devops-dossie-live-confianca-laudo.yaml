@@ -1,0 +1,21 @@
+from: "@dev"
+to: "@devops"
+date: "2026-05-15"
+story: "18.47"
+title: "Uniformizar confianca e laudo no dossie publicado"
+summary:
+  - "Confianca operacional do dossie agora aparece sempre com fallback honesto quando a analise ainda nao estiver completa."
+  - "Os labels das abas foram normalizados para o live sem mojibake."
+  - "A aba pericial passou a aparecer como Pericial (Laudo) no dossie publicado."
+quality_gates:
+  lint: "passed"
+  typecheck: "passed"
+  test: "passed"
+  build: "passed"
+files:
+  - "apps/web/src/components/layout/client-dossier-frame.tsx"
+  - "apps/web/src/app/(workspace)/pessoas/clientes/[clientId]/page.tsx"
+  - "docs/stories/18.47.uniformizar-confianca-e-laudo-no-dossie-publicado.md"
+notes:
+  - "Pacote sem migration."
+  - "Validacao pos-deploy deve reabrir cl-002 autenticado no live."

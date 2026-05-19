@@ -1,7 +1,12 @@
 import { BankingCaseRecord, ClientRecord } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  DEMO_CASE_RECORD,
+  DEMO_CLIENT_ID,
+  DEMO_CASE_ID
+} from "@/server/services/demo/demo-workspace-data";
 
 type BankingCaseWithClient = BankingCaseRecord & {
   client: ClientRecord;
@@ -10,17 +15,17 @@ type BankingCaseWithClient = BankingCaseRecord & {
 type ClientRow = {
   id: string;
   full_name: string;
-  document_id: string;
-  email: string;
+  document_id: string | null;
+  email: string | null;
   phone: string;
-  whatsapp: string;
+  whatsapp: string | null;
   address: string;
-  lead_source: string;
-  bank_name: string;
+  lead_source: string | null;
+  bank_name: string | null;
   service_status: ClientRecord["serviceStatus"];
   signed_contract: boolean;
   legal_viability_score: number;
-  fees_label: string;
+  fees_label: string | null;
   documents_sent: number;
   notes: string;
   ia_context: string;
@@ -33,9 +38,9 @@ type CaseRow = {
   id: string;
   client_id: string;
   title: string;
-  bank_name: string;
+  bank_name: string | null;
   process_number: string;
-  contract_number: string;
+  contract_number: string | null;
   claim_type: string;
   stage: string;
   status: BankingCaseRecord["status"];
@@ -55,21 +60,33 @@ type CaseRow = {
   client: ClientRow | ClientRow[] | null;
 };
 
+function isDemoTenant(tenantSlug: string): boolean {
+  return tenantSlug === "clara-bancaria-demo";
+}
+
+function isSupabaseConfigured() {
+  return (
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL) != null &&
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY) != null &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY != null
+  );
+}
+
 function mapClientRow(row: ClientRow): ClientRecord {
   return {
     id: row.id,
     fullName: row.full_name,
-    documentId: row.document_id,
-    email: row.email,
+    documentId: row.document_id ?? "",
+    email: row.email ?? "",
     phone: row.phone,
-    whatsapp: row.whatsapp,
+    whatsapp: row.whatsapp ?? "",
     address: row.address,
-    leadSource: row.lead_source,
-    bankName: row.bank_name,
+    leadSource: row.lead_source ?? "",
+    bankName: row.bank_name ?? "",
     serviceStatus: row.service_status,
     signedContract: row.signed_contract,
     legalViabilityScore: row.legal_viability_score,
-    feesLabel: row.fees_label,
+    feesLabel: row.fees_label ?? "",
     documentsSent: row.documents_sent,
     notes: row.notes,
     iaContext: row.ia_context,
@@ -90,9 +107,9 @@ function mapCaseRow(row: CaseRow): BankingCaseWithClient | null {
     id: row.id,
     clientId: row.client_id,
     title: row.title,
-    bankName: row.bank_name,
+    bankName: row.bank_name ?? "",
     processNumber: row.process_number,
-    contractNumber: row.contract_number,
+    contractNumber: row.contract_number ?? "",
     claimType: row.claim_type,
     stage: row.stage,
     status: row.status,
@@ -177,10 +194,19 @@ export async function getCases(filters?: {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load cases.");
+    return [];
   }
 
-  const supabase = getSupabaseServerClient();
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabaseConfigured()) {
+    const matchesClient = !filters?.clientId || filters.clientId === DEMO_CLIENT_ID;
+    const matchesCase = !filters?.caseId || filters.caseId === DEMO_CASE_ID;
+
+    return demoTenant && matchesClient && matchesCase ? [DEMO_CASE_RECORD] : [];
+  }
+
+  const supabase = getSupabaseAdminClient();
   let query = supabase
     .from("cases")
     .select(CASE_SELECT)
@@ -197,15 +223,44 @@ export async function getCases(filters?: {
   const { data, error } = await query.order("process_number", { ascending: true });
 
   if (error) {
-    throw new Error(`Failed to load cases for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load cases for tenant ${session.workspace.tenant.id}.`);
+
+    if (demoTenant) {
+      const matchesClient = !filters?.clientId || filters.clientId === DEMO_CLIENT_ID;
+      const matchesCase = !filters?.caseId || filters.caseId === DEMO_CASE_ID;
+
+      return matchesClient && matchesCase ? [DEMO_CASE_RECORD] : [];
+    }
+
+    return [];
   }
 
-  return (data ?? [])
+  const cases = (data ?? [])
     .map((row) => mapCaseRow(row as CaseRow))
     .filter((row): row is BankingCaseWithClient => row !== null);
+
+  if (cases.length === 0 && demoTenant) {
+    const matchesClient = !filters?.clientId || filters.clientId === DEMO_CLIENT_ID;
+    const matchesCase = !filters?.caseId || filters.caseId === DEMO_CASE_ID;
+
+    return matchesClient && matchesCase ? [DEMO_CASE_RECORD] : [];
+  }
+
+  return cases;
 }
 
 export async function getCaseById(caseId: string): Promise<BankingCaseWithClient | null> {
+  const session = await getWorkspaceSession();
+
+  if (
+    session &&
+    !isSupabaseConfigured() &&
+    isDemoTenant(session.workspace.tenant.slug) &&
+    caseId === DEMO_CASE_ID
+  ) {
+    return DEMO_CASE_RECORD;
+  }
+
   const [bankingCase] = await getCases({ caseId });
 
   return bankingCase ?? null;

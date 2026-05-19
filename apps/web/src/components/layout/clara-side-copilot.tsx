@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const contextualFixtures = {
-  dashboard: {
+  crm: {
     eyebrow: "Contexto atual",
-    title: "Leitura executiva da carteira",
-    prompt: "Resuma os gargalos mais urgentes da operacao bancaria desta semana.",
+    title: "Leitura de entrada e relacionamento",
+    prompt: "Resuma os gargalos mais urgentes da jornada de CRM desta semana.",
     conclusion:
-      "A operacao concentra urgencia em tarefas ligadas a tutela, pendencias documentais e consolidacao de tese.",
-    actions: ["Ver tarefas urgentes", "Revisar clientes travados", "Gerar resumo da semana"]
+      "A entrada concentra urgencia em triagem, pendencias documentais e passagem para cliente e caso ativo.",
+    actions: ["Ver triagem pendente", "Revisar clientes travados", "Gerar resumo da semana"]
   },
   clientes: {
     eyebrow: "Contexto atual",
@@ -100,14 +100,6 @@ const contextualFixtures = {
       "A triagem do Diario Oficial deve destacar urgencia, vinculo processual e encaminhamento operacional.",
     actions: ["Revisar publicacoes", "Abrir palavras-chave", "Gerar tarefa"]
   },
-  andamentos: {
-    eyebrow: "Contexto atual",
-    title: "Monitoramento processual continuo",
-    prompt: "Mostre os andamentos recentes que mudam prioridade ou exigem nova medida.",
-    conclusion:
-      "Os andamentos precisam conectar leitura juridica, risco e proxima acao dentro do fluxo operacional.",
-    actions: ["Abrir monitoramentos", "Ler andamentos automaticos", "Priorizar riscos"]
-  },
   site: {
     eyebrow: "Contexto atual",
     title: "Operacao institucional do site",
@@ -143,7 +135,8 @@ const contextualFixtures = {
 } as const;
 
 function getContextKey(pathname: string) {
-  if (pathname.startsWith("/dashboard")) return "dashboard";
+  if (pathname.startsWith("/dashboard")) return "crm";
+  if (pathname.startsWith("/crm")) return "crm";
   if (pathname.startsWith("/processos")) return "processos";
   if (pathname.startsWith("/pessoas")) return "pessoas";
   if (pathname.startsWith("/equipe")) return "equipe";
@@ -152,7 +145,7 @@ function getContextKey(pathname: string) {
   if (pathname.startsWith("/relatorios")) return "relatorios";
   if (pathname.startsWith("/estatisticas")) return "estatisticas";
   if (pathname.startsWith("/diario-oficial")) return "diarioOficial";
-  if (pathname.startsWith("/andamentos")) return "andamentos";
+  if (pathname.startsWith("/andamentos")) return "processos";
   if (pathname.startsWith("/site")) return "site";
   if (pathname.startsWith("/editor-de-texto")) return "editor";
   if (pathname.startsWith("/clientes")) return "pessoas";
@@ -180,7 +173,7 @@ export function ClaraSideCopilot() {
           className="detail-link-button px-4 py-3 text-sm font-semibold"
           href="/clara"
         >
-          Abrir fluxo da Clara
+          Abrir na Clara
         </Link>
       </div>
       <div className="mt-4 flex flex-wrap gap-2">

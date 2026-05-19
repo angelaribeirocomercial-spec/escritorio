@@ -24,7 +24,7 @@ export function WorkspaceStatePanel({
   footer
 }: WorkspaceStatePanelProps) {
   return (
-    <section className={`workspace-panel rounded-[6px] border p-5 ${toneClasses[tone]}`}>
+    <section className={`workspace-state-panel workspace-panel rounded-[6px] border p-5 ${toneClasses[tone]}`}>
       <p className="text-sm font-semibold text-white">{title}</p>
       <p className="mt-2 text-sm leading-6">{description}</p>
       {actionHref && actionLabel ? (

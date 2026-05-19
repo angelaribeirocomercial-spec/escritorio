@@ -1,90 +1,56 @@
-import { BANKING_NICHES } from "@lexia/domain";
-
 import { createBankingIntakeAction } from "@/app/(workspace)/novo-atendimento-bancario/actions";
 import { WorkspacePage } from "@/components/layout/workspace-page";
-import {
-  buildPersistedBankingCaseLifecycle,
-  getBankingCaseWorkflow
-} from "@/server/services/cases/get-banking-case-workflow";
-
-const previewLifecycle = buildPersistedBankingCaseLifecycle({
-  niche: "revisional",
-  stage: "Analise contratual inicial",
-  documentLabels: []
-});
+import { FormSubmitButton } from "@/components/forms/form-submit-button";
+import { getClientById } from "@/server/services/clients/get-clients";
 
 const intakeFormAction = createBankingIntakeAction as unknown as string;
 
-const nextSteps = [
-  {
-    label: "1. Cliente",
-    detail: "Cadastrar o cliente com os dados minimos para iniciar o caso."
-  },
-  {
-    label: "2. Caso e nicho",
-    detail: "Registrar o banco, o nicho bancario e o objetivo inicial da demanda."
-  },
-  {
-    label: "3. Documentos",
-    detail: "Anexar os documentos essenciais ja na abertura para iniciar checklist e workflow."
-  }
-] as const;
-
-const revisionalWorkflowPreview = getBankingCaseWorkflow(
-  {
-    id: "preview-revisional",
-    clientId: "preview-client",
-    title: "Revisional de contrato",
-    bankName: "Banco de exemplo",
-    processNumber: "pendente",
-    contractNumber: "pendente",
-    claimType: "acao_revisional",
-    stage: "Analise contratual inicial",
-    status: "draft",
-    amountInDispute: 0,
-    estimatedValue: 0,
-    mainThesis: "Juros abusivos e revisao contratual",
-    legalRisk: "medium",
-    suggestedStrategy: "Consolidar contrato, memoria inicial e estrategia revisional.",
-    ownerLabel: "Equipe",
-    niche: "revisional",
-    linkedDocuments: [],
-    linkedTasks: [],
-    linkedDeadlines: [],
-    lexiaInsights: [],
-    workflowState: previewLifecycle.workflowState,
-    checklistState: previewLifecycle.checklistState
-  },
-  { documentLabels: [] }
-);
-
-export default function NovoAtendimentoBancarioPage({
+export default async function NovoAtendimentoBancarioPage({
   searchParams
 }: {
-  searchParams?: { error?: string };
+  searchParams?: { error?: string; clientId?: string };
 }) {
-  return <NovoAtendimentoBancarioPageContent searchParams={searchParams} />;
+  const existingClient = searchParams?.clientId ? await getClientById(searchParams.clientId).catch(() => null) : null;
+
+  return <NovoAtendimentoBancarioPageContent existingClient={existingClient} searchParams={searchParams} />;
 }
 
 function NovoAtendimentoBancarioPageContent({
+  existingClient,
   searchParams
 }: {
-  searchParams?: { error?: string };
+  existingClient: Awaited<ReturnType<typeof getClientById>> | null;
+  searchParams?: { error?: string; clientId?: string };
 }) {
   const errorMessage = searchParams?.error ? decodeURIComponent(searchParams.error) : null;
 
   return (
     <WorkspacePage
-      description="A abertura do caso passa a concentrar cliente, dados do caso, nicho e documentos essenciais em uma unica jornada principal."
+      description={
+        existingClient
+          ? "Novo caso para cliente existente: os dados do cliente sao reaproveitados e a nova acao fica vinculada ao mesmo cadastro."
+          : "A abertura minima do atendimento captura identificacao e documento pessoal agora; banco, nicho e o restante dos anexos podem entrar depois no cockpit."
+      }
       eyebrow="Novo atendimento bancario"
       metrics={[
         { label: "Papel", value: "Entrada unica" },
-        { label: "Fase", value: "Onboarding com anexos" },
-        { label: "Nicho piloto", value: "Revisional" },
+        { label: "Fase", value: "Triagem inicial" },
+        { label: "Minimo", value: "Contato + documento" },
         { label: "Destino", value: "Cockpit do cliente" }
       ]}
       title="Iniciar caso bancario"
-    >
+      >
+      <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+          Novo atendimento bancario
+        </p>
+        <p className="mt-1 text-[11px] leading-5 text-slate-400">
+          {existingClient
+            ? `Cliente existente carregado: ${existingClient.fullName}. O sistema vai abrir um novo caso vinculado ao mesmo cadastro.`
+            : "O atendimento agora nasce pela triagem minima. Banco, nicho e anexos complementares podem ser fechados depois no cockpit do cliente."}
+        </p>
+      </div>
+
       {errorMessage ? (
         <div className="workspace-panel border border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100">
           <p className="font-semibold">Nao foi possivel concluir o atendimento.</p>
@@ -92,11 +58,12 @@ function NovoAtendimentoBancarioPageContent({
         </div>
       ) : null}
 
-      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-4">
         <form action={intakeFormAction} className="workspace-panel p-6" encType="multipart/form-data">
-          <p className="text-sm font-semibold text-white">Entrada unica do caso</p>
+          {existingClient ? <input name="existingClientId" type="hidden" value={existingClient.id} /> : null}
+          <p className="text-sm font-semibold text-white">Triagem minima do atendimento</p>
           <p className="mt-2 text-sm leading-7 text-slate-300">
-            Preencha cliente, caso, nicho e os documentos essenciais da triagem. Ao concluir, o sistema abre o cockpit do cliente com o caso e o workflow inicial ja preparados.
+            So `nome`, `endereco`, `telefone` e `documento pessoal` bloqueiam esta abertura. Banco, nicho juridico, objetivo e os demais anexos podem ser complementados depois.
           </p>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -104,102 +71,107 @@ function NovoAtendimentoBancarioPageContent({
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Nome do cliente
               </label>
-              <input
-                className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                name="fullName"
-                placeholder="Nome completo"
-                required
-                type="text"
-              />
+                <input
+                  className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                  name="fullName"
+                  placeholder="Nome completo"
+                  defaultValue={existingClient?.fullName ?? ""}
+                  required={!existingClient}
+                  type="text"
+                />
             </div>
 
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Documento
               </label>
-              <input
-                className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                name="documentId"
-                placeholder="CPF ou CNPJ"
-                required
-                type="text"
-              />
+                <input
+                  className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                  name="documentId"
+                  placeholder="CPF ou CNPJ se ja estiver disponivel"
+                  defaultValue={existingClient?.documentId ?? ""}
+                  type="text"
+                />
             </div>
 
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                 E-mail
               </label>
-              <input
-                className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                name="email"
-                placeholder="cliente@exemplo.com"
-                required
-                type="email"
-              />
+                <input
+                  className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                  name="email"
+                  placeholder="cliente@exemplo.com"
+                  defaultValue={existingClient?.email ?? ""}
+                  type="email"
+                />
             </div>
 
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Telefone
               </label>
-              <input
-                className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                name="phone"
-                placeholder="(00) 00000-0000"
-                required
-                type="text"
-              />
+                <input
+                  className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                  name="phone"
+                  placeholder="(00) 00000-0000"
+                  defaultValue={existingClient?.phone ?? ""}
+                  required={!existingClient}
+                  type="text"
+                />
             </div>
 
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                 WhatsApp
               </label>
-              <input
-                className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                name="whatsapp"
-                placeholder="Se vazio, repete o telefone"
-                type="text"
-              />
+                <input
+                  className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                  name="whatsapp"
+                  placeholder="Pode ser preenchido depois"
+                  defaultValue={existingClient?.whatsapp ?? ""}
+                  type="text"
+                />
             </div>
 
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Origem do lead
               </label>
-              <input
-                className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                defaultValue="Clara"
-                name="leadSource"
-                type="text"
-              />
+                <input
+                  className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                  placeholder="Ex.: Clara, indicacao, campanha"
+                  name="leadSource"
+                  defaultValue={existingClient?.leadSource ?? ""}
+                  type="text"
+                />
             </div>
 
             <div className="md:col-span-2">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Endereco
               </label>
-              <input
-                className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                name="address"
-                placeholder="Endereco completo"
-                required
-                type="text"
-              />
+                <input
+                  className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                  name="address"
+                  placeholder="Endereco completo"
+                  defaultValue={existingClient?.address ?? ""}
+                  required={!existingClient}
+                  type="text"
+                />
             </div>
 
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Banco
               </label>
-              <input
-                className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                name="bankName"
-                placeholder="Banco envolvido"
-                required
-                type="text"
-              />
+                <input
+                  className="reference-search-input w-full px-3 py-2 text-sm outline-none"
+                  name="bankName"
+                  placeholder="Pode ser preenchido depois"
+                  defaultValue={existingClient?.bankName ?? ""}
+                  type="text"
+                />
             </div>
 
             <div>
@@ -208,15 +180,21 @@ function NovoAtendimentoBancarioPageContent({
               </label>
               <select
                 className="reference-search-input w-full px-3 py-2 text-sm outline-none"
-                defaultValue="revisional"
+                defaultValue=""
                 name="niche"
-                required
               >
-                {BANKING_NICHES.map((niche) => (
-                  <option key={niche.value} value={niche.value}>
-                    {niche.label}
-                  </option>
-                ))}
+                <option value="">Classificar depois na triagem</option>
+                <optgroup label="Revisional">
+                  <option value="revisional">Revisional de contratos (veiculos)</option>
+                </optgroup>
+                <optgroup label="Fraude bancaria">
+                  <option value="fraude">Fraude bancaria (PIX)</option>
+                  <option value="cartao-consignado">Cartao consignado / RMC</option>
+                  <option value="beneficio-descontos">Descontos indevidos em beneficio previdenciario</option>
+                </optgroup>
+                <optgroup label="Busca e apreensao">
+                  <option value="busca-apreensao">Busca e apreensao (veiculos)</option>
+                </optgroup>
               </select>
             </div>
 
@@ -258,10 +236,10 @@ function NovoAtendimentoBancarioPageContent({
             <div className="md:col-span-2">
               <div className="rounded-[4px] border border-white/10 bg-white/[0.02] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Documentos essenciais da abertura
+                  Documentos da triagem
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Anexe na propria jornada os arquivos essenciais do caso. O sistema valida o que e obrigatorio de acordo com o nicho selecionado.
+                  O documento pessoal do cliente abre o atendimento. Os demais anexos podem entrar depois, sem travar o inicio do caso.
                 </p>
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -273,6 +251,7 @@ function NovoAtendimentoBancarioPageContent({
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                       className="reference-search-input w-full px-3 py-2 text-sm outline-none"
                       name="personalDocumentFile"
+                      required={!existingClient}
                       type="file"
                     />
                   </div>
@@ -377,48 +356,13 @@ function NovoAtendimentoBancarioPageContent({
             </div>
           </div>
 
-          <button
-            className="mt-6 rounded-[4px] bg-[linear-gradient(90deg,#22c55e,#4ade80)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-soft transition hover:brightness-105"
-            type="submit"
-          >
+          <FormSubmitButton className="mt-6 rounded-[4px] bg-[linear-gradient(90deg,#22c55e,#4ade80)] px-5 py-3 text-sm font-semibold text-slate-950 shadow-soft transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70">
             Iniciar caso
-          </button>
+          </FormSubmitButton>
+          <p className="mt-3 text-xs leading-5 text-slate-400">
+            Esta fase abre o caso em `triagem inicial`, registra pendencias e encaminha o restante da completude para o cockpit do cliente.
+          </p>
         </form>
-
-        <article className="workspace-panel p-6">
-          <p className="text-sm font-semibold text-white">O que esta fase faz</p>
-          <div className="mt-5 grid gap-3">
-            {nextSteps.map((step) => (
-              <div key={step.label} className="workspace-soft-card rounded-[4px] px-4 py-4">
-                <p className="text-sm font-semibold text-white">{step.label}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{step.detail}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="workspace-soft-card mt-5 rounded-[4px] px-4 py-4 text-sm leading-6 text-slate-300">
-            O onboarding ja recebe documentos na propria jornada. Se algo faltar, a abertura falha de forma controlada e informa exatamente o que precisa ser anexado.
-          </div>
-
-          <div className="mt-5">
-            <p className="text-sm font-semibold text-white">Workflow piloto que nasce com o caso</p>
-            <div className="mt-4 grid gap-3">
-              {revisionalWorkflowPreview.steps.slice(0, 5).map((step, index) => (
-                <div
-                  key={step.id}
-                  className={`workspace-soft-card rounded-[4px] px-4 py-4 text-sm ${
-                    step.state === "current" ? "border border-cyan-300/20 bg-cyan-300/10" : ""
-                  }`}
-                >
-                  <p className="font-semibold text-white">
-                    {index + 1}. {step.title}
-                  </p>
-                  <p className="mt-2 leading-6 text-slate-300">{step.detail}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </article>
       </section>
     </WorkspacePage>
   );

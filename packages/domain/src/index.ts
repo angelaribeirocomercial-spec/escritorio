@@ -66,7 +66,13 @@ export interface ClientRecord {
 
 export type BankingCaseStatus = "draft" | "active" | "awaiting-action" | "closed";
 export type BankingCaseRisk = "low" | "medium" | "high";
-export type BankingNiche = "revisional" | "fraude" | "busca-apreensao";
+export type BankingNiche =
+  | "triagem-inicial"
+  | "revisional"
+  | "fraude"
+  | "busca-apreensao"
+  | "cartao-consignado"
+  | "beneficio-descontos";
 export type BankingWorkflowStepState = "done" | "current" | "pending";
 export type BankingChecklistItemState = "received" | "missing";
 export type BankingWorkflowReadinessState = "ready" | "blocked";
@@ -77,10 +83,16 @@ export const BANKING_NICHES: ReadonlyArray<{
 }> = [
   { value: "revisional", label: "Revisional de contratos" },
   { value: "fraude", label: "Fraude bancaria" },
-  { value: "busca-apreensao", label: "Busca e apreensao" }
+  { value: "busca-apreensao", label: "Busca e apreensao" },
+  { value: "cartao-consignado", label: "Cartao consignado / RMC" },
+  { value: "beneficio-descontos", label: "Descontos indevidos em beneficio previdenciario" }
 ] as const;
 
 export function getBankingNicheLabel(niche: BankingNiche): string {
+  if (niche === "triagem-inicial") {
+    return "Triagem inicial";
+  }
+
   return (
     BANKING_NICHES.find((entry) => entry.value === niche)?.label ?? "Nicho bancario"
   );
@@ -158,6 +170,11 @@ export type JudicialProcessStatus =
   | "closed";
 
 export type JudicialProcessCriticality = "low" | "medium" | "high";
+export type JudicialOfficialSource = "manual_confirmed" | "official_import";
+export type JudicialOfficialDistributionStatus =
+  | "preparatory_local"
+  | "attempt_failed"
+  | "official_confirmed";
 
 export interface JudicialTimelineItem {
   id: string;
@@ -168,11 +185,27 @@ export interface JudicialTimelineItem {
   criticality: JudicialProcessCriticality;
 }
 
+export interface JudicialDistributionAuditItem {
+  id: string;
+  occurredAt: string;
+  status: JudicialOfficialDistributionStatus;
+  source: JudicialOfficialSource;
+  title: string;
+  detail: string;
+}
+
 export interface JudicialProcessRecord {
   id: string;
   caseId: string;
   clientId: string;
   processNumber: string;
+  localReferenceNumber: string;
+  officialProcessNumber?: string;
+  officialDistributionDate?: string;
+  officialSource?: JudicialOfficialSource;
+  officialDistributionStatus: JudicialOfficialDistributionStatus;
+  protocolReceiptDocumentId?: string;
+  distributionAuditTrail: readonly JudicialDistributionAuditItem[];
   tribunal: string;
   courtDistrict: string;
   courtName: string;
@@ -252,6 +285,24 @@ export interface ProceduralDeadlineRecord {
 }
 
 export type DocumentAiStatus = "not_analyzed" | "analyzed" | "needs_review";
+export type DocumentReviewStatus = "pending" | "reviewed" | "corrected";
+export type AutomationReadinessState = "autonomous" | "assisted" | "blocked";
+export type AutomationConfidenceLabel = "high" | "medium" | "low";
+
+export interface AutomationReadinessRecord {
+  state: AutomationReadinessState;
+  confidenceScore: number;
+  confidenceLabel: AutomationConfidenceLabel;
+  summary: string;
+  blockers: readonly string[];
+  signals: readonly string[];
+}
+
+export interface DocumentStructuredExtractionField {
+  value: string;
+  confidence: "low" | "medium" | "high";
+  sourceLabel: string;
+}
 
 export interface DocumentRecord {
   id: string;
@@ -272,6 +323,14 @@ export interface DocumentRecord {
   storageMimeType: string;
   storageSizeBytes: number;
   actions: readonly string[];
+  structuredExtraction?: Record<string, DocumentStructuredExtractionField>;
+  extractionSourceTrace?: Record<string, unknown>;
+  extractionError?: string;
+  extractedAt?: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+  reviewStatus?: DocumentReviewStatus;
+  automationReadiness?: AutomationReadinessRecord;
 }
 
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
@@ -335,6 +394,41 @@ export interface ContractAnalysisRecord {
   proceduralRisk: "low" | "medium" | "high";
   suggestedRequests: readonly string[];
   executiveSummary: string;
+  caseId?: string;
+  calculationSnapshot?: Record<string, unknown>;
+  bacenSnapshot?: Record<string, unknown>;
+  strategicSnapshot?: Record<string, unknown>;
+  petitionSnapshot?: Record<string, unknown>;
+  approvedForFiling?: boolean;
+  syncedAt?: string;
+  automationReadiness?: AutomationReadinessRecord;
+}
+
+export type ProcessFilingKind =
+  | "peticao_inicial"
+  | "contestacao"
+  | "replica"
+  | "manifestacao"
+  | "recurso"
+  | "cumprimento_sentenca"
+  | "peticao_intercorrente";
+
+export type ProcessFilingStatus = "draft" | "in_review" | "approved" | "filed" | "fulfilled";
+
+export interface ProcessFilingRecord {
+  id: string;
+  processId: string;
+  caseId: string;
+  clientId: string;
+  kind: ProcessFilingKind;
+  title: string;
+  status: ProcessFilingStatus;
+  sourceMinutaId?: string;
+  linkedUpdateId?: string;
+  summary: string;
+  nextAction: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type FinancialEntryKind = "income" | "expense" | "transfer";

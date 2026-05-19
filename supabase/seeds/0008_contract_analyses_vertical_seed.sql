@@ -51,31 +51,61 @@ values
     'ca-004',
     '11111111-1111-1111-1111-111111111111',
     'doc-004',
-    '3,12% a.m.',
-    '3,88% a.m. | 57,92% a.a.',
-    'Capitalizacao mensal expressa em CCB com reflexo direto no custo efetivo',
-    'Tarifas administrativas e custos operacionais incorporados ao contrato',
-    'Cobertura acessoria sem detalhamento comercial suficiente',
+    '2,10% a.m.',
+    '3,24% a.m. | 47,62% a.a.',
+    'Descontos em folha e composicao da RMC com reflexo no beneficio liquido',
+    'Tarifas administrativas e custos acessorios incorporados ao consignado',
+    'Cobertura acessoria sem destaque suficiente sobre opcionalidade',
     'Clausula de comissao de permanencia dependente de interpretacao restritiva',
     'Multa de 2% com encargos moratorios adicionais',
     '[
-      "Capitalizacao mensal destacada em bloco tecnico de dificil leitura para o tomador",
+      "Desconto consignado destacado em bloco tecnico de dificil leitura para o tomador",
       "Descricao pouco clara de tarifas e custos agregados",
       "Previsao de permanencia com margem para discussao sobre cumulatividade"
     ]'::jsonb,
     '[
-      "Capitalizacao mensal com potencial forte de revisao",
-      "CET alto para operacao de capital de giro",
+      "Desconto consignado com potencial forte de revisao",
+      "CET alto para operacao de credito consignado",
       "Tarifas acessorias e custo agregado com transparencia insuficiente"
     ]'::jsonb,
-    'Capitalizacao mensal indevida e revisao de encargos em CCB',
+    'Desconto indevido em cartao consignado / RMC',
     'low',
     '[
-      "Revisao contratual com limitacao de encargos remuneratorios",
+      "Revisao contratual com limitacao de descontos remuneratorios",
       "Afastamento de cobrancas acessorias sem transparencia",
       "Tutela para estabilizar cobranca durante a discussao judicial"
     ]'::jsonb,
-    'A CCB apresenta boa base para tese economica, com foco em capitalizacao mensal, CET elevado e transparencia insuficiente sobre custos agregados.'
+    'O consignado apresenta boa base para tese economica, com foco em desconto em folha, CET elevado e transparencia insuficiente sobre custos agregados.'
+  ),
+  (
+    'ca-005',
+    '11111111-1111-1111-1111-111111111111',
+    'doc-005',
+    '1,95% a.m.',
+    '3,11% a.m. | 45,88% a.a.',
+    'Mora contratual com risco de busca e apreensao do veiculo',
+    'Cobranca acessoria e encargos vinculados a notificacao de mora',
+    'Seguimento contratual dependente de leitura restritiva da clausula de garantia',
+    'Comissao de permanencia a depender do entendimento do juizo',
+    'Multa de 2% com encargos moratorios adicionais',
+    '[
+      "Notificacao de mora com indicios de concessao de prazo insuficiente",
+      "Previsao de apreensao com redacao pouco acessivel ao consumidor",
+      "Clausulas sobre atraso e retomada do bem com margem para discussao"
+    ]'::jsonb,
+    '[
+      "Mora controvertida com risco de busca e apreensao",
+      "Prova da posse e do uso do veiculo essencial para a defesa",
+      "Notificacao com potencial de leitura restritiva"
+    ]'::jsonb,
+    'Mora controvertida e preservacao do veiculo',
+    'medium',
+    '[
+      "Revisao da notificacao e da prova de mora",
+      "Preservacao da posse do veiculo com tutela urgente",
+      "Organizacao dos comprovantes de pagamento e do contrato de financiamento"
+    ]',
+    'A notificacao de mora tem base util para demonstrar a controversia sobre a busca e apreensao e a necessidade de preservar o veiculo.'
   )
 on conflict (id) do update
 set

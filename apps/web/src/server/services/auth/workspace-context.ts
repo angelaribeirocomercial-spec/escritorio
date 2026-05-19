@@ -4,7 +4,7 @@ import {
   UserRole
 } from "@lexia/domain";
 
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type WorkspaceContext = {
   tenant: TenantSummary;
@@ -21,7 +21,7 @@ export class WorkspaceContextError extends Error {
 export async function resolveWorkspaceContext(
   userId: string
 ): Promise<WorkspaceContext> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
 
   const { data, error } = await supabase
     .from("memberships")
@@ -47,7 +47,7 @@ export async function resolveWorkspaceContext(
 
   if (error) {
     throw new WorkspaceContextError(
-      `Failed to resolve workspace membership for user ${userId}.`
+      `Failed to resolve workspace membership for user ${userId}: ${error.message}`
     );
   }
 

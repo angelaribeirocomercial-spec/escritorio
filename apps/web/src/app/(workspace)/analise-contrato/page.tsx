@@ -14,6 +14,26 @@ function proceduralRiskLabel(risk: string) {
   }
 }
 
+const dossierTabs = [
+  { label: "Visao geral", href: "#resumo" },
+  { label: "BACEN", href: "#bacen" },
+  { label: "Abusividades", href: "#abusividades" },
+  { label: "Clara", href: "#clara" },
+  { label: "Laudo", href: "#laudo" },
+  { label: "Peticoes", href: "#peticoes" }
+] as const;
+
+function severityLabel(severity: "low" | "medium" | "high") {
+  switch (severity) {
+    case "low":
+      return "Baixa";
+    case "medium":
+      return "Media";
+    default:
+      return "Alta";
+  }
+}
+
 export default async function ContractAnalysisPage({
   searchParams
 }: {
@@ -43,12 +63,26 @@ export default async function ContractAnalysisPage({
 
   return (
     <WorkspacePage
-      description="Tela flagship de leitura contratual da Clara, com abusividade, tese sugerida, risco e pedidos estruturados para Direito Bancario."
+      description="Tela flagship do dossie local do caso, com Clara, BACEN, calculos, laudo e peticoes estruturadas para Direito Bancario."
       eyebrow="Analise de Contrato"
       metrics={metrics}
       title="Console premium de analise contratual bancaria"
     >
-      <section className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
+      <section className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.92),rgba(14,24,42,0.82))] p-4 shadow-soft">
+        <div className="flex flex-wrap items-center gap-2">
+          {dossierTabs.map((tab) => (
+            <Link
+              key={tab.href}
+              className="rounded-[16px] border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-300/30 hover:bg-cyan-300/10 hover:text-cyan-50"
+              href={tab.href}
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section id="resumo" className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <p className="text-sm font-semibold text-white">Contrato em foco</p>
@@ -188,7 +222,46 @@ export default async function ContractAnalysisPage({
         </article>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+      <section id="bacen" className="rounded-[30px] border border-cyan-300/15 bg-[linear-gradient(180deg,rgba(8,18,32,0.95),rgba(10,34,50,0.82))] p-6 shadow-soft">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-white">BACEN</p>
+            <p className="mt-1 text-sm text-slate-300">{workspace.bacenComparison.summary}</p>
+          </div>
+          <div className="rounded-[18px] border border-white/10 bg-white/[0.05] px-4 py-3 text-sm font-semibold text-cyan-100">
+            {workspace.bacenComparison.classificationLabel}
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Taxa contratual</p>
+            <p className="mt-2 text-sm font-semibold text-white">{workspace.bacenComparison.contractRateLabel}</p>
+          </div>
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Taxa BACEN</p>
+            <p className="mt-2 text-sm font-semibold text-white">{workspace.bacenComparison.marketReferenceLabel}</p>
+          </div>
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Modalidade</p>
+            <p className="mt-2 text-sm font-semibold text-white">{workspace.bacenComparison.modalityLabel}</p>
+          </div>
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Periodo consultado</p>
+            <p className="mt-2 text-sm font-semibold text-white">{workspace.bacenComparison.consultedPeriodLabel}</p>
+          </div>
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-4 md:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Diferenca percentual</p>
+            <p className="mt-2 text-sm font-semibold text-white">{workspace.bacenComparison.differencePercentLabel}</p>
+          </div>
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-4 md:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Leitura operacional</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{workspace.bacenComparison.summary}</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="abusividades" className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <article className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
           <p className="text-sm font-semibold text-white">Clausulas sensiveis</p>
           <div className="mt-5 space-y-3">
@@ -204,23 +277,58 @@ export default async function ContractAnalysisPage({
         </article>
 
         <article className="rounded-[30px] border border-amber-300/15 bg-[linear-gradient(180deg,rgba(52,31,6,0.78),rgba(74,40,8,0.56))] p-6 shadow-soft">
-          <p className="text-sm font-semibold text-white">Indicios de abusividade</p>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-white">Inventario de abusividades</p>
+              <p className="mt-1 text-sm text-amber-100/80">
+                Sinais persistidos e prontos para estrategia, laudo e peticao.
+              </p>
+            </div>
+            <div className="rounded-[18px] border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm font-semibold text-amber-100">
+              {workspace.detectedAbuses.length} itens
+            </div>
+          </div>
           <div className="mt-5 space-y-3">
-            {workspace.analysis.abusivenessSignals.map((signal) => (
+            {workspace.detectedAbuses.map((abuse) => (
               <div
-                key={signal}
-                className="rounded-[22px] border border-amber-300/20 bg-amber-300/10 px-4 py-4 text-sm leading-6 text-amber-100"
+                key={abuse.id}
+                className="rounded-[24px] border border-amber-300/20 bg-amber-300/10 px-4 py-4 text-sm leading-6 text-amber-100"
               >
-                {signal}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="font-semibold text-white">{abuse.signalLabel}</p>
+                  <span className="rounded-full border border-amber-200/30 bg-black/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
+                    Gravidade {severityLabel(abuse.severity)}
+                  </span>
+                </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-[18px] border border-white/10 bg-black/20 px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-100/70">
+                      Dado usado
+                    </p>
+                    <p className="mt-2 text-sm text-amber-50">{abuse.evidenceLabel}</p>
+                  </div>
+                  <div className="rounded-[18px] border border-white/10 bg-black/20 px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-100/70">
+                      Impacto financeiro
+                    </p>
+                    <p className="mt-2 text-sm text-amber-50">{abuse.financialImpactLabel}</p>
+                  </div>
+                </div>
+                <div className="mt-3 rounded-[18px] border border-white/10 bg-black/20 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-100/70">
+                    Sugestao juridica
+                  </p>
+                  <p className="mt-2 text-sm text-amber-50">{abuse.legalSuggestion}</p>
+                </div>
               </div>
             ))}
           </div>
         </article>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+      <section id="clara" className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <article className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
-          <p className="text-sm font-semibold text-white">Contexto do caso</p>
+          <p className="text-sm font-semibold text-white">Clara no contexto do caso</p>
           <div className="mt-5 rounded-[28px] border border-white/10 bg-black/20 p-5 text-sm leading-7 text-slate-300">
             <p>
               Cliente relacionado: <span className="font-semibold text-white">{workspace.client.fullName}</span>
@@ -229,6 +337,17 @@ export default async function ContractAnalysisPage({
               Caso vinculado: <span className="font-semibold text-white">{workspace.bankingCase.title}</span>
             </p>
             <p className="mt-3">Estrategia atual: {workspace.bankingCase.suggestedStrategy}</p>
+            <p className="mt-3 text-slate-200">{workspace.caseDossier.clara.summary}</p>
+            <div className="mt-4 grid gap-2 md:grid-cols-2">
+              {workspace.caseDossier.clara.focusPoints.map((item) => (
+                <div
+                  key={item}
+                  className="rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-200"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
           </div>
         </article>
 
@@ -256,9 +375,23 @@ export default async function ContractAnalysisPage({
         </article>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.94fr_1.06fr]">
+      <section id="laudo" className="grid gap-4 xl:grid-cols-[0.94fr_1.06fr]">
         <article className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
-          <p className="text-sm font-semibold text-white">Checklist minimo da revisional</p>
+          <p className="text-sm font-semibold text-white">Laudo automatizado</p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">{workspace.caseDossier.laudo.summary}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {workspace.caseDossier.laudo.sources.map((source) => (
+              <span
+                key={source}
+                className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100"
+              >
+                {source}
+              </span>
+            ))}
+          </div>
+          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Checklist minimo da revisional
+          </p>
           <div className="mt-5 space-y-3">
             {workspace.revisionalChecklist.map((item) => (
               <div
@@ -419,9 +552,23 @@ export default async function ContractAnalysisPage({
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.98fr_1.02fr]">
+      <section id="peticoes" className="grid gap-4 xl:grid-cols-[0.98fr_1.02fr]">
         <article className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,20,35,0.94),rgba(14,24,42,0.84))] p-6 shadow-soft">
-          <p className="text-sm font-semibold text-white">Fundamentos juridicos sugeridos</p>
+          <p className="text-sm font-semibold text-white">Peticoes automatizadas</p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">{workspace.caseDossier.peticoes.summary}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {workspace.caseDossier.peticoes.sources.map((source) => (
+              <span
+                key={source}
+                className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-100"
+              >
+                {source}
+              </span>
+            ))}
+          </div>
+          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Fundamentos juridicos sugeridos
+          </p>
           <div className="mt-5 space-y-3">
             {workspace.thesisFrames.map((item) => (
               <div key={item.title} className="rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-4">

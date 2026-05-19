@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { getAdversaries } from "@/server/services/adversaries/get-adversaries";
@@ -46,9 +47,13 @@ export default async function DiarioOficialPalavrasPage() {
           <p className="mj-model-title">Palavras-chave para recebimento de publicacoes</p>
           <p className="mj-model-subtitle">Exibindo {keywords.length} resultado(s)</p>
         </div>
-        <button className="mj-model-button-green" type="button">
-          Adicionar
-        </button>
+        <Link
+          className="mj-model-button-green inline-flex items-center justify-center"
+          href="/processos/importar-oab"
+          title="Abrir o monitoramento operacional por OAB."
+        >
+          Configurar OAB
+        </Link>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[22rem_1fr]">
@@ -69,6 +74,9 @@ export default async function DiarioOficialPalavrasPage() {
               {warning}
             </p>
           ))}
+          <p className="mt-3 break-words text-slate-500">
+            Agora a configuracao de OAB pode ser aplicada diretamente ao processo no fluxo operacional.
+          </p>
         </div>
       </div>
 

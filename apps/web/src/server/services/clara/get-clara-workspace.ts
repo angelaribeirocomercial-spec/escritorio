@@ -258,7 +258,7 @@ export async function getClaraWorkspace(params?: {
             { label: "Documento base", type: "document" },
             { label: "Cliente", type: "client" }
           ],
-          actions: ["Analisar processo", "Abrir prazo calculado", "Gerar resumo executivo"]
+          actions: ["Analisar processo", "Analisar Caso com Clara", "Abrir prazo calculado", "Gerar resumo executivo"]
         }
       },
       intimacao: {
@@ -402,7 +402,13 @@ export async function getClaraWorkspace(params?: {
             {
               label: "Nicho de atuacao",
               type: "custom",
-              options: BANKING_NICHES.map((entry) => entry.label)
+              options: [
+                "Revisional de contratos",
+                "Fraude bancaria",
+                "Fraude bancaria > Cartao consignado / RMC",
+                "Fraude bancaria > Descontos indevidos em beneficio previdenciario",
+                "Busca e apreensao"
+              ]
             },
             { label: "Tribunal", type: "custom", options: ["TJSP", "TJRJ", "TJMG", "STJ", "STF"] }
           ],

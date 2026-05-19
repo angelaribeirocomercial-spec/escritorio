@@ -8,7 +8,7 @@ import {
 } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getTasks, type TaskWithContext } from "@/server/services/tasks/get-tasks";
 
 export type AgendaEntryType = "task" | "commitment" | "deadline";
@@ -42,17 +42,17 @@ export type DeadlineWithContext = ProceduralDeadlineRecord & {
 type ClientRow = {
   id: string;
   full_name: string;
-  document_id: string;
-  email: string;
+  document_id: string | null;
+  email: string | null;
   phone: string;
-  whatsapp: string;
+  whatsapp: string | null;
   address: string;
-  lead_source: string;
-  bank_name: string;
+  lead_source: string | null;
+  bank_name: string | null;
   service_status: ClientRecord["serviceStatus"];
   signed_contract: boolean;
   legal_viability_score: number;
-  fees_label: string;
+  fees_label: string | null;
   documents_sent: number;
   notes: string;
   ia_context: string;
@@ -65,9 +65,9 @@ type CaseRow = {
   id: string;
   client_id: string;
   title: string;
-  bank_name: string;
+  bank_name: string | null;
   process_number: string;
-  contract_number: string;
+  contract_number: string | null;
   claim_type: string;
   stage: string;
   status: BankingCaseRecord["status"];
@@ -120,17 +120,17 @@ function mapClientRow(row: ClientRow): ClientRecord {
   return {
     id: row.id,
     fullName: row.full_name,
-    documentId: row.document_id,
-    email: row.email,
+    documentId: row.document_id ?? "",
+    email: row.email ?? "",
     phone: row.phone,
-    whatsapp: row.whatsapp,
+    whatsapp: row.whatsapp ?? "",
     address: row.address,
-    leadSource: row.lead_source,
-    bankName: row.bank_name,
+    leadSource: row.lead_source ?? "",
+    bankName: row.bank_name ?? "",
     serviceStatus: row.service_status,
     signedContract: row.signed_contract,
     legalViabilityScore: row.legal_viability_score,
-    feesLabel: row.fees_label,
+    feesLabel: row.fees_label ?? "",
     documentsSent: row.documents_sent,
     notes: row.notes,
     iaContext: row.ia_context,
@@ -145,9 +145,9 @@ function mapCaseRow(row: CaseRow): BankingCaseRecord {
     id: row.id,
     clientId: row.client_id,
     title: row.title,
-    bankName: row.bank_name,
+    bankName: row.bank_name ?? "",
     processNumber: row.process_number,
-    contractNumber: row.contract_number,
+    contractNumber: row.contract_number ?? "",
     claimType: row.claim_type,
     stage: row.stage,
     status: row.status,
@@ -339,10 +339,10 @@ export async function getAgendaCommitments(): Promise<CommitmentWithContext[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load agenda commitments.");
+    return [];
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("agenda_commitments")
     .select(`
@@ -362,9 +362,10 @@ export async function getAgendaCommitments(): Promise<CommitmentWithContext[]> {
     .order("scheduled_for", { ascending: true });
 
   if (error) {
-    throw new Error(
+    console.warn(
       `Failed to load agenda commitments for tenant ${session.workspace.tenant.id}.`
     );
+    return [];
   }
 
   return (data ?? []).map((row) => mapCommitmentRow(row as CommitmentRow));
@@ -374,10 +375,10 @@ export async function getProceduralDeadlines(): Promise<DeadlineWithContext[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load procedural deadlines.");
+    return [];
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("procedural_deadlines")
     .select(`
@@ -397,9 +398,10 @@ export async function getProceduralDeadlines(): Promise<DeadlineWithContext[]> {
     .order("due_date", { ascending: true });
 
   if (error) {
-    throw new Error(
+    console.warn(
       `Failed to load procedural deadlines for tenant ${session.workspace.tenant.id}.`
     );
+    return [];
   }
 
   return (data ?? [])

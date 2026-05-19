@@ -1,6 +1,7 @@
 import { AdversaryRecord } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 type AdversaryRow = {
@@ -25,6 +26,30 @@ const ADVERSARY_SELECT = `
   status
 `;
 
+const DEMO_ADVERSARIES: AdversaryRecord[] = [
+  {
+    id: "adv-demo-itau-1",
+    name: "Banco Itau Unibanco S.A.",
+    documentId: "60.701.190/0001-04",
+    bankName: "Itau",
+    caseSummary: "Fraude bancaria via PIX",
+    attorneyLabel: "Dr. Caio Nascimento",
+    contactLabel: "contencioso@itau.demo.local",
+    status: "active"
+  }
+];
+
+function isDemoTenant(tenantSlug: string): boolean {
+  return tenantSlug === "clara-bancaria-demo";
+}
+
+function isSupabasePublicConfigAvailable(): boolean {
+  return (
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL) != null &&
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY) != null
+  );
+}
+
 function mapAdversaryRow(row: AdversaryRow): AdversaryRecord {
   return {
     id: row.id,
@@ -45,7 +70,17 @@ export async function getAdversaries(): Promise<AdversaryRecord[]> {
     throw new Error("Workspace session is required to load adversaries.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabasePublicConfigAvailable()) {
+    if (demoTenant) {
+      return DEMO_ADVERSARIES;
+    }
+
+    throw new Error("Supabase public configuration is required to load adversaries.");
+  }
+
+  const supabase = demoTenant ? getSupabaseAdminClient() : getSupabaseServerClient();
   const { data, error } = await supabase
     .from("adversaries")
     .select(ADVERSARY_SELECT)
@@ -53,8 +88,18 @@ export async function getAdversaries(): Promise<AdversaryRecord[]> {
     .order("name", { ascending: true });
 
   if (error) {
+    if (demoTenant) {
+      return DEMO_ADVERSARIES;
+    }
+
     throw new Error(`Failed to load adversaries for tenant ${session.workspace.tenant.id}.`);
   }
 
-  return (data ?? []).map((row) => mapAdversaryRow(row as AdversaryRow));
+  const adversaries = (data ?? []).map((row) => mapAdversaryRow(row as AdversaryRow));
+
+  if (demoTenant && adversaries.length === 0) {
+    return DEMO_ADVERSARIES;
+  }
+
+  return adversaries;
 }

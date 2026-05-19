@@ -13,10 +13,18 @@ export function getSupabaseServerClient() {
         return cookieStore.get(name)?.value;
       },
       set(name: string, value: string, options) {
-        cookieStore.set({ name, value, ...options });
+        try {
+          cookieStore.set({ name, value, ...options });
+        } catch {
+          // Server Components cannot mutate cookies directly during render.
+        }
       },
       remove(name: string, options) {
-        cookieStore.set({ name, value: "", ...options, maxAge: 0 });
+        try {
+          cookieStore.set({ name, value: "", ...options, maxAge: 0 });
+        } catch {
+          // Server Components cannot mutate cookies directly during render.
+        }
       }
     }
   });

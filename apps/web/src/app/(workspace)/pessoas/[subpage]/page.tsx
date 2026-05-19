@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { WorkspaceStatePanel } from "@lexia/ui";
 
@@ -55,11 +56,17 @@ export default async function PessoasSubpage({
     params.subpage === "advogados-adversos"
       ? {
           title: "Advogados adversos",
-          emptyState: "Voce ainda nao cadastrou nenhum advogado adverso."
+          emptyState: "Voce ainda nao cadastrou nenhum advogado adverso.",
+          actionHref: "/pessoas/adversos/novo",
+          actionLabel: "Novo adverso",
+          actionTitle: "Abrir cadastro real de adverso."
         }
       : {
           title: "Contatos / Partes",
-          emptyState: "Voce ainda nao cadastrou nenhuma parte."
+          emptyState: "Voce ainda nao cadastrou nenhuma parte.",
+          actionHref: "/novo-atendimento-bancario",
+          actionLabel: "Novo atendimento",
+          actionTitle: "Abrir o fluxo real de entrada de um novo caso."
         };
   const term = searchParams?.termo?.toLowerCase().trim() ?? "";
   const filteredItems = rows.filter((item) =>
@@ -71,9 +78,13 @@ export default async function PessoasSubpage({
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <p className="mj-model-title">{page.title}</p>
         <div className="flex gap-2">
-          <button className="mj-model-button-green" type="button">
-            Adicionar
-          </button>
+          <Link
+            className="mj-model-button-green inline-flex items-center justify-center"
+            href={page.actionHref}
+            title={page.actionTitle}
+          >
+            {page.actionLabel}
+          </Link>
         </div>
       </div>
 

@@ -6,7 +6,8 @@ import {
 } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 export type TaskWithContext = TaskRecord & {
   client: ClientRecord;
@@ -17,17 +18,17 @@ export type TaskWithContext = TaskRecord & {
 type ClientRow = {
   id: string;
   full_name: string;
-  document_id: string;
-  email: string;
+  document_id: string | null;
+  email: string | null;
   phone: string;
-  whatsapp: string;
+  whatsapp: string | null;
   address: string;
-  lead_source: string;
-  bank_name: string;
+  lead_source: string | null;
+  bank_name: string | null;
   service_status: ClientRecord["serviceStatus"];
   signed_contract: boolean;
   legal_viability_score: number;
-  fees_label: string;
+  fees_label: string | null;
   documents_sent: number;
   notes: string;
   ia_context: string;
@@ -40,9 +41,9 @@ type CaseRow = {
   id: string;
   client_id: string;
   title: string;
-  bank_name: string;
+  bank_name: string | null;
   process_number: string;
-  contract_number: string;
+  contract_number: string | null;
   claim_type: string;
   stage: string;
   status: BankingCaseRecord["status"];
@@ -89,17 +90,17 @@ function mapClientRow(row: ClientRow): ClientRecord {
   return {
     id: row.id,
     fullName: row.full_name,
-    documentId: row.document_id,
-    email: row.email,
+    documentId: row.document_id ?? "",
+    email: row.email ?? "",
     phone: row.phone,
-    whatsapp: row.whatsapp,
+    whatsapp: row.whatsapp ?? "",
     address: row.address,
-    leadSource: row.lead_source,
-    bankName: row.bank_name,
+    leadSource: row.lead_source ?? "",
+    bankName: row.bank_name ?? "",
     serviceStatus: row.service_status,
     signedContract: row.signed_contract,
     legalViabilityScore: row.legal_viability_score,
-    feesLabel: row.fees_label,
+    feesLabel: row.fees_label ?? "",
     documentsSent: row.documents_sent,
     notes: row.notes,
     iaContext: row.ia_context,
@@ -114,9 +115,9 @@ function mapCaseRow(row: CaseRow): BankingCaseRecord {
     id: row.id,
     clientId: row.client_id,
     title: row.title,
-    bankName: row.bank_name,
+    bankName: row.bank_name ?? "",
     processNumber: row.process_number,
-    contractNumber: row.contract_number,
+    contractNumber: row.contract_number ?? "",
     claimType: row.claim_type,
     stage: row.stage,
     status: row.status,
@@ -253,10 +254,14 @@ export async function getTasks(filters?: {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load tasks.");
+    return [];
   }
 
-  const supabase = getSupabaseServerClient();
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
+  const supabase = getSupabaseAdminClient();
   let query = supabase
     .from("tasks")
     .select(TASK_SELECT)
@@ -273,7 +278,8 @@ export async function getTasks(filters?: {
   const { data, error } = await query.order("due_date", { ascending: true });
 
   if (error) {
-    throw new Error(`Failed to load tasks for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load tasks for tenant ${session.workspace.tenant.id}.`);
+    return [];
   }
 
   return (data ?? [])
@@ -285,10 +291,10 @@ export async function getTaskById(taskId: string): Promise<TaskWithContext | nul
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load task details.");
+    return null;
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("tasks")
     .select(TASK_SELECT)
@@ -297,7 +303,8 @@ export async function getTaskById(taskId: string): Promise<TaskWithContext | nul
     .maybeSingle();
 
   if (error) {
-    throw new Error(`Failed to load task ${taskId} for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load task ${taskId} for tenant ${session.workspace.tenant.id}.`);
+    return null;
   }
 
   return data ? mapTaskRow(data as TaskRow) : null;

@@ -81,11 +81,11 @@ values
     8.6,
     'R$ 14.000 + exito escalonado',
     18,
-    'Empresa com contrato de capital de giro e discussao sobre encargos excessivos e capitalizacao mensal.',
-    'LexIA aponta boa aderencia para revisional com estrategia combinada de revisao contratual e pedido de tutela para suspensao de negativacao.',
-    '[{"id":"case-311","title":"Capital de giro com juros abusivos","status":"Peca inicial em preparacao","thesis":"Capitalizacao mensal indevida"},{"id":"case-312","title":"Negativacao indevida vinculada ao contrato","status":"Documentacao completa","thesis":"Suspensao de cobranca e danos"}]'::jsonb,
-    '["CCB","Extratos da conta","Email de cobranca","Comprovantes bancarios","Contrato social"]'::jsonb,
-    '["Lead convertido por campanha de alta intencao","Contrato assinado no mesmo dia da proposta","Time recebeu documentacao complementar da empresa"]'::jsonb
+    'Cliente modelo para dois fluxos complementares do escritorio: fraude consignada / RMC e busca e apreensao.',
+    'LexIA aponta que este cliente pode demonstrar tanto o modelo de fraude consignada quanto o modelo de busca e apreensao, mantendo a leitura clara por caso.',
+    '[{"id":"case-311","title":"Fraude consignada / RMC","status":"Peca inicial em preparacao","thesis":"Desconto indevido em cartao consignado"},{"id":"case-312","title":"Busca e apreensao de veiculo","status":"Documentacao completa","thesis":"Mora controvertida e preservacao do veiculo"}]'::jsonb,
+    '["Contrato do cartao consignado","Notificacao de busca e apreensao","Extrato do beneficio","Documento do veiculo"]'::jsonb,
+    '["Lead convertido por campanha de alta intencao","Contrato assinado no mesmo dia da proposta","Time recebeu documentacao complementar da pessoa fisica"]'::jsonb
   )
 on conflict (id) do update
 set

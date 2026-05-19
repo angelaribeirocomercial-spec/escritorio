@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { WorkspaceStatePanel } from "@lexia/ui";
 
+import { getCases } from "@/server/services/cases/get-cases";
+import { getClients } from "@/server/services/clients/get-clients";
 import {
   JudicialProcessWithRelations,
   getProcesses
@@ -37,6 +39,10 @@ function statusLabel(status: string) {
   }
 }
 
+const CANONICAL_CLIENT_ID = "cl-002";
+const CANONICAL_CASE_ID = "case-205";
+const CANONICAL_PROCESS_ID = "proc-205";
+
 export default async function ProcessosPage({
   searchParams
 }: {
@@ -48,6 +54,8 @@ export default async function ProcessosPage({
   };
 }) {
   let processes: JudicialProcessWithRelations[] = [];
+  let clients: Awaited<ReturnType<typeof getClients>> = [];
+  let cases: Awaited<ReturnType<typeof getCases>> = [];
   let state: {
     title: string;
     description: string;
@@ -55,7 +63,7 @@ export default async function ProcessosPage({
   } | null = null;
 
   try {
-    processes = await getProcesses();
+    [processes, clients, cases] = await Promise.all([getProcesses(), getClients(), getCases()]);
   } catch {
     state = {
       title: "Processos indisponiveis no momento",
@@ -71,6 +79,19 @@ export default async function ProcessosPage({
   const quickSearch = searchParams?.localizar?.toLowerCase().trim() ?? "";
   const activeField =
     filterOptions.find((option) => option.value === filterType) ?? filterOptions[0];
+  const modelClient =
+    clients.find((client) => client.id === CANONICAL_CLIENT_ID) ?? clients[0] ?? null;
+  const modelCase =
+    cases.find((caseItem) => caseItem.id === CANONICAL_CASE_ID) ??
+    cases.find((caseItem) => caseItem.client.id === CANONICAL_CLIENT_ID) ??
+    cases[0] ??
+    null;
+  const modelProcess =
+    processes.find((processItem) => processItem.id === CANONICAL_PROCESS_ID) ??
+    processes.find((processItem) => processItem.caseId === CANONICAL_CASE_ID) ??
+    processes.find((processItem) => processItem.client.id === CANONICAL_CLIENT_ID) ??
+    processes[0] ??
+    null;
 
   const filteredProcesses = processes.filter((processItem) => {
     const normalizedStatus = statusLabel(processItem.status);
@@ -103,6 +124,23 @@ export default async function ProcessosPage({
     return matchesStatus && matchesSelectedField && matchesQuickSearch;
   });
 
+  const hasNoRealProcesses = !state && filteredProcesses.length === 0;
+  const modelCard = modelClient || modelCase || modelProcess
+    ? {
+        caseTitle: modelCase?.title ?? "Caso modelo",
+        title: modelProcess?.processNumber ?? modelCase?.processNumber ?? "0000000-00.2026.8.13.0000",
+        clientName:
+          modelProcess?.client.fullName ?? modelCase?.client.fullName ?? modelClient?.fullName ?? "Cliente modelo",
+        clientDocumentId:
+          modelProcess?.client.documentId ?? modelCase?.client.documentId ?? modelClient?.documentId ?? "000.000.000-00",
+        bankName: modelProcess?.bankingCase.bankName ?? modelCase?.bankName ?? modelClient?.bankName ?? "Banco modelo",
+        tribunal: modelProcess?.tribunal ?? "TJMG",
+        courtDistrict: modelProcess?.courtDistrict ?? "Belo Horizonte/MG",
+        courtName: modelProcess?.courtName ?? "4a Vara Civel de Belo Horizonte",
+        processId: modelProcess?.id ?? modelCase?.id ?? modelClient?.id ?? "modelo-processo",
+        statusLabel: "Distribuido"
+      }
+    : null;
   return (
     <div className="mj-model-page space-y-4">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -111,9 +149,9 @@ export default async function ProcessosPage({
           <p className="mj-model-subtitle">Exibindo {filteredProcesses.length} resultado(s)</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button className="mj-model-button-green" type="button">
-            Adicionar
-          </button>
+          <Link className="mj-model-button-gray inline-flex items-center justify-center" href="/processos/importar-oab">
+            Boundary OAB
+          </Link>
         </div>
       </div>
 
@@ -138,7 +176,13 @@ export default async function ProcessosPage({
       <div className="mj-model-toolbar px-4 py-4">
         <div className="text-right text-[13px] text-slate-400">
           Filtros simples /{" "}
-          <button className="font-medium text-slate-200 underline underline-offset-2" type="button">
+          <button
+            aria-disabled="true"
+            className="font-medium text-slate-200 underline underline-offset-2 opacity-70"
+            title="Filtros personalizados ainda nao estao liberados nesta lista."
+            type="button"
+            disabled
+          >
             Filtros personalizados
           </button>
         </div>
@@ -209,7 +253,58 @@ export default async function ProcessosPage({
         />
       ) : null}
 
-      {!state && filteredProcesses.length === 0 ? (
+      {hasNoRealProcesses && modelCard ? (
+        <div className="mj-model-panel border border-cyan-300/20 bg-cyan-300/10 px-4 py-4">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0">
+            <p className="mj-model-title">Exemplo canonico de processo pos-distribuicao</p>
+            <p className="mt-1 text-[13px] text-slate-300">
+                Use este card para visualizar o processo ja nascido depois do handoff, partindo de um cliente real do tenant.
+            </p>
+          </div>
+            <Link className="mj-model-button-gray inline-flex items-center justify-center" href="/processos/modelo">
+              Ver fluxo canonico
+            </Link>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Cliente</p>
+              <p className="mt-2 text-sm font-semibold text-white">{modelCard.clientName}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">{modelCard.clientDocumentId}</p>
+            </div>
+            <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Caso</p>
+              <p className="mt-2 text-sm font-semibold text-white">{modelCard.caseTitle}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                {modelCard.bankName} | {modelCard.title}
+              </p>
+            </div>
+            <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Comarca</p>
+              <p className="mt-2 text-sm font-semibold text-white">{modelCard.courtDistrict}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">{modelCard.courtName}</p>
+            </div>
+            <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Handoff de distribuicao</p>
+              <p className="mt-2 text-sm font-semibold text-white">Caso fechado para o processo</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                O quadro do detalhe mostra classe, assunto, urgencia e os acessos oficiais antes do processo nascer.
+              </p>
+            </div>
+            <div className="workspace-soft-card rounded-[4px] border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Processo</p>
+              <p className="mt-2 text-sm font-semibold text-white">{modelCard.title}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">{modelCard.statusLabel}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                Clique para abrir o modelo e ver o detalhe completo do processo.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {!state && filteredProcesses.length === 0 && !modelCard ? (
         <div className="mj-model-panel px-4 py-4">
           <p className="mj-model-empty">Nenhum processo encontrado para o filtro atual.</p>
         </div>

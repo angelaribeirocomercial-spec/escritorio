@@ -1,0 +1,38 @@
+from_agent: analyst
+to_agent: devops
+last_command: "*push"
+story_ids:
+  - "18.12"
+  - "18.14"
+consumed: true
+branch: "feature/clara-hardening"
+summary: "Processos agora exibem modelo canônico com quadro de distribuição, a busca global navega para o melhor resultado e o menu lateral foi enxugado."
+quality_gates:
+  lint: pass
+  typecheck: pass
+  test: pass
+  build: pass
+changes:
+  - "Criado quadro de distribuicao no detalhe do processo com cliente, CPF/CNPJ, parte contraria, classe, assunto, comarca, competencia, valor, tipo de acao, urgencia e estado local."
+  - "Adicionado acesso externo ao PJe/TJMG apenas como atalho oficial, sem protocolo automatizado."
+  - "Criado exemplo canônico de processo em /processos/modelo para quando a lista real vier vazia."
+  - "Removido Meus textos do menu lateral."
+  - "Removido o bloco Entrada unica do caso da Clara."
+  - "Busca global agora abre o melhor resultado ao pressionar Enter."
+files:
+  - "apps/web/src/app/(workspace)/clara/page.tsx"
+  - "apps/web/src/app/(workspace)/pessoas/clientes/[clientId]/page.tsx"
+  - "apps/web/src/app/(workspace)/processos/[processId]/page.tsx"
+  - "apps/web/src/app/(workspace)/processos/modelo/page.tsx"
+  - "apps/web/src/app/(workspace)/processos/page.tsx"
+  - "apps/web/src/components/layout/client-cockpit-frame.tsx"
+  - "apps/web/src/components/layout/process-cockpit-frame.tsx"
+  - "apps/web/src/components/layout/workspace-global-search.tsx"
+  - "apps/web/src/components/layout/workspace-navigation.ts"
+  - "apps/web/src/server/services/workspace/get-workspace-shell-search.ts"
+  - "docs/stories/18.12.modelos-canonicos-por-nicho-e-distribuicao-simulada.md"
+  - "docs/stories/18.14.pacote-documental-do-cliente-com-procuracao-e-honorarios.md"
+next_recommended_command: "*push"
+notes:
+  - "PJe/TJMG continua sem integração automatizada de protocolo ou comprovante."
+  - "Untracked `.codex/memories/` and `apps/web/tsconfig.tsbuildinfo` remain intentionally excluded."

@@ -5,7 +5,11 @@ import { UserRole } from "@lexia/domain";
 import {
   buildDemoWorkspaceSession,
   DEMO_AUTH_COOKIE,
-  isDemoAccessEnabled
+  DEMO_VISIBLE_EMAIL,
+  DEMO_VISIBLE_TENANT_NAME,
+  DEMO_VISIBLE_TENANT_SLUG,
+  isDemoAccessEnabled,
+  isDemoWorkspaceContext
 } from "@/lib/auth/demo-access";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -17,6 +21,7 @@ import {
 export type WorkspaceSession = {
   userId: string;
   email: string | null;
+  displayEmail: string | null;
   role: UserRole;
   workspace: WorkspaceContext;
 };
@@ -37,20 +42,35 @@ export async function getWorkspaceSession(): Promise<WorkspaceSession | null> {
 
   const supabase = getSupabaseServerClient();
   const {
-    data: { session }
-  } = await supabase.auth.getSession();
+    data: { user }
+  } = await supabase.auth.getUser();
 
-  if (!session?.user) {
+  if (!user) {
     return null;
   }
 
-  const workspace = await resolveWorkspaceContext(session.user.id);
+  const workspace = await resolveWorkspaceContext(user.id);
+  const isDemoContext = isDemoWorkspaceContext({
+    userId: user.id,
+    tenantId: workspace.tenant.id,
+    email: user.email ?? null
+  });
 
   return {
-    userId: session.user.id,
-    email: session.user.email ?? null,
+    userId: user.id,
+    email: user.email ?? null,
+    displayEmail: isDemoContext ? DEMO_VISIBLE_EMAIL : user.email ?? null,
     role: workspace.membership.role,
-    workspace
+    workspace: isDemoContext
+      ? {
+          ...workspace,
+          tenant: {
+            ...workspace.tenant,
+            name: DEMO_VISIBLE_TENANT_NAME,
+            slug: DEMO_VISIBLE_TENANT_SLUG
+          }
+        }
+      : workspace
   } satisfies WorkspaceSession;
 }
 

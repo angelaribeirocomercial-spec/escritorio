@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DocumentRecord } from "@lexia/domain";
 
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -25,12 +27,14 @@ export type TenantDocumentUploadInput = {
   summary: string;
   tags?: readonly string[];
   actions?: readonly string[];
+  supabaseClient?: SupabaseClient;
 };
 
 export type TenantDocumentUploadResult = {
   documentId: string;
   storagePath: string;
   uploadedAt: string;
+  document: DocumentRecord;
 };
 
 function slugifyFileName(fileName: string) {
@@ -68,7 +72,7 @@ export async function uploadTenantDocument(
     throw new Error("O arquivo selecionado excede o limite de 30 MB.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = input.supabaseClient ?? getSupabaseServerClient();
   const documentId = `doc-${randomUUID()}`;
   const storedFileName = slugifyFileName(input.file.name);
   const storagePath = `${input.tenantId}/${input.clientId}/${input.caseId}/${documentId}/${storedFileName}`;
@@ -101,12 +105,12 @@ export async function uploadTenantDocument(
     summary: input.summary,
     page_count: 0,
     uploaded_at: uploadedAt,
-    preview_label: "Preview pendente de processamento.",
+    preview_label: "Aguardando leitura OCR e revisao humana.",
     storage_bucket: TENANT_DOCUMENT_BUCKET,
     storage_path: storagePath,
     storage_mime_type: mimeType,
     storage_size_bytes: input.file.size,
-    actions: input.actions ?? ["Classificar documento", "Acionar Clara"]
+    actions: input.actions ?? ["Ler com OCR", "Classificar documento", "Acionar Clara"]
   });
 
   if (insertError) {
@@ -117,6 +121,29 @@ export async function uploadTenantDocument(
   return {
     documentId,
     storagePath,
-    uploadedAt
+    uploadedAt,
+    document: {
+      id: documentId,
+      clientId: input.clientId,
+      caseId: input.caseId,
+      fileName: input.file.name,
+      originalFileName: input.file.name,
+      documentType: input.documentType,
+      category: input.category,
+      tags: input.tags ?? [],
+      aiStatus: "not_analyzed",
+      summary: input.summary,
+      pageCount: 0,
+      uploadedAt,
+      previewLabel: "Aguardando leitura OCR e revisao humana.",
+      storageBucket: TENANT_DOCUMENT_BUCKET,
+      storagePath,
+      storageMimeType: mimeType,
+      storageSizeBytes: input.file.size,
+      actions: input.actions ?? ["Ler com OCR", "Classificar documento", "Acionar Clara"],
+      structuredExtraction: {},
+      extractionSourceTrace: {},
+      reviewStatus: "pending"
+    }
   };
 }

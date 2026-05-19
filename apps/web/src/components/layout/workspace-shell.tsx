@@ -4,17 +4,21 @@ import Link from "next/link";
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
+import { ClaraFloatingAvatar } from "@/components/layout/clara-floating-avatar";
 import { SessionActions } from "@/components/layout/session-actions";
+import { WorkspaceGlobalSearch } from "@/components/layout/workspace-global-search";
 import {
   navSections,
   type NavIconId,
   type NavItem
 } from "@/components/layout/workspace-navigation";
+import type { WorkspaceSearchEntry } from "@/components/layout/workspace-search-types";
 import { WorkspaceSession } from "@/lib/auth/session";
 
 type WorkspaceShellProps = {
   session: WorkspaceSession;
   children: ReactNode;
+  searchEntries: WorkspaceSearchEntry[];
 };
 
 const navigationItems = navSections.flatMap((section) => section.items);
@@ -186,6 +190,7 @@ function renderNavItem(
   pathname: string,
   openSections: Record<string, boolean>,
   toggleSection: (href: string, fallbackOpen: boolean) => void,
+  clearSections: () => void,
   mode: "desktop" | "mobile" = "desktop"
 ) {
   const isActive =
@@ -247,6 +252,7 @@ function renderNavItem(
             isActive ? "text-white" : "theme-shell-muted hover:bg-white/[0.06] hover:text-white"
           }`}
           href={item.href}
+          onClick={clearSections}
           style={isActive ? { backgroundColor: "var(--shell-active-bg)" } : undefined}
         >
           <span className="flex items-center gap-3">
@@ -291,9 +297,10 @@ function renderNavItem(
   );
 }
 
-export function WorkspaceShell({ children, session }: WorkspaceShellProps) {
+export function WorkspaceShell({ children, searchEntries, session }: WorkspaceShellProps) {
   const pathname = usePathname();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const clearSections = () => setOpenSections({});
 
   useEffect(() => {
     const activeParent = navigationItems.find(
@@ -374,9 +381,9 @@ export function WorkspaceShell({ children, session }: WorkspaceShellProps) {
                   </p>
                 ) : null}
                 <div className="space-y-1">
-                  {section.items.map((item) =>
-                    renderNavItem(item, pathname, openSections, toggleSection)
-                  )}
+                    {section.items.map((item) =>
+                      renderNavItem(item, pathname, openSections, toggleSection, clearSections)
+                    )}
                 </div>
               </div>
             ))}
@@ -418,15 +425,7 @@ export function WorkspaceShell({ children, session }: WorkspaceShellProps) {
               </div>
 
               <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
-                <button
-                  className="reference-header-search theme-header-muted inline-flex h-9 w-full items-center justify-between px-3 text-[13px] font-medium transition hover:bg-white/[0.08] hover:text-white sm:w-[23rem]"
-                  type="button"
-                >
-                  <span className="truncate">Buscar cliente, processo, documento ou tese</span>
-                  <span className="rounded-[4px] border border-white/10 bg-white/5 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em]">
-                    /
-                  </span>
-                </button>
+                <WorkspaceGlobalSearch entries={searchEntries} />
                 <SessionActions session={session} />
               </div>
             </div>
@@ -439,7 +438,7 @@ export function WorkspaceShell({ children, session }: WorkspaceShellProps) {
                   </p>
                   <div className="space-y-2">
                     {section.items.map((item) =>
-                      renderNavItem(item, pathname, openSections, toggleSection, "mobile")
+                      renderNavItem(item, pathname, openSections, toggleSection, clearSections, "mobile")
                     )}
                   </div>
                 </div>
@@ -455,6 +454,7 @@ export function WorkspaceShell({ children, session }: WorkspaceShellProps) {
           <main className="min-w-0">{children}</main>
         </div>
       </div>
+      <ClaraFloatingAvatar />
     </div>
   );
 }

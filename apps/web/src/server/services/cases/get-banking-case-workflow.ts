@@ -26,6 +26,20 @@ const WORKFLOW_BLUEPRINTS: Record<
     requiredDocuments: readonly string[];
   }
 > = {
+  "triagem-inicial": {
+    steps: [
+      { id: "cadastro", title: "Cadastro minimo concluido", detail: "Nome, contato e documento pessoal ja foram capturados." },
+      { id: "documentos", title: "Complementar base documental", detail: "Comprovante de residencia, contrato e anexos do caso ainda precisam entrar." },
+      { id: "classificacao", title: "Classificar banco e nicho", detail: "A triagem ainda precisa fechar banco, nicho bancario e objetivo juridico." },
+      { id: "estrategia", title: "Abrir leitura juridica", detail: "Depois da triagem, o caso pode migrar para a leitura juridica adequada." },
+      { id: "distribuicao", title: "Distribuicao e acompanhamento", detail: "Somente depois da triagem completa o caso segue para peca, protocolo e monitoramento." }
+    ],
+    requiredDocuments: [
+      "Documento pessoal do cliente",
+      "Comprovante de residencia",
+      "Contrato bancario ou CCB"
+    ]
+  },
   revisional: {
     steps: [
       { id: "cadastro", title: "Cadastro concluido", detail: "Cliente, banco, nicho e objetivo inicial registrados." },
@@ -74,6 +88,34 @@ const WORKFLOW_BLUEPRINTS: Record<
       "Documento pessoal do cliente",
       "Documento do veiculo",
       "Notificacao de mora"
+    ]
+  },
+  "cartao-consignado": {
+    steps: [
+      { id: "cadastro", title: "Cadastro concluido", detail: "Cliente, banco e contexto inicial registrados." },
+      { id: "documentos", title: "Base contratual", detail: "Contrato, extratos e sinais do desconto reunidos." },
+      { id: "analise", title: "Analise do desconto", detail: "Leitura do extrato, do contrato e da cobranca controvertida." },
+      { id: "estrategia", title: "Estrategia juridica", detail: "Definicao da peca e da tese de RMC ou cartao consignado." },
+      { id: "distribuicao", title: "Distribuicao e acompanhamento", detail: "Protocolo e monitoramento processual do caso." }
+    ],
+    requiredDocuments: [
+      "Documento pessoal do cliente",
+      "Extrato do beneficio ou extrato bancario",
+      "Contrato bancario ou CCB"
+    ]
+  },
+  "beneficio-descontos": {
+    steps: [
+      { id: "cadastro", title: "Cadastro concluido", detail: "Cliente, banco e contexto inicial registrados." },
+      { id: "documentos", title: "Base de beneficio", detail: "Extrato, comunicações e base de desconto reunidos." },
+      { id: "analise", title: "Analise do desconto", detail: "Leitura do extrato do beneficio e da cobranca controvertida." },
+      { id: "estrategia", title: "Estrategia juridica", detail: "Definicao da peca e da tese de desconto previdenciario." },
+      { id: "distribuicao", title: "Distribuicao e acompanhamento", detail: "Protocolo e monitoramento processual do caso." }
+    ],
+    requiredDocuments: [
+      "Documento pessoal do cliente",
+      "Extrato do beneficio ou extrato bancario",
+      "Comunicacoes com o banco"
     ]
   }
 };
@@ -124,6 +166,24 @@ function detectCurrentStepIndex(
   missingDocuments: readonly string[]
 ) {
   const normalizedStage = normalizeLabel(stage);
+
+  if (niche === "triagem-inicial") {
+    if (normalizedStage.includes("estrateg")) {
+      return WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "estrategia");
+    }
+
+    if (normalizedStage.includes("classific")) {
+      return WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "classificacao");
+    }
+
+    if (normalizedStage.includes("distribu")) {
+      return WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "distribuicao");
+    }
+
+    return missingDocuments.length > 0
+      ? WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "documentos")
+      : WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "classificacao");
+  }
 
   if (normalizedStage.includes("distribu")) {
     return WORKFLOW_BLUEPRINTS[niche].steps.findIndex((step) => step.id === "distribuicao");
@@ -216,6 +276,11 @@ function buildWorkflowBlockers(
 ) {
   const blockers = [...checklistState.missingDocuments];
 
+  if (niche === "triagem-inicial") {
+    blockers.push("Banco e nicho bancario final ainda precisam ser classificados na triagem.");
+    blockers.push("A leitura juridica continua bloqueada ate o fechamento minimo do atendimento.");
+  }
+
   if (niche === "revisional" && !stageReached(stage, "estrategia")) {
     blockers.push("Parecer tecnico e estrategia juridica ainda nao consolidados.");
   }
@@ -229,6 +294,31 @@ function buildWorkflowReadiness(
   documentLabels: readonly string[],
   checklistState: BankingCaseChecklistStateRecord
 ): BankingCaseWorkflowReadinessRecord[] {
+  if (niche === "triagem-inicial") {
+    return [
+      {
+        id: "triage-classification",
+        label: "Classificacao do atendimento",
+        state: "blocked",
+        detail: "O atendimento ja entrou no cockpit, mas ainda precisa fechar banco, nicho e objetivo juridico.",
+        blockers: ["Banco e nicho bancario final ainda nao foram consolidados."]
+      },
+      {
+        id: "triage-initial-analysis",
+        label: "Leitura juridica inicial",
+        state: "blocked",
+        detail:
+          checklistState.missingDocuments.length === 0
+            ? "A base documental minima esta melhor, mas a triagem ainda precisa ser classificada antes da leitura juridica."
+            : "Ainda faltam documentos-base para tirar o atendimento da triagem inicial.",
+        blockers:
+          checklistState.missingDocuments.length === 0
+            ? ["Classificar banco e nicho bancario do atendimento."]
+            : checklistState.missingDocuments
+      }
+    ];
+  }
+
   if (niche !== "revisional") {
     return [
       {
@@ -356,6 +446,8 @@ export function buildBankingCaseWorkflowState(
   const nextStep =
     checklistState.missingDocuments.length > 0
       ? `Reunir ${checklistState.missingDocuments[0].toLowerCase()} para destravar o fluxo do caso.`
+      : niche === "triagem-inicial"
+        ? "Classificar banco, nicho e objetivo inicial antes de abrir a leitura juridica."
       : readiness.find((item) => item.state === "ready" && item.id === "petition-draft")
         ? "Preparar a minuta da peticao inicial dentro do contexto deste caso."
         : readiness.find((item) => item.state === "ready" && item.id === "technical-opinion")

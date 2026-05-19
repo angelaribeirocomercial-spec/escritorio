@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { getClaraDeadlineArtifact } from "@/server/services/clara/get-clara-artifacts";
@@ -15,10 +17,40 @@ function severityLabel(severity: string) {
   }
 }
 
+type ResponsibleOption = {
+  label: string;
+  value: string;
+  disabled?: boolean;
+};
+
+function buildResponsibleOptions(
+  items: Awaited<ReturnType<typeof getProceduralDeadlines>>
+): ResponsibleOption[] {
+  const responsibles = [...new Set(items.map((item) => item.responsibleLabel).filter(Boolean))];
+
+  return responsibles.length > 0
+    ? [
+        { label: "Todos os advogados", value: "" },
+        ...responsibles.map((responsible) => ({ label: responsible, value: responsible }))
+      ]
+    : [{ label: "Nenhum advogado disponivel", value: "", disabled: true }];
+}
+
 export default async function AgendaPrazosPage({
   searchParams
 }: {
-  searchParams?: { clara?: string; created?: string; record?: string; action?: string };
+  searchParams?: {
+    clara?: string;
+    created?: string;
+    record?: string;
+    action?: string;
+    baixado?: string;
+    inicio?: string;
+    fim?: string;
+    responsavel?: string;
+    origem?: string;
+    severidade?: string;
+  };
 }) {
   let deadlines: Awaited<ReturnType<typeof getProceduralDeadlines>> = [];
   let state: {
@@ -48,21 +80,57 @@ export default async function AgendaPrazosPage({
   const claraDisplay = claraArtifact
     ? getClaraRecordDisplay(claraRecord, "Prazo preparado pela Clara", claraArtifact.summary)
     : null;
+  const responsibleOptions = buildResponsibleOptions(deadlines);
+  const selectedResponsavel = searchParams?.responsavel?.trim() ?? "";
+  const selectedOrigem = searchParams?.origem?.trim() ?? "";
+  const selectedSeveridade = searchParams?.severidade?.trim() ?? "";
+  const selectedBaixado = searchParams?.baixado?.trim() ?? "nao";
+  const selectedInicio = searchParams?.inicio?.trim() ?? "";
+  const selectedFim = searchParams?.fim?.trim() ?? "";
+  const startDate = selectedInicio ? new Date(selectedInicio) : null;
+  const endDate = selectedFim ? new Date(selectedFim) : null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const filteredDeadlines = deadlines.filter((deadline) => {
+    const dueDate = new Date(deadline.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+
+    const matchesResponsavel = selectedResponsavel ? deadline.responsibleLabel === selectedResponsavel : true;
+    const matchesOrigem = selectedOrigem ? deadline.sourceLabel === selectedOrigem : true;
+    const matchesSeveridade = selectedSeveridade ? deadline.severity === selectedSeveridade : true;
+    const matchesBaixado =
+      selectedBaixado === "todos"
+        ? true
+        : selectedBaixado === "sim"
+          ? dueDate <= today
+          : dueDate > today;
+    const matchesInicio = startDate ? dueDate >= startDate : true;
+    const matchesFim = endDate ? dueDate <= endDate : true;
+
+    return (
+      matchesResponsavel &&
+      matchesOrigem &&
+      matchesSeveridade &&
+      matchesBaixado &&
+      matchesInicio &&
+      matchesFim
+    );
+  });
 
   return (
     <div className="mj-model-page space-y-4">
       <div className="flex items-start justify-between">
         <div>
           <p className="mj-model-title">Prazos</p>
-          <p className="mj-model-subtitle">Exibindo {deadlines.length} resultado(s)</p>
+          <p className="mj-model-subtitle">Exibindo {filteredDeadlines.length} resultado(s)</p>
         </div>
         <div className="flex gap-2">
-          <button className="mj-model-button-gray" type="button">
-            Importar lote
-          </button>
-          <button className="mj-model-button-green" type="button">
+          <Link className="mj-model-button-gray inline-flex items-center justify-center" href="/configuracoes/integracoes">
+            Configurar integração
+          </Link>
+          <Link className="mj-model-button-green inline-flex items-center justify-center" href="/agenda/prazos/novo">
             Adicionar
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -70,23 +138,35 @@ export default async function AgendaPrazosPage({
         prazo em dia prazo expirando prazo expirado prazo baixado
       </p>
 
-      <section className="mj-model-toolbar px-4 py-4">
+      <form className="mj-model-toolbar px-4 py-4" method="get">
         <div className="grid gap-3 xl:grid-cols-[1.2fr_1fr_1fr_1fr_1fr_auto]">
           <div>
             <label className="mb-2 block text-[13px] text-slate-400">Prazo atendido (baixado)</label>
-            <select className="mj-model-input w-full px-3 outline-none">
-              <option>Nao</option>
-              <option>Todos</option>
-              <option>Sim</option>
+            <select className="mj-model-input w-full px-3 outline-none" defaultValue={selectedBaixado} name="baixado">
+              <option value="nao">Nao</option>
+              <option value="todos">Todos</option>
+              <option value="sim">Sim</option>
             </select>
           </div>
           <div>
             <label className="mb-2 block text-[13px] text-slate-400">Inicio</label>
-            <input className="mj-model-input w-full px-3 outline-none" placeholder="__/__/____" type="text" />
+            <input
+              className="mj-model-input w-full px-3 outline-none"
+              defaultValue={selectedInicio}
+              name="inicio"
+              placeholder="__/__/____"
+              type="text"
+            />
           </div>
           <div>
             <label className="mb-2 block text-[13px] text-slate-400">Fim</label>
-            <input className="mj-model-input w-full px-3 outline-none" placeholder="__/__/____" type="text" />
+            <input
+              className="mj-model-input w-full px-3 outline-none"
+              defaultValue={selectedFim}
+              name="fim"
+              placeholder="__/__/____"
+              type="text"
+            />
           </div>
           <div>
             <label className="mb-2 block text-[13px] text-slate-400">
@@ -98,17 +178,26 @@ export default async function AgendaPrazosPage({
             <label className="mb-2 block text-[13px]" style={{ color: "transparent" }}>
               Advogados
             </label>
-            <select className="mj-model-input w-full px-3 outline-none">
-              <option>Selecionar...</option>
+            <select
+              className="mj-model-input w-full px-3 outline-none"
+              defaultValue={selectedResponsavel}
+              disabled={responsibleOptions.length === 1 && responsibleOptions[0].disabled === true}
+              name="responsavel"
+            >
+              {responsibleOptions.map((option) => (
+                <option key={option.label} value={option.value} disabled={option.disabled}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex items-end">
-            <button className="mj-model-button-gray" type="button">
+            <button className="mj-model-button-gray" type="submit">
               Buscar
             </button>
           </div>
         </div>
-      </section>
+      </form>
 
       {state ? (
         <WorkspaceStatePanel
@@ -132,7 +221,7 @@ export default async function AgendaPrazosPage({
             <span>Severidade</span>
           </div>
 
-          {deadlines.map((deadline, index) => (
+          {filteredDeadlines.map((deadline, index) => (
             <div
               key={deadline.id}
               className="grid grid-cols-[8rem_1.2fr_1fr_10rem_9rem] items-center px-3 py-3 text-[13px]"

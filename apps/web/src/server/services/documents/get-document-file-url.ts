@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 export async function getDocumentFileSignedUrl(params: {
   bucket: string;
@@ -6,6 +7,10 @@ export async function getDocumentFileSignedUrl(params: {
   expiresInSeconds?: number;
 }) {
   if (!params.bucket || !params.path) {
+    return null;
+  }
+
+  if (!isSupabaseConfigured()) {
     return null;
   }
 

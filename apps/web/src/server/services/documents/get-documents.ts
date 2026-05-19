@@ -1,31 +1,40 @@
 import {
   BankingCaseRecord,
   ClientRecord,
+  DocumentStructuredExtractionField,
   DocumentRecord
 } from "@lexia/domain";
 
 import { getWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getDocumentAutomationReadiness } from "@/server/services/contract-analysis/get-automation-readiness";
+import { getDocumentFileSignedUrl } from "@/server/services/documents/get-document-file-url";
+import {
+  DEMO_CASE_RECORD,
+  DEMO_CLIENT_RECORD,
+  DEMO_DOCUMENT_RECORDS
+} from "@/server/services/demo/demo-workspace-data";
 
 type DocumentWithContext = DocumentRecord & {
   client: ClientRecord;
   bankingCase: BankingCaseRecord;
+  pdfHref: string | null;
 };
 
 type ClientRow = {
   id: string;
   full_name: string;
-  document_id: string;
-  email: string;
+  document_id: string | null;
+  email: string | null;
   phone: string;
-  whatsapp: string;
+  whatsapp: string | null;
   address: string;
-  lead_source: string;
-  bank_name: string;
+  lead_source: string | null;
+  bank_name: string | null;
   service_status: ClientRecord["serviceStatus"];
   signed_contract: boolean;
   legal_viability_score: number;
-  fees_label: string;
+  fees_label: string | null;
   documents_sent: number;
   notes: string;
   ia_context: string;
@@ -38,9 +47,9 @@ type CaseRow = {
   id: string;
   client_id: string;
   title: string;
-  bank_name: string;
+  bank_name: string | null;
   process_number: string;
-  contract_number: string;
+  contract_number: string | null;
   claim_type: string;
   stage: string;
   status: BankingCaseRecord["status"];
@@ -78,6 +87,13 @@ type DocumentRow = {
   storage_mime_type: string;
   storage_size_bytes: number;
   actions: string[] | null;
+  structured_extraction: Record<string, DocumentStructuredExtractionField> | null;
+  extraction_source_trace: Record<string, unknown> | null;
+  extraction_error: string | null;
+  extracted_at: string | null;
+  reviewed_at: string | null;
+  review_notes: string | null;
+  review_status: DocumentRecord["reviewStatus"] | null;
   client: ClientRow | ClientRow[] | null;
   banking_case: CaseRow | CaseRow[] | null;
 };
@@ -86,17 +102,17 @@ function mapClientRow(row: ClientRow): ClientRecord {
   return {
     id: row.id,
     fullName: row.full_name,
-    documentId: row.document_id,
-    email: row.email,
+    documentId: row.document_id ?? "",
+    email: row.email ?? "",
     phone: row.phone,
-    whatsapp: row.whatsapp,
+    whatsapp: row.whatsapp ?? "",
     address: row.address,
-    leadSource: row.lead_source,
-    bankName: row.bank_name,
+    leadSource: row.lead_source ?? "",
+    bankName: row.bank_name ?? "",
     serviceStatus: row.service_status,
     signedContract: row.signed_contract,
     legalViabilityScore: row.legal_viability_score,
-    feesLabel: row.fees_label,
+    feesLabel: row.fees_label ?? "",
     documentsSent: row.documents_sent,
     notes: row.notes,
     iaContext: row.ia_context,
@@ -111,9 +127,9 @@ function mapCaseRow(row: CaseRow): BankingCaseRecord {
     id: row.id,
     clientId: row.client_id,
     title: row.title,
-    bankName: row.bank_name,
+    bankName: row.bank_name ?? "",
     processNumber: row.process_number,
-    contractNumber: row.contract_number,
+    contractNumber: row.contract_number ?? "",
     claimType: row.claim_type,
     stage: row.stage,
     status: row.status,
@@ -152,7 +168,7 @@ function mapDocumentRow(row: DocumentRow): DocumentWithContext | null {
     return null;
   }
 
-  return {
+  const mappedDocument: DocumentWithContext = {
     id: row.id,
     clientId: row.client_id,
     caseId: row.case_id,
@@ -171,8 +187,21 @@ function mapDocumentRow(row: DocumentRow): DocumentWithContext | null {
     storageMimeType: row.storage_mime_type,
     storageSizeBytes: row.storage_size_bytes,
     actions: row.actions ?? [],
+    structuredExtraction: row.structured_extraction ?? {},
+    extractionSourceTrace: row.extraction_source_trace ?? {},
+    extractionError: row.extraction_error ?? undefined,
+    extractedAt: row.extracted_at ?? undefined,
+    reviewedAt: row.reviewed_at ?? undefined,
+    reviewNotes: row.review_notes ?? undefined,
+    reviewStatus: row.review_status ?? undefined,
     client: mapClientRow(clientRow),
-    bankingCase: mapCaseRow(caseRow)
+    bankingCase: mapCaseRow(caseRow),
+    pdfHref: null
+  };
+
+  return {
+    ...mappedDocument,
+    automationReadiness: getDocumentAutomationReadiness(mappedDocument)
   };
 }
 
@@ -195,6 +224,13 @@ const DOCUMENT_SELECT = `
   storage_mime_type,
   storage_size_bytes,
   actions,
+  structured_extraction,
+  extraction_source_trace,
+  extraction_error,
+  extracted_at,
+  reviewed_at,
+  review_notes,
+  review_status,
   client:clients (
     id,
     full_name,
@@ -246,10 +282,23 @@ export async function getDocuments(): Promise<DocumentWithContext[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load documents.");
+    return [];
   }
 
-  const supabase = getSupabaseServerClient();
+  if (
+    session.workspace.tenant.slug === "clara-bancaria-demo" ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
+  ) {
+    return DEMO_DOCUMENT_RECORDS.map((document) => ({
+      ...document,
+      client: DEMO_CLIENT_RECORD,
+      bankingCase: DEMO_CASE_RECORD,
+      pdfHref: null
+    }));
+  }
+
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("documents")
     .select(DOCUMENT_SELECT)
@@ -257,12 +306,29 @@ export async function getDocuments(): Promise<DocumentWithContext[]> {
     .order("uploaded_at", { ascending: false });
 
   if (error) {
-    throw new Error(`Failed to load documents for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load documents for tenant ${session.workspace.tenant.id}.`);
+    return [];
   }
 
-  return (data ?? [])
-    .map((row) => mapDocumentRow(row as DocumentRow))
-    .filter((row): row is DocumentWithContext => row !== null);
+  return Promise.all(
+    (data ?? []).map(async (row) => {
+      const mapped = mapDocumentRow(row as DocumentRow);
+
+      if (!mapped) {
+        return null;
+      }
+
+      const pdfHref = await getDocumentFileSignedUrl({
+        bucket: mapped.storageBucket,
+        path: mapped.storagePath
+      }).catch(() => null);
+
+      return {
+        ...mapped,
+        pdfHref
+      };
+    })
+  ).then((rows) => rows.filter((row): row is DocumentWithContext => row !== null));
 }
 
 export async function getDocumentById(
@@ -271,10 +337,35 @@ export async function getDocumentById(
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load document details.");
+    return null;
   }
 
-  const supabase = getSupabaseServerClient();
+  if (
+    session.workspace.tenant.slug === "clara-bancaria-demo" ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL == null ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY == null
+  ) {
+    const demoDocument = DEMO_DOCUMENT_RECORDS.find((document) => document.id === documentId);
+
+    if (!demoDocument) {
+      return null;
+    }
+
+    return {
+      ...demoDocument,
+      client: DEMO_CLIENT_RECORD,
+      bankingCase: DEMO_CASE_RECORD,
+      pdfHref: null,
+      automationReadiness: getDocumentAutomationReadiness({
+        ...demoDocument,
+        client: DEMO_CLIENT_RECORD,
+        bankingCase: DEMO_CASE_RECORD,
+        pdfHref: null
+      } as DocumentWithContext)
+    };
+  }
+
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("documents")
     .select(DOCUMENT_SELECT)
@@ -283,9 +374,10 @@ export async function getDocumentById(
     .maybeSingle();
 
   if (error) {
-    throw new Error(
+    console.warn(
       `Failed to load document ${documentId} for tenant ${session.workspace.tenant.id}.`
     );
+    return null;
   }
 
   return data ? mapDocumentRow(data as DocumentRow) : null;

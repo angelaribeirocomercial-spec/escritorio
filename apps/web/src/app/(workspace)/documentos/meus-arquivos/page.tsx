@@ -16,14 +16,25 @@ function ToolButton({
     <button
       className={
         active
-          ? "mj-model-button-green !min-h-0 !w-[2.5rem] !px-0 !py-1"
-          : "mj-model-button-gray !min-h-0 !w-[2.5rem] !px-0 !py-1"
+          ? "mj-model-button-green !min-h-0 !min-w-[4.75rem] !px-3 !py-1"
+          : "mj-model-button-gray !min-h-0 !min-w-[4.75rem] !px-3 !py-1"
       }
       type="button"
     >
       {label}
     </button>
   );
+}
+
+function aiStatusLabel(status: string) {
+  switch (status) {
+    case "analyzed":
+      return "Lido";
+    case "needs_review":
+      return "Revisao humana";
+    default:
+      return "Aguardando OCR";
+  }
 }
 
 export default async function MeusArquivosPage({
@@ -77,17 +88,17 @@ export default async function MeusArquivosPage({
 
       <section className="mj-model-panel overflow-hidden">
         <div className="flex items-center justify-between gap-3 border-b px-4 py-3 mj-model-gridline">
-          <div className="flex items-center gap-1.5">
-            <ToolButton label="<" />
-            <ToolButton label="..." />
-            <ToolButton label="||" />
-            <ToolButton active label="o" />
-            <ToolButton label="+" />
-            <ToolButton label="x" />
-            <ToolButton label="i" />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <ToolButton label="Voltar" />
+            <ToolButton label="Mais acoes" />
+            <ToolButton label="Pausar" />
+            <ToolButton active label="Ativo" />
+            <ToolButton label="Novo" />
+            <ToolButton label="Fechar" />
+            <ToolButton label="Info" />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <span className="text-[13px] text-slate-400">
               Base real: {documents.length} docs / {totalPages} pags.
             </span>
@@ -96,9 +107,9 @@ export default async function MeusArquivosPage({
               placeholder="Buscar arquivos..."
               type="text"
             />
-            <ToolButton label="?" />
-            <ToolButton label="#" />
-            <ToolButton label="=" />
+            <ToolButton label="Ajuda" />
+            <ToolButton label="Filtros" />
+            <ToolButton label="Layout" />
           </div>
         </div>
 
@@ -136,7 +147,7 @@ export default async function MeusArquivosPage({
                       </p>
                     </div>
                     <span className="ml-4 shrink-0 text-[12px] text-slate-400">
-                      {document.aiStatus}
+                      {aiStatusLabel(document.aiStatus)}
                     </span>
                   </Link>
                 ))}

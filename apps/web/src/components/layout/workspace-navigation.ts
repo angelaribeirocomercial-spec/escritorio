@@ -53,14 +53,19 @@ export const navSections: NavSection[] = [
         shortLabel: "CRM",
         icon: "people",
         description: "Entrada, relacionamento e passagem para cliente/caso.",
-        children: [{ href: "/pessoas/clientes", label: "Clientes" }]
+        children: [
+          { href: "/crm/pipeline", label: "Pipeline" },
+          { href: "/crm/contratos", label: "Contratos" },
+          { href: "/crm/conversas", label: "Conversas" },
+          { href: "/crm/conversao", label: "Conversao" }
+        ]
       },
       {
         href: "/pessoas/clientes",
         label: "Clientes",
         shortLabel: "Clientes",
         icon: "people",
-        description: "Cockpit do relacionamento e entrada para o caso bancario."
+        description: "Base de clientes e ponto de partida para abertura de casos."
       },
       {
         href: "/processos",
@@ -71,9 +76,20 @@ export const navSections: NavSection[] = [
         children: [
           { href: "/processos", label: "Lista" },
           { href: "/processos/ultimos-andamentos", label: "Ultimos andamentos" },
-          { href: "/processos/importar-lote", label: "Importar lote" },
-          { href: "/processos/importar-oab", label: "Importar via OAB" },
+          { href: "/processos/monitoramentos", label: "Monitoramentos" },
           { href: "/processos/lixeira", label: "Lixeira" }
+        ]
+      },
+      {
+        href: "/agenda",
+        label: "Agenda",
+        shortLabel: "Agenda",
+        icon: "agenda",
+        description: "Compromissos, tarefas e prazos como execucao diaria do escritorio.",
+        children: [
+          { href: "/agenda/compromissos", label: "Compromissos" },
+          { href: "/agenda/tarefas", label: "Tarefas" },
+          { href: "/agenda/prazos", label: "Prazos" }
         ]
       },
       {
@@ -90,34 +106,11 @@ export const navSections: NavSection[] = [
         ]
       },
       {
-        href: "/andamentos",
-        label: "Andamentos",
-        shortLabel: "Andamentos",
-        icon: "updates",
-        description: "Monitoramento processual e leitura do que mudou nos casos.",
-        children: [
-          { href: "/andamentos/automaticos", label: "Automaticos" },
-          { href: "/andamentos/monitoramentos", label: "Monitoramentos" }
-        ]
-      },
-      {
-        href: "/agenda",
-        label: "Agenda",
-        shortLabel: "Agenda",
-        icon: "agenda",
-        description: "Compromissos, tarefas e prazos como execucao diaria do escritorio.",
-        children: [
-          { href: "/agenda/compromissos", label: "Compromissos" },
-          { href: "/agenda/tarefas", label: "Tarefas" },
-          { href: "/agenda/prazos", label: "Prazos" }
-        ]
-      },
-      {
         href: "/financeiro",
         label: "Financeiro",
         shortLabel: "Financeiro",
         icon: "financial",
-        description: "Receitas, despesas e leitura financeira do escritorio.",
+        description: "Receitas, despesas e leitura operacional do escritorio.",
         children: [
           { href: "/financeiro/despesas", label: "Despesas" },
           { href: "/financeiro/receitas", label: "Receitas" },
@@ -131,7 +124,8 @@ export const navSections: NavSection[] = [
         label: "Configuracoes",
         shortLabel: "Config",
         icon: "agenda",
-        description: "Parametros, integracoes e governanca do workspace."
+        description: "Parametros, integracoes e governanca do workspace.",
+        children: [{ href: "/configuracoes/integracoes", label: "Integracoes" }]
       }
     ]
   },

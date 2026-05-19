@@ -1,5 +1,9 @@
 # Epic 14: Nucleo operacional do escritorio bancario
 
+## Status
+
+Done
+
 ## Objetivo
 
 Instalar o primeiro nucleo operacional completo do novo produto, obedecendo ao PRD mestre v2 e ao handoff arquitetural executavel.
@@ -56,3 +60,9 @@ O nucleo minimo correto e:
 ## Recomendacao de implementacao
 
 A primeira story a implementar deve ser a `14.1`, porque ela fecha o primeiro caminho real de cadastro de cliente e caso com documentos e workflow inicial, que e a prioridade imediata de negocio definida pela usuaria.
+
+## Completion Notes
+
+- As stories `14.1` a `14.5` foram implementadas, validadas e marcadas como `Done`.
+- O nucleo operacional do escritorio bancario ficou consolidado no fluxo `Novo atendimento bancario -> caso com workflow do nicho -> cockpit do cliente -> Clara contextual minima`.
+- A governanca anti-legado foi aplicada para manter a superficie principal consistente com o `PRD mestre novo`.

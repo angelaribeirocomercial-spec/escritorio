@@ -25,7 +25,7 @@ const operationActions = [
   },
   {
     label: "Monitoramento",
-    href: "/andamentos/automaticos",
+    href: "/processos/monitoramentos",
     detail: "Andamentos processuais recentes e sinais que mudam prioridade."
   }
 ] as const;

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { getClaraRecord, getClaraRecordDisplay } from "@/server/services/clara/clara-record-store";
@@ -20,6 +22,25 @@ function categoryLabel(category: string) {
   }
 }
 
+type ResponsibleOption = {
+  label: string;
+  value: string;
+  disabled?: boolean;
+};
+
+function buildResponsibleOptions(
+  items: Awaited<ReturnType<typeof getAgendaCommitments>>
+): ResponsibleOption[] {
+  const responsibles = [...new Set(items.map((item) => item.responsibleLabel).filter(Boolean))];
+
+  return responsibles.length > 0
+    ? [
+        { label: "Todos os advogados", value: "" },
+        ...responsibles.map((responsible) => ({ label: responsible, value: responsible }))
+      ]
+    : [{ label: "Nenhum advogado disponivel", value: "", disabled: true }];
+}
+
 export default async function AgendaCompromissosPage({
   searchParams
 }: {
@@ -33,6 +54,7 @@ export default async function AgendaCompromissosPage({
     document?: string;
     focus?: string;
     objetivo?: string;
+    responsible?: string;
   };
 }) {
   let commitments: Awaited<ReturnType<typeof getAgendaCommitments>> = [];
@@ -76,33 +98,52 @@ export default async function AgendaCompromissosPage({
   const claraDisplay = claraArtifact
     ? getClaraRecordDisplay(claraRecord, "Compromisso preparado pela Clara", claraArtifact.message)
     : null;
+  const responsibleOptions = buildResponsibleOptions(commitments);
+  const selectedResponsible = searchParams?.responsible?.trim() ?? "";
+  const filteredCommitments = commitments.filter((commitment) =>
+    selectedResponsible ? commitment.responsibleLabel === selectedResponsible : true
+  );
 
   return (
     <div className="mj-model-page space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="mj-model-title">Compromissos</p>
-          <p className="mj-model-subtitle">Exibindo {commitments.length} resultado(s)</p>
+          <p className="mj-model-subtitle">Exibindo {filteredCommitments.length} resultado(s)</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <button className="mj-model-button-gray" type="button">
+          <Link
+            className="mj-model-button-gray inline-flex items-center justify-center"
+            href="/agenda/google-agenda"
+          >
             Integrar com o Google Agenda
-          </button>
-          <button className="mj-model-button-gray" type="button">
-            Modo lista
-          </button>
-          <button className="mj-model-button-green" type="button">
+          </Link>
+          <Link className="mj-model-button-green inline-flex items-center justify-center" href="/agenda/compromissos/novo">
             Adicionar
-          </button>
+          </Link>
         </div>
       </div>
 
-      <section className="mj-model-panel px-4 py-4">
+      <form className="mj-model-panel px-4 py-4" method="get">
         <label className="mb-2 block text-[13px] font-semibold text-slate-300">Advogados</label>
-        <select className="mj-model-input w-full px-3 outline-none">
-          <option>Selecionar...</option>
-        </select>
-      </section>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <select
+            className="mj-model-input w-full px-3 outline-none md:flex-1"
+            defaultValue={selectedResponsible}
+            disabled={responsibleOptions.length === 1 && responsibleOptions[0].disabled === true}
+            name="responsible"
+          >
+            {responsibleOptions.map((option) => (
+              <option key={option.label} value={option.value} disabled={option.disabled}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <button className="mj-model-button-gray md:w-40" type="submit">
+            Filtrar
+          </button>
+        </div>
+      </form>
 
       {claraArtifact ? (
         <section className="mj-model-panel px-4 py-4">
@@ -155,7 +196,7 @@ export default async function AgendaCompromissosPage({
             <span>Categoria</span>
           </div>
 
-          {commitments.map((commitment, index) => (
+          {filteredCommitments.map((commitment, index) => (
             <div
               key={commitment.id}
               className="grid grid-cols-[10rem_1.2fr_1fr_10rem_9rem] items-center px-3 py-3 text-[13px]"

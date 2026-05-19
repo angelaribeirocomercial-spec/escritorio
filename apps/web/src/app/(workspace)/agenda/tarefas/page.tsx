@@ -9,12 +9,6 @@ import {
 import { getOfficialDiaryTaskDraft } from "@/server/services/official-diary/get-official-diary";
 import { getTasks } from "@/server/services/tasks/get-tasks";
 
-const warningStyle = {
-  background: "rgba(250, 204, 21, 0.14)",
-  borderColor: "rgba(250, 204, 21, 0.3)",
-  color: "rgba(254, 240, 138, 0.96)"
-} as const;
-
 function priorityLabel(priority: string) {
   switch (priority) {
     case "urgent":
@@ -127,22 +121,14 @@ export default async function AgendaTarefasPage({
           <p className="mj-model-title">Tarefas</p>
           <p className="mj-model-subtitle">Exibindo {filteredTasks.length} resultado(s)</p>
         </div>
-        <button className="mj-model-button-green" type="button">
+        <Link className="mj-model-button-green inline-flex items-center justify-center" href="/diario-oficial">
           Adicionar
-        </button>
+        </Link>
       </div>
 
       <p className="text-[13px] text-slate-400">
         tarefa em dia prazo da tarefa expirando prazo da tarefa expirado tarefa baixada
       </p>
-
-      <div className="mj-model-panel px-4 py-4 text-[13px] leading-6" style={warningStyle}>
-        NOVIDADE: Em breve lancaremos a nova versao desta ferramenta de gestao de tarefas, chamada Workflow. Muito mais moderna, com fluxos de trabalho mais visuais no estilo arrastar e soltar. Aguarde!!
-      </div>
-
-      <div className="mj-model-panel px-4 py-4 text-[13px] leading-6" style={warningStyle}>
-        Atencao! voce nao possui mais credito para enviar torpedos pelo site. Adquira mais.
-      </div>
 
       {preparedTask ? (
         <section className="mj-model-panel px-4 py-4">

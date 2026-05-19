@@ -6,8 +6,8 @@ const siteStates = {
     title: "Criador de site indisponivel",
     description:
       "Esta area depende de um backend proprio para paginas publicas, permissao de clientes e publicacao do site. Como esse contrato ainda nao existe no sistema, a rota permanece bloqueada para nao simular uma criacao funcional.",
-    actionHref: "/dashboard",
-    actionLabel: "Voltar ao dashboard"
+    actionHref: "/crm",
+    actionLabel: "Voltar ao CRM"
   },
   "banco-de-imagens": {
     title: "Banco de imagens indisponivel",

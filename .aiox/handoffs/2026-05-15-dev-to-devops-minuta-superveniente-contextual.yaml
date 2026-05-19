@@ -1,0 +1,36 @@
+from_agent: dev
+to_agent: devops
+last_command: "*deploy"
+story_ids:
+  - "18.49"
+consumed: true
+branch: "feature/clara-hardening"
+summary: "Link contextual adicionado na carteira de pecas do processo para abrir a minuta superveniente na Clara com contexto preservado."
+quality_gates:
+  lint: pass
+  typecheck: pass
+  test: pass
+  build: pass
+changes:
+  - "A carteira de pecas do processo ganhou acao direta para abrir a minuta contextual correspondente."
+  - "A transicao para o editor preserva processId, caseId, clientId, piece, source e linked_update quando disponiveis."
+  - "O editor de texto passa a carregar e manter o contexto adicional da peca superveniente sugerida."
+files:
+  - "apps/web/src/app/(workspace)/processos/[processId]/page.tsx"
+  - "apps/web/src/components/layout/process-cockpit-frame.tsx"
+  - "apps/web/src/app/(workspace)/editor-de-texto/[subpage]/page.tsx"
+  - "docs/stories/18.49.abrir-minuta-superveniente-a-partir-da-peca-sugerida.md"
+do_not_stage:
+  - ".aiox/handoffs/2026-05-05-analyst-pje-distribuicao-gap.yaml"
+  - ".aiox/handoffs/2026-05-05-dev-to-devops-demo-fallback.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-click-validation-analise-contrato-gap.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-dossie-unico-prd-master-gap.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-onboarding-processos-financeiro-gap.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-to-devops-contract-analysis-failsafe.yaml"
+  - ".aiox/handoffs/2026-05-07-analyst-to-devops-dossier-tab-destinations.yaml"
+  - ".aiox/handoffs/2026-05-07-architect-dev-decisions-onboarding-processos-financeiro.yaml"
+  - ".aiox/handoffs/2026-05-07-deploy-preview-escritorio-liart.yaml"
+  - ".aiox/handoffs/2026-05-07-dev-to-devops-consolidate-onboarding-processes-finance.yaml"
+  - ".aiox/handoffs/2026-05-07-final-dossier-tabs-handoff.yaml"
+  - ".aiox/handoffs/2026-05-07-pr-body-feature-clara-hardening.md"
+  - "apps/web/tsconfig.tsbuildinfo"

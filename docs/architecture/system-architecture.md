@@ -8,7 +8,7 @@
 
 O repositorio segue como monorepo npm workspaces com a aplicacao principal em `apps/web`, contratos em `packages/domain`, componentes compartilhados em `packages/ui` e estrutura Supabase versionada em `supabase/`.
 
-A migracao Brownfield removeu o pacote ativo `@lexia/mocks` e converteu as principais verticais operacionais para fontes reais por tenant, usando Supabase como fonte primaria. Rotas que ainda nao possuem contrato tecnico real, como upload de arquivos, importacao de processos, site e preferencias editaveis, foram substituidas por estados controlados de indisponibilidade para nao simular funcionalidade pronta.
+A migracao Brownfield removeu o pacote ativo `@lexia/mocks` e converteu as principais verticais operacionais para fontes reais por tenant, usando Supabase como fonte primaria. Rotas que ainda nao possuem contrato tecnico real, como upload de arquivos, importacao em lote de processos, site e preferencias editaveis, foram substituidas por estados controlados de indisponibilidade para nao simular funcionalidade pronta. A rota legada `processos/importar-oab` nao faz importacao externa: ela apenas habilita monitoramento por OAB em processos reais ja existentes no tenant.
 
 ## 2. Current Stack
 
@@ -74,10 +74,17 @@ As verticais principais foram migradas para services por tenant:
 
 As areas abaixo nao exibem formulario ou fluxo falso enquanto nao houver contrato de backend:
 
-- Importacao de processos por lote/OAB.
+- Importacao de processos por lote.
 - Upload de documentos e relatorios reais de storage.
 - Criador de site, banco de imagens, e-mail e configuracoes do site.
 - Preferencias editaveis gerais do tenant.
+
+### 4.5 OAB Monitoring Route
+
+- A rota `processos/importar-oab` foi mantida por compatibilidade de navegacao, mas sua semantica atual e de monitoramento, nao de importacao.
+- O usuario seleciona um processo real do tenant e aciona uma server action que muda `monitoring_mode` para `oab`.
+- A action registra trilha processual local em `processes.latest_timeline` e `procedural_updates`, sem depender de integracao externa adicional.
+- O retorno da action preserva o foco visual via `processId` na querystring para manter contexto apos o redirect.
 
 ## 5. Brownfield Closure Criteria
 
@@ -95,6 +102,7 @@ As areas abaixo nao exibem formulario ou fluxo falso enquanto nao houver contrat
 O Brownfield foi fechado para migracao de runtime e remocao de placeholders criticos. O proximo trabalho deve ser tratado como evolucao de produto, nao descoberta Brownfield:
 
 - Implementar upload real com storage, processamento e vinculacao.
-- Implementar importadores de processos por lote/OAB.
+- Implementar importador real de processos por lote.
+- Evoluir o monitoramento por OAB para integracoes externas quando houver contrato tecnico proprio.
 - Implementar site publico, banco de imagens e e-mail por tenant.
 - Transformar estados controlados em funcionalidades reais conforme novas stories.

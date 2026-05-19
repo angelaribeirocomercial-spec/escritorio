@@ -6,7 +6,13 @@ import { getClaraStructuredCore } from "@/server/services/clara/get-clara-struct
 export type ClaraContextualTaskType =
   | "analisar-caso"
   | "checklist-documental"
-  | "sugerir-proximos-passos";
+  | "sugerir-proximos-passos"
+  | "parecer-tecnico"
+  | "analisar-intimacao"
+  | "gerar-peca"
+  | "consultar-jurisprudencia"
+  | "acompanhar-processo"
+  | "revisar-minuta";
 
 type ClaraExecutionLog = {
   executionId: string;
@@ -36,22 +42,54 @@ const DATA_DIR = path.join(process.cwd(), ".data");
 const EXECUTION_STORE_PATH = path.join(DATA_DIR, "clara-executions.json");
 
 async function ensureExecutionStore() {
-  await mkdir(DATA_DIR, { recursive: true });
-
   try {
-    await readFile(EXECUTION_STORE_PATH, "utf8");
+    await mkdir(DATA_DIR, { recursive: true });
+
+    try {
+      await readFile(EXECUTION_STORE_PATH, "utf8");
+    } catch {
+      await writeFile(EXECUTION_STORE_PATH, JSON.stringify({ executions: [] }, null, 2), "utf8");
+    }
+
+    return true;
   } catch {
-    await writeFile(EXECUTION_STORE_PATH, JSON.stringify({ executions: [] }, null, 2), "utf8");
+    return false;
   }
 }
 
 async function appendExecutionLog(log: ClaraExecutionLog) {
-  await ensureExecutionStore();
-  const raw = await readFile(EXECUTION_STORE_PATH, "utf8");
-  const store = JSON.parse(raw) as { executions: ClaraExecutionLog[] };
+  const storeReady = await ensureExecutionStore();
 
-  store.executions.unshift(log);
-  await writeFile(EXECUTION_STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+  if (!storeReady) {
+    return;
+  }
+
+  try {
+    const raw = await readFile(EXECUTION_STORE_PATH, "utf8");
+    const store = JSON.parse(raw) as { executions: ClaraExecutionLog[] };
+
+    store.executions.unshift(log);
+    await writeFile(EXECUTION_STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+  } catch {
+    // Ignore non-persistent runtimes and keep the response flow alive.
+  }
+}
+
+export async function listClaraExecutionLogs(limit = 12) {
+  const storeReady = await ensureExecutionStore();
+
+  if (!storeReady) {
+    return [];
+  }
+
+  try {
+    const raw = await readFile(EXECUTION_STORE_PATH, "utf8");
+    const store = JSON.parse(raw) as { executions: ClaraExecutionLog[] };
+
+    return store.executions.slice(0, limit);
+  } catch {
+    return [];
+  }
 }
 
 export async function getClaraContextualAnalysis(params: {

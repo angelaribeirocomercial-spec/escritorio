@@ -590,6 +590,721 @@ with check (
   )
 );
 
+-- >>> supabase/migrations/0014_case_workflow_checklist_state.sql
+alter table public.cases
+  add column if not exists workflow_state jsonb not null default '{}'::jsonb,
+  add column if not exists checklist_state jsonb not null default '{}'::jsonb;
+
+-- >>> supabase/migrations/0015_clara_crm_operational_schema.sql
+create table if not exists public.minutas (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  client_id text not null references public.clients (id) on delete cascade,
+  case_id text not null references public.cases (id) on delete cascade,
+  title text not null,
+  body text not null default '',
+  status text not null check (status in ('draft', 'in_review', 'approved', 'sent', 'closed')) default 'draft',
+  output_format text not null check (output_format in ('docx', 'pdf', 'print')) default 'docx',
+  summary text not null default '',
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists minutas_tenant_id_idx
+  on public.minutas (tenant_id);
+
+create index if not exists minutas_case_id_idx
+  on public.minutas (case_id);
+
+create index if not exists minutas_client_id_idx
+  on public.minutas (client_id);
+
+drop trigger if exists minutas_set_updated_at on public.minutas;
+create trigger minutas_set_updated_at
+before update on public.minutas
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.versoes_peca (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  minuta_id text not null references public.minutas (id) on delete cascade,
+  version_number integer not null,
+  content text not null default '',
+  review_status text not null check (review_status in ('draft', 'reviewed', 'approved')) default 'draft',
+  source_trace jsonb not null default '{}'::jsonb,
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  unique (minuta_id, version_number)
+);
+
+create index if not exists versoes_peca_tenant_id_idx
+  on public.versoes_peca (tenant_id);
+
+create index if not exists versoes_peca_minuta_id_idx
+  on public.versoes_peca (minuta_id);
+
+drop trigger if exists versoes_peca_set_updated_at on public.versoes_peca;
+create trigger versoes_peca_set_updated_at
+before update on public.versoes_peca
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.modelos_internos (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  name text not null,
+  category text not null,
+  body text not null default '',
+  status text not null check (status in ('active', 'archived')) default 'active',
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists modelos_internos_tenant_id_idx
+  on public.modelos_internos (tenant_id);
+
+create index if not exists modelos_internos_tenant_category_idx
+  on public.modelos_internos (tenant_id, category);
+
+drop trigger if exists modelos_internos_set_updated_at on public.modelos_internos;
+create trigger modelos_internos_set_updated_at
+before update on public.modelos_internos
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.teses_argumentos (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  claim_type text not null,
+  title text not null,
+  argument text not null default '',
+  source text not null default '',
+  status text not null check (status in ('active', 'archived')) default 'active',
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists teses_argumentos_tenant_id_idx
+  on public.teses_argumentos (tenant_id);
+
+create index if not exists teses_argumentos_tenant_claim_type_idx
+  on public.teses_argumentos (tenant_id, claim_type);
+
+drop trigger if exists teses_argumentos_set_updated_at on public.teses_argumentos;
+create trigger teses_argumentos_set_updated_at
+before update on public.teses_argumentos
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.fontes_externas_consultadas (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  source_id text not null,
+  source_label text not null,
+  scope text not null,
+  query text not null,
+  status text not null check (status in ('not_consulted', 'consulted', 'unavailable', 'failed')) default 'not_consulted',
+  execution_id text not null default '',
+  source_trace jsonb not null default '{}'::jsonb,
+  consulted_at timestamptz,
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists fontes_externas_consultadas_tenant_id_idx
+  on public.fontes_externas_consultadas (tenant_id);
+
+create index if not exists fontes_externas_consultadas_source_id_idx
+  on public.fontes_externas_consultadas (tenant_id, source_id);
+
+create index if not exists fontes_externas_consultadas_execution_id_idx
+  on public.fontes_externas_consultadas (tenant_id, execution_id);
+
+drop trigger if exists fontes_externas_consultadas_set_updated_at on public.fontes_externas_consultadas;
+create trigger fontes_externas_consultadas_set_updated_at
+before update on public.fontes_externas_consultadas
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.resultados_api (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  source_name text not null,
+  endpoint text not null,
+  request_payload jsonb not null default '{}'::jsonb,
+  response_payload jsonb not null default '{}'::jsonb,
+  status text not null check (status in ('success', 'failed', 'unavailable')) default 'success',
+  execution_id text not null default '',
+  requested_at timestamptz not null default timezone('utc', now()),
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists resultados_api_tenant_id_idx
+  on public.resultados_api (tenant_id);
+
+create index if not exists resultados_api_source_name_idx
+  on public.resultados_api (tenant_id, source_name);
+
+create index if not exists resultados_api_execution_id_idx
+  on public.resultados_api (tenant_id, execution_id);
+
+drop trigger if exists resultados_api_set_updated_at on public.resultados_api;
+create trigger resultados_api_set_updated_at
+before update on public.resultados_api
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.logs_execucao_clara (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  execution_id text not null,
+  task_type text not null,
+  input_payload jsonb not null default '{}'::jsonb,
+  output_payload jsonb not null default '{}'::jsonb,
+  source_trace jsonb not null default '{}'::jsonb,
+  status text not null check (status in ('success', 'warning', 'failed')) default 'success',
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists logs_execucao_clara_tenant_id_idx
+  on public.logs_execucao_clara (tenant_id);
+
+create index if not exists logs_execucao_clara_execution_id_idx
+  on public.logs_execucao_clara (tenant_id, execution_id);
+
+drop trigger if exists logs_execucao_clara_set_updated_at on public.logs_execucao_clara;
+create trigger logs_execucao_clara_set_updated_at
+before update on public.logs_execucao_clara
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.observacoes_revisor_humano (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  minuta_id text references public.minutas (id) on delete cascade,
+  case_id text references public.cases (id) on delete cascade,
+  review_note text not null,
+  status_revisao text not null check (status_revisao in ('pending', 'approved', 'rejected')) default 'pending',
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists observacoes_revisor_humano_tenant_id_idx
+  on public.observacoes_revisor_humano (tenant_id);
+
+create index if not exists observacoes_revisor_humano_minuta_id_idx
+  on public.observacoes_revisor_humano (minuta_id);
+
+create index if not exists observacoes_revisor_humano_case_id_idx
+  on public.observacoes_revisor_humano (case_id);
+
+drop trigger if exists observacoes_revisor_humano_set_updated_at on public.observacoes_revisor_humano;
+create trigger observacoes_revisor_humano_set_updated_at
+before update on public.observacoes_revisor_humano
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.crm_pipeline_stages (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  name text not null,
+  order_index integer not null,
+  description text not null default '',
+  status text not null check (status in ('active', 'archived')) default 'active',
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  unique (tenant_id, order_index)
+);
+
+create index if not exists crm_pipeline_stages_tenant_id_idx
+  on public.crm_pipeline_stages (tenant_id);
+
+drop trigger if exists crm_pipeline_stages_set_updated_at on public.crm_pipeline_stages;
+create trigger crm_pipeline_stages_set_updated_at
+before update on public.crm_pipeline_stages
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.crm_leads (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  client_id text references public.clients (id) on delete set null,
+  case_id text references public.cases (id) on delete set null,
+  full_name text not null,
+  bank_name text not null default '',
+  source_channel text not null default '',
+  pipeline_stage text not null default '',
+  stage_label text not null default '',
+  risk_label text not null default '',
+  next_action text not null default '',
+  summary text not null default '',
+  status text not null check (status in ('active', 'converted', 'lost')) default 'active',
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists crm_leads_tenant_id_idx
+  on public.crm_leads (tenant_id);
+
+create index if not exists crm_leads_tenant_status_idx
+  on public.crm_leads (tenant_id, status);
+
+create index if not exists crm_leads_client_id_idx
+  on public.crm_leads (client_id);
+
+drop trigger if exists crm_leads_set_updated_at on public.crm_leads;
+create trigger crm_leads_set_updated_at
+before update on public.crm_leads
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.crm_followups (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  lead_id text references public.crm_leads (id) on delete cascade,
+  note text not null,
+  due_date date,
+  status text not null check (status in ('open', 'done', 'canceled')) default 'open',
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists crm_followups_tenant_id_idx
+  on public.crm_followups (tenant_id);
+
+create index if not exists crm_followups_lead_id_idx
+  on public.crm_followups (lead_id);
+
+drop trigger if exists crm_followups_set_updated_at on public.crm_followups;
+create trigger crm_followups_set_updated_at
+before update on public.crm_followups
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.crm_conversas (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  lead_id text references public.crm_leads (id) on delete cascade,
+  channel text not null default '',
+  summary text not null default '',
+  last_message_at timestamptz,
+  status text not null check (status in ('open', 'closed')) default 'open',
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists crm_conversas_tenant_id_idx
+  on public.crm_conversas (tenant_id);
+
+create index if not exists crm_conversas_lead_id_idx
+  on public.crm_conversas (lead_id);
+
+drop trigger if exists crm_conversas_set_updated_at on public.crm_conversas;
+create trigger crm_conversas_set_updated_at
+before update on public.crm_conversas
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.crm_contratos (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  lead_id text references public.crm_leads (id) on delete cascade,
+  title text not null,
+  status text not null check (status in ('draft', 'review', 'signed', 'archived')) default 'draft',
+  signed_at date,
+  source_label text not null default '',
+  summary text not null default '',
+  created_by uuid references auth.users (id) on delete set null,
+  updated_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists crm_contratos_tenant_id_idx
+  on public.crm_contratos (tenant_id);
+
+create index if not exists crm_contratos_lead_id_idx
+  on public.crm_contratos (lead_id);
+
+drop trigger if exists crm_contratos_set_updated_at on public.crm_contratos;
+create trigger crm_contratos_set_updated_at
+before update on public.crm_contratos
+for each row
+execute function public.set_updated_at();
+
+-- >>> supabase/migrations/0016_banking_intake_triage_nullable.sql
+alter table public.clients
+  alter column document_id drop not null,
+  alter column email drop not null,
+  alter column whatsapp drop not null,
+  alter column lead_source drop not null,
+  alter column bank_name drop not null,
+  alter column fees_label drop not null;
+
+alter table public.cases
+  alter column bank_name drop not null,
+  alter column contract_number drop not null;
+
+do $$
+declare
+  current_constraint_name text;
+begin
+  select conname
+    into current_constraint_name
+  from pg_constraint
+  where conrelid = 'public.cases'::regclass
+    and contype = 'c'
+    and pg_get_constraintdef(oid) like '%niche%';
+
+  if current_constraint_name is not null then
+    execute format('alter table public.cases drop constraint %I', current_constraint_name);
+  end if;
+end $$;
+
+alter table public.cases
+  add constraint cases_niche_check
+  check (
+    niche in (
+      'triagem-inicial',
+      'revisional',
+      'fraude',
+      'busca-apreensao',
+      'cartao-consignado',
+      'beneficio-descontos'
+    )
+  );
+
+-- >>> supabase/migrations/0017_detected_abuses_vertical.sql
+create table if not exists public.detected_abuses (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  case_id text not null references public.cases (id) on delete cascade,
+  contract_id text not null references public.documents (id) on delete cascade,
+  contract_analysis_id text not null references public.contract_analyses (id) on delete cascade,
+  signal_key text not null,
+  signal_label text not null,
+  description text not null,
+  severity text not null check (severity in ('low', 'medium', 'high')),
+  evidence_label text not null,
+  financial_impact_label text not null,
+  legal_suggestion text not null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create unique index if not exists detected_abuses_tenant_case_contract_signal_key_idx
+  on public.detected_abuses (tenant_id, case_id, contract_id, signal_key);
+
+create index if not exists detected_abuses_tenant_id_idx
+  on public.detected_abuses (tenant_id);
+
+create index if not exists detected_abuses_case_id_idx
+  on public.detected_abuses (case_id);
+
+create index if not exists detected_abuses_contract_id_idx
+  on public.detected_abuses (contract_id);
+
+drop trigger if exists detected_abuses_set_updated_at on public.detected_abuses;
+create trigger detected_abuses_set_updated_at
+before update on public.detected_abuses
+for each row
+execute function public.set_updated_at();
+
+-- >>> supabase/migrations/0018_processes_official_distribution_audit.sql
+alter table public.processes
+  add column if not exists local_reference_number text,
+  add column if not exists official_process_number text,
+  add column if not exists official_distribution_date date,
+  add column if not exists official_source text check (official_source in ('manual_confirmed', 'official_import')),
+  add column if not exists official_distribution_status text not null default 'preparatory_local'
+    check (official_distribution_status in ('preparatory_local', 'attempt_failed', 'official_confirmed')),
+  add column if not exists protocol_receipt_document_id text references public.documents (id) on delete set null,
+  add column if not exists distribution_audit_trail jsonb not null default '[]'::jsonb;
+
+update public.processes
+set
+  local_reference_number = coalesce(local_reference_number, process_number),
+  official_process_number = case
+    when status in ('active', 'monitoring', 'stayed', 'closed') then coalesce(official_process_number, process_number)
+    else official_process_number
+  end,
+  official_distribution_date = case
+    when status in ('active', 'monitoring', 'stayed', 'closed') then coalesce(official_distribution_date, created_at::date)
+    else official_distribution_date
+  end,
+  official_source = case
+    when status in ('active', 'monitoring', 'stayed', 'closed') then coalesce(official_source, 'manual_confirmed')
+    else official_source
+  end,
+  official_distribution_status = case
+    when status in ('active', 'monitoring', 'stayed', 'closed') then 'official_confirmed'
+    when status = 'awaiting-filing' then 'preparatory_local'
+    else official_distribution_status
+  end
+where local_reference_number is null
+   or status in ('active', 'monitoring', 'stayed', 'closed');
+
+-- >>> supabase/migrations/0019_case_dossier_realization.sql
+alter table public.documents
+  add column if not exists structured_extraction jsonb not null default '{}'::jsonb,
+  add column if not exists extraction_source_trace jsonb not null default '{}'::jsonb,
+  add column if not exists extraction_error text,
+  add column if not exists extracted_at timestamptz,
+  add column if not exists reviewed_at timestamptz,
+  add column if not exists review_notes text,
+  add column if not exists review_status text not null default 'pending'
+    check (review_status in ('pending', 'reviewed', 'corrected'));
+
+alter table public.contract_analyses
+  add column if not exists case_id text references public.cases (id) on delete cascade,
+  add column if not exists calculation_snapshot jsonb not null default '{}'::jsonb,
+  add column if not exists bacen_snapshot jsonb not null default '{}'::jsonb,
+  add column if not exists strategic_snapshot jsonb not null default '{}'::jsonb,
+  add column if not exists petition_snapshot jsonb not null default '{}'::jsonb,
+  add column if not exists approved_for_filing boolean not null default false,
+  add column if not exists synced_at timestamptz not null default timezone('utc', now());
+
+update public.contract_analyses analyses
+set case_id = documents.case_id
+from public.documents
+where analyses.document_id = documents.id
+  and analyses.case_id is null;
+
+create index if not exists contract_analyses_case_id_idx
+  on public.contract_analyses (case_id);
+
+create table if not exists public.process_filings (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  process_id text not null references public.processes (id) on delete cascade,
+  case_id text not null references public.cases (id) on delete cascade,
+  client_id text not null references public.clients (id) on delete cascade,
+  kind text not null
+    check (kind in ('peticao_inicial', 'contestacao', 'replica', 'manifestacao', 'recurso', 'cumprimento_sentenca', 'peticao_intercorrente')),
+  title text not null,
+  status text not null
+    check (status in ('draft', 'in_review', 'approved', 'filed', 'fulfilled')),
+  source_minuta_id text references public.minutas (id) on delete set null,
+  linked_update_id text references public.procedural_updates (id) on delete set null,
+  summary text not null default '',
+  next_action text not null default '',
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists process_filings_tenant_id_idx
+  on public.process_filings (tenant_id);
+
+create index if not exists process_filings_process_id_idx
+  on public.process_filings (process_id);
+
+create index if not exists process_filings_case_id_idx
+  on public.process_filings (case_id);
+
+drop trigger if exists process_filings_set_updated_at on public.process_filings;
+create trigger process_filings_set_updated_at
+before update on public.process_filings
+for each row
+execute function public.set_updated_at();
+
+alter table public.process_filings enable row level security;
+
+drop policy if exists "tenant members can read process filings" on public.process_filings;
+create policy "tenant members can read process filings"
+on public.process_filings
+for select
+using (
+  exists (
+    select 1
+    from public.memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = process_filings.tenant_id
+      and memberships.is_active = true
+  )
+);
+
+drop policy if exists "tenant owners and admins can manage process filings" on public.process_filings;
+create policy "tenant owners and admins can manage process filings"
+on public.process_filings
+for all
+using (
+  exists (
+    select 1
+    from public.memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = process_filings.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = process_filings.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+-- >>> supabase/migrations/0020_clara_chat_threads.sql
+create table if not exists public.clara_chat_threads (
+  id text primary key,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  client_id text not null references public.clients (id) on delete cascade,
+  case_id text not null references public.cases (id) on delete cascade,
+  process_id text references public.processes (id) on delete cascade,
+  document_id text references public.documents (id) on delete set null,
+  source text not null
+    check (source in ('dossie', 'workspace')),
+  status text not null default 'active'
+    check (status in ('active')),
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists clara_chat_threads_tenant_case_idx
+  on public.clara_chat_threads (tenant_id, client_id, case_id);
+
+create index if not exists clara_chat_threads_process_idx
+  on public.clara_chat_threads (process_id);
+
+drop trigger if exists clara_chat_threads_set_updated_at on public.clara_chat_threads;
+create trigger clara_chat_threads_set_updated_at
+before update on public.clara_chat_threads
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.clara_chat_messages (
+  id text primary key,
+  thread_id text not null references public.clara_chat_threads (id) on delete cascade,
+  tenant_id uuid not null references public.tenants (id) on delete cascade,
+  role text not null
+    check (role in ('user', 'assistant')),
+  text text not null default '',
+  intent text,
+  status text
+    check (status in ('completed', 'fallback')),
+  source_trace jsonb not null default '{}'::jsonb,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists clara_chat_messages_thread_idx
+  on public.clara_chat_messages (thread_id, created_at);
+
+create index if not exists clara_chat_messages_tenant_idx
+  on public.clara_chat_messages (tenant_id);
+
+alter table public.clara_chat_threads enable row level security;
+alter table public.clara_chat_messages enable row level security;
+
+drop policy if exists "tenant members can read clara chat threads" on public.clara_chat_threads;
+create policy "tenant members can read clara chat threads"
+on public.clara_chat_threads
+for select
+using (
+  exists (
+    select 1
+    from public.memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = clara_chat_threads.tenant_id
+      and memberships.is_active = true
+  )
+);
+
+drop policy if exists "tenant owners and admins can manage clara chat threads" on public.clara_chat_threads;
+create policy "tenant owners and admins can manage clara chat threads"
+on public.clara_chat_threads
+for all
+using (
+  exists (
+    select 1
+    from public.memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = clara_chat_threads.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = clara_chat_threads.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read clara chat messages" on public.clara_chat_messages;
+create policy "tenant members can read clara chat messages"
+on public.clara_chat_messages
+for select
+using (
+  exists (
+    select 1
+    from public.memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = clara_chat_messages.tenant_id
+      and memberships.is_active = true
+  )
+);
+
+drop policy if exists "tenant owners and admins can manage clara chat messages" on public.clara_chat_messages;
+create policy "tenant owners and admins can manage clara chat messages"
+on public.clara_chat_messages
+for all
+using (
+  exists (
+    select 1
+    from public.memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = clara_chat_messages.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = clara_chat_messages.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
 -- ===== POLICIES =====
 
 -- >>> supabase/policies/0001_identity_tenancy_rls.sql
@@ -1148,6 +1863,450 @@ with check (
   )
 );
 
+-- >>> supabase/policies/0013_clara_crm_operational_rls.sql
+alter table public.minutas enable row level security;
+alter table public.versoes_peca enable row level security;
+alter table public.modelos_internos enable row level security;
+alter table public.teses_argumentos enable row level security;
+alter table public.fontes_externas_consultadas enable row level security;
+alter table public.resultados_api enable row level security;
+alter table public.logs_execucao_clara enable row level security;
+alter table public.observacoes_revisor_humano enable row level security;
+alter table public.crm_pipeline_stages enable row level security;
+alter table public.crm_leads enable row level security;
+alter table public.crm_followups enable row level security;
+alter table public.crm_conversas enable row level security;
+alter table public.crm_contratos enable row level security;
+
+drop policy if exists "tenant members can read minutas" on public.minutas;
+create policy "tenant members can read minutas"
+on public.minutas
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage minutas" on public.minutas;
+create policy "tenant owners and admins can manage minutas"
+on public.minutas
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = minutas.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = minutas.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read versoes_peca" on public.versoes_peca;
+create policy "tenant members can read versoes_peca"
+on public.versoes_peca
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage versoes_peca" on public.versoes_peca;
+create policy "tenant owners and admins can manage versoes_peca"
+on public.versoes_peca
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = versoes_peca.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = versoes_peca.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read modelos_internos" on public.modelos_internos;
+create policy "tenant members can read modelos_internos"
+on public.modelos_internos
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage modelos_internos" on public.modelos_internos;
+create policy "tenant owners and admins can manage modelos_internos"
+on public.modelos_internos
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = modelos_internos.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = modelos_internos.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read teses_argumentos" on public.teses_argumentos;
+create policy "tenant members can read teses_argumentos"
+on public.teses_argumentos
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage teses_argumentos" on public.teses_argumentos;
+create policy "tenant owners and admins can manage teses_argumentos"
+on public.teses_argumentos
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = teses_argumentos.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = teses_argumentos.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read fontes_externas_consultadas" on public.fontes_externas_consultadas;
+create policy "tenant members can read fontes_externas_consultadas"
+on public.fontes_externas_consultadas
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage fontes_externas_consultadas" on public.fontes_externas_consultadas;
+create policy "tenant owners and admins can manage fontes_externas_consultadas"
+on public.fontes_externas_consultadas
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = fontes_externas_consultadas.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = fontes_externas_consultadas.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read resultados_api" on public.resultados_api;
+create policy "tenant members can read resultados_api"
+on public.resultados_api
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage resultados_api" on public.resultados_api;
+create policy "tenant owners and admins can manage resultados_api"
+on public.resultados_api
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = resultados_api.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = resultados_api.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read logs_execucao_clara" on public.logs_execucao_clara;
+create policy "tenant members can read logs_execucao_clara"
+on public.logs_execucao_clara
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage logs_execucao_clara" on public.logs_execucao_clara;
+create policy "tenant owners and admins can manage logs_execucao_clara"
+on public.logs_execucao_clara
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = logs_execucao_clara.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = logs_execucao_clara.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read observacoes_revisor_humano" on public.observacoes_revisor_humano;
+create policy "tenant members can read observacoes_revisor_humano"
+on public.observacoes_revisor_humano
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage observacoes_revisor_humano" on public.observacoes_revisor_humano;
+create policy "tenant owners and admins can manage observacoes_revisor_humano"
+on public.observacoes_revisor_humano
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = observacoes_revisor_humano.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = observacoes_revisor_humano.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read crm_pipeline_stages" on public.crm_pipeline_stages;
+create policy "tenant members can read crm_pipeline_stages"
+on public.crm_pipeline_stages
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage crm_pipeline_stages" on public.crm_pipeline_stages;
+create policy "tenant owners and admins can manage crm_pipeline_stages"
+on public.crm_pipeline_stages
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = crm_pipeline_stages.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = crm_pipeline_stages.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read crm_leads" on public.crm_leads;
+create policy "tenant members can read crm_leads"
+on public.crm_leads
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage crm_leads" on public.crm_leads;
+create policy "tenant owners and admins can manage crm_leads"
+on public.crm_leads
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = crm_leads.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = crm_leads.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read crm_followups" on public.crm_followups;
+create policy "tenant members can read crm_followups"
+on public.crm_followups
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage crm_followups" on public.crm_followups;
+create policy "tenant owners and admins can manage crm_followups"
+on public.crm_followups
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = crm_followups.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = crm_followups.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read crm_conversas" on public.crm_conversas;
+create policy "tenant members can read crm_conversas"
+on public.crm_conversas
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage crm_conversas" on public.crm_conversas;
+create policy "tenant owners and admins can manage crm_conversas"
+on public.crm_conversas
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = crm_conversas.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = crm_conversas.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
+drop policy if exists "tenant members can read crm_contratos" on public.crm_contratos;
+create policy "tenant members can read crm_contratos"
+on public.crm_contratos
+for select
+to authenticated
+using (public.is_tenant_member(tenant_id));
+
+drop policy if exists "tenant owners and admins can manage crm_contratos" on public.crm_contratos;
+create policy "tenant owners and admins can manage crm_contratos"
+on public.crm_contratos
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = crm_contratos.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.memberships memberships
+    where memberships.user_id = auth.uid()
+      and memberships.tenant_id = crm_contratos.tenant_id
+      and memberships.is_active = true
+      and memberships.role in ('owner', 'admin')
+  )
+);
+
 -- ===== SEEDS =====
 
 -- >>> supabase/seeds/0001_identity_tenancy_seed.sql
@@ -1322,11 +2481,11 @@ values
     8.6,
     'R$ 14.000 + exito escalonado',
     18,
-    'Empresa com contrato de capital de giro e discussao sobre encargos excessivos e capitalizacao mensal.',
-    'LexIA aponta boa aderencia para revisional com estrategia combinada de revisao contratual e pedido de tutela para suspensao de negativacao.',
-    '[{"id":"case-311","title":"Capital de giro com juros abusivos","status":"Peca inicial em preparacao","thesis":"Capitalizacao mensal indevida"},{"id":"case-312","title":"Negativacao indevida vinculada ao contrato","status":"Documentacao completa","thesis":"Suspensao de cobranca e danos"}]'::jsonb,
-    '["CCB","Extratos da conta","Email de cobranca","Comprovantes bancarios","Contrato social"]'::jsonb,
-    '["Lead convertido por campanha de alta intencao","Contrato assinado no mesmo dia da proposta","Time recebeu documentacao complementar da empresa"]'::jsonb
+    'Cliente modelo para dois fluxos complementares do escritorio: fraude consignada / RMC e busca e apreensao.',
+    'LexIA aponta que este cliente pode demonstrar tanto o modelo de fraude consignada quanto o modelo de busca e apreensao, mantendo a leitura clara por caso.',
+    '[{"id":"case-311","title":"Fraude consignada / RMC","status":"Peca inicial em preparacao","thesis":"Desconto indevido em cartao consignado"},{"id":"case-312","title":"Busca e apreensao de veiculo","status":"Documentacao completa","thesis":"Mora controvertida e preservacao do veiculo"}]'::jsonb,
+    '["Contrato do cartao consignado","Notificacao de busca e apreensao","Extrato do beneficio","Documento do veiculo"]'::jsonb,
+    '["Lead convertido por campanha de alta intencao","Contrato assinado no mesmo dia da proposta","Time recebeu documentacao complementar da pessoa fisica"]'::jsonb
   )
 on conflict (id) do update
 set
@@ -1426,7 +2585,7 @@ values
       {"id":"proc-311-t2","occurredAt":"2026-04-04","title":"Minuta encaminhada para revisao interna","description":"Peca inicial foi encaminhada para revisao da tese economica principal.","source":"ADVX","criticality":"low"},
       {"id":"proc-311-t3","occurredAt":"2026-04-09","title":"Janela de protocolo aberta","description":"Caso pronto para ingresso apos ultima checagem de anexos empresariais.","source":"ADVX","criticality":"medium"}
     ]'::jsonb,
-    '{"id":"case-311","clientId":"cl-003","title":"Capital de giro com juros abusivos","bankName":"Santander","processNumber":"7012844-11.2026.8.13.0024","contractNumber":"CCB-88372","claimType":"juros_abusivos","stage":"Peca inicial em preparacao","status":"active","amountInDispute":248000,"estimatedValue":118000,"mainThesis":"Capitalizacao mensal indevida","legalRisk":"low","suggestedStrategy":"Combinar revisao contratual com pedido de tutela para limitar cobranca e reforcar a leitura economica do capital de giro.","ownerLabel":"Dra. Julia Ramalho","niche":"revisional","linkedDocuments":["CCB","Extratos da conta","Email de cobranca","Comprovantes bancarios","Contrato social"],"linkedTasks":["Finalizar fatos resumidos","Conferir planilha de encargos","Revisar fundamentos da inicial"],"linkedDeadlines":["Submeter minuta para revisao em 15/04/2026","Validar anexos ate 17/04/2026"],"lexiaInsights":["Caso com boa combinacao entre tese economica e prova documental.","Recomendavel destacar capitalizacao mensal e CET total no resumo executivo."]}'::jsonb
+    '{"id":"case-311","clientId":"cl-003","title":"Fraude consignada / RMC","bankName":"Santander","processNumber":"7012844-11.2026.8.13.0024","contractNumber":"RMC-88372","claimType":"cartao_consignado_rmc","stage":"Peca inicial em preparacao","status":"active","amountInDispute":248000,"estimatedValue":118000,"mainThesis":"Desconto indevido em cartao consignado","legalRisk":"low","suggestedStrategy":"Consolidar extrato, contrato e prova do desconto para estruturar a tese de cartao consignado / RMC com pedido de tutela.","ownerLabel":"Dra. Julia Ramalho","niche":"fraude","linkedDocuments":["Contrato do cartao consignado","Extrato do beneficio","Comprovante de desconto","Comunicacao com o banco"],"linkedTasks":["Finalizar fatos resumidos","Conferir desconto consignado","Revisar fundamentos da inicial"],"linkedDeadlines":["Submeter minuta para revisao em 15/04/2026","Validar anexos ate 17/04/2026"],"lexiaInsights":["Caso com boa combinacao entre prova de desconto e narrativa de contratacao controvertida.","Recomendavel destacar margem, extrato e eventual venda casada no resumo executivo."]}'::jsonb
   ),
   (
     'proc-312',
@@ -1446,7 +2605,7 @@ values
       {"id":"proc-312-t2","occurredAt":"2026-04-03","title":"Autos em carga para manifestacao","description":"Equipe separou comprovantes de negativacao e cobrancas correlatas.","source":"TJMG","criticality":"medium"},
       {"id":"proc-312-t3","occurredAt":"2026-04-07","title":"Processo temporariamente suspenso","description":"Fluxo parado ate juntada de documento complementar exigido pelo juizo.","source":"TJMG","criticality":"medium"}
     ]'::jsonb,
-    '{"id":"case-312","clientId":"cl-003","title":"Negativacao indevida vinculada ao contrato","bankName":"Santander","processNumber":"7012855-49.2026.8.13.0024","contractNumber":"NEG-55210","claimType":"negativacao_indevida","stage":"Documentacao completa","status":"active","amountInDispute":32000,"estimatedValue":24000,"mainThesis":"Suspensao de cobranca e danos","legalRisk":"low","suggestedStrategy":"Estruturar urgencia na retirada da restricao e combinar pedido declaratorio com danos morais bancarios.","ownerLabel":"Dra. Julia Ramalho","niche":"revisional","linkedDocuments":["Email de cobranca","Comprovantes bancarios","Notificacao de negativacao"],"linkedTasks":["Validar prova da negativacao","Fechar pedido de tutela","Revisar danos morais"],"linkedDeadlines":["Consolidar anexos ate 13/04/2026"],"lexiaInsights":["Caso apto para narrativa objetiva com pedido urgente.","Documentacao completa melhora o potencial de tutela."]}'::jsonb
+    '{"id":"case-312","clientId":"cl-003","title":"Busca e apreensao de veiculo","bankName":"Santander","processNumber":"7012855-49.2026.8.13.0024","contractNumber":"FIN-55210","claimType":"busca_apreensao","stage":"Documentacao completa","status":"active","amountInDispute":32000,"estimatedValue":24000,"mainThesis":"Mora controvertida e preservacao do veiculo","legalRisk":"low","suggestedStrategy":"Consolidar contrato, notificacao de mora e prova de posse para estruturar a defesa contra a busca e apreensao.","ownerLabel":"Dra. Julia Ramalho","niche":"busca-apreensao","linkedDocuments":["Contrato de financiamento do veiculo","Notificacao de mora","Comprovantes de pagamento"],"linkedTasks":["Validar prova da mora","Fechar pedido de tutela","Revisar danos patrimoniais"],"linkedDeadlines":["Consolidar anexos ate 13/04/2026"],"lexiaInsights":["Caso apto para narrativa objetiva com pedido urgente.","Documentacao completa melhora o potencial de tutela e preservacao do veiculo."]}'::jsonb
   )
 on conflict (id) do update
 set
@@ -1486,7 +2645,9 @@ insert into public.cases (
   linked_documents,
   linked_tasks,
   linked_deadlines,
-  lexia_insights
+  lexia_insights,
+  workflow_state,
+  checklist_state
 )
 values
   (
@@ -1510,7 +2671,9 @@ values
     '["Contrato bancario","Planilha de parcelas","Extratos","Comprovante de renda"]'::jsonb,
     '["Revisar memoria de calculo","Validar clausula de seguro embutido","Preparar peticao inicial"]'::jsonb,
     '["Coletar documentos complementares ate 14/04/2026","Aprovar estrategia interna ate 16/04/2026"]'::jsonb,
-    '["Boa aderencia a tese revisional com foco em venda casada.","Ha espaco para pedido cumulativo de repeticao de indebito.","Cliente tem documentacao suficiente para primeira peca."]'::jsonb
+    '["Boa aderencia a tese revisional com foco em venda casada.","Ha espaco para pedido cumulativo de repeticao de indebito.","Cliente tem documentacao suficiente para primeira peca."]'::jsonb,
+    '{}'::jsonb,
+    '{}'::jsonb
   ),
   (
     'case-205',
@@ -1533,53 +2696,59 @@ values
     '["Comprovantes PIX","Atendimento bancario","Capturas de tela"]'::jsonb,
     '["Cobrar boletim de ocorrencia","Solicitar comprovante bancario detalhado","Montar cronologia do golpe"]'::jsonb,
     '["Revisar pendencias documentais em 11/04/2026"]'::jsonb,
-    '["Sem boletim de ocorrencia, a narrativa probatoria fica fragil.","A tese principal permanece viavel se a cronologia for bem consolidada."]'::jsonb
+    '["Sem boletim de ocorrencia, a narrativa probatoria fica fragil.","A tese principal permanece viavel se a cronologia for bem consolidada."]'::jsonb,
+    '{}'::jsonb,
+    '{}'::jsonb
   ),
   (
     'case-311',
     '11111111-1111-1111-1111-111111111111',
     'cl-003',
-    'Capital de giro com juros abusivos',
+    'Fraude consignada / RMC',
     'Santander',
     '7012844-11.2026.8.13.0024',
-    'CCB-88372',
-    'juros_abusivos',
+    'RMC-88372',
+    'cartao_consignado_rmc',
     'Peca inicial em preparacao',
     'active',
     248000,
     118000,
-    'Capitalizacao mensal indevida',
+    'Desconto indevido em cartao consignado',
     'low',
-    'Combinar revisao contratual com pedido de tutela para limitar cobranca e reforcar a leitura economica do capital de giro.',
+    'Consolidar extrato, contrato e prova do desconto para estruturar a tese de cartao consignado / RMC com pedido de tutela.',
     'Dra. Julia Ramalho',
-    'revisional',
-    '["CCB","Extratos da conta","Email de cobranca","Comprovantes bancarios","Contrato social"]'::jsonb,
-    '["Finalizar fatos resumidos","Conferir planilha de encargos","Revisar fundamentos da inicial"]'::jsonb,
+    'fraude',
+    '["Contrato do cartao consignado","Extrato do beneficio","Comprovante de desconto","Comunicacao com o banco"]'::jsonb,
+    '["Finalizar fatos resumidos","Conferir desconto consignado","Revisar fundamentos da inicial"]'::jsonb,
     '["Submeter minuta para revisao em 15/04/2026","Validar anexos ate 17/04/2026"]'::jsonb,
-    '["Caso com boa combinacao entre tese economica e prova documental.","Recomendavel destacar capitalizacao mensal e CET total no resumo executivo."]'::jsonb
+    '["Caso com boa combinacao entre prova de desconto e narrativa de contratacao controvertida.","Recomendavel destacar margem, extrato e eventual venda casada no resumo executivo."]'::jsonb,
+    '{}'::jsonb,
+    '{}'::jsonb
   ),
   (
     'case-312',
     '11111111-1111-1111-1111-111111111111',
     'cl-003',
-    'Negativacao indevida vinculada ao contrato',
+    'Busca e apreensao de veiculo',
     'Santander',
     '7012855-49.2026.8.13.0024',
-    'NEG-55210',
-    'negativacao_indevida',
+    'FIN-55210',
+    'busca_apreensao',
     'Documentacao completa',
     'active',
     32000,
     24000,
-    'Suspensao de cobranca e danos',
+    'Mora controvertida e preservacao do veiculo',
     'low',
-    'Estruturar urgencia na retirada da restricao e combinar pedido declaratorio com danos morais bancarios.',
+    'Consolidar contrato, notificacao de mora e prova de posse para estruturar a defesa contra a busca e apreensao.',
     'Dra. Julia Ramalho',
-    'revisional',
-    '["Email de cobranca","Comprovantes bancarios","Notificacao de negativacao"]'::jsonb,
-    '["Validar prova da negativacao","Fechar pedido de tutela","Revisar danos morais"]'::jsonb,
+    'busca-apreensao',
+    '["Contrato de financiamento do veiculo","Notificacao de mora","Comprovantes de pagamento"]'::jsonb,
+    '["Validar prova da mora","Fechar pedido de tutela","Revisar danos patrimoniais"]'::jsonb,
     '["Consolidar anexos ate 13/04/2026"]'::jsonb,
-    '["Caso apto para narrativa objetiva com pedido urgente.","Documentacao completa melhora o potencial de tutela."]'::jsonb
+    '["Caso apto para narrativa objetiva com pedido urgente.","Documentacao completa melhora o potencial de tutela e preservacao do veiculo."]'::jsonb,
+    '{}'::jsonb,
+    '{}'::jsonb
   )
 on conflict (id) do update
 set
@@ -1602,6 +2771,8 @@ set
   linked_tasks = excluded.linked_tasks,
   linked_deadlines = excluded.linked_deadlines,
   lexia_insights = excluded.lexia_insights,
+  workflow_state = excluded.workflow_state,
+  checklist_state = excluded.checklist_state,
   updated_at = timezone('utc', now());
 
 -- >>> supabase/seeds/0005_documents_vertical_seed.sql
@@ -1679,16 +2850,16 @@ values
     '11111111-1111-1111-1111-111111111111',
     'cl-003',
     'case-311',
-    'ccb-capital-giro-araujo.pdf',
-    'ccb-capital-giro-araujo.pdf',
-    'CCB',
+    'contrato-cartao-consignado-araujo.pdf',
+    'contrato-cartao-consignado-araujo.pdf',
+    'Contrato do cartao consignado',
     'contrato',
-    '["capital-giro","ccb","capitalizacao"]'::jsonb,
+    '["consignado","rmc","desconto"]'::jsonb,
     'analyzed',
-    'Cedula de credito bancario com pontos sensiveis sobre capitalizacao mensal e encargos remuneratorios.',
+    'Contrato do cartao consignado com descontos em folha e pontos sensiveis sobre RMC e margem comprometida.',
     22,
     '2026-04-01',
-    'Preview pendente da CCB com clausulas sensiveis destacadas.',
+    'Preview pendente do contrato consignado com clausulas sensiveis destacadas.',
     '["Analisar com IA","Resumir","Extrair tese","Gerar peca","Buscar jurisprudencia"]'::jsonb
   ),
   (
@@ -1696,17 +2867,17 @@ values
     '11111111-1111-1111-1111-111111111111',
     'cl-003',
     'case-312',
-    'notificacao-negativacao-araujo.pdf',
-    'notificacao-negativacao-araujo.pdf',
-    'Intimacao',
+    'notificacao-busca-apreensao-araujo.pdf',
+    'notificacao-busca-apreensao-araujo.pdf',
+    'Notificacao de busca e apreensao',
     'cobranca',
-    '["negativacao","urgencia","cobranca"]'::jsonb,
-    'not_analyzed',
-    'Notificacao de negativacao vinculada ao contrato principal com potencial para pedido urgente.',
+    '["busca","apreensao","veiculo"]'::jsonb,
+    'analyzed',
+    'Notificacao de mora e busca e apreensao vinculada ao contrato de financiamento do veiculo.',
     3,
     '2026-04-05',
-    'Preview pendente da notificacao de negativacao.',
-    '["Analisar com IA","Resumir","Gerar peca"]'::jsonb
+    'Preview pendente da notificacao de busca e apreensao.',
+    '["Analisar com IA","Resumir","Gerar peca","Buscar jurisprudencia"]'::jsonb
   )
 on conflict (id) do update
 set
@@ -1791,41 +2962,41 @@ values
     '11111111-1111-1111-1111-111111111111',
     'cl-003',
     'case-311',
-    'Revisar fundamentos da inicial de capital de giro',
-    'Revisao final dos fundamentos sobre capitalizacao mensal, CET e encargos remuneratorios.',
+    'Revisar fundamentos da inicial de cartao consignado',
+    'Revisao final dos fundamentos sobre margem, RMC e desconto indevido em cartao consignado.',
     'Dra. Julia Ramalho',
     '2026-04-15',
     'medium',
     'in_progress',
-    'A peca esta bem encaminhada; falta amarrar com mais clareza o pedido de tutela para limitacao de cobranca.',
+    'A peca esta bem encaminhada; falta amarrar com mais clareza o pedido de tutela para cessar o desconto indevido.',
     '[
       {"id":"task-003-1","label":"Finalizar fatos resumidos","done":true},
-      {"id":"task-003-2","label":"Conferir planilha de encargos","done":true},
+      {"id":"task-003-2","label":"Conferir desconto consignado","done":true},
       {"id":"task-003-3","label":"Revisar fundamentos da inicial","done":false},
       {"id":"task-003-4","label":"Submeter minuta para revisao","done":false}
     ]'::jsonb,
-    'Checklist sugerido para juros abusivos em CCB.',
-    'Enfatizar capitalizacao mensal e pedido de limitacao de cobranca no topico de urgencia.'
+    'Checklist sugerido para fraude consignada / RMC.',
+    'Enfatizar desconto indevido, RMC e pedido de tutela para suspensao da cobranca no topico de urgencia.'
   ),
   (
     'task-004',
     '11111111-1111-1111-1111-111111111111',
     'cl-003',
     'case-312',
-    'Fechar pedido de tutela para retirada da negativacao',
-    'Consolidar os argumentos de urgencia e a prova da restricao crediticia indevida.',
+    'Fechar pedido de tutela para preservacao do veiculo',
+    'Consolidar os argumentos de urgencia e a prova da mora controvertida para evitar a busca e apreensao.',
     'Dra. Julia Ramalho',
     '2026-04-12',
     'urgent',
     'todo',
-    'Caso apto para narrativa enxuta, com foco em urgencia e impacto operacional na empresa cliente.',
+    'Caso apto para narrativa enxuta, com foco em urgencia e preservacao do veiculo do cliente.',
     '[
-      {"id":"task-004-1","label":"Validar prova da negativacao","done":true},
+      {"id":"task-004-1","label":"Validar prova da mora","done":true},
       {"id":"task-004-2","label":"Fechar pedido de tutela","done":false},
-      {"id":"task-004-3","label":"Revisar danos morais","done":false}
+      {"id":"task-004-3","label":"Revisar danos patrimoniais","done":false}
     ]'::jsonb,
-    'Checklist sugerido para negativacao indevida.',
-    'Priorizar o pedido liminar e anexar prova objetiva do impacto comercial da restricao.'
+    'Checklist sugerido para busca e apreensao.',
+    'Priorizar o pedido liminar e anexar prova objetiva da posse e da mora controvertida.'
   ),
   (
     'task-005',
@@ -1897,8 +3068,8 @@ values
     'cl-003',
     'case-311',
     'proc-311',
-    'Revisao interna da inicial de capital de giro',
-    'Conferir tese economica, anexos empresariais e pedido de tutela antes do protocolo.',
+    'Revisao interna da inicial de cartao consignado',
+    'Conferir tese de consignado, anexos e pedido de tutela antes do protocolo.',
     '2026-04-10T14:30:00-03:00',
     'Dra. Julia Ramalho',
     'Sala de estrategia',
@@ -1963,8 +3134,8 @@ values
     'cl-003',
     'case-312',
     'proc-312',
-    'Juntar prova complementar da negativacao',
-    'Anexar evidencia da restricao e do impacto operacional para sustentar tutela.',
+    'Juntar prova complementar da busca e apreensao',
+    'Anexar evidencia da mora e da posse do veiculo para sustentar tutela.',
     '2026-04-12',
     'Dra. Julia Ramalho',
     'Andamento processual',
@@ -1976,8 +3147,8 @@ values
     'cl-003',
     'case-311',
     'proc-311',
-    'Conferir representacao societaria antes do protocolo',
-    'Validar anexos empresariais e contrato social antes da movimentacao final.',
+    'Conferir descontos e extratos antes do protocolo',
+    'Validar extrato do beneficio e contrato consignado antes da movimentacao final.',
     '2026-04-15',
     'Dra. Julia Ramalho',
     'Ato ordinatorio',
@@ -2050,31 +3221,61 @@ values
     'ca-004',
     '11111111-1111-1111-1111-111111111111',
     'doc-004',
-    '3,12% a.m.',
-    '3,88% a.m. | 57,92% a.a.',
-    'Capitalizacao mensal expressa em CCB com reflexo direto no custo efetivo',
-    'Tarifas administrativas e custos operacionais incorporados ao contrato',
-    'Cobertura acessoria sem detalhamento comercial suficiente',
+    '2,10% a.m.',
+    '3,24% a.m. | 47,62% a.a.',
+    'Descontos em folha e composicao da RMC com reflexo no beneficio liquido',
+    'Tarifas administrativas e custos acessorios incorporados ao consignado',
+    'Cobertura acessoria sem destaque suficiente sobre opcionalidade',
     'Clausula de comissao de permanencia dependente de interpretacao restritiva',
     'Multa de 2% com encargos moratorios adicionais',
     '[
-      "Capitalizacao mensal destacada em bloco tecnico de dificil leitura para o tomador",
+      "Desconto consignado destacado em bloco tecnico de dificil leitura para o tomador",
       "Descricao pouco clara de tarifas e custos agregados",
       "Previsao de permanencia com margem para discussao sobre cumulatividade"
     ]'::jsonb,
     '[
-      "Capitalizacao mensal com potencial forte de revisao",
-      "CET alto para operacao de capital de giro",
+      "Desconto consignado com potencial forte de revisao",
+      "CET alto para operacao de credito consignado",
       "Tarifas acessorias e custo agregado com transparencia insuficiente"
     ]'::jsonb,
-    'Capitalizacao mensal indevida e revisao de encargos em CCB',
+    'Desconto indevido em cartao consignado / RMC',
     'low',
     '[
-      "Revisao contratual com limitacao de encargos remuneratorios",
+      "Revisao contratual com limitacao de descontos remuneratorios",
       "Afastamento de cobrancas acessorias sem transparencia",
       "Tutela para estabilizar cobranca durante a discussao judicial"
     ]'::jsonb,
-    'A CCB apresenta boa base para tese economica, com foco em capitalizacao mensal, CET elevado e transparencia insuficiente sobre custos agregados.'
+    'O consignado apresenta boa base para tese economica, com foco em desconto em folha, CET elevado e transparencia insuficiente sobre custos agregados.'
+  ),
+  (
+    'ca-005',
+    '11111111-1111-1111-1111-111111111111',
+    'doc-005',
+    '1,95% a.m.',
+    '3,11% a.m. | 45,88% a.a.',
+    'Mora contratual com risco de busca e apreensao do veiculo',
+    'Cobranca acessoria e encargos vinculados a notificacao de mora',
+    'Seguimento contratual dependente de leitura restritiva da clausula de garantia',
+    'Comissao de permanencia a depender do entendimento do juizo',
+    'Multa de 2% com encargos moratorios adicionais',
+    '[
+      "Notificacao de mora com indicios de concessao de prazo insuficiente",
+      "Previsao de apreensao com redacao pouco acessivel ao consumidor",
+      "Clausulas sobre atraso e retomada do bem com margem para discussao"
+    ]'::jsonb,
+    '[
+      "Mora controvertida com risco de busca e apreensao",
+      "Prova da posse e do uso do veiculo essencial para a defesa",
+      "Notificacao com potencial de leitura restritiva"
+    ]'::jsonb,
+    'Mora controvertida e preservacao do veiculo',
+    'medium',
+    '[
+      "Revisao da notificacao e da prova de mora",
+      "Preservacao da posse do veiculo com tutela urgente",
+      "Organizacao dos comprovantes de pagamento e do contrato de financiamento"
+    ]',
+    'A notificacao de mora tem base util para demonstrar a controversia sobre a busca e apreensao e a necessidade de preservar o veiculo.'
   )
 on conflict (id) do update
 set
@@ -2157,12 +3358,12 @@ values
     'Ato ordinatorio',
     'TJMG',
     'Portal TJMG',
-    'Intime-se a parte autora para conferencia dos anexos empresariais e regularidade da representacao documental.',
-    'A movimentacao nao muda a tese, mas exige saneamento de anexos antes do protocolo final.',
+    'Intime-se a parte autora para conferencia dos anexos de consignado e regularidade da prova do desconto.',
+    'A movimentacao nao muda a tese, mas exige saneamento de prova e extratos antes do protocolo final.',
     'low',
-    'O caso segue forte. O risco imediato nao e juridico, e sim operacional por eventual erro documental.',
-    'Um detalhe societario mal anexado pode atrasar um caso que ja esta maduro para ingresso.',
-    '["Conferir contrato social", "Validar poderes de representacao", "Liberar protocolo apos saneamento"]'::jsonb
+    'O caso segue forte. O risco imediato nao e juridico, e sim operacional por eventual lacuna probatoria no consignado.',
+    'Um extrato mal anexado pode atrasar um caso que ja esta maduro para ingresso.',
+    '["Conferir contrato consignado", "Validar extrato do beneficio", "Liberar protocolo apos saneamento"]'::jsonb
   ),
   (
     'upd-312',
@@ -2174,12 +3375,12 @@ values
     'Despacho',
     'TJMG',
     'Portal TJMG',
-    'Intime-se a parte autora para apresentar prova complementar da negativacao e do dano operacional alegado.',
-    'A tutela depende agora de prova objetiva da restricao e do impacto concreto na operacao da empresa.',
+    'Intime-se a parte autora para apresentar prova complementar da mora e da posse do veiculo.',
+    'A tutela depende agora de prova objetiva da mora controvertida e do impacto concreto sobre o veiculo.',
     'high',
-    'A tese continua boa, mas o caso pede prova mais incisiva para sustentar urgencia e dano moral empresarial.',
-    'Sem prova forte da restricao, o pedido de urgencia pode perder aderencia.',
-    '["Reunir prova da negativacao", "Documentar impacto comercial", "Reforcar pedido de tutela"]'::jsonb
+    'A tese continua boa, mas o caso pede prova mais incisiva para sustentar urgencia e preservacao do veiculo.',
+    'Sem prova forte da mora, o pedido de urgencia pode perder aderencia.',
+    '["Reunir prova da mora", "Documentar posse do veiculo", "Reforcar pedido de tutela"]'::jsonb
   )
 on conflict (id) do update
 set
@@ -2263,14 +3464,14 @@ values
     '2026-04-07',
     'TJMG',
     'DJE TJMG',
-    'Ato ordinatorio para conferencia de anexos empresariais',
-    'Intime-se a parte autora para confirmar regularidade dos anexos empresariais e eventual representacao da pessoa juridica nos autos.',
-    'A publicacao nao altera a tese de capitalizacao mensal, mas exige saneamento documental antes do protocolo ou da continuidade da medida.',
-    'Conferir contrato social, poderes e anexos empresariais antes do proximo movimento da equipe.',
+    'Ato ordinatorio para conferencia de anexos de consignado',
+    'Intime-se a parte autora para confirmar regularidade dos anexos de consignado e eventual extrato do beneficio nos autos.',
+    'A publicacao nao altera a tese de desconto indevido, mas exige saneamento documental antes do protocolo ou da continuidade da medida.',
+    'Conferir contrato consignado, extrato e prova do desconto antes do proximo movimento da equipe.',
     'medium',
     'Dra. Julia Ramalho',
-    'Conferir anexos empresariais do capital de giro',
-    'Validar representacao da empresa e anexos obrigatorios para manter o caso apto ao protocolo.'
+    'Conferir anexos do cartao consignado',
+    'Validar extrato e contrato obrigatorios para manter o caso apto ao protocolo.'
   ),
   (
     'pub-312',
@@ -2281,14 +3482,14 @@ values
     '2026-04-07',
     'TJMG',
     'DJE TJMG',
-    'Despacho exigindo prova complementar da negativacao',
-    'Intime-se a parte autora para apresentar prova documental complementar acerca da inscricao restritiva e do impacto alegado, no prazo assinalado.',
-    'A tese permanece boa, mas a tutela depende de prova objetiva da restricao e do dano operacional causado pela cobranca indevida.',
-    'Separar notificacao de negativacao, comprovantes e demonstracao do impacto comercial para reforcar a urgencia.',
+    'Despacho exigindo prova complementar da busca e apreensao',
+    'Intime-se a parte autora para apresentar prova documental complementar acerca da mora e da posse do veiculo, no prazo assinalado.',
+    'A tese permanece boa, mas a tutela depende de prova objetiva da mora controvertida e da preservacao do bem.',
+    'Separar notificacao de mora, comprovantes e demonstracao da posse do veiculo para reforcar a urgencia.',
     'high',
     'Dra. Julia Ramalho',
-    'Montar prova complementar da negativacao',
-    'Reunir prova da restricao crediticia e do impacto comercial para sustentar tutela e danos.'
+    'Montar prova complementar da busca e apreensao',
+    'Reunir prova da mora e da posse do veiculo para sustentar tutela e preservacao do bem.'
   )
 on conflict (id) do update
 set
@@ -2348,10 +3549,10 @@ values
     'cl-003',
     'case-311',
     'income',
-    'Parcela de contrato empresarial',
-    'Receita recorrente vinculada ao caso de capital de giro.',
+    'Honorarios iniciais consignado',
+    'Receita recorrente vinculada ao caso de fraude consignada / RMC.',
     'Conta Principal',
-    'TechRio Comercio Ltda.',
+    'Patricia Gomes Araujo',
     6800.00,
     '2026-04-08',
     '2026-04-08',
@@ -2463,7 +3664,7 @@ values
     'Banco Santander',
     '90.400.888/0001-42',
     'Santander',
-    'Capital de giro e negativacao indevida',
+    'Fraude consignada / RMC e busca e apreensao',
     'Santander Juridico',
     '(11) 4004-3535 | juridico@santander.example',
     'active'

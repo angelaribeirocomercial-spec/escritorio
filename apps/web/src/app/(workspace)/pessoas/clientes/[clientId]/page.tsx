@@ -1,20 +1,24 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBankingNicheLabel } from "@lexia/domain";
 import { WorkspaceStatePanel } from "@lexia/ui";
 
-import { ClaraContextActions } from "@/components/layout/clara-context-actions";
+import { ClientCockpitFrame } from "@/components/layout/client-dossier-frame";
 import { WorkspacePage } from "@/components/layout/workspace-page";
 import {
-  getClaraRecord,
-  getClaraRecordDisplay,
+  normalizeVisibleCopy,
+  normalizeVisibleCopyList
+} from "@/lib/branding/normalize-visible-copy";
+import {
   listClaraRecords
 } from "@/server/services/clara/clara-record-store";
-import { getClaraClientArtifact } from "@/server/services/clara/get-clara-artifacts";
+import { getContractAnalysisWorkspace } from "@/server/services/contract-analysis/get-contract-analysis";
 import { getBankingCaseWorkflow } from "@/server/services/cases/get-banking-case-workflow";
 import { getCases } from "@/server/services/cases/get-cases";
 import { getClientById } from "@/server/services/clients/get-clients";
+import { getDocumentFileSignedUrl } from "@/server/services/documents/get-document-file-url";
 import { getDocumentsByCaseId } from "@/server/services/documents/get-documents";
+import { getProcessByCaseId } from "@/server/services/processes/get-processes";
+import { getProceduralUpdatesByProcessId } from "@/server/services/procedural-updates/get-procedural-updates";
 import { getTasks } from "@/server/services/tasks/get-tasks";
 
 const CASE_STATUS_PRIORITY = {
@@ -24,16 +28,7 @@ const CASE_STATUS_PRIORITY = {
   closed: 3
 } as const;
 
-function workflowStatusLabel(status: "created" | "reviewed" | "completed") {
-  switch (status) {
-    case "reviewed":
-      return "Revisado";
-    case "completed":
-      return "Concluido";
-    default:
-      return "Criado";
-  }
-}
+const CONTRACT_ANALYSIS_DOCUMENT_TYPES = new Set(["Contrato bancario", "CCB"]);
 
 function serviceStatusLabel(status: string) {
   switch (status) {
@@ -115,6 +110,136 @@ function readClaraRecordContext(targetPath: string) {
   };
 }
 
+function monitoringModeLabel(mode: string) {
+  switch (mode) {
+    case "oab":
+      return "Boundary OAB";
+    case "court":
+      return "Monitoramento por tribunal";
+    default:
+      return "Monitoramento manual";
+  }
+}
+
+function actionTypeLabel(niche: string) {
+  switch (niche) {
+    case "fraude":
+      return "Fraude bancaria";
+    case "busca-apreensao":
+      return "Busca e apreensao";
+    default:
+      return "Revisional";
+  }
+}
+
+function suggestedJudicialClass(niche: string) {
+  switch (niche) {
+    case "busca-apreensao":
+      return "Busca e apreensao";
+    default:
+      return "Procedimento comum civel";
+  }
+}
+
+function suggestedCnjSubject(niche: string, claimType: string) {
+  const normalizedClaimType = claimType.toLowerCase();
+
+  if (niche === "fraude" || normalizedClaimType.includes("fraude")) {
+    return "Falha na prestacao do servico bancario / fraude";
+  }
+
+  if (niche === "busca-apreensao" || normalizedClaimType.includes("busca")) {
+    return "Alienacao fiduciaria / busca e apreensao";
+  }
+
+  return "Contratos bancarios / revisao de clausulas";
+}
+
+function suggestedUrgencyLabel(input: {
+  title: string;
+  claimType: string;
+  mainThesis: string;
+  suggestedStrategy: string;
+}) {
+  const evidence = [input.title, input.claimType, input.mainThesis, input.suggestedStrategy]
+    .join(" ")
+    .toLowerCase();
+
+  return /urg|tutela|negativ|busca|apreens|fraude/.test(evidence) ? "Sim" : "Nao";
+}
+
+function distributionDateLabel(
+  timeline: ReadonlyArray<{
+    occurredAt: string;
+    title: string;
+    description: string;
+  }>
+) {
+  const distributionEvent = timeline.find((item) =>
+    /distribu/i.test(`${item.title} ${item.description}`)
+  );
+
+  return distributionEvent?.occurredAt ?? "Nao registrada";
+}
+
+function isContractAnalysisDocument(documentType: string) {
+  return CONTRACT_ANALYSIS_DOCUMENT_TYPES.has(documentType);
+}
+
+function buildTextDraftEditorHref(input: {
+  clientId: string;
+  caseId: string;
+  documentId: string;
+  piece: "acao-revisional" | "peticao-inicial" | "procuracao" | "contrato-honorarios";
+  objective: string;
+  niche: string;
+  processId?: string | null;
+}) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("draft", "1");
+  searchParams.set("niche", input.niche);
+  searchParams.set("client", input.clientId);
+  searchParams.set("case", input.caseId);
+  searchParams.set("document", input.documentId);
+  searchParams.set("piece", input.piece);
+  searchParams.set("objetivo", input.objective);
+
+  if (input.processId) {
+    searchParams.set("process", input.processId);
+  }
+
+  return `/editor-de-texto/meus-textos?${searchParams.toString()}`;
+}
+
+function buildCaseClaraHref(input: {
+  niche?: string | null;
+  clientId: string;
+  caseId?: string | null;
+  processId?: string | null;
+  documentId?: string | null;
+  tab?: string;
+}) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("niche", input.niche ?? "revisional");
+  searchParams.set("client", input.clientId);
+
+  if (input.caseId) {
+    searchParams.set("case", input.caseId);
+  }
+
+  if (input.processId) {
+    searchParams.set("process", input.processId);
+  }
+
+  if (input.documentId) {
+    searchParams.set("document", input.documentId);
+  }
+
+  searchParams.set("tab", input.tab ?? "analise");
+
+  return `/clara?${searchParams.toString()}`;
+}
+
 export default async function ClientDetailPage({
   params,
   searchParams
@@ -125,6 +250,7 @@ export default async function ClientDetailPage({
     record?: string;
     action?: string;
     case?: string;
+    panel?: string;
     onboarding?: string;
     workflow?: string;
     uploaded?: string;
@@ -133,7 +259,7 @@ export default async function ClientDetailPage({
   let client = null;
 
   try {
-    client = await getClientById(params.clientId);
+    client = await getClientById(params.clientId, { failOnError: true });
   } catch {
     return (
       <WorkspacePage
@@ -162,23 +288,27 @@ export default async function ClientDetailPage({
     notFound();
   }
 
-  const [clientCases, claraRecord, claraRecords] = await Promise.all([
+  const [clientCases, claraRecords] = await Promise.all([
     getCases({ clientId: params.clientId }),
-    getClaraRecord(searchParams?.record),
     listClaraRecords(80)
   ]);
   const activeCase = resolveCanonicalActiveCase(clientCases, client.linkedCases, searchParams?.case);
-  const [caseDocuments, activeCaseTasks] = activeCase
+  const [caseDocuments, activeCaseTasks, relatedProcess] = activeCase
     ? await Promise.all([
         getDocumentsByCaseId(activeCase.id),
-        getTasks({ caseId: activeCase.id })
+        getTasks({ caseId: activeCase.id }),
+        getProcessByCaseId(activeCase.id)
       ])
-    : [[], []];
+    : [[], [], null];
+  const relatedProcessUpdates = relatedProcess
+    ? await getProceduralUpdatesByProcessId(relatedProcess.id)
+    : [];
   const workflow = activeCase
     ? getBankingCaseWorkflow(activeCase, {
         documentLabels: caseDocuments.map((document) => document.documentType)
       })
     : null;
+  const canonicalWorkflow = workflow;
   const nextTask =
     activeCaseTasks.find((task) => task.status !== "done") ?? activeCaseTasks[0] ?? null;
   const relatedClaraRecords = claraRecords.filter((record) => {
@@ -186,7 +316,7 @@ export default async function ClientDetailPage({
       return false;
     }
 
-    const payload = record.payload as Awaited<ReturnType<typeof getClaraClientArtifact>>;
+    const payload = record.payload as { recordId?: string };
     const recordContext = readClaraRecordContext(record.targetPath);
     const matchesClient =
       recordContext.clientId === client.id || payload.recordId === `CLI-${client.id.toUpperCase()}`;
@@ -201,590 +331,237 @@ export default async function ClientDetailPage({
 
     return !recordContext.caseId || recordContext.caseId === activeCase.id;
   });
-  const claraArtifact =
-    claraRecord?.kind === "client"
-      ? (claraRecord.payload as Awaited<ReturnType<typeof getClaraClientArtifact>>)
-      : searchParams?.clara
-        ? await getClaraClientArtifact(params.clientId, activeCase?.id, false)
-        : null;
-  const claraDisplay = claraArtifact
-    ? getClaraRecordDisplay(claraRecord, "Resumo contextual da Clara carregado", claraArtifact.summary)
+  const nextStepLabel = activeCase
+    ? normalizeVisibleCopy(nextTask?.lexiaNextStep ?? workflow?.nextStep ?? activeCase.suggestedStrategy)
+    : "Abrir o primeiro caso bancario deste cliente pela entrada de Iniciar caso.";
+  const normalizedClientIaContext = normalizeVisibleCopy(client.iaContext);
+  const normalizedTimeline = normalizeVisibleCopyList(client.timeline);
+  const normalizedCaseInsights = normalizeVisibleCopyList(activeCase?.lexiaInsights ?? []);
+  const contractAnalysisDocumentId =
+    caseDocuments.find((document) => isContractAnalysisDocument(document.documentType))?.id ?? null;
+  const activeCaseDraftDocumentId = contractAnalysisDocumentId ?? caseDocuments[0]?.id ?? null;
+  let contractAnalysisWorkspace = null;
+
+  if (contractAnalysisDocumentId) {
+    try {
+      contractAnalysisWorkspace = await getContractAnalysisWorkspace(contractAnalysisDocumentId);
+    } catch (error) {
+      console.warn(
+        `Contract analysis workspace unavailable for client dossier document ${contractAnalysisDocumentId}.`,
+        error
+      );
+    }
+  }
+  const generatedDocuments =
+    activeCase && activeCaseDraftDocumentId
+      ? [
+          {
+            kind: "procuracao" as const,
+            label: "Gerar procuracao",
+            detail:
+              "Abre a minuta de procuracao para revisar, editar e depois gerar PDF para impressao.",
+            href: buildTextDraftEditorHref({
+              clientId: client.id,
+              caseId: activeCase.id,
+              documentId: activeCaseDraftDocumentId,
+              piece: "procuracao",
+              niche: activeCase.niche,
+              objective: "Preparar procuracao",
+              processId: relatedProcess?.id ?? null
+            }),
+            statusLabel: "Abrir para revisar"
+          },
+          {
+            kind: "contrato-honorarios" as const,
+            label: "Gerar contrato de honorarios",
+            detail:
+              "Abre a minuta do contrato de honorarios para revisar, editar e depois gerar PDF para impressao.",
+            href: buildTextDraftEditorHref({
+              clientId: client.id,
+              caseId: activeCase.id,
+              documentId: activeCaseDraftDocumentId,
+              piece: "contrato-honorarios",
+              niche: activeCase.niche,
+              objective: "Preparar contrato de honorarios",
+              processId: relatedProcess?.id ?? null
+            }),
+            statusLabel: "Abrir para revisar"
+          }
+        ]
+      : [];
+  const petitionDraftHref =
+    activeCase && activeCaseDraftDocumentId
+          ? buildTextDraftEditorHref({
+              clientId: client.id,
+              caseId: activeCase.id,
+              documentId: activeCaseDraftDocumentId,
+              piece: activeCase.niche === "revisional" ? "acao-revisional" : "peticao-inicial",
+              niche: activeCase.niche,
+              objective: "Preparar acao revisional",
+              processId: relatedProcess?.id ?? null
+            })
+      : null;
+  const caseDocumentsForFrame = await Promise.all(
+    caseDocuments.map(async (document) => ({
+      id: document.id,
+      documentType: document.documentType,
+      fileName: document.fileName,
+      aiStatus: document.aiStatus,
+      summary: document.summary,
+      uploadedAt: document.uploadedAt,
+      previewLabel: document.previewLabel,
+      actions: document.actions,
+      detailHref: `/documentos/${document.id}`,
+      pdfHref: await getDocumentFileSignedUrl({
+        bucket: document.storageBucket,
+        path: document.storagePath
+      })
+    }))
+  );
+  const metrics: Array<{ label: string; value: string }> = [];
+
+  const cockpitFrameActiveCase = activeCase
+    ? {
+        id: activeCase.id,
+        title: activeCase.title,
+        claimType: activeCase.claimType,
+        nicheLabel: getBankingNicheLabel(activeCase.niche),
+        status: activeCase.status,
+        stage: workflow?.phaseLabel ?? activeCase.stage,
+        legalRiskLabel: legalRiskLabel(activeCase.legalRisk),
+        mainThesis: activeCase.mainThesis,
+        suggestedStrategy: activeCase.suggestedStrategy
+      }
     : null;
 
-  const nextStepLabel = activeCase
-    ? nextTask?.lexiaNextStep ?? workflow?.nextStep ?? activeCase.suggestedStrategy
-    : "Abrir o primeiro caso bancario deste cliente pela entrada de Novo atendimento bancario.";
-  const checklistItems = workflow?.requiredDocuments.map((label) => ({
-    label,
-    missing: workflow.missingDocuments.includes(label)
-  })) ?? [];
-  const receivedDocuments = caseDocuments.length;
-  const availableNow = [
-    "Cockpit do caso ativo",
-    "Checklist documental inicial",
-    "Workflow visivel do nicho",
-    "Retorno do onboarding e do upload documental"
-  ];
-  const comingNext = [
-    "Pecas e minutas com revisao humana",
-    "Processo judicial completo apos distribuicao",
-    "Andamentos e Diario Oficial correlacionados ao caso",
-    "Clara executora com historico operacional ampliado"
-  ];
-  const metrics = [
-    {
-      label: "Caso Ativo",
-      value: activeCase ? "Resolvido" : "Pendente"
-    },
-    {
-      label: "Nicho",
-      value: activeCase ? getBankingNicheLabel(activeCase.niche) : "Nao iniciado"
-    },
-    {
-      label: "Documentos",
-      value: workflow?.completionLabel ?? `${client.documentsSent} enviados`
-    },
-    {
-      label: "Proximo passo",
-      value: nextTask ? "Com tarefa aberta" : "A definir"
-    }
-  ];
-
+  const cockpitFrameWorkflow = canonicalWorkflow
+    ? {
+        phaseLabel: canonicalWorkflow.phaseLabel,
+        completionLabel: canonicalWorkflow.completionLabel,
+        requiredDocuments: canonicalWorkflow.requiredDocuments,
+        missingDocuments: canonicalWorkflow.missingDocuments,
+        blockers: canonicalWorkflow.blockers,
+        steps: canonicalWorkflow.steps,
+        readiness: canonicalWorkflow.readiness
+      }
+    : null;
+  const dossierTabs = [
+    { key: "visao-geral", label: "Visao geral" },
+    { key: "documentos", label: "Documentos" },
+    { key: "financeiro", label: "Calculos" },
+    { key: "bacen", label: "Bacen" },
+    { key: "estrategico", label: "Estrategico" },
+    { key: "laudo", label: "Pericial (Laudo)" },
+    { key: "peticoes", label: "Peticoes" },
+    { key: "clara", label: "Clara" }
+  ] as const;
   return (
     <WorkspacePage
-      description="Cockpit inicial do cliente orientado pelo caso ativo, com contexto juridico, base documental e proximo passo operacional no mesmo lugar."
-      eyebrow="Clientes"
+      description="Dossie central do cliente orientado pelo caso ativo, com contexto juridico, base documental e a peça mantida bloqueada ate o fechamento humano."
+      eyebrow="Dossie do caso"
       metrics={metrics}
       title={client.fullName}
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="text-sm text-slate-400">
-            {client.documentId} | {client.bankName} | Origem {client.leadSource}
-          </p>
-          <p className="mt-2 text-sm leading-7 text-slate-300">
-            O cliente agora abre direto no cockpit do caso, sem depender de leitura cadastral solta.
-          </p>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          {activeCase ? (
-            <Link
-              className="detail-link-button px-4 py-3 text-sm font-semibold"
-              href={`/documentos/enviar-arquivos?caseId=${activeCase.id}`}
-            >
-              Anexar documentos
-            </Link>
-          ) : null}
-          <Link
-            className="detail-link-button px-4 py-3 text-sm font-semibold"
-            href={`/clara?tab=proximos-passos&client=${params.clientId}${activeCase ? `&case=${activeCase.id}` : ""}#clara-workbench`}
-          >
-            Continuar na Clara
-          </Link>
-          <Link
-            className="detail-link-button px-4 py-3 text-sm font-semibold"
-            href="/pessoas/clientes"
-          >
-            Voltar para clientes
-          </Link>
-        </div>
-      </div>
-
-      {claraArtifact ? (
-        <WorkspaceStatePanel
-          actionHref={`/clara?tab=proximos-passos&client=${params.clientId}${activeCase ? `&case=${activeCase.id}` : ""}#clara-history`}
-          actionLabel="Ver historico completo na Clara"
-          description={`${claraDisplay?.title}: ${claraDisplay?.detail}`}
-          footer={`Status ${claraArtifact.statusLabel} | Etapa ${claraArtifact.stageLabel} | Registro ${claraArtifact.recordId}`}
-          title="Resumo ativo da Clara para este cliente"
-          tone="warning"
-        />
-      ) : null}
-
-      {searchParams?.onboarding === "1" && activeCase ? (
-        <WorkspaceStatePanel
-          actionHref={`/pessoas/clientes/${params.clientId}?case=${activeCase.id}`}
-          actionLabel="Abrir cockpit do caso"
-          description="O onboarding concluiu cliente, caso, documentos essenciais, checklist inicial e tarefas minimas. Este cockpit passa a ser a superficie padrao para continuar a operacao."
-          title="Atendimento bancario iniciado com sucesso"
-          tone="warning"
-        />
-      ) : null}
-
-      {searchParams?.uploaded === "1" && activeCase ? (
-        <WorkspaceStatePanel
-          actionHref={`/pessoas/clientes/${params.clientId}?case=${activeCase.id}`}
-          actionLabel="Voltar ao cockpit"
-          description="O documento foi vinculado ao caso ativo e o retorno do fluxo documental permanece neste cockpit, com checklist e workflow atualizados."
-          title="Documento enviado com sucesso"
-          tone="warning"
-        />
-      ) : null}
-
-      {activeCase ? (
-        <section className="detail-panel-accent p-6">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold text-white">Cockpit inicial do caso</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">{activeCase.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-slate-200">
-                Nicho {getBankingNicheLabel(activeCase.niche).toLowerCase()}, fase atual{" "}
-                {workflow?.phaseLabel ?? activeCase.stage.toLowerCase()} e proximo passo operacional
-                centralizados na area do cliente.
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 xl:w-[25rem]">
-              <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                Fase atual:{" "}
-                <span className="font-semibold text-white">{workflow?.phaseLabel ?? activeCase.stage}</span>
-              </div>
-              <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                Status do caso: <span className="font-semibold text-white">{activeCase.status}</span>
-              </div>
-              <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                Risco juridico: <span className="font-semibold text-white">{legalRiskLabel(activeCase.legalRisk)}</span>
-              </div>
-              <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                Base documental:{" "}
-                <span className="font-semibold text-white">{workflow?.completionLabel ?? `${receivedDocuments} arquivo(s)`}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-            <div className="detail-subpanel p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Resumo do caso
-              </p>
-              <p className="mt-3 text-sm leading-7 text-slate-200">{activeCase.mainThesis}</p>
-              <p className="mt-3 text-sm leading-7 text-slate-300">{activeCase.suggestedStrategy}</p>
-            </div>
-
-            <div className="detail-subpanel p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Proximo passo recomendado
-              </p>
-              <p className="mt-3 text-sm leading-7 text-slate-200">{nextStepLabel}</p>
-              {nextTask ? (
-                <div className="detail-soft-row mt-4 px-4 py-4 text-sm text-slate-300">
-                  Tarefa aberta: <span className="font-semibold text-white">{nextTask.title}</span>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </section>
-      ) : (
-        <WorkspaceStatePanel
-          actionHref="/novo-atendimento-bancario"
-          actionLabel="Abrir novo atendimento bancario"
-          description="Ainda nao existe caso ativo para este cliente. O cockpit passa a fazer sentido depois que o onboarding cria cliente, caso, nicho e documentos iniciais."
-          title="Cliente sem caso ativo"
-          tone="warning"
-        />
-      )}
-
-      {clientCases.length > 1 ? (
-        <section className="detail-panel p-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-white">Casos deste cliente</p>
-              <p className="mt-2 text-sm leading-7 text-slate-300">
-                O cockpit usa um caso ativo por vez. Troque de contexto sem sair da area do cliente.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-3 lg:grid-cols-2">
-            {clientCases.map((caseItem) => {
-              const isActive = activeCase?.id === caseItem.id;
-
-              return (
-                <Link
-                  key={caseItem.id}
-                  className={`detail-soft-row block px-4 py-4 text-sm transition ${
-                    isActive ? "border-cyan-300/20 bg-cyan-300/10" : "hover:bg-white/[0.07]"
-                  }`}
-                  href={`/pessoas/clientes/${params.clientId}?case=${caseItem.id}`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold text-white">{caseItem.title}</p>
-                    <span className="text-xs uppercase tracking-[0.16em] text-slate-400">
-                      {isActive ? "Ativo" : caseItem.status}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-slate-300">{getBankingNicheLabel(caseItem.niche)}</p>
-                  <p className="mt-2 text-slate-400">{caseItem.stage}</p>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
-
-      {activeCase && workflow ? (
-        <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-          <article className="detail-panel p-6">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-white">Workflow do caso</p>
-                <p className="mt-2 text-sm leading-7 text-slate-300">
-                  O nicho selecionado ja aparece como trilha operacional dentro do cockpit, sem criar uma tela paralela de workflow.
-                </p>
-              </div>
-              <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-100">
-                {workflow.phaseLabel}
-              </span>
-            </div>
-
-            <div className="mt-5 grid gap-3">
-              {workflow.steps.map((step, index) => (
-                <div
-                  key={step.id}
-                  className={`rounded-[4px] border px-4 py-4 text-sm ${
-                    step.state === "done"
-                      ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-50"
-                      : step.state === "current"
-                        ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-50"
-                        : "border-white/10 bg-white/[0.03] text-slate-300"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full border border-current/20 text-xs font-semibold">
-                        {index + 1}
-                      </span>
-                      <p className="font-semibold">{step.title}</p>
-                    </div>
-                    <span className="text-[11px] uppercase tracking-[0.16em] opacity-80">
-                      {step.state === "done"
-                        ? "Concluida"
-                        : step.state === "current"
-                          ? "Atual"
-                          : "Pendente"}
-                    </span>
-                  </div>
-                  <p className="mt-3 leading-6">{step.detail}</p>
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <article className="detail-panel p-6">
-            <p className="text-sm font-semibold text-white">Checklist documental</p>
-            <p className="mt-2 text-sm leading-7 text-slate-300">
-              O cockpit mostra o que ja entrou no caso e o que ainda bloqueia a proxima etapa juridica.
-            </p>
-
-            <div className="detail-subpanel mt-5 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Base documental do caso
-              </p>
-              <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-200">
-                {checklistItems.map((item) => (
-                  <li key={item.label} className="flex items-start gap-3">
-                    <span
-                      className={`mt-1 h-2.5 w-2.5 rounded-full ${item.missing ? "bg-amber-300" : "bg-emerald-300"}`}
-                    />
-                    <span>{item.label}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                Recebidos: <span className="font-semibold text-white">{receivedDocuments}</span>
-              </div>
-              <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                Pendentes:{" "}
-                <span className="font-semibold text-white">{workflow.missingDocuments.length}</span>
-              </div>
-            </div>
-
-            <div className="detail-subpanel mt-4 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Bloqueios atuais do workflow
-              </p>
-              {workflow.blockers.length ? (
-                <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-200">
-                  {workflow.blockers.map((blocker) => (
-                    <li key={blocker} className="flex items-start gap-3">
-                      <span className="mt-1 h-2.5 w-2.5 rounded-full bg-amber-300" />
-                      <span>{blocker}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-3 text-sm leading-6 text-emerald-100">
-                  Nenhum bloqueio documental imediato. O caso pode seguir para a proxima leitura juridica.
-                </p>
-              )}
-            </div>
-
-            {caseDocuments.length ? (
-              <div className="mt-4 grid gap-3">
-                {caseDocuments.slice(0, 4).map((document) => (
-                  <div key={document.id} className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-                    <p className="font-semibold text-white">{document.documentType}</p>
-                    <p className="mt-1 text-slate-400">{document.fileName}</p>
-                    <p className="mt-2">{document.summary}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="detail-soft-row mt-4 px-4 py-4 text-sm text-slate-400">
-                Nenhum documento foi vinculado ao caso ativo ainda.
-              </div>
-            )}
-          </article>
-        </section>
-      ) : null}
-
-      {activeCase && workflow?.readiness.length ? (
-        <section className="detail-panel p-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-white">Prontidao juridica inicial</p>
-              <p className="mt-2 text-sm leading-7 text-slate-300">
-                Esta leitura prepara a proxima fase da Clara e deixa explicito quando o caso ja pode abrir leitura contratual, parecer tecnico e minuta sem suposicoes.
-              </p>
-            </div>
-            <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-300">
-              Contrato estrutural para Clara
-            </span>
-          </div>
-
-          <div className="mt-5 grid gap-3 lg:grid-cols-3">
-            {workflow.readiness.map((item) => (
-              <div
-                key={item.id}
-                className={`rounded-[4px] border px-4 py-4 text-sm ${
-                  item.state === "ready"
-                    ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-50"
-                    : "border-amber-300/20 bg-amber-300/10 text-amber-50"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold">{item.label}</p>
-                  <span className="text-[11px] uppercase tracking-[0.16em]">
-                    {item.state === "ready" ? "Apta" : "Bloqueada"}
-                  </span>
-                </div>
-                <p className="mt-3 leading-6">{item.detail}</p>
-                {item.blockers.length ? (
-                  <ul className="mt-3 space-y-2 text-xs leading-5 opacity-90">
-                    {item.blockers.map((blocker) => (
-                      <li key={blocker}>- {blocker}</li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-        <article className="detail-panel p-6">
-          <p className="text-sm font-semibold text-white">Documentos, workflow e Clara no mesmo contexto</p>
-          <div className="mt-5 grid gap-3">
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Documentos: <span className="font-semibold text-white">Disponivel agora</span>
-              <p className="mt-2 text-slate-400">
-                Upload e checklist retornam ao cockpit do cliente e atualizam o caso ativo.
-              </p>
-            </div>
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Workflow: <span className="font-semibold text-white">Disponivel agora</span>
-              <p className="mt-2 text-slate-400">
-                Fase atual e proximo passo ficam visiveis no proprio cliente.
-              </p>
-            </div>
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Clara contextual: <span className="font-semibold text-white">Preparada nesta fase</span>
-              <p className="mt-2 text-slate-400">
-                A Clara ja recebe contexto do cliente/caso e o historico fica acessivel sem prometer automacao ainda nao entregue.
-              </p>
-            </div>
-          </div>
-        </article>
-
-        <article className="detail-panel p-6">
-          <p className="text-sm font-semibold text-white">Fases seguintes do cockpit</p>
-          <p className="mt-2 text-sm leading-7 text-slate-300">
-            Estas areas ficam explicitas desde agora, mas sem criar a impressao de que ja estao completas.
-          </p>
-          <div className="mt-5 grid gap-3">
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Pecas
-              <p className="mt-2 text-slate-400">
-                Entram quando o pipeline juridico de minutas e revisao humana for instalado.
-              </p>
-            </div>
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Processo
-              <p className="mt-2 text-slate-400">
-                Ganha detalhamento completo depois da distribuicao e do vinculo processual real.
-              </p>
-            </div>
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Andamentos e Diario Oficial
-              <p className="mt-2 text-slate-400">
-                Passam a aparecer aqui quando houver correlacao processual automatizada por caso.
-              </p>
-            </div>
-          </div>
-        </article>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <article className="detail-panel p-6">
-          <p className="text-sm font-semibold text-white">Contexto operacional do cliente</p>
-          <dl className="mt-5 space-y-4 text-sm">
-            <div>
-              <dt className="text-slate-500">Contato</dt>
-              <dd className="mt-1 text-slate-200">
-                {client.email}
-                <br />
-                {client.phone}
-                <br />
-                WhatsApp {client.whatsapp}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-slate-500">Endereco</dt>
-              <dd className="mt-1 text-slate-200">{client.address}</dd>
-            </div>
-            <div>
-              <dt className="text-slate-500">Status do atendimento</dt>
-              <dd className="mt-1 text-slate-200">{serviceStatusLabel(client.serviceStatus)}</dd>
-            </div>
-            <div>
-              <dt className="text-slate-500">Notas internas</dt>
-              <dd className="mt-1 text-slate-200">{client.notes}</dd>
-            </div>
-          </dl>
-        </article>
-
-        <article className="detail-panel-accent p-6">
-          <p className="text-sm font-semibold text-white">Clara contextual</p>
-          <div className="detail-subpanel mt-5 p-5">
-            <p className="text-sm leading-7 text-slate-200">{client.iaContext}</p>
-          </div>
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Registros da Clara: <span className="font-semibold text-white">{relatedClaraRecords.length}</span>
-            </div>
-            <div className="detail-soft-row px-4 py-4 text-sm text-slate-300">
-              Insights do caso: <span className="font-semibold text-white">{activeCase?.lexiaInsights.length ?? 0}</span>
-            </div>
-          </div>
-
-          {activeCase?.lexiaInsights.length ? (
-            <div className="mt-4 grid gap-3">
-              {activeCase.lexiaInsights.slice(0, 3).map((insight) => (
-                <div key={insight} className="detail-soft-row px-4 py-4 text-sm leading-6 text-slate-200">
-                  {insight}
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </article>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-3">
-        <article className="detail-panel p-6 lg:col-span-2">
-          <p className="text-sm font-semibold text-white">Historico da Clara neste cliente</p>
-          <div className="mt-5 grid gap-3">
-            {relatedClaraRecords.length ? (
-              relatedClaraRecords.slice(0, 6).map((record) => {
-                const display = getClaraRecordDisplay(
-                  record,
-                  "Resumo de relacionamento registrado",
-                  "Sem resumo adicional."
-                );
-
-                return (
-                  <Link
-                    key={record.id}
-                    className="detail-soft-row block px-4 py-4 text-sm text-slate-300"
-                    href={`/pessoas/clientes/${params.clientId}?record=${record.id}${activeCase ? `&case=${activeCase.id}` : ""}`}
-                  >
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                      <span className="rounded-full border border-white/10 px-2 py-1 text-slate-300">
-                        {workflowStatusLabel(record.workflowStatus)}
-                      </span>
-                      <span>{record.id}</span>
-                    </div>
-                    <p className="mt-3 font-semibold text-white">{display.title}</p>
-                    <p className="mt-2 leading-6 text-slate-300">{display.detail}</p>
-                  </Link>
-                );
-              })
-            ) : (
-              <div className="detail-soft-row px-4 py-4 text-sm text-slate-400">
-                Nenhum registro da Clara foi persistido neste cliente ainda.
-              </div>
-            )}
-          </div>
-        </article>
-
-        <article className="detail-panel p-6">
-          <p className="text-sm font-semibold text-white">Disponivel agora</p>
-          <ul className="mt-5 space-y-3">
-            {availableNow.map((item) => (
-              <li key={item} className="detail-soft-row px-4 py-3 text-sm text-slate-300">
-                {item}
-              </li>
-            ))}
-          </ul>
-
-          <p className="mt-6 text-sm font-semibold text-white">Depende de proximas fases</p>
-          <ul className="mt-4 space-y-3">
-            {comingNext.map((item) => (
-              <li key={item} className="detail-soft-row px-4 py-3 text-sm text-slate-300">
-                {item}
-              </li>
-            ))}
-          </ul>
-        </article>
-      </section>
-
-      <section className="detail-panel p-6">
-        <p className="text-sm font-semibold text-white">Timeline de atendimento</p>
-        <ol className="mt-5 space-y-3">
-          {client.timeline.map((entry, index) => (
-            <li
-              key={entry}
-              className="detail-soft-row flex gap-4 px-4 py-4 text-sm text-slate-300"
-            >
-              <span className="detail-step-badge flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
-                {index + 1}
-              </span>
-              <span>{entry}</span>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <ClaraContextActions
-        actionHref={`/clara?tab=proximos-passos&client=${params.clientId}${activeCase ? `&case=${activeCase.id}` : ""}#clara-workbench`}
-        basis={[
-          serviceStatusLabel(client.serviceStatus),
-          client.bankName,
-          workflow?.completionLabel ?? `${client.documentsSent} documentos`,
-          activeCase ? getBankingNicheLabel(activeCase.niche) : "Sem caso ativo"
-        ]}
-        cautionLabel="As orientacoes da Clara seguem dependentes de revisao humana e nao substituem validacao juridica."
-        conclusion="O melhor uso da Clara neste ponto e fechar pendencias do caso ativo, reforcar a leitura do nicho e transformar isso em proxima acao objetiva do escritorio."
-        eyebrow="Fluxo Clara"
-        nextActions={[
-          "Listar documentos faltantes do caso ativo",
-          "Consolidar o proximo passo do workflow",
-          "Preparar contexto para a fase juridica seguinte"
-        ]}
-        title="Continuar este cliente dentro da Clara"
+      <ClientCockpitFrame
+        actionLinks={{
+          attachDocuments: "documentos",
+          continueClaraHref: buildCaseClaraHref({
+            niche: activeCase?.niche ?? "revisional",
+            clientId: client.id,
+            caseId: activeCase?.id ?? null,
+            processId: relatedProcess?.id ?? null,
+            documentId: activeCaseDraftDocumentId,
+            tab: "analise"
+          })
+        }}
+        activeCase={cockpitFrameActiveCase}
+        caseDocuments={caseDocumentsForFrame}
+        generatedDocuments={generatedDocuments}
+        petitionDraftHref={petitionDraftHref}
+        initialPanel={searchParams?.panel === "clara" ? "clara" : undefined}
+        client={{
+          id: client.id,
+          fullName: client.fullName,
+          documentId: client.documentId,
+          bankName: client.bankName,
+          legalViabilityScore: client.legalViabilityScore,
+          leadSource: client.leadSource,
+          serviceStatusLabel: serviceStatusLabel(client.serviceStatus),
+          address: client.address,
+          notes: client.notes,
+          email: client.email,
+          phone: client.phone,
+          whatsapp: client.whatsapp
+        }}
+        nextStepLabel={nextStepLabel}
+        nextTaskTitle={nextTask?.title ?? null}
+        normalizedCaseInsights={normalizedCaseInsights}
+        normalizedClientIaContext={normalizedClientIaContext}
+        normalizedTimeline={normalizedTimeline}
+        clientCaseCount={clientCases.length}
+        dossierTabs={dossierTabs}
+        contractAnalysis={
+          contractAnalysisWorkspace
+            ? {
+                analysis: contractAnalysisWorkspace.analysis,
+                bacenComparison: contractAnalysisWorkspace.bacenComparison,
+                caseCalculations: contractAnalysisWorkspace.caseCalculations,
+                bacenDossier: contractAnalysisWorkspace.bacenDossier,
+                calculationMemory: contractAnalysisWorkspace.calculationMemory,
+                detectedAbuses: contractAnalysisWorkspace.detectedAbuses,
+                caseDossier: contractAnalysisWorkspace.caseDossier,
+                revisionalChecklist: contractAnalysisWorkspace.revisionalChecklist,
+                thesisFrames: contractAnalysisWorkspace.thesisFrames,
+                revisionalRequests: contractAnalysisWorkspace.revisionalRequests,
+                proofStrategy: contractAnalysisWorkspace.proofStrategy,
+                revisionalStructure: contractAnalysisWorkspace.revisionalStructure
+              }
+            : null
+        }
+        claraChatContext={
+          activeCase
+            ? {
+                clientId: client.id,
+                caseId: activeCase.id,
+                processId: relatedProcess?.id ?? null,
+                documentId: activeCaseDraftDocumentId,
+                source: "dossie"
+              }
+            : null
+        }
+        relatedClaraRecordsCount={relatedClaraRecords.length}
+        relatedProcess={
+          relatedProcess
+            ? {
+                processNumber: relatedProcess.processNumber,
+                tribunal: relatedProcess.tribunal,
+                courtDistrict: relatedProcess.courtDistrict,
+                courtName: relatedProcess.courtName,
+                statusLabel: relatedProcess.status,
+                proceduralPhase: relatedProcess.proceduralPhase,
+                monitoringModeLabel: monitoringModeLabel(relatedProcess.monitoringMode),
+                processClassLabel: suggestedJudicialClass(relatedProcess.bankingCase.niche),
+                suggestedCnjSubjectLabel: suggestedCnjSubject(
+                  relatedProcess.bankingCase.niche,
+                  relatedProcess.bankingCase.claimType
+                ),
+                urgencyLabel: suggestedUrgencyLabel({
+                  title: relatedProcess.bankingCase.title,
+                  claimType: relatedProcess.bankingCase.claimType,
+                  mainThesis: relatedProcess.bankingCase.mainThesis,
+                  suggestedStrategy: relatedProcess.bankingCase.suggestedStrategy
+                }),
+                actionTypeLabel: actionTypeLabel(relatedProcess.bankingCase.niche),
+                valueInCauseLabel: `R$ ${relatedProcess.bankingCase.estimatedValue.toLocaleString("pt-BR")}`,
+                distributionDateLabel: distributionDateLabel(relatedProcess.latestTimeline),
+                protocolReceiptLabel: "Comprovante oficial anexado",
+                integrationStatusLabel: "Processo oficial consolidado a partir da distribuicao manual.",
+                officialTimeline: relatedProcess.latestTimeline,
+                linkedUpdates: relatedProcessUpdates
+              }
+            : null
+        }
+        workflow={cockpitFrameWorkflow}
       />
     </WorkspacePage>
   );

@@ -16,7 +16,7 @@ export default async function PessoasClientesPage({
   } | null = null;
 
   try {
-    clients = await getClients();
+    clients = await getClients({ failOnError: true });
   } catch {
     state = {
       title: "Clientes indisponiveis no momento",

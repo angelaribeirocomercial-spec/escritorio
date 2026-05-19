@@ -1,0 +1,23 @@
+from: "@dev"
+to: "@devops"
+date: "2026-05-15"
+story: "18.45"
+title: "Endurecer extracao deterministica com zero chute financeiro"
+summary:
+  - "Extracao financeira deixou de preencher taxa, parcelas, valor financiado e parcela cobrada com defaults silenciosos."
+  - "Campos reconciliados agora carregam origem explicita de reconciliacao documental."
+  - "Memoria economica passou a expor inputQuality: grounded, hybrid ou simulated."
+  - "Confianca operacional do caso agora penaliza calculo ainda simulado por lacuna documental."
+quality_gates:
+  lint: "passed"
+  typecheck: "passed"
+  test: "passed"
+  build: "passed"
+files:
+  - "apps/web/src/server/services/contract-analysis/sync-case-dossier-from-document.ts"
+  - "apps/web/src/server/services/contract-analysis/get-automation-readiness.ts"
+  - "apps/web/src/server/services/contract-analysis/get-contract-analysis.ts"
+  - "docs/stories/18.45.endurecer-extracao-deterministica-com-zero-chute-financeiro.md"
+notes:
+  - "Nao inclui tsconfig.json nem tsbuildinfo gerados pelo build."
+  - "Pacote nao exige migration."

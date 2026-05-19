@@ -1,6 +1,6 @@
 # Supabase Schema Snapshot
 
-**Date:** 2026-04-20  
+**Date:** 2026-05-03  
 **Status:** Baseline versioned in repository
 
 ## Summary
@@ -107,14 +107,27 @@ Credenciais de referencia do seed:
 
 ## Current Schema Boundary
 
-Esta baseline ainda nao cobre entidades de negocio como:
+Essa baseline ainda nao cobre todas as entidades do produto. As verticais adicionais versionadas ate aqui incluem:
 
 - `clients`
 - `banking_cases`
 - `documents`
 - `tasks`
-- `deadlines`
-- `contract_analyses`
-- `ai_interactions`
+- `processes`
+- `financial_entries`
+- `adversaries`
+- `minutas`
+- `versoes_peca`
+- `modelos_internos`
+- `teses_argumentos`
+- `fontes_externas_consultadas`
+- `resultados_api`
+- `logs_execucao_clara`
+- `observacoes_revisor_humano`
+- `crm_pipeline_stages`
+- `crm_leads`
+- `crm_followups`
+- `crm_conversas`
+- `crm_contratos`
 
-Essas tabelas devem entrar em migrations futuras por vertical, nao por big bang.
+O restante continua por vertical, sem big bang.

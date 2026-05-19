@@ -105,12 +105,21 @@ html[data-theme="light"] main option {
   color: hsl(var(--foreground)) !important;
 }
 
+html[data-theme="light"] main option {
+  background: #ffffff !important;
+}
+
 html[data-theme="light"] main input,
 html[data-theme="light"] main select,
 html[data-theme="light"] main textarea {
   background: rgba(255, 255, 255, 0.98) !important;
   border-color: rgba(148, 163, 184, 0.45) !important;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+
+html[data-theme="dark"] main option {
+  background: #111827;
+  color: #f8fafc;
 }
 
 html[data-theme="light"] main input:focus,
@@ -165,6 +174,52 @@ html[data-theme="light"] .workspace-session-summary-card .text-white,
 html[data-theme="light"] .workspace-session-summary-card .text-slate-300,
 html[data-theme="light"] .workspace-session-summary-card .text-slate-400 {
   color: rgba(239, 246, 255, 0.92) !important;
+}
+
+html[data-theme="light"] .workspace-state-panel {
+  background: #ffffff !important;
+  border-color: rgba(210, 220, 232, 0.95) !important;
+  box-shadow: none !important;
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .workspace-state-panel .text-white,
+html[data-theme="light"] .workspace-state-panel .text-slate-100,
+html[data-theme="light"] .workspace-state-panel .text-slate-200 {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .workspace-state-panel .text-slate-300,
+html[data-theme="light"] .workspace-state-panel .text-slate-400 {
+  color: rgba(71, 85, 105, 0.94) !important;
+}
+
+html[data-theme="light"] .workspace-state-panel .text-amber-100,
+html[data-theme="light"] .workspace-state-panel .text-rose-100 {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .workspace-header-narrative {
+  background: #ffffff !important;
+  border-color: rgba(210, 220, 232, 0.95) !important;
+  color: rgb(15 23 42) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .workspace-header-narrative .text-white,
+html[data-theme="light"] .workspace-header-narrative .text-slate-100,
+html[data-theme="light"] .workspace-header-narrative .text-slate-200 {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .workspace-header-narrative .text-slate-300,
+html[data-theme="light"] .workspace-header-narrative .text-slate-400,
+html[data-theme="light"] .workspace-header-narrative .text-slate-500 {
+  color: rgba(71, 85, 105, 0.94) !important;
+}
+
+html[data-theme="light"] .workspace-header-narrative .text-cyan-200 {
+  color: rgb(8 145 178) !important;
 }
 
 html[data-theme="light"] .reference-list-shell,
@@ -331,6 +386,90 @@ html[data-theme="light"] .tasks-page .text-amber-100\/85,
 html[data-theme="light"] .tasks-page .text-fuchsia-200,
 html[data-theme="light"] .tasks-page .text-amber-100 {
   color: rgba(71, 85, 105, 0.94) !important;
+}
+
+html[data-theme="light"] .sign-in-page {
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%) !important;
+}
+
+html[data-theme="light"] .sign-in-hero-shell,
+html[data-theme="light"] .sign-in-security-shell,
+html[data-theme="light"] .sign-in-security-card {
+  background: #ffffff !important;
+  border-color: rgba(203, 213, 225, 0.95) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .sign-in-hero-shell,
+html[data-theme="light"] .sign-in-security-shell,
+html[data-theme="light"] .sign-in-security-card {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .sign-in-hero-shell .text-white,
+html[data-theme="light"] .sign-in-hero-shell .text-slate-100,
+html[data-theme="light"] .sign-in-security-shell .text-white,
+html[data-theme="light"] .sign-in-security-shell .text-slate-100,
+html[data-theme="light"] .sign-in-security-card .text-white,
+html[data-theme="light"] .sign-in-security-card .text-slate-100 {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .sign-in-hero-shell .text-slate-200,
+html[data-theme="light"] .sign-in-hero-shell .text-slate-300,
+html[data-theme="light"] .sign-in-hero-shell .text-slate-400,
+html[data-theme="light"] .sign-in-security-shell .text-slate-200,
+html[data-theme="light"] .sign-in-security-shell .text-slate-300,
+html[data-theme="light"] .sign-in-security-shell .text-slate-400,
+html[data-theme="light"] .sign-in-security-card .text-slate-200,
+html[data-theme="light"] .sign-in-security-card .text-slate-300,
+html[data-theme="light"] .sign-in-security-card .text-slate-400,
+html[data-theme="light"] .sign-in-helper {
+  color: rgba(71, 85, 105, 0.96) !important;
+}
+
+html[data-theme="light"] .sign-in-brand {
+  color: rgb(30 41 59) !important;
+}
+
+html[data-theme="light"] .sign-in-eyebrow {
+  color: rgb(51 65 85) !important;
+}
+
+html[data-theme="light"] .sign-in-label {
+  color: rgb(30 41 59) !important;
+}
+
+html[data-theme="light"] .sign-in-input {
+  background: #ffffff !important;
+  color: rgb(15 23 42) !important;
+  border-color: rgba(148, 163, 184, 0.5) !important;
+}
+
+html[data-theme="light"] .sign-in-input::placeholder {
+  color: rgba(100, 116, 139, 0.92) !important;
+}
+
+html[data-theme="light"] .sign-in-demo-button {
+  background: #ffffff !important;
+  color: rgb(30 41 59) !important;
+  border-color: rgba(189, 199, 211, 1) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .sign-in-demo-button:hover {
+  background: #f8fafc !important;
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .sign-in-warning-box {
+  background: rgba(255, 247, 205, 0.95) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: rgb(120 53 15) !important;
+}
+
+html[data-theme="light"] .sign-in-warning-box code {
+  color: rgb(120 53 15) !important;
 }
 
 * {
@@ -525,6 +664,14 @@ h4,
     box-shadow: none;
   }
 
+  .detail-danger-button {
+    border: 1px solid rgba(248, 113, 113, 0.24);
+    border-radius: 4px;
+    background: rgba(220, 38, 38, 0.14);
+    color: rgb(254 226 226);
+    box-shadow: none;
+  }
+
   .detail-panel {
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
@@ -687,15 +834,22 @@ h4,
   .mj-model-toolbar input {
     font-size: 13px;
   }
+
+  .mj-model-toolbar option,
+  .mj-model-input option,
+  .reference-search-input option {
+    background: #111827;
+    color: #f8fafc;
+  }
 }
 
 html[data-theme="light"] .mj-model-title {
-  color: #b8bec7 !important;
+  color: rgb(30 41 59) !important;
 }
 
 html[data-theme="light"] .mj-model-subtitle,
 html[data-theme="light"] .mj-model-empty {
-  color: #c0c6cd !important;
+  color: rgba(71, 85, 105, 0.94) !important;
 }
 
 html[data-theme="light"] .mj-model-panel,
@@ -713,11 +867,44 @@ html[data-theme="light"] .mj-model-soft-panel {
 html[data-theme="light"] .mj-model-input {
   background: #ffffff !important;
   border-color: #e5e7eb !important;
-  color: #6b7280 !important;
+  color: rgb(15 23 42) !important;
 }
 
 html[data-theme="light"] .mj-model-gridline {
   border-color: #eceff3 !important;
+}
+
+html[data-theme="light"] .mj-model-page .text-white,
+html[data-theme="light"] .mj-model-panel .text-white,
+html[data-theme="light"] .mj-model-soft-panel .text-white,
+html[data-theme="light"] .mj-model-toolbar .text-white {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .mj-model-page .text-slate-100,
+html[data-theme="light"] .mj-model-page .text-slate-200,
+html[data-theme="light"] .mj-model-panel .text-slate-100,
+html[data-theme="light"] .mj-model-panel .text-slate-200,
+html[data-theme="light"] .mj-model-soft-panel .text-slate-100,
+html[data-theme="light"] .mj-model-soft-panel .text-slate-200,
+html[data-theme="light"] .mj-model-toolbar .text-slate-100,
+html[data-theme="light"] .mj-model-toolbar .text-slate-200 {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .mj-model-page .text-slate-300,
+html[data-theme="light"] .mj-model-page .text-slate-400,
+html[data-theme="light"] .mj-model-page .text-slate-500,
+html[data-theme="light"] .mj-model-panel .text-slate-300,
+html[data-theme="light"] .mj-model-panel .text-slate-400,
+html[data-theme="light"] .mj-model-panel .text-slate-500,
+html[data-theme="light"] .mj-model-soft-panel .text-slate-300,
+html[data-theme="light"] .mj-model-soft-panel .text-slate-400,
+html[data-theme="light"] .mj-model-soft-panel .text-slate-500,
+html[data-theme="light"] .mj-model-toolbar .text-slate-300,
+html[data-theme="light"] .mj-model-toolbar .text-slate-400,
+html[data-theme="light"] .mj-model-toolbar .text-slate-500 {
+  color: rgba(71, 85, 105, 0.94) !important;
 }
 
 html[data-theme="light"] .detail-link-button {
@@ -727,8 +914,15 @@ html[data-theme="light"] .detail-link-button {
   box-shadow: none !important;
 }
 
+html[data-theme="light"] .detail-danger-button {
+  border-color: rgba(248, 113, 113, 0.35) !important;
+  background: rgba(254, 242, 242, 0.98) !important;
+  color: rgb(153 27 27) !important;
+  box-shadow: none !important;
+}
+
 html[data-theme="light"] .workspace-kicker {
-  color: rgb(180 112 12) !important;
+  color: rgb(51 65 85) !important;
 }
 
 html[data-theme="light"] .detail-panel,
@@ -778,7 +972,13 @@ html[data-theme="light"] .detail-soft-row .text-slate-500 {
 html[data-theme="light"] .detail-panel .text-cyan-100,
 html[data-theme="light"] .detail-panel-accent .text-cyan-100,
 html[data-theme="light"] .detail-soft-row .text-cyan-100 {
-  color: rgb(8 145 178) !important;
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme="light"] .detail-panel .text-cyan-50,
+html[data-theme="light"] .detail-panel-accent .text-cyan-50,
+html[data-theme="light"] .detail-soft-row .text-cyan-50 {
+  color: rgb(15 23 42) !important;
 }
 
 html[data-theme="light"] .detail-panel .border-white\/10,

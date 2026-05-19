@@ -2,12 +2,14 @@ import { WorkspaceStatePanel } from "@lexia/ui";
 
 import { uploadDocumentAction } from "@/app/(workspace)/documentos/enviar-arquivos/actions";
 import { getCases } from "@/server/services/cases/get-cases";
+import { ScrollToTop } from "@/components/layout/scroll-to-top";
 
 const documentTypes = [
   "Contrato bancario",
   "CCB",
   "Peticao",
   "Comprovante",
+  "Comprovante de protocolo",
   "Planilha",
   "Notificacao"
 ];
@@ -15,7 +17,7 @@ const documentTypes = [
 export default async function EnviarArquivosPage({
   searchParams
 }: {
-  searchParams?: { caseId?: string };
+  searchParams?: { caseId?: string; documentType?: string; returnTo?: string };
 }) {
   let cases: Awaited<ReturnType<typeof getCases>> = [];
   let state: { title: string; description: string; tone?: "neutral" | "warning" | "danger" } | null = null;
@@ -59,9 +61,15 @@ export default async function EnviarArquivosPage({
   const defaultCaseId = cases.some((caseItem) => caseItem.id === searchParams?.caseId)
     ? searchParams?.caseId
     : cases[0]?.id;
+  const defaultDocumentType = documentTypes.includes(searchParams?.documentType ?? "")
+    ? searchParams?.documentType
+    : documentTypes[0];
+  const safeReturnTo =
+    searchParams?.returnTo && searchParams.returnTo.startsWith("/") ? searchParams.returnTo : "";
 
   return (
-    <div className="mj-model-page space-y-4">
+    <div className="mj-model-page space-y-4 pb-8">
+      <ScrollToTop />
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="mj-model-title">Enviar arquivos</p>
@@ -71,10 +79,11 @@ export default async function EnviarArquivosPage({
         </div>
       </div>
 
-      <form action={uploadFormAction} className="mj-model-panel overflow-hidden">
+      <form action={uploadFormAction} className="mj-model-panel">
+        {safeReturnTo ? <input name="returnTo" type="hidden" value={safeReturnTo} /> : null}
         <div className="grid gap-4 px-4 py-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
           <div
-            className="flex min-h-[24rem] flex-col items-center justify-center border border-dashed px-6 text-center mj-model-gridline"
+            className="flex min-h-[26rem] flex-col items-center justify-center border border-dashed px-6 py-8 text-center mj-model-gridline"
             style={{ borderRadius: "4px" }}
           >
             <svg aria-hidden="true" className="h-14 w-14 text-slate-400" fill="none" viewBox="0 0 48 48">
@@ -123,6 +132,7 @@ export default async function EnviarArquivosPage({
             </label>
             <select
               className="mj-model-input mt-1 w-full px-3 py-2 text-[13px] outline-none"
+              defaultValue={defaultDocumentType}
               id="documentType"
               name="documentType"
               required

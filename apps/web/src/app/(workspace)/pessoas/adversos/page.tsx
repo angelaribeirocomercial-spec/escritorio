@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { AdversaryRecord } from "@lexia/domain";
 import { WorkspaceStatePanel } from "@lexia/ui";
 
@@ -41,12 +43,16 @@ export default async function PessoasAdversosPage({
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <p className="mj-model-title">Adversos</p>
         <div className="flex gap-2">
-          <button className="mj-model-button-gray" type="button">
-            Importar lote
-          </button>
-          <button className="mj-model-button-green" type="button">
-            Adicionar
-          </button>
+          <Link
+            className="mj-model-button-gray inline-flex items-center justify-center"
+            href="/configuracoes/integracoes"
+            title="Abrir a configuracao das integracoes oficiais."
+          >
+            Configurar integração
+          </Link>
+          <Link className="mj-model-button-green inline-flex items-center justify-center" href="/pessoas/adversos/novo">
+            Novo adverso
+          </Link>
         </div>
       </div>
 

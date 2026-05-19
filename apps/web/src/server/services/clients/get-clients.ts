@@ -1,22 +1,26 @@
 import { ClientLinkedCaseSummary, ClientRecord } from "@lexia/domain";
 
+import {
+  DEMO_CLIENT_RECORD,
+  DEMO_CLIENT_ID
+} from "@/server/services/demo/demo-workspace-data";
 import { getWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type ClientRow = {
   id: string;
   full_name: string;
-  document_id: string;
-  email: string;
+  document_id: string | null;
+  email: string | null;
   phone: string;
-  whatsapp: string;
+  whatsapp: string | null;
   address: string;
-  lead_source: string;
-  bank_name: string;
+  lead_source: string | null;
+  bank_name: string | null;
   service_status: ClientRecord["serviceStatus"];
   signed_contract: boolean;
   legal_viability_score: number;
-  fees_label: string;
+  fees_label: string | null;
   documents_sent: number;
   notes: string;
   ia_context: string;
@@ -25,21 +29,41 @@ type ClientRow = {
   timeline: string[] | null;
 };
 
+type GetClientsOptions = {
+  failOnError?: boolean;
+};
+
+type GetClientByIdOptions = {
+  failOnError?: boolean;
+};
+
+function isDemoTenant(tenantSlug: string): boolean {
+  return tenantSlug === "clara-bancaria-demo";
+}
+
+function isSupabaseConfigured() {
+  return (
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL) != null &&
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY) != null &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY != null
+  );
+}
+
 function mapClientRow(row: ClientRow): ClientRecord {
   return {
     id: row.id,
     fullName: row.full_name,
-    documentId: row.document_id,
-    email: row.email,
+    documentId: row.document_id ?? "",
+    email: row.email ?? "",
     phone: row.phone,
-    whatsapp: row.whatsapp,
+    whatsapp: row.whatsapp ?? "",
     address: row.address,
-    leadSource: row.lead_source,
-    bankName: row.bank_name,
+    leadSource: row.lead_source ?? "",
+    bankName: row.bank_name ?? "",
     serviceStatus: row.service_status,
     signedContract: row.signed_contract,
     legalViabilityScore: row.legal_viability_score,
-    feesLabel: row.fees_label,
+    feesLabel: row.fees_label ?? "",
     documentsSent: row.documents_sent,
     notes: row.notes,
     iaContext: row.ia_context,
@@ -49,14 +73,24 @@ function mapClientRow(row: ClientRow): ClientRecord {
   };
 }
 
-export async function getClients(): Promise<ClientRecord[]> {
+export async function getClients(options?: GetClientsOptions): Promise<ClientRecord[]> {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load clients.");
+    return [];
   }
 
-  const supabase = getSupabaseServerClient();
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabaseConfigured()) {
+    if (demoTenant) {
+      return [DEMO_CLIENT_RECORD];
+    }
+
+    return [];
+  }
+
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("clients")
     .select(
@@ -86,20 +120,47 @@ export async function getClients(): Promise<ClientRecord[]> {
     .order("full_name", { ascending: true });
 
   if (error) {
-    throw new Error(`Failed to load clients for tenant ${session.workspace.tenant.id}.`);
+    console.warn(`Failed to load clients for tenant ${session.workspace.tenant.id}.`);
+
+    if (demoTenant) {
+      return [DEMO_CLIENT_RECORD];
+    }
+
+    if (options?.failOnError) {
+      throw new Error(
+        `Falha ao carregar clientes para o tenant ${session.workspace.tenant.id}.`
+      );
+    }
+
+    return [];
   }
 
-  return (data ?? []).map((row) => mapClientRow(row as ClientRow));
+  const clients = (data ?? []).map((row) => mapClientRow(row as ClientRow));
+
+  if (clients.length === 0 && demoTenant) {
+    return [DEMO_CLIENT_RECORD];
+  }
+
+  return clients;
 }
 
-export async function getClientById(clientId: string): Promise<ClientRecord | null> {
+export async function getClientById(
+  clientId: string,
+  options?: GetClientByIdOptions
+): Promise<ClientRecord | null> {
   const session = await getWorkspaceSession();
 
   if (!session) {
-    throw new Error("Workspace session is required to load client details.");
+    return null;
   }
 
-  const supabase = getSupabaseServerClient();
+  const demoTenant = isDemoTenant(session.workspace.tenant.slug);
+
+  if (!isSupabaseConfigured() && clientId === DEMO_CLIENT_ID && demoTenant) {
+    return DEMO_CLIENT_RECORD;
+  }
+
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("clients")
     .select(
@@ -130,9 +191,23 @@ export async function getClientById(clientId: string): Promise<ClientRecord | nu
     .maybeSingle();
 
   if (error) {
-    throw new Error(
-      `Failed to load client ${clientId} for tenant ${session.workspace.tenant.id}.`
-    );
+    console.warn(`Failed to load client ${clientId} for tenant ${session.workspace.tenant.id}.`);
+
+    if (demoTenant && clientId === DEMO_CLIENT_ID) {
+      return DEMO_CLIENT_RECORD;
+    }
+
+    if (options?.failOnError) {
+      throw new Error(
+        `Falha ao carregar o cliente ${clientId} para o tenant ${session.workspace.tenant.id}.`
+      );
+    }
+
+    return null;
+  }
+
+  if (!data && demoTenant && clientId === DEMO_CLIENT_ID) {
+    return DEMO_CLIENT_RECORD;
   }
 
   return data ? mapClientRow(data as ClientRow) : null;

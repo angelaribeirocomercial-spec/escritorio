@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { requireWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   buildBankingCaseOperationalTaskState,
   buildPersistedBankingCaseLifecycle
@@ -15,6 +15,9 @@ import {
   MAX_TENANT_DOCUMENT_SIZE_BYTES,
   uploadTenantDocument
 } from "@/server/services/documents/upload-tenant-document";
+import { syncCaseDossierFromDocument } from "@/server/services/contract-analysis/sync-case-dossier-from-document";
+
+const CONTRACT_ANALYSIS_DOCUMENT_TYPES = new Set(["Contrato bancario", "CCB"]);
 
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -43,6 +46,7 @@ export async function uploadDocumentAction(formData: FormData) {
   const documentType = readText(formData, "documentType");
   const category = readText(formData, "category");
   const summary = readText(formData, "summary");
+  const returnTo = readText(formData, "returnTo");
   const tags = readText(formData, "tags")
     .split(",")
     .map((tag) => tag.trim())
@@ -58,17 +62,62 @@ export async function uploadDocumentAction(formData: FormData) {
     throw new Error("Selected case was not found for the active tenant.");
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const uploadedDocument = await uploadTenantDocument({
+    supabaseClient: supabase,
     tenantId: session.workspace.tenant.id,
     clientId: bankingCase.clientId,
     caseId: bankingCase.id,
     file,
     documentType,
     category,
-    summary: summary || "Documento enviado pela interface e aguardando processamento.",
+    summary: summary || "Documento enviado pela interface e aguardando leitura OCR.",
     tags
   });
+  await syncCaseDossierFromDocument({
+    supabase,
+    tenantId: session.workspace.tenant.id,
+    document: uploadedDocument.document,
+    client: {
+      id: bankingCase.client.id,
+      fullName: bankingCase.client.fullName,
+      bankName: bankingCase.client.bankName
+    },
+    bankingCase: {
+      id: bankingCase.id,
+      title: bankingCase.title,
+      bankName: bankingCase.bankName,
+      niche: bankingCase.niche,
+      claimType: bankingCase.claimType
+    }
+  });
+  const existingDocuments = await getDocumentsByCaseId(bankingCase.id);
+
+  if (!CONTRACT_ANALYSIS_DOCUMENT_TYPES.has(documentType)) {
+    const primaryContractDocument = existingDocuments.find((document) =>
+      CONTRACT_ANALYSIS_DOCUMENT_TYPES.has(document.documentType)
+    );
+
+    if (primaryContractDocument) {
+      await syncCaseDossierFromDocument({
+        supabase,
+        tenantId: session.workspace.tenant.id,
+        document: primaryContractDocument,
+        client: {
+          id: bankingCase.client.id,
+          fullName: bankingCase.client.fullName,
+          bankName: bankingCase.client.bankName
+        },
+        bankingCase: {
+          id: bankingCase.id,
+          title: bankingCase.title,
+          bankName: bankingCase.bankName,
+          niche: bankingCase.niche,
+          claimType: bankingCase.claimType
+        }
+      });
+    }
+  }
 
   const nextCaseLinkedDocuments = Array.from(
     new Set([...bankingCase.linkedDocuments, uploadedDocument.documentId])
@@ -76,7 +125,6 @@ export async function uploadDocumentAction(formData: FormData) {
   const nextClientLinkedDocuments = Array.from(
     new Set([...bankingCase.client.linkedDocuments, uploadedDocument.documentId])
   );
-  const existingDocuments = await getDocumentsByCaseId(bankingCase.id);
   const lifecycleState = buildPersistedBankingCaseLifecycle({
     niche: bankingCase.niche,
     stage: bankingCase.stage,
@@ -133,6 +181,12 @@ export async function uploadDocumentAction(formData: FormData) {
 
   revalidatePath("/documentos/meus-arquivos");
   revalidatePath(`/pessoas/clientes/${bankingCase.clientId}`);
+  revalidatePath("/processos");
   revalidatePath("/tarefas");
+
+  if (returnTo.startsWith("/")) {
+    redirect(returnTo.includes("?") ? `${returnTo}&uploaded=1` : `${returnTo}?uploaded=1`);
+  }
+
   redirect(`/pessoas/clientes/${bankingCase.clientId}?case=${bankingCase.id}&uploaded=1`);
 }

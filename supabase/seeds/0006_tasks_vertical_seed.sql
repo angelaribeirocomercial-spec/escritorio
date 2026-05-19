@@ -63,41 +63,41 @@ values
     '11111111-1111-1111-1111-111111111111',
     'cl-003',
     'case-311',
-    'Revisar fundamentos da inicial de capital de giro',
-    'Revisao final dos fundamentos sobre capitalizacao mensal, CET e encargos remuneratorios.',
+    'Revisar fundamentos da inicial de cartao consignado',
+    'Revisao final dos fundamentos sobre margem, RMC e desconto indevido em cartao consignado.',
     'Dra. Julia Ramalho',
     '2026-04-15',
     'medium',
     'in_progress',
-    'A peca esta bem encaminhada; falta amarrar com mais clareza o pedido de tutela para limitacao de cobranca.',
+    'A peca esta bem encaminhada; falta amarrar com mais clareza o pedido de tutela para cessar o desconto indevido.',
     '[
       {"id":"task-003-1","label":"Finalizar fatos resumidos","done":true},
-      {"id":"task-003-2","label":"Conferir planilha de encargos","done":true},
+      {"id":"task-003-2","label":"Conferir desconto consignado","done":true},
       {"id":"task-003-3","label":"Revisar fundamentos da inicial","done":false},
       {"id":"task-003-4","label":"Submeter minuta para revisao","done":false}
     ]'::jsonb,
-    'Checklist sugerido para juros abusivos em CCB.',
-    'Enfatizar capitalizacao mensal e pedido de limitacao de cobranca no topico de urgencia.'
+    'Checklist sugerido para fraude consignada / RMC.',
+    'Enfatizar desconto indevido, RMC e pedido de tutela para suspensao da cobranca no topico de urgencia.'
   ),
   (
     'task-004',
     '11111111-1111-1111-1111-111111111111',
     'cl-003',
     'case-312',
-    'Fechar pedido de tutela para retirada da negativacao',
-    'Consolidar os argumentos de urgencia e a prova da restricao crediticia indevida.',
+    'Fechar pedido de tutela para preservacao do veiculo',
+    'Consolidar os argumentos de urgencia e a prova da mora controvertida para evitar a busca e apreensao.',
     'Dra. Julia Ramalho',
     '2026-04-12',
     'urgent',
     'todo',
-    'Caso apto para narrativa enxuta, com foco em urgencia e impacto operacional na empresa cliente.',
+    'Caso apto para narrativa enxuta, com foco em urgencia e preservacao do veiculo do cliente.',
     '[
-      {"id":"task-004-1","label":"Validar prova da negativacao","done":true},
+      {"id":"task-004-1","label":"Validar prova da mora","done":true},
       {"id":"task-004-2","label":"Fechar pedido de tutela","done":false},
-      {"id":"task-004-3","label":"Revisar danos morais","done":false}
+      {"id":"task-004-3","label":"Revisar danos patrimoniais","done":false}
     ]'::jsonb,
-    'Checklist sugerido para negativacao indevida.',
-    'Priorizar o pedido liminar e anexar prova objetiva do impacto comercial da restricao.'
+    'Checklist sugerido para busca e apreensao.',
+    'Priorizar o pedido liminar e anexar prova objetiva da posse e da mora controvertida.'
   ),
   (
     'task-005',

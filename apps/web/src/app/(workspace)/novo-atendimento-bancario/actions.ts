@@ -6,15 +6,18 @@ import { redirect } from "next/navigation";
 import { BANKING_NICHES, BankingNiche, getBankingNicheLabel } from "@lexia/domain";
 
 import { requireWorkspaceSession } from "@/lib/auth/session";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import {
   buildBankingCaseOperationalTaskState,
   buildPersistedBankingCaseLifecycle
 } from "@/server/services/cases/get-banking-case-workflow";
+import { getClientById } from "@/server/services/clients/get-clients";
 import {
   TENANT_DOCUMENT_BUCKET,
   uploadTenantDocument
 } from "@/server/services/documents/upload-tenant-document";
+import { syncCaseDossierFromDocument } from "@/server/services/contract-analysis/sync-case-dossier-from-document";
 
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -106,18 +109,15 @@ const DOCUMENT_SLOTS: readonly IntakeDocumentSlot[] = [
   }
 ] as const;
 
-const REQUIRED_DOCUMENT_SLOT_KEYS: Record<BankingNiche, readonly string[]> = {
-  revisional: ["personal-document", "address-proof", "contract"],
-  fraude: ["personal-document", "benefit-statement", "bank-communication"],
-  "busca-apreensao": ["personal-document", "contract", "vehicle-document", "default-notice"]
-};
+const MINIMUM_REQUIRED_DOCUMENT_SLOT_KEYS = ["personal-document"] as const;
+const CONTRACT_ANALYSIS_DOCUMENT_TYPES = new Set(["Contrato bancario", "CCB", "Contrato bancario ou CCB"]);
 
 function getDocumentSlot(slotKey: string) {
   return DOCUMENT_SLOTS.find((slot) => slot.key === slotKey) ?? null;
 }
 
-function getRequiredDocumentSlots(niche: BankingNiche) {
-  return REQUIRED_DOCUMENT_SLOT_KEYS[niche]
+function getRequiredDocumentSlots(slotKeys: readonly string[]) {
+  return slotKeys
     .map((slotKey) => getDocumentSlot(slotKey))
     .filter((slot): slot is IntakeDocumentSlot => slot !== null);
 }
@@ -129,33 +129,57 @@ function buildValidationRedirect(message: string) {
 }
 
 function buildCaseTitle(niche: BankingNiche, bankName: string) {
+  if (niche === "triagem-inicial") {
+    return bankName ? `Triagem inicial de atendimento contra ${bankName}` : "Triagem inicial de atendimento bancario";
+  }
+
   switch (niche) {
     case "fraude":
       return `Fraude bancaria contra ${bankName}`;
     case "busca-apreensao":
       return `Busca e apreensao vinculada a ${bankName}`;
+    case "cartao-consignado":
+      return `Cartao consignado / RMC contra ${bankName}`;
+    case "beneficio-descontos":
+      return `Descontos indevidos em beneficio previdenciario contra ${bankName}`;
     default:
       return `Revisional de contrato com ${bankName}`;
   }
 }
 
 function buildClaimType(niche: BankingNiche) {
+  if (niche === "triagem-inicial") {
+    return "triagem_bancaria";
+  }
+
   switch (niche) {
     case "fraude":
       return "fraude_bancaria";
     case "busca-apreensao":
       return "busca_apreensao";
+    case "cartao-consignado":
+      return "cartao_consignado_rmc";
+    case "beneficio-descontos":
+      return "descontos_beneficio_previdenciario";
     default:
       return "acao_revisional";
   }
 }
 
 function buildStage(niche: BankingNiche) {
+  if (niche === "triagem-inicial") {
+    return "Triagem inicial";
+  }
+
   switch (niche) {
     case "fraude":
       return "Triagem de fraude";
     case "busca-apreensao":
       return "Triagem de busca e apreensao";
+    case "cartao-consignado":
+      return "Triagem de cartao consignado / RMC";
+    case "beneficio-descontos":
+      return "Triagem de descontos indevidos em beneficio previdenciario";
     default:
       return "Analise contratual inicial";
   }
@@ -166,23 +190,43 @@ function buildMainThesis(niche: BankingNiche, objective: string) {
     return objective;
   }
 
+  if (niche === "triagem-inicial") {
+    return "Contexto inicial ainda em consolidacao.";
+  }
+
   switch (niche) {
     case "fraude":
       return "Falha de seguranca e contratacao nao autorizada";
     case "busca-apreensao":
       return "Mora controvertida e preservacao do veiculo";
+    case "cartao-consignado":
+      return "Desconto controvertido em cartao consignado / RMC";
+    case "beneficio-descontos":
+      return "Desconto indevido em beneficio previdenciario";
     default:
       return "Juros abusivos e revisao contratual";
   }
 }
 
 function buildSuggestedStrategy(niche: BankingNiche, objective: string) {
+  if (niche === "triagem-inicial") {
+    return "Completar banco, nicho, objetivo e anexos basicos antes de abrir a leitura juridica do caso.";
+  }
+
   if (niche === "fraude") {
     return "Fechar cronologia, reforcar a prova e estruturar a estrategia de resposta contra a fraude bancaria.";
   }
 
   if (niche === "busca-apreensao") {
     return "Consolidar contrato, mora e urgencia para estruturar a defesa e a protecao do veiculo.";
+  }
+
+  if (niche === "cartao-consignado") {
+    return "Consolidar contrato, extrato e desconto para estruturar a tese de cartao consignado / RMC.";
+  }
+
+  if (niche === "beneficio-descontos") {
+    return "Consolidar beneficio, extrato e comunicacoes para estruturar a tese de descontos indevidos.";
   }
 
   return objective
@@ -193,7 +237,9 @@ function buildSuggestedStrategy(niche: BankingNiche, objective: string) {
 function buildInitialTimeline(clientName: string, niche: BankingNiche) {
   return [
     `Atendimento bancario iniciado para ${clientName}.`,
-    `Nicho selecionado: ${getBankingNicheLabel(niche)}.`,
+    niche === "triagem-inicial"
+      ? "Nicho bancario ainda nao classificado na triagem inicial."
+      : `Nicho selecionado: ${getBankingNicheLabel(niche)}.`,
     "Caso aberto pela entrada unica do escritorio."
   ];
 }
@@ -201,8 +247,9 @@ function buildInitialTimeline(clientName: string, niche: BankingNiche) {
 function buildClientContext(bankName: string, niche: BankingNiche, objective: string) {
   const nicheLabel = getBankingNicheLabel(niche);
   const objectiveLine = objective ? ` Objetivo inicial: ${objective}.` : "";
+  const bankLine = bankName ? ` com banco ${bankName}` : " sem banco definido";
 
-  return `Cliente em onboarding do nicho ${nicheLabel} com banco ${bankName}.${objectiveLine}`;
+  return `Cliente em onboarding do nicho ${nicheLabel}${bankLine}.${objectiveLine}`;
 }
 
 function buildInitialTasks(params: {
@@ -231,8 +278,14 @@ function buildInitialTasks(params: {
       id: `task-${randomUUID()}`,
       client_id: params.clientId,
       case_id: params.caseId,
-      title: "Fechar checklist documental inicial",
-      description: `Consolidar a base minima do caso ${params.caseTitle} para liberar a leitura juridica do nicho.`,
+      title:
+        params.niche === "triagem-inicial"
+          ? "Fechar triagem inicial do atendimento"
+          : "Fechar checklist documental inicial",
+      description:
+        params.niche === "triagem-inicial"
+          ? `Consolidar banco, nicho e base documental minima do atendimento ${params.caseTitle}.`
+          : `Consolidar a base minima do caso ${params.caseTitle} para liberar a leitura juridica do nicho.`,
       assignee_label: params.assigneeLabel,
       due_date: firstDueDate.toISOString().slice(0, 10),
       priority: "urgent",
@@ -240,7 +293,7 @@ function buildInitialTasks(params: {
       notes: checklistTaskState.notes,
       checklist: checklistTaskState.checklist,
       suggested_by_claim_type:
-        params.niche === "fraude"
+        params.niche === "fraude" || params.niche === "cartao-consignado" || params.niche === "beneficio-descontos"
           ? "fraude_bancaria"
           : params.niche === "busca-apreensao"
             ? "busca_apreensao"
@@ -251,34 +304,52 @@ function buildInitialTasks(params: {
       id: `task-${randomUUID()}`,
       client_id: params.clientId,
       case_id: params.caseId,
-      title: "Consolidar estrategia inicial do caso",
-      description: "Validar o objetivo inicial, ajustar a tese principal e registrar o proximo passo do caso.",
+      title:
+        params.niche === "triagem-inicial"
+          ? "Classificar banco, nicho e objetivo do caso"
+          : "Consolidar estrategia inicial do caso",
+      description:
+        params.niche === "triagem-inicial"
+          ? "Completar a classificacao do atendimento antes de abrir a leitura juridica do caso."
+          : "Validar o objetivo inicial, ajustar a tese principal e registrar o proximo passo do caso.",
       assignee_label: params.assigneeLabel,
       due_date: secondDueDate.toISOString().slice(0, 10),
       priority: "high",
       status: "todo",
-      notes: params.objective
-        ? `Objetivo inicial informado no onboarding: ${params.objective}.`
-        : "Objetivo inicial ainda precisa de refinamento humano.",
+      notes:
+        params.niche === "triagem-inicial"
+          ? "Banco, nicho juridico e objetivo inicial ainda precisam de validacao humana."
+          : params.objective
+            ? `Objetivo inicial informado no onboarding: ${params.objective}.`
+            : "Objetivo inicial ainda precisa de refinamento humano.",
       checklist: [
         {
           id: `item-${randomUUID()}`,
-          label: "Validar objetivo inicial do caso",
-          done: Boolean(params.objective)
+          label:
+            params.niche === "triagem-inicial"
+              ? "Classificar nicho bancario"
+              : "Validar objetivo inicial do caso",
+          done: params.niche === "triagem-inicial" ? false : Boolean(params.objective)
         },
         {
           id: `item-${randomUUID()}`,
-          label: "Confirmar tese principal e proxima fase do workflow",
+          label:
+            params.niche === "triagem-inicial"
+              ? "Confirmar banco e proxima fase do workflow"
+              : "Confirmar tese principal e proxima fase do workflow",
           done: false
         }
       ],
       suggested_by_claim_type:
-        params.niche === "fraude"
+        params.niche === "fraude" || params.niche === "cartao-consignado" || params.niche === "beneficio-descontos"
           ? "fraude_bancaria"
           : params.niche === "busca-apreensao"
             ? "busca_apreensao"
             : "acao_revisional",
-      lexia_next_step: "Transformar o onboarding em leitura inicial do caso e travar a proxima etapa do workflow."
+      lexia_next_step:
+        params.niche === "triagem-inicial"
+          ? "Completar a classificacao do atendimento antes de abrir a leitura juridica do caso."
+          : "Transformar o onboarding em leitura inicial do caso e travar a proxima etapa do workflow."
     }
   ] as const;
 }
@@ -286,34 +357,53 @@ function buildInitialTasks(params: {
 export async function createBankingIntakeAction(formData: FormData) {
   const session = await requireWorkspaceSession();
 
-  if (!["owner", "admin"].includes(session.role)) {
-    throw new Error("Only owners and admins can open a new banking intake.");
+  if (!["owner", "admin", "lawyer", "assistant"].includes(session.role)) {
+    redirect(
+      buildValidationRedirect(
+        "Seu perfil atual nao tem permissao para iniciar um novo atendimento bancario."
+      )
+    );
   }
 
   const fullName = readText(formData, "fullName");
   const documentId = readText(formData, "documentId");
   const email = readText(formData, "email");
   const phone = readText(formData, "phone");
-  const whatsapp = readText(formData, "whatsapp") || phone;
+  const whatsapp = readText(formData, "whatsapp");
   const address = readText(formData, "address");
-  const leadSource = readText(formData, "leadSource") || "Clara";
+  const leadSource = readText(formData, "leadSource");
   const bankName = readText(formData, "bankName");
   const nicheValue = readText(formData, "niche");
   const objective = readText(formData, "objective");
   const contractNumber = readText(formData, "contractNumber");
   const notes = readText(formData, "notes");
+  const existingClientId = readText(formData, "existingClientId");
+  const existingClient = existingClientId ? await getClientById(existingClientId).catch(() => null) : null;
+  const personalDocumentFile = readFile(formData, "personalDocumentFile");
+  const resolvedFullName = fullName || existingClient?.fullName || "";
+  const resolvedDocumentId = documentId || existingClient?.documentId || "";
+  const resolvedEmail = email || existingClient?.email || "";
+  const resolvedPhone = phone || existingClient?.phone || "";
+  const resolvedWhatsapp = whatsapp || existingClient?.whatsapp || "";
+  const resolvedAddress = address || existingClient?.address || "";
+  const resolvedLeadSource = leadSource || existingClient?.leadSource || "";
+  const resolvedBankName = bankName || existingClient?.bankName || "";
 
-  if (!fullName || !documentId || !email || !phone || !address || !bankName || !nicheValue) {
-    redirect(buildValidationRedirect("Preencha os campos obrigatorios de cliente, caso e nicho antes de iniciar o caso."));
+  if (!existingClient && (!fullName || !phone || !address)) {
+    redirect(buildValidationRedirect("Preencha nome, endereco e telefone antes de iniciar o caso."));
   }
 
-  if (!isBankingNiche(nicheValue)) {
+  if (!existingClient && !personalDocumentFile) {
+    redirect(buildValidationRedirect("Anexe o documento pessoal do cliente para abrir a triagem inicial."));
+  }
+
+  if (nicheValue && !isBankingNiche(nicheValue)) {
     redirect(buildValidationRedirect("Selecione um nicho bancario valido."));
   }
 
-  const niche = nicheValue;
-  const requiredDocumentSlots = getRequiredDocumentSlots(niche);
-  const missingRequiredFields = requiredDocumentSlots.filter((slot) => !readFile(formData, slot.field));
+  const niche: BankingNiche = nicheValue && isBankingNiche(nicheValue) ? nicheValue : "triagem-inicial";
+  const requiredDocumentSlots = getRequiredDocumentSlots(MINIMUM_REQUIRED_DOCUMENT_SLOT_KEYS);
+  const missingRequiredFields = existingClient ? [] : requiredDocumentSlots.filter((slot) => !readFile(formData, slot.field));
 
   if (missingRequiredFields.length > 0) {
     redirect(
@@ -323,15 +413,24 @@ export async function createBankingIntakeAction(formData: FormData) {
     );
   }
 
-  const clientId = `cl-${randomUUID()}`;
+  if (!isSupabaseConfigured()) {
+    redirect(
+      buildValidationRedirect(
+        "A demonstracao atual nao possui Supabase configurado para persistir cliente, caso e documentos. Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY para concluir o onboarding real."
+      )
+    );
+  }
+
+  const clientId = existingClient?.id ?? `cl-${randomUUID()}`;
   const caseId = `case-${randomUUID()}`;
-  const caseTitle = buildCaseTitle(niche, bankName);
+  const caseTitle = buildCaseTitle(niche, resolvedBankName);
   const caseStage = buildStage(niche);
   const mainThesis = buildMainThesis(niche, objective);
   const suggestedStrategy = buildSuggestedStrategy(niche, objective);
   const processNumber = `pendente-distribuicao-${Date.now()}`;
-  const clientTimeline = buildInitialTimeline(fullName, niche);
+  const clientTimeline = existingClient ? existingClient.timeline : buildInitialTimeline(resolvedFullName, niche);
   const linkedCaseSummary = [
+    ...(existingClient?.linkedCases ?? []),
     {
       id: caseId,
       title: caseTitle,
@@ -341,34 +440,37 @@ export async function createBankingIntakeAction(formData: FormData) {
   ];
   const uploadedDocumentIds: string[] = [];
   const uploadedStoragePaths: string[] = [];
+  const uploadedDocuments: Awaited<ReturnType<typeof uploadTenantDocument>>[] = [];
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
 
-  const { error: clientError } = await supabase.from("clients").insert({
-    id: clientId,
-    tenant_id: session.workspace.tenant.id,
-    full_name: fullName,
-    document_id: documentId,
-    email,
-    phone,
-    whatsapp,
-    address,
-    lead_source: leadSource,
-    bank_name: bankName,
-    service_status: "triage",
-    signed_contract: false,
-    legal_viability_score: 8,
-    fees_label: "A definir",
-    documents_sent: 0,
-    notes: notes || "Cliente criado pela entrada unica do atendimento bancario.",
-    ia_context: buildClientContext(bankName, niche, objective),
-    linked_cases: linkedCaseSummary,
-    linked_documents: [],
-    timeline: clientTimeline
-  });
+  if (!existingClient) {
+    const { error: clientError } = await supabase.from("clients").insert({
+      id: clientId,
+      tenant_id: session.workspace.tenant.id,
+      full_name: fullName,
+      document_id: documentId || null,
+      email: email || null,
+      phone,
+      whatsapp: whatsapp || null,
+      address,
+      lead_source: leadSource || null,
+      bank_name: bankName || null,
+      service_status: "triage",
+      signed_contract: false,
+      legal_viability_score: 8,
+      fees_label: null,
+      documents_sent: 0,
+      notes: notes || "Cliente criado pela triagem inicial do atendimento bancario.",
+      ia_context: buildClientContext(bankName, niche, objective),
+      linked_cases: linkedCaseSummary,
+      linked_documents: [],
+      timeline: clientTimeline
+    });
 
-  if (clientError) {
-    redirect(buildValidationRedirect(`Nao foi possivel criar o cliente: ${clientError.message}`));
+    if (clientError) {
+      redirect(buildValidationRedirect(`Nao foi possivel criar o cliente: ${clientError.message}`));
+    }
   }
 
   const initialLifecycle = buildPersistedBankingCaseLifecycle({
@@ -382,9 +484,9 @@ export async function createBankingIntakeAction(formData: FormData) {
     tenant_id: session.workspace.tenant.id,
     client_id: clientId,
     title: caseTitle,
-    bank_name: bankName,
+    bank_name: bankName || null,
     process_number: processNumber,
-    contract_number: contractNumber || `contrato-pendente-${Date.now()}`,
+    contract_number: contractNumber || null,
     claim_type: buildClaimType(niche),
     stage: caseStage,
     status: "draft",
@@ -399,7 +501,9 @@ export async function createBankingIntakeAction(formData: FormData) {
     linked_tasks: [],
     linked_deadlines: [],
     lexia_insights: [
-      `Caso iniciado pela entrada unica do nicho ${getBankingNicheLabel(niche)}.`,
+      niche === "triagem-inicial"
+        ? "Caso iniciado pela triagem inicial do atendimento bancario."
+        : `Caso iniciado pela entrada unica do nicho ${getBankingNicheLabel(niche)}.`,
       objective ? `Objetivo inicial registrado: ${objective}.` : "Objetivo inicial pendente de refinamento."
     ],
     workflow_state: initialLifecycle.workflowState,
@@ -420,6 +524,7 @@ export async function createBankingIntakeAction(formData: FormData) {
       }
 
       const uploadedDocument = await uploadTenantDocument({
+        supabaseClient: supabase,
         tenantId: session.workspace.tenant.id,
         clientId,
         caseId,
@@ -432,6 +537,7 @@ export async function createBankingIntakeAction(formData: FormData) {
 
       uploadedDocumentIds.push(uploadedDocument.documentId);
       uploadedStoragePaths.push(uploadedDocument.storagePath);
+      uploadedDocuments.push(uploadedDocument);
     }
 
     const uploadedDocumentLabels = DOCUMENT_SLOTS.filter((slot) => readFile(formData, slot.field) !== null).map(
@@ -471,7 +577,7 @@ export async function createBankingIntakeAction(formData: FormData) {
       .update({
         linked_documents: uploadedDocumentIds,
         linked_tasks: taskIds,
-        status: "active",
+        status: "draft",
         workflow_state: lifecycleState.workflowState,
         checklist_state: lifecycleState.checklistState
       })
@@ -488,12 +594,27 @@ export async function createBankingIntakeAction(formData: FormData) {
       `${taskIds.length} tarefa(s) inicial(is) criada(s) para o workflow do nicho.`
     ];
 
+    const nextLinkedDocuments = existingClient
+      ? Array.from(new Set([...(existingClient.linkedDocuments ?? []), ...uploadedDocumentIds]))
+      : uploadedDocumentIds;
+
     const { error: updateClientError } = await supabase
       .from("clients")
       .update({
-        linked_documents: uploadedDocumentIds,
-        documents_sent: uploadedDocumentIds.length,
-        service_status: "active",
+        full_name: resolvedFullName,
+        document_id: resolvedDocumentId || null,
+        email: resolvedEmail || null,
+        phone: resolvedPhone,
+        whatsapp: resolvedWhatsapp || null,
+        address: resolvedAddress,
+        lead_source: resolvedLeadSource || null,
+        bank_name: resolvedBankName || null,
+        service_status: existingClient ? existingClient.serviceStatus : "triage",
+        documents_sent: Math.max(existingClient?.documentsSent ?? 0, nextLinkedDocuments.length),
+        notes: notes || existingClient?.notes || "Cliente atualizado pela entrada bancaria.",
+        ia_context: buildClientContext(resolvedBankName, niche, objective),
+        linked_cases: linkedCaseSummary,
+        linked_documents: nextLinkedDocuments,
         timeline
       })
       .eq("tenant_id", session.workspace.tenant.id)
@@ -501,6 +622,50 @@ export async function createBankingIntakeAction(formData: FormData) {
 
     if (updateClientError) {
       throw new Error(`Nao foi possivel atualizar o cliente com o onboarding completo: ${updateClientError.message}`);
+    }
+
+    for (const uploadedDocument of uploadedDocuments) {
+      await syncCaseDossierFromDocument({
+        supabase,
+        tenantId: session.workspace.tenant.id,
+        document: uploadedDocument.document,
+        client: {
+          id: clientId,
+          fullName: resolvedFullName,
+          bankName: resolvedBankName
+        },
+        bankingCase: {
+          id: caseId,
+          title: caseTitle,
+          bankName,
+          niche,
+          claimType: buildClaimType(niche)
+        }
+      });
+    }
+
+    const primaryContractDocument = uploadedDocuments.find((uploadedDocument) =>
+      CONTRACT_ANALYSIS_DOCUMENT_TYPES.has(uploadedDocument.document.documentType)
+    );
+
+    if (primaryContractDocument) {
+      await syncCaseDossierFromDocument({
+        supabase,
+        tenantId: session.workspace.tenant.id,
+        document: primaryContractDocument.document,
+        client: {
+          id: clientId,
+          fullName: resolvedFullName,
+          bankName: resolvedBankName
+        },
+        bankingCase: {
+          id: caseId,
+          title: caseTitle,
+          bankName,
+          niche,
+          claimType: buildClaimType(niche)
+        }
+      });
     }
   } catch (error) {
     await supabase.from("tasks").delete().eq("tenant_id", session.workspace.tenant.id).eq("case_id", caseId);
@@ -511,7 +676,9 @@ export async function createBankingIntakeAction(formData: FormData) {
       await supabase.storage.from(TENANT_DOCUMENT_BUCKET).remove(uploadedStoragePaths);
     }
     await supabase.from("cases").delete().eq("tenant_id", session.workspace.tenant.id).eq("id", caseId);
-    await supabase.from("clients").delete().eq("tenant_id", session.workspace.tenant.id).eq("id", clientId);
+    if (!existingClient) {
+      await supabase.from("clients").delete().eq("tenant_id", session.workspace.tenant.id).eq("id", clientId);
+    }
 
     redirect(
       buildValidationRedirect(

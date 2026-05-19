@@ -457,11 +457,28 @@ export async function getBankingRevisionalWorkspace(params?: {
     (params?.documentId ? await getDocumentById(params.documentId) : null) ??
     contractDocuments.find((document) => document.id === params?.documentId) ??
     contractDocuments[0];
-  const analysis = await getContractAnalysisByDocumentId(selectedDocument.id);
-
-  if (!analysis) {
-    throw new Error("No contract analysis is available to build the Clara revisional workspace.");
-  }
+  const analysis = (await getContractAnalysisByDocumentId(selectedDocument.id)) ?? {
+    id: `virtual-analysis-${selectedDocument.id}`,
+    documentId: selectedDocument.id,
+    rateLabel: "Taxa contratual sem consolidacao automatica",
+    cetLabel: "CET sem leitura estruturada disponivel",
+    capitalizationLabel: "Capitalizacao a confirmar",
+    feesLabel: "Tarifas e encargos a confirmar",
+    bundledInsuranceLabel: "Seguro embutido nao confirmado",
+    permanenceCommissionLabel: "Comissao de permanencia a confirmar",
+    penaltyLabel: "Multa a confirmar",
+    sensitiveClauses: [],
+    abusivenessSignals: [],
+    suggestedThesis: "Revisao contratual com base na documentacao minima disponivel",
+    proceduralRisk: "medium" as const,
+    suggestedRequests: [
+      "confirmar contrato base e quadro-resumo",
+      "localizar demonstrativos de parcela e saldo",
+      "validar pontos de abusividade com revisao humana"
+    ],
+    executiveSummary:
+      "A analise contratual nao foi carregada do tenant, mas o workspace segue com base minima controlada para nao bloquear a Clara."
+  };
 
   const documentCase = await getCaseById(selectedDocument.caseId);
   const bankingCase =
@@ -487,10 +504,23 @@ export async function getBankingRevisionalWorkspace(params?: {
     (params?.processId ? await getProcessById(params.processId) : null) ??
     allProcesses.find((item) => item.caseId === bankingCase.id) ??
     allProcesses[0];
-
-  if (!process) {
-    throw new Error("No process is available to build the Clara revisional workspace.");
-  }
+  const resolvedProcess =
+    process ?? {
+      id: `virtual-process-${bankingCase.id}`,
+      caseId: bankingCase.id,
+      clientId: client.id,
+      processNumber: `PROCESSO PENDENTE DE VINCULO - ${bankingCase.id.toUpperCase()}`,
+      tribunal: "A definir",
+      courtDistrict: "Vinculo processual pendente",
+      courtName: "Processo ainda nao vinculado",
+      proceduralPhase: "Sem processo vinculado",
+      status: "awaiting-filing" as const,
+      responsibleLawyer: "A definir",
+      monitoringMode: "manual" as const,
+      latestTimeline: [],
+      client,
+      bankingCase
+    };
   const scenarioProfile = getScenarioProfile({
     bankName: bankingCase.bankName,
     caseTitle: bankingCase.title,
@@ -703,13 +733,54 @@ export async function getBankingRevisionalWorkspace(params?: {
           targetReductionPercent: 27.8,
           basis:
             "Estimativa preliminar considerando exclusao de seguro embutido, encargos cumulativos e revisao do custo efetivo."
-        }
+      }
   );
+  const strategySummary = {
+    mainThesis: priorityTheses[0]?.title ?? analysis.suggestedThesis,
+    alternativeThesis: priorityTheses[1]?.title ?? productProfile.label,
+    riskLabel: getRiskLabel(analysis.proceduralRisk),
+    recommendedRequests: [
+      ...priorityTheses.slice(0, 2).map((item) => item.request),
+      ...objectiveProfile.requestFocus.slice(0, 2)
+    ],
+    actionType: objectiveProfile.label,
+    agreementSuggestion:
+      analysis.proceduralRisk === "high"
+        ? "Buscar acordo apenas com seguranca economica minima e conferencia da memoria revisional."
+        : "Negociar apenas apos validar a memoria de calculo e a coerencia da tese revisional.",
+    nextSteps: [
+      "Fechar a memoria de calculo revisional",
+      "Conferir prova documental faltante",
+      "Escolher a tese principal e a tese de apoio",
+      "Converter o resumo em minuta revisional"
+    ]
+  };
+  const reportSummary = {
+    clientLabel: client.fullName,
+    caseLabel: bankingCase.title,
+    bankLabel: bankingCase.bankName,
+    methodology:
+      "Comparativo entre taxa contratada, CET, encargos agregados, memoria de calculo e leitura documental assistida pela Clara.",
+    originalVsRevised: [
+      `Parcela contratada: ${calculationMemory.labels.contractedInstallment}`,
+      `Parcela cobrada: ${calculationMemory.labels.chargedInstallment}`,
+      `Parcela revisada: ${calculationMemory.labels.revisedInstallment}`,
+      `Excesso estimado: ${calculationMemory.labels.estimatedTotalExcess}`
+    ],
+    improperCharges: [
+      analysis.rateLabel,
+      analysis.cetLabel,
+      analysis.capitalizationLabel,
+      analysis.feesLabel
+    ],
+    conclusion:
+      "O laudo consolidado serve como base tecnica para revisao humana antes da peticao, sem substituir a validacao final do advogado."
+  };
 
   return {
     client,
     bankingCase,
-    process,
+    process: resolvedProcess,
     selectedDocument,
     analysis,
     productProfile,
@@ -732,6 +803,8 @@ export async function getBankingRevisionalWorkspace(params?: {
     documentReadiness,
     filingChecklist,
     filingPackage,
-    decisionSummary
+    decisionSummary,
+    strategySummary,
+    reportSummary
   };
 }

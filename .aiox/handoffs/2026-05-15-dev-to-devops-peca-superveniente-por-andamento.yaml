@@ -1,0 +1,22 @@
+from: "@dev"
+to: "@devops"
+date: "2026-05-15"
+story: "18.48"
+title: "Automatizar sugestao de peca superveniente por andamento"
+summary:
+  - "Leitura de process_filings agora tenta sugerir e materializar a proxima peca superveniente a partir do andamento mais relevante."
+  - "A sincronizacao evita duplicar pecas abertas do mesmo tipo e vincula a sugestao ao update gatilho."
+  - "O cockpit passou a explicar explicitamente o boundary entre pre-registro interno e protocolo oficial."
+quality_gates:
+  lint: "passed"
+  typecheck: "passed"
+  test: "passed"
+  build: "passed"
+files:
+  - "apps/web/src/server/services/process-filings/sync-suggested-filing.ts"
+  - "apps/web/src/server/services/process-filings/get-process-filings.ts"
+  - "apps/web/src/components/layout/process-cockpit-frame.tsx"
+  - "docs/stories/18.48.automatizar-sugestao-de-peca-superveniente-por-andamento.md"
+notes:
+  - "Sem migration."
+  - "A automacao continua interna ao workspace; nao ha protocolo judicial automatico."

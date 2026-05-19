@@ -11,6 +11,11 @@ assert.equal(true, true);
   "src/app/(workspace)/layout.tsx",
   "src/app/(workspace)/dashboard/page.tsx",
   "src/app/(workspace)/crm/page.tsx",
+  "src/app/(workspace)/crm/page.tsx",
+  "src/app/(workspace)/crm/pipeline/page.tsx",
+  "src/app/(workspace)/crm/contratos/page.tsx",
+  "src/app/(workspace)/crm/conversas/page.tsx",
+  "src/app/(workspace)/crm/conversao/page.tsx",
   "src/app/(workspace)/pessoas/page.tsx",
   "src/app/(workspace)/pessoas/clientes/page.tsx",
   "src/app/(workspace)/pessoas/adversos/page.tsx",
@@ -22,6 +27,7 @@ assert.equal(true, true);
   "src/app/(workspace)/processos/lista/page.tsx",
   "src/app/(workspace)/processos/lixeira/page.tsx",
   "src/app/(workspace)/processos/ultimos-andamentos/page.tsx",
+  "src/app/(workspace)/processos/monitoramentos/page.tsx",
   "src/app/(workspace)/processos/importar-lote/page.tsx",
   "src/app/(workspace)/processos/importar-oab/page.tsx",
   "src/app/(workspace)/processos/[processId]/page.tsx",
@@ -46,10 +52,35 @@ assert.equal(true, true);
   "src/app/(workspace)/documentos/[documentId]/page.tsx",
   "src/app/(workspace)/documentos/enviar-arquivos/page.tsx",
   "src/app/(workspace)/documentos/relatorios/page.tsx",
+  "src/components/layout/workspace-global-search.tsx",
+  "src/components/layout/workspace-search-types.ts",
+  "src/app/api/clientes/[clientId]/route.ts",
+  "src/app/api/casos/[id]/route.ts",
+  "src/app/api/casos/[id]/documentos/route.ts",
+  "src/app/api/casos/[id]/checklist/route.ts",
+  "src/app/api/casos/[id]/modelos/route.ts",
+  "src/app/api/clara/analisar-caso/route.ts",
+  "src/app/api/clara/checklist-documental/route.ts",
+  "src/app/api/clara/parecer-tecnico/route.ts",
+  "src/app/api/clara/sugerir-proximo-passo/route.ts",
+  "src/app/api/clara/resumir-andamentos/route.ts",
+  "src/app/api/clara/gerar-peca/route.ts",
+  "src/app/api/clara/historico/route.ts",
+  "src/app/api/clara/minutas/route.ts",
+  "src/app/api/clara/minutas/[recordId]/route.ts",
+  "src/app/api/clara/minutas/[recordId]/exportacao/route.ts",
+  "src/app/api/clara/revisar-minuta/route.ts",
+  "src/app/api/clara/fontes/route.ts",
+  "src/app/api/crm/chatbot-intake/route.ts",
+  "src/app/api/processos/[numero]/datajud/route.ts",
+  "src/app/api/bcb/tarifas/route.ts",
+  "src/app/api/bcb/sgs/route.ts",
+  "src/app/api/bcb/ptax/route.ts",
   "src/app/(workspace)/site/page.tsx",
   "src/app/(workspace)/site/[subpage]/page.tsx",
   "src/app/(workspace)/editor-de-texto/page.tsx",
   "src/app/(workspace)/analise-contrato/page.tsx",
+  "src/app/(workspace)/configuracoes/integracoes/page.tsx",
   "src/app/(workspace)/tarefas/page.tsx",
   "src/app/(workspace)/tarefas/[taskId]/page.tsx",
   "src/app/(workspace)/lexia/page.tsx",
@@ -57,9 +88,12 @@ assert.equal(true, true);
   "src/app/(workspace)/configuracoes/page.tsx",
   "src/components/layout/workspace-navigation.ts",
   "src/components/layout/workspace-shell.tsx",
+  "src/components/layout/clara-minuta-actions.tsx",
   "src/components/layout/lexia-context-actions.tsx",
   "src/components/layout/session-actions.tsx",
+  "src/lib/branding/normalize-visible-copy.ts",
   "src/lib/auth/session.ts",
+  "src/lib/auth/demo-entry.ts",
   "src/lib/supabase/client.ts",
   "src/lib/supabase/server.ts",
   "src/middleware.ts",
@@ -71,9 +105,19 @@ assert.equal(true, true);
   "src/server/services/official-diary/get-official-diary.ts",
   "src/server/services/procedural-updates/get-procedural-updates.ts",
   "src/server/services/agenda/get-agenda-workspace.ts",
+  "src/server/services/crm/get-crm-leads.ts",
+  "src/server/services/crm/get-crm-pipeline.ts",
+  "src/server/services/crm/get-crm-contracts.ts",
+  "src/server/services/crm/get-crm-conversations.ts",
+  "src/server/services/crm/get-crm-conversion.ts",
+  "src/server/services/clara/get-clara-integrations.ts",
+  "src/server/services/crm/chatbot-intake.ts",
+  "src/server/services/datajud/get-datajud-process.ts",
+  "src/server/services/bcb/get-bcb-consultation.ts",
   "src/server/services/clients/get-clients.ts",
   "src/server/services/cases/get-cases.ts",
   "src/server/services/documents/get-documents.ts",
+  "src/server/services/workspace/get-workspace-shell-search.ts",
   "src/server/services/documents/get-document-file-url.ts",
   "src/server/services/tasks/get-tasks.ts"
 ].forEach((relativePath) => {
@@ -115,6 +159,11 @@ const workspaceContextSource = fs.readFileSync(
 );
 assert.match(
   workspaceContextSource,
+  /getSupabaseAdminClient\(\)/,
+  "Expected workspace context resolution to use the privileged Supabase admin client."
+);
+assert.match(
+  workspaceContextSource,
   /No active workspace membership found/,
   "Expected workspace context resolution to fail explicitly when membership is missing."
 );
@@ -132,6 +181,175 @@ assert.match(
   sessionSource,
   /Configure%20NEXT_PUBLIC_SUPABASE_URL%20e%20NEXT_PUBLIC_SUPABASE_ANON_KEY/,
   "Expected protected routes to redirect with explicit Supabase configuration guidance."
+);
+
+const demoAccessSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/lib/auth/demo-access.ts"),
+  "utf8"
+);
+assert.match(
+  demoAccessSource,
+  /import type \{ WorkspaceSession \}/,
+  "Expected demo access to import the workspace session as a type-only dependency."
+);
+assert.match(
+  demoAccessSource,
+  /DEMO_TENANT_ID = "11111111-1111-1111-1111-111111111111"/,
+  "Expected demo access to use the seeded demo tenant UUID."
+);
+assert.match(
+  demoAccessSource,
+  /DEMO_EMAIL = "owner@lexia-demo\.local"/,
+  "Expected demo access to use the seeded Supabase demo account."
+);
+assert.match(
+  demoAccessSource,
+  /DEMO_VISIBLE_TENANT_NAME = "Clara Bancaria Demo"/,
+  "Expected demo access to expose Clara as the visible tenant branding for the workspace."
+);
+assert.match(
+  demoAccessSource,
+  /DEMO_VISIBLE_EMAIL = "workspace\.demo@clara\.local"/,
+  "Expected demo access to expose a Clara-aligned visible email label for the demo workspace."
+);
+
+const visibleCopySource = fs.readFileSync(
+  path.join(__dirname, "..", "src/lib/branding/normalize-visible-copy.ts"),
+  "utf8"
+);
+assert.match(
+  visibleCopySource,
+  /LexIA/,
+  "Expected visible copy normalization to detect legacy LexIA branding."
+);
+assert.match(
+  visibleCopySource,
+  /replace\(LEGACY_AGENT_BRAND_PATTERN, "Clara"\)/,
+  "Expected visible copy normalization to rewrite legacy agent branding to Clara."
+);
+
+const clientCockpitSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/pessoas/clientes/[clientId]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  clientCockpitSource,
+  /normalizeVisibleCopyList/,
+  "Expected the client cockpit to normalize visible legacy copy from seeded data."
+);
+
+const demoSignInRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/auth/demo-sign-in/route.ts"),
+  "utf8"
+);
+const demoEntrySource = fs.readFileSync(
+  path.join(__dirname, "..", "src/lib/auth/demo-entry.ts"),
+  "utf8"
+);
+assert.match(
+  demoSignInRouteSource,
+  /isSupabaseConfigured\(\)/,
+  "Expected demo sign-in route to detect when Supabase is available."
+);
+assert.match(
+  demoSignInRouteSource,
+  /signInWithPassword/,
+  "Expected demo sign-in route to create a real Supabase session when configuration is present."
+);
+assert.match(
+  demoSignInRouteSource,
+  /getDemoClaraFirstHref\(\)/,
+  "Expected demo sign-in route to redirect to the Clara-first demo entry."
+);
+assert.match(
+  demoEntrySource,
+  /return `\/clara\?/,
+  "Expected the Clara-first demo entry to open the Clara workspace route."
+);
+assert.match(
+  demoEntrySource,
+  /#clara-workbench/,
+  "Expected the Clara-first demo entry to deep-link to the Clara workbench."
+);
+assert.doesNotMatch(
+  demoEntrySource,
+  /searchParams\.set\("client"|searchParams\.set\("case"|searchParams\.set\("process"|searchParams\.set\("document"|searchParams\.set\("niche"/,
+  "Expected the global Clara demo entry to avoid requiring case-bound context."
+);
+assert.match(
+  sessionSource,
+  /auth\.getUser\(\)/,
+  "Expected workspace session resolution to authenticate the Supabase user via getUser()."
+);
+assert.match(
+  sessionSource,
+  /displayEmail/,
+  "Expected workspace session resolution to carry a display email for UI-safe branding."
+);
+
+const signInRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/auth/sign-in/route.ts"),
+  "utf8"
+);
+assert.match(
+  signInRouteSource,
+  /getDemoClaraFirstHref\(\)/,
+  "Expected the email/password sign-in route to redirect to the Clara-first demo entry."
+);
+
+const signInPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(auth)/sign-in/page.tsx"),
+  "utf8"
+);
+assert.match(
+  signInPageSource,
+  /redirect\(getDemoClaraFirstHref\(\)\)/,
+  "Expected the sign-in page to send existing sessions to the Clara-first demo entry."
+);
+
+const workspaceHeaderNarrativeSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/components/layout/workspace-header-narrative.tsx"),
+  "utf8"
+);
+assert.match(
+  workspaceHeaderNarrativeSource,
+  /pathname\.startsWith\("\/crm"\)/,
+  "Expected the workspace header narrative to follow CRM as the primary visible entry."
+);
+
+const claraSideCopilotSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/components/layout/clara-side-copilot.tsx"),
+  "utf8"
+);
+assert.match(
+  claraSideCopilotSource,
+  /if \(pathname\.startsWith\("\/dashboard"\)\) return "crm";/,
+  "Expected the Clara side copilot to treat dashboard as CRM compatibility, not as primary context."
+);
+assert.match(
+  claraSideCopilotSource,
+  /if \(pathname\.startsWith\("\/andamentos"\)\) return "processos";/,
+  "Expected legacy andamentos routes to inherit the process context in the Clara side copilot."
+);
+
+const supabaseServerSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/lib/supabase/server.ts"),
+  "utf8"
+);
+assert.match(
+  supabaseServerSource,
+  /Server Components cannot mutate cookies directly during render\./,
+  "Expected Supabase server client to tolerate cookie writes during Server Component rendering."
+);
+
+const supabaseAdminSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/lib/supabase/admin.ts"),
+  "utf8"
+);
+assert.match(
+  supabaseAdminSource,
+  /SUPABASE_SERVICE_ROLE_KEY/,
+  "Expected Supabase admin client to require the service role key."
 );
 
 const dashboardServiceSource = fs.readFileSync(
@@ -180,8 +398,8 @@ const dashboardPageSource = fs.readFileSync(
 );
 assert.match(
   dashboardPageSource,
-  /Dashboard indisponivel no momento/,
-  "Expected dashboard page to render a controlled error state."
+  /Painel executivo indisponivel no momento/,
+  "Expected the dashboard route to render a neutral compatibility label."
 );
 
 assert.equal(
@@ -190,9 +408,379 @@ assert.equal(
   "Expected loading state for the dashboard route."
 );
 
+const claraApiSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/clara/clara-api.ts"),
+  "utf8"
+);
+assert.match(
+  claraApiSource,
+  /getClaraAnalysisApiPayload/,
+  "Expected Clara API helper to expose analysis payload builders."
+);
+assert.match(
+  claraApiSource,
+  /getClaraCaseChecklistApiPayload/,
+  "Expected Clara API helper to expose checklist payload builders."
+);
+assert.match(
+  claraApiSource,
+  /getClaraProcessSummaryApiPayload/,
+  "Expected Clara API helper to expose process summary payload builders."
+);
+assert.match(
+  claraApiSource,
+  /getClaraPieceDraftApiPayload/,
+  "Expected Clara API helper to expose piece draft payload builders."
+);
+assert.match(
+  claraApiSource,
+  /getClaraTechnicalOpinionApiPayload/,
+  "Expected Clara API helper to expose technical opinion payload builders."
+);
+assert.match(
+  claraApiSource,
+  /taskType: "parecer-tecnico"/,
+  "Expected Clara API helper to stamp the technical opinion task type."
+);
+
+const bcbSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/bcb/get-bcb-consultation.ts"),
+  "utf8"
+);
+assert.match(
+  bcbSource,
+  /api\.bcb\.gov\.br\/dados\/serie\/bcdata\.sgs/,
+  "Expected BCB SGS consultation to use the official public base URL."
+);
+assert.match(
+  bcbSource,
+  /olinda\.bcb\.gov\.br\/olinda\/servico\/PTAX\/versao\/v1\/odata/,
+  "Expected BCB PTAX consultation to use the official public OData base URL."
+);
+assert.match(
+  bcbSource,
+  /dadosabertos\.bcb\.gov\.br\/dataset\/tarifas-bancarias-por-segmento-e-por-instituicao/,
+  "Expected BCB tariffs consultation to point to the official open-data portal."
+);
+
+const claraInternalRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/analisar-caso/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraInternalRouteSource,
+  /taskType: "analisar-caso"/,
+  "Expected Clara analysis route to default to the analyze-case task type."
+);
+assert.match(
+  claraInternalRouteSource,
+  /NextResponse\.json\(\{ ok: true, data \}\)/,
+  "Expected Clara analysis route to respond with structured JSON."
+);
+
+const claraChecklistRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/checklist-documental/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraChecklistRouteSource,
+  /getClaraCaseChecklistApiPayload/,
+  "Expected Clara checklist route to use the checklist payload builder."
+);
+
+const claraOpinionRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/parecer-tecnico/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraOpinionRouteSource,
+  /getClaraTechnicalOpinionApiPayload/,
+  "Expected Clara technical opinion route to use the technical opinion payload builder."
+);
+
+const claraHistoryRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/historico/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraHistoryRouteSource,
+  /listClaraRecords/,
+  "Expected Clara history route to expose stored Clara records."
+);
+assert.match(
+  claraHistoryRouteSource,
+  /listClaraExecutionLogs/,
+  "Expected Clara history route to expose stored Clara execution logs."
+);
+
+const claraMinutasRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/minutas/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraMinutasRouteSource,
+  /listClaraRecords/,
+  "Expected Clara minutas route to expose stored text-draft records."
+);
+
+const claraMinutaRecordRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/minutas/[recordId]/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraMinutaRecordRouteSource,
+  /updateClaraRecordWorkflowStatus/,
+  "Expected Clara minuta record route to support workflow transitions."
+);
+assert.match(
+  claraMinutaRecordRouteSource,
+  /updateClaraRecordReviewNote/,
+  "Expected Clara minuta record route to support human review notes."
+);
+assert.match(
+  claraMinutaRecordRouteSource,
+  /updateClaraRecordContent/,
+  "Expected Clara minuta record route to support edited content."
+);
+
+const claraMinutaExportRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/clara/minutas/[recordId]/exportacao/route.ts"),
+  "utf8"
+);
+assert.match(
+  claraMinutaExportRouteSource,
+  /application\/pdf/,
+  "Expected Clara minuta export route to emit a real PDF response."
+);
+assert.match(
+  claraMinutaExportRouteSource,
+  /printable: true/,
+  "Expected Clara minuta export route to mark the export as printable."
+);
+assert.match(
+  claraMinutaExportRouteSource,
+  /available: true/,
+  "Expected Clara minuta export route to expose available export formats."
+);
+
+const claraMinutaActionsSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/components/layout/clara-minuta-actions.tsx"),
+  "utf8"
+);
+assert.match(
+  claraMinutaActionsSource,
+  /window\.print\(\)/,
+  "Expected Clara minuta actions to expose a print action."
+);
+assert.match(
+  claraMinutaActionsSource,
+  /Baixar texto base/,
+  "Expected Clara minuta actions to expose plain-text export instead of promising a DOCX file."
+);
+assert.match(
+  claraMinutaActionsSource,
+  /Abrir PDF/,
+  "Expected Clara minuta actions to expose PDF distribution."
+);
+assert.match(
+  claraMinutaActionsSource,
+  /Pronto para distribuir/,
+  "Expected Clara minuta actions to expose the final distribution action."
+);
+
+const crmPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/crm/page.tsx"),
+  "utf8"
+);
+assert.match(
+  crmPageSource,
+  /getCrmLeads\(\)/,
+  "Expected CRM page to read real lead records."
+);
+assert.match(
+  crmPageSource,
+  /Leads e conversao do escritorio/,
+  "Expected CRM page to present the CRM real leads heading."
+);
+assert.match(
+  crmPageSource,
+  /Abrir pipeline e follow-ups/,
+  "Expected CRM page to link to the pipeline follow-up view."
+);
+
+const crmLeadsServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/crm/get-crm-leads.ts"),
+  "utf8"
+);
+assert.match(
+  crmLeadsServiceSource,
+  /getClients\(\)/,
+  "Expected CRM leads service to derive leads from real clients."
+);
+assert.match(
+  crmLeadsServiceSource,
+  /getCases\(\)/,
+  "Expected CRM leads service to derive pipeline data from real cases."
+);
+
+const crmPipelinePageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/crm/pipeline/page.tsx"),
+  "utf8"
+);
+assert.match(
+  crmPipelinePageSource,
+  /getCrmPipeline\(\)/,
+  "Expected CRM pipeline page to read real pipeline data."
+);
+assert.match(
+  crmPipelinePageSource,
+  /Follow-ups ativos/,
+  "Expected CRM pipeline page to render follow-up records."
+);
+
+const crmPipelineServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/crm/get-crm-pipeline.ts"),
+  "utf8"
+);
+assert.match(
+  crmPipelineServiceSource,
+  /getClients\(\)/,
+  "Expected CRM pipeline service to derive data from real clients."
+);
+assert.match(
+  crmPipelineServiceSource,
+  /getCases\(\)/,
+  "Expected CRM pipeline service to derive data from real cases."
+);
+assert.match(
+  crmPipelineServiceSource,
+  /followUps/,
+  "Expected CRM pipeline service to expose follow-up records."
+);
+
+const crmChatbotIntakeSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/crm/chatbot-intake.ts"),
+  "utf8"
+);
+assert.match(
+  crmChatbotIntakeSource,
+  /crmChatbotIntakeSchema/,
+  "Expected chatbot intake contract to validate the CRM payload."
+);
+assert.match(
+  crmChatbotIntakeSource,
+  /normalizeCrmChatbotIntake/,
+  "Expected chatbot intake contract to normalize the lead payload."
+);
+
+const datajudServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/datajud/get-datajud-process.ts"),
+  "utf8"
+);
+assert.match(
+  datajudServiceSource,
+  /DATAJUD_API_KEY/,
+  "Expected DataJud service to read an API key from the environment when configured."
+);
+assert.match(
+  datajudServiceSource,
+  /api-publica\.datajud\.cnj\.jus\.br/,
+  "Expected DataJud service to target the official CNJ public API base URL."
+);
+assert.match(
+  datajudServiceSource,
+  /numeroProcesso/,
+  "Expected DataJud service to query by the normalized process number."
+);
+
+const datajudRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/processos/[numero]/datajud/route.ts"),
+  "utf8"
+);
+assert.match(
+  datajudRouteSource,
+  /getDataJudProcessConsultation/,
+  "Expected the DataJud route to use the server-side consultation service."
+);
+
+const jurisprudenceStjRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/jurisprudencia/stj/route.ts"),
+  "utf8"
+);
+assert.match(
+  jurisprudenceStjRouteSource,
+  /getJurisprudenceConsultation\("stj"/,
+  "Expected the STJ route to use the jurisprudence consultation service."
+);
+
+const jurisprudenceStfRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/jurisprudencia/stf/route.ts"),
+  "utf8"
+);
+assert.match(
+  jurisprudenceStfRouteSource,
+  /getJurisprudenceConsultation\("stf"/,
+  "Expected the STF route to use the jurisprudence consultation service."
+);
+
+const consumidorReclamacoesRouteSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/api/consumidor/reclamacoes/route.ts"),
+  "utf8"
+);
+assert.match(
+  consumidorReclamacoesRouteSource,
+  /getConsumidorReclamacoesConsultation/,
+  "Expected the Consumidor.gov route to use the reclamacoes consultation service."
+);
+
+const jurisprudenceServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/jurisprudence/get-jurisprudence-consultation.ts"),
+  "utf8"
+);
+assert.match(
+  jurisprudenceServiceSource,
+  /prepared_stub/,
+  "Expected jurisprudence consultation to expose a controlled stub contract."
+);
+
+const consumidorServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/consumidor/get-consumidor-reclamacoes.ts"),
+  "utf8"
+);
+assert.match(
+  consumidorServiceSource,
+  /prepared_stub/,
+  "Expected Consumidor.gov consultation to expose a controlled stub contract."
+);
+
+const processDetailSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/[processId]/page.tsx"),
+  "utf8"
+);
+assert.match(
+  processDetailSource,
+  /Consultar DataJud/,
+  "Expected the process cockpit to expose the DataJud consultation link."
+);
+assert.match(
+  processDetailSource,
+  /\/processos\/\$\{encodeURIComponent\(processItem\.id\)\}\/datajud/,
+  "Expected the process cockpit to open the DataJud consultation page instead of the raw API route."
+);
+assert.doesNotMatch(
+  processDetailSource,
+  /\/api\/processos\/\$\{encodeURIComponent\(processItem\.processNumber\)\}\/datajud/,
+  "Expected the process cockpit to stop linking DataJud to the raw API route."
+);
+
 const clientServiceSource = fs.readFileSync(
   path.join(__dirname, "..", "src/server/services/clients/get-clients.ts"),
   "utf8"
+);
+assert.match(
+  clientServiceSource,
+  /getSupabaseAdminClient\(\)/,
+  "Expected client reads to use the privileged Supabase admin client after workspace session resolution."
 );
 assert.match(
   clientServiceSource,
@@ -346,26 +934,55 @@ assert.equal(
   "Expected loading state for the process trash route."
 );
 
-[
-  "importar-lote",
-  "importar-oab"
-].forEach((route) => {
-  const source = fs.readFileSync(
-    path.join(__dirname, "..", `src/app/(workspace)/processos/${route}/page.tsx`),
-    "utf8"
-  );
+const processBatchImportSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/importar-lote/page.tsx"),
+  "utf8"
+);
+assert.match(
+  processBatchImportSource,
+  /WorkspaceStatePanel/,
+  "Expected processos/importar-lote to render a controlled unavailable state."
+);
+assert.doesNotMatch(
+  processBatchImportSource,
+  /Area preparada/,
+  "Expected processos/importar-lote to stop rendering a placeholder prepared area."
+);
 
-  assert.match(
-    source,
-    /WorkspaceStatePanel/,
-    `Expected processos/${route} to render a controlled unavailable state.`
-  );
-  assert.doesNotMatch(
-    source,
-    /Area preparada/,
-    `Expected processos/${route} to stop rendering a placeholder prepared area.`
-  );
-});
+const processOabImportSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/importar-oab/page.tsx"),
+  "utf8"
+);
+assert.match(
+  processOabImportSource,
+  /enableProcessOabAction/,
+  "Expected processos/importar-oab to submit the OAB monitoring action."
+);
+assert.match(
+  processOabImportSource,
+  /Esta rota legada nao importa dados externos nem protocola processos\./,
+  "Expected processos/importar-oab to explain that the route is a boundary and does not import external data."
+);
+assert.match(
+  processOabImportSource,
+  /processId\?\: string;/,
+  "Expected processos/importar-oab to preserve focus through the processId search param."
+);
+assert.doesNotMatch(
+  processOabImportSource,
+  /Area preparada|controlled unavailable state/,
+  "Expected processos/importar-oab to stop behaving like an unavailable placeholder route."
+);
+
+const processOabActionSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/importar-oab/actions.ts"),
+  "utf8"
+);
+assert.match(
+  processOabActionSource,
+  /processId=/,
+  "Expected processos/importar-oab action redirects to preserve the focused processId."
+);
 
 assert.equal(
   fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/processos/loading.tsx")),
@@ -539,13 +1156,13 @@ const proceduralUpdatesPageSource = fs.readFileSync(
 );
 assert.match(
   proceduralUpdatesPageSource,
-  /getProceduralUpdates\(\)/,
-  "Expected automatic procedural updates page to read real procedural updates."
+  /redirect\(href\)/,
+  "Expected automatic procedural updates route to redirect to the canonical process updates page."
 );
 assert.match(
   proceduralUpdatesPageSource,
-  /Andamentos indisponiveis no momento/,
-  "Expected automatic procedural updates page to render a controlled error state."
+  /processos\/ultimos-andamentos/,
+  "Expected automatic procedural updates route to point at the canonical process updates page."
 );
 assert.equal(
   fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/andamentos/automaticos/loading.tsx")),
@@ -559,13 +1176,13 @@ const proceduralMonitoringPageSource = fs.readFileSync(
 );
 assert.match(
   proceduralMonitoringPageSource,
-  /getProcesses\(\)/,
-  "Expected procedural monitoring page to read real processes."
+  /redirect\(href\)/,
+  "Expected procedural monitoring route to redirect to the canonical process monitoring page."
 );
 assert.match(
   proceduralMonitoringPageSource,
-  /Monitoramentos indisponiveis no momento/,
-  "Expected procedural monitoring page to render a controlled error state."
+  /processos\/monitoramentos/,
+  "Expected procedural monitoring route to point at the canonical process monitoring page."
 );
 assert.equal(
   fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/andamentos/monitoramentos/loading.tsx")),
@@ -593,6 +1210,31 @@ assert.equal(
   "Expected loading state for the process latest updates route."
 );
 
+const processMonitoringPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/processos/monitoramentos/page.tsx"),
+  "utf8"
+);
+assert.match(
+  processMonitoringPageSource,
+  /getProcesses\(\)/,
+  "Expected process monitoring page to read real processes."
+);
+assert.match(
+  processMonitoringPageSource,
+  /Monitoramentos indisponiveis no momento/,
+  "Expected process monitoring page to render a controlled error state."
+);
+assert.match(
+  processMonitoringPageSource,
+  /Ver ultimos andamentos/,
+  "Expected process monitoring page to link back to the canonical latest updates list."
+);
+assert.equal(
+  fs.existsSync(path.join(__dirname, "..", "src/app/(workspace)/processos/monitoramentos/loading.tsx")),
+  true,
+  "Expected loading state for the process monitoring route."
+);
+
 const claraArtifactsSource = fs.readFileSync(
   path.join(__dirname, "..", "src/server/services/clara/get-clara-artifacts.ts"),
   "utf8"
@@ -606,6 +1248,21 @@ assert.match(
   claraArtifactsSource,
   /processLabel: bankingCase\.processNumber/,
   "Expected Clara text draft artifact to expose the real banking case process number."
+);
+
+const claraPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/clara/page.tsx"),
+  "utf8"
+);
+assert.match(
+  claraPageSource,
+  /renderClaraContextualAnalysis\(contextualAnalysis\)/,
+  "Expected Clara contextual analysis to render in both the controlled and full workspace states."
+);
+assert.match(
+  claraPageSource,
+  /id="clara-contextual-minima"/,
+  "Expected Clara contextual analysis to expose a stable workspace anchor."
 );
 
 const textEditorSource = fs.readFileSync(
@@ -631,6 +1288,16 @@ assert.match(
   textEditorSource,
   /listClaraRecords\(80\)/,
   "Expected text editor to list persisted Clara text draft records."
+);
+assert.match(
+  textEditorSource,
+  /updateClaraWorkflowStatusAction/,
+  "Expected text editor to expose workflow approval controls."
+);
+assert.match(
+  textEditorSource,
+  /updateClaraReviewNoteAction/,
+  "Expected text editor to expose human review note controls."
 );
 assert.doesNotMatch(
   textEditorSource,
@@ -847,6 +1514,32 @@ assert.doesNotMatch(
   /mockClients|mockCases|mockDocuments|mockContractAnalyses/,
   "Expected contract analysis workspace to stop using primary mock context sources."
 );
+assert.match(
+  contractAnalysisSource,
+  /notFound\(\)/,
+  "Expected contract analysis workspace to degrade with a controlled not-found state instead of throwing a 500."
+);
+assert.match(
+  contractAnalysisSource,
+  /document\.caseId === requestedDocument\.caseId/,
+  "Expected contract analysis workspace to resolve a compatible contract only from the same case context."
+);
+assert.doesNotMatch(
+  contractAnalysisSource,
+  /document\.clientId === requestedDocument\.clientId/,
+  "Expected contract analysis workspace to avoid falling back to a different case from the same client."
+);
+
+assert.match(
+  clientCockpitSource,
+  /contractAnalysisDocumentId/,
+  "Expected the client cockpit to derive a dedicated compatible contract document for contract-analysis shortcuts."
+);
+assert.match(
+  clientCockpitSource,
+  /caseDocuments\.find\(\(document\) => isContractAnalysisDocument\(document\.documentType\)\)/,
+  "Expected the client cockpit to look for a compatible contract document instead of reusing the first case document."
+);
 
 const documentServiceSource = fs.readFileSync(
   path.join(__dirname, "..", "src/server/services/documents/get-documents.ts"),
@@ -1039,9 +1732,109 @@ assert.match(
   "Expected document upload action to require an authenticated workspace session."
 );
 
+const bankingIntakeActionSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/novo-atendimento-bancario/actions.ts"),
+  "utf8"
+);
+assert.match(
+  bankingIntakeActionSource,
+  /getSupabaseAdminClient\(\)/,
+  "Expected banking intake action to persist onboarding writes through the privileged Supabase admin client."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /isSupabaseConfigured\(\)/,
+  "Expected banking intake action to guard real onboarding writes behind explicit Supabase configuration."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /demonstracao atual nao possui Supabase configurado/,
+  "Expected banking intake action to fail with a controlled onboarding message when Supabase is unavailable."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /const niche: BankingNiche = nicheValue && isBankingNiche\(nicheValue\) \? nicheValue : "triagem-inicial";/,
+  "Expected banking intake action to default incomplete onboarding to the triagem-inicial niche."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /Anexe o documento pessoal do cliente para abrir a triagem inicial\./,
+  "Expected banking intake action to require only the personal document upload for minimal intake."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /status: "draft"/,
+  "Expected banking intake action to keep the new case in draft while triage is still incomplete."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /document_id: documentId \|\| null[\s\S]*email: email \|\| null[\s\S]*whatsapp: whatsapp \|\| null[\s\S]*lead_source: leadSource \|\| null[\s\S]*bank_name: bankName \|\| null[\s\S]*fees_label: null/s,
+  "Expected banking intake action to persist optional client fields as null instead of placeholder empty strings."
+);
+assert.match(
+  bankingIntakeActionSource,
+  /bank_name: bankName \|\| null[\s\S]*contract_number: contractNumber \|\| null/s,
+  "Expected banking intake action to persist optional case fields as null instead of placeholder empty strings."
+);
+
+const bankingIntakePageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/novo-atendimento-bancario/page.tsx"),
+  "utf8"
+);
+assert.match(
+  bankingIntakePageSource,
+  /So `nome`, `endereco`, `telefone` e `documento pessoal` bloqueiam esta abertura\./,
+  "Expected banking intake page to explain the reduced minimum required data."
+);
+assert.match(
+  bankingIntakePageSource,
+  /<option value="">Classificar depois na triagem<\/option>/,
+  "Expected banking intake page to allow postponing niche classification."
+);
+assert.match(
+  bankingIntakePageSource,
+  /name="personalDocumentFile"[\s\S]*required/s,
+  "Expected banking intake page to require the personal document upload."
+);
+
+const bankingWorkflowSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/cases/get-banking-case-workflow.ts"),
+  "utf8"
+);
+assert.match(
+  bankingWorkflowSource,
+  /"triagem-inicial": \{/,
+  "Expected banking case workflow to define a generic triagem-inicial blueprint."
+);
+
+const bankingIntakeMigrationSource = fs.readFileSync(
+  path.join(__dirname, "..", "..", "..", "supabase/migrations/0016_banking_intake_triage_nullable.sql"),
+  "utf8"
+);
+assert.match(
+  bankingIntakeMigrationSource,
+  /alter column email drop not null/,
+  "Expected banking intake migration to relax client email nullability."
+);
+assert.match(
+  bankingIntakeMigrationSource,
+  /cases_niche_check/,
+  "Expected banking intake migration to recreate the cases niche constraint."
+);
+assert.match(
+  bankingIntakeMigrationSource,
+  /'triagem-inicial'/,
+  "Expected banking intake migration to accept triagem-inicial in cases.niche."
+);
+
 const tenantDocumentUploadHelperSource = fs.readFileSync(
   path.join(__dirname, "..", "src/server/services/documents/upload-tenant-document.ts"),
   "utf8"
+);
+assert.match(
+  tenantDocumentUploadHelperSource,
+  /supabaseClient\?: SupabaseClient/,
+  "Expected shared tenant document helper to accept an injected Supabase client for privileged write flows."
 );
 assert.match(
   tenantDocumentUploadHelperSource,
@@ -1125,6 +1918,11 @@ const taskServiceSource = fs.readFileSync(
 );
 assert.match(
   taskServiceSource,
+  /getSupabaseAdminClient\(\)/,
+  "Expected task reads to use the privileged Supabase admin client after workspace session resolution."
+);
+assert.match(
+  taskServiceSource,
   /\.from\("tasks"\)/,
   "Expected tasks service to read from the real tasks table."
 );
@@ -1164,6 +1962,11 @@ assert.match(
 const agendaServiceSource = fs.readFileSync(
   path.join(__dirname, "..", "src/server/services/agenda/get-agenda-workspace.ts"),
   "utf8"
+);
+assert.match(
+  agendaServiceSource,
+  /getSupabaseAdminClient\(\)/,
+  "Expected agenda reads to use the privileged Supabase admin client after workspace session resolution."
 );
 assert.match(
   agendaServiceSource,
@@ -1283,6 +2086,56 @@ assert.doesNotMatch(
   financeFallbackSource,
   /Exibindo 0 resultado/,
   "Expected generic finance subpage route to stop rendering a static empty list."
+);
+
+const financeCreatePageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/financeiro/[subpage]/novo/page.tsx"),
+  "utf8"
+);
+assert.match(
+  financeCreatePageSource,
+  /decodeURIComponent\(searchParams\.error\)/,
+  "Expected financial creation form to render controlled validation errors from search params."
+);
+assert.match(
+  financeCreatePageSource,
+  /Conta Principal` ainda funciona como rotulo operacional/,
+  "Expected financial creation form to explain that Conta Principal is still an operational label."
+);
+assert.match(
+  financeCreatePageSource,
+  /Aceita `1500`, `1500,45` e `1\.500,45`\./,
+  "Expected financial creation form to document the accepted pt-BR amount formats."
+);
+
+const financeCreateActionSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/financeiro/[subpage]/novo/actions.ts"),
+  "utf8"
+);
+assert.match(
+  financeCreateActionSource,
+  /function parseAmountInput/,
+  "Expected financial creation action to normalize pt-BR amount input."
+);
+assert.match(
+  financeCreateActionSource,
+  /function parseOperationalDate/,
+  "Expected financial creation action to normalize operational date input."
+);
+assert.match(
+  financeCreateActionSource,
+  /buildRedirectUrl/,
+  "Expected financial creation action to preserve form data on validation redirects."
+);
+assert.match(
+  financeCreateActionSource,
+  /Valor invalido: use um formato numerico como 1500, 1500,45 ou 1\.500,45\./,
+  "Expected financial creation action to return a specific invalid amount message."
+);
+assert.match(
+  financeCreateActionSource,
+  /Data invalida: use 07\/05\/2026 ou 2026-05-07\./,
+  "Expected financial creation action to return a specific invalid date message."
 );
 
 const teamSubpageSource = fs.readFileSync(
@@ -1451,8 +2304,13 @@ assert.match(
 );
 assert.match(
   workspaceNavigationSource,
+  /label: "Monitoramentos"/,
+  "Expected navigation config to expose Monitoramentos under Processos."
+);
+assert.doesNotMatch(
+  workspaceNavigationSource,
   /label: "Andamentos"/,
-  "Expected navigation config to expose Andamentos in the primary flow."
+  "Expected navigation config to remove Andamentos from the visible primary flow."
 );
 assert.match(
   workspaceNavigationSource,
@@ -1480,6 +2338,16 @@ assert.doesNotMatch(
   "Expected navigation config to hide Lexia and Site from visible navigation."
 );
 
+const operationPageSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/app/(workspace)/operacao/page.tsx"),
+  "utf8"
+);
+assert.match(
+  operationPageSource,
+  /href: "\/processos\/monitoramentos"/,
+  "Expected operation shortcuts to open the canonical process monitoring route."
+);
+
 const workspaceShellSource = fs.readFileSync(
   path.join(__dirname, "..", "src/components/layout/workspace-shell.tsx"),
   "utf8"
@@ -1489,10 +2357,45 @@ assert.match(
   /navSections\.filter\(\(section\) => section\.items\.length > 0\)\.map/,
   "Expected workspace shell to render grouped navigation sections."
 );
+assert.match(
+  workspaceShellSource,
+  /WorkspaceGlobalSearch/,
+  "Expected workspace shell to render the new local workspace search field."
+);
 assert.doesNotMatch(
   workspaceShellSource,
   /label: "Dashboard"|label: "Pessoas"|label: "Lexia"|label: "Site"/,
   "Expected workspace shell to stop hardcoding legacy labels in the visible navigation."
+);
+
+const workspaceSearchServiceSource = fs.readFileSync(
+  path.join(__dirname, "..", "src/server/services/workspace/get-workspace-shell-search.ts"),
+  "utf8"
+);
+assert.match(
+  workspaceSearchServiceSource,
+  /getClients\(\)/,
+  "Expected workspace search to read real clients."
+);
+assert.match(
+  workspaceSearchServiceSource,
+  /getProcesses\(\)/,
+  "Expected workspace search to read real processes."
+);
+assert.match(
+  workspaceSearchServiceSource,
+  /getDocuments\(\)/,
+  "Expected workspace search to read real documents."
+);
+assert.match(
+  workspaceSearchServiceSource,
+  /catch \{\s*return \[\];\s*\}/s,
+  "Expected workspace search to fail softly and return an empty list when the shell bootstrap cannot resolve data."
+);
+assert.doesNotMatch(
+  workspaceSearchServiceSource,
+  /openai|fetch\(|axios|semantic|embedding|IA/,
+  "Expected workspace search to stay local and non-semantic."
 );
 
 const claraRevisionalSource = fs.readFileSync(
